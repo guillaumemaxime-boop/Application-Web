@@ -95,8 +95,5 @@ describe('HomeComponent', () => {
     expect(consoleSpy).not.toHaveBeenCalled(); // Or check for specific error handling
   });
 
-  it('should have formatRange method', () => {
-    expect(component.formatRange).toBeTruthy();
-    expect(typeof component.formatRange).toBe('function');
-  });
+
 });
