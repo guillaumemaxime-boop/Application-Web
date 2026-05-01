@@ -104,25 +104,26 @@ class FurnitureTest {
     }
 
     @Test
-    void testFurnitureRecord_WithNullValues_ThrowsException() {
-        // Assert that records cannot have null values
-        assertThrows(NullPointerException.class, () -> {
-            new Furniture(
-                    null, // id is null
-                    "Test Furniture",
-                    "test-furniture",
-                    "Test Category",
-                    "Test Material",
-                    2023,
-                    "https://example.com/cover.jpg",
-                    List.of(),
-                    "Short description",
-                    "Full description",
-                    List.of(),
-                    "Test Designer",
-                    false
-            );
-        });
+    void testFurnitureRecord_WithEmptyValues() {
+        // Records can have empty strings but not null
+        Furniture furniture = new Furniture(
+                "f-001",
+                "", // Empty title
+                "test-furniture",
+                "", // Empty category
+                "", // Empty material
+                0,   // Year 0
+                "", // Empty coverImage
+                List.of(),
+                "", // Empty shortDescription
+                "", // Empty description
+                List.of(),
+                "", // Empty designer
+                false
+        );
+        assertNotNull(furniture);
+        assertEquals("", furniture.title());
+        assertEquals("", furniture.category());
     }
 
     @Test

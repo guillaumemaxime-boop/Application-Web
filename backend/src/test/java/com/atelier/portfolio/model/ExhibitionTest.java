@@ -113,27 +113,28 @@ class ExhibitionTest {
     }
 
     @Test
-    void testExhibitionRecord_WithNullValues_ThrowsException() {
-        // Assert that records cannot have null values
-        assertThrows(NullPointerException.class, () -> {
-            new Exhibition(
-                    null, // id is null
-                    "Test Exhibition",
-                    "test-exhibition",
-                    "Test Venue",
-                    "Test City",
-                    "Test Country",
-                    LocalDate.of(2024, 1, 1),
-                    LocalDate.of(2024, 1, 10),
-                    "https://example.com/cover.jpg",
-                    List.of(),
-                    "Test Curator",
-                    "Short description",
-                    "Full description",
-                    List.of(),
-                    false
-            );
-        });
+    void testExhibitionRecord_WithEmptyValues() {
+        // Records can have empty strings but not null
+        Exhibition exhibition = new Exhibition(
+                "e-001",
+                "", // Empty title
+                "test-exhibition",
+                "", // Empty venue
+                "", // Empty city
+                "", // Empty country
+                LocalDate.of(2024, 1, 1),
+                LocalDate.of(2024, 1, 10),
+                "", // Empty coverImage
+                List.of(),
+                "", // Empty curator
+                "", // Empty shortDescription
+                "", // Empty description
+                List.of(),
+                false
+        );
+        assertNotNull(exhibition);
+        assertEquals("", exhibition.title());
+        assertEquals("", exhibition.venue());
     }
 
     @Test

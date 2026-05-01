@@ -89,13 +89,14 @@ class FurnitureServiceTest {
     }
 
     @Test
-    void testFindAll_ReturnsImmutableList() {
+    void testFindAll_ReturnsUnmodifiableList() {
         // Act
-        List<Furniture> result1 = furnitureService.findAll();
-        List<Furniture> result2 = furnitureService.findAll();
+        List<Furniture> result = furnitureService.findAll();
 
         // Assert
-        assertNotSame(result1, result2, "Should return a new list instance each time");
+        assertNotNull(result);
+        // Verify the list is unmodifiable (List.of() returns an unmodifiable list)
+        assertThrows(UnsupportedOperationException.class, () -> result.add(null));
     }
 
     @Test
