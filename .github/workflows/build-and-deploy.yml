@@ -7,6 +7,7 @@ on:
       - '**.md'
       - 'docs/**'
       - '.github/**'
+  workflow_dispatch:
 
 concurrency:
   group: build-and-deploy
@@ -91,7 +92,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -103,3 +104,46 @@ jobs:
           echo "Deploying to production..."
           # Uncomment and configure the following for actual deployment:
           # ssh -o StrictHostKeyChecking=no user@server "cd /path/to/app && docker-compose pull && docker-compose up -d"
+
+  redeploy-rancher:
+    name: Redeploy on Rancher Desktop
+    needs: build
+    # Requires a self-hosted runner registered on the local machine where
+    # Rancher Desktop is installed, with the labels below applied at install time.
+    # See: https://docs.github.com/en/actions/hosting-your-own-runners
+    runs-on: [self-hosted, rancher-desktop]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Rancher Desktop docker engine is reachable
+        run: |
+          docker version
+          docker compose version
+
+      - name: Rebuild and (re)start the stack
+        run: docker compose -f docker-compose.yml up -d --build --remove-orphans
+
+      - name: Show running services
+        run: docker compose -f docker-compose.yml ps
+
+      - name: Health check (backend)
+        shell: bash
+        run: |
+          for i in {1..12}; do
+            if curl -fsS http://localhost:8080/actuator/health 2>/dev/null | grep -q UP; then
+              echo "Backend healthy"
+              exit 0
+            fi
+            echo "Waiting for backend... ($i/12)"
+            sleep 10
+          done
+          echo "Backend health check failed — dumping logs:"
+          docker compose -f docker-compose.yml logs --tail=200
+          exit 1
+
+      - name: Prune dangling images
+        if: success()
+        run: docker image prune -f
