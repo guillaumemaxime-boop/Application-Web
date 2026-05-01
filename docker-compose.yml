@@ -1,0 +1,39 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: atelier-lumen/backend:1.0.0
+    container_name: atelier-backend
+    restart: unless-stopped
+    expose:
+      - "8080"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 20s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    networks:
+      - atelier-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: atelier-lumen/frontend:1.0.0
+    container_name: atelier-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - atelier-net
+
+networks:
+  atelier-net:
+    driver: bridge

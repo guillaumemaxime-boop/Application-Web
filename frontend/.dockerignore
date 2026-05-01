@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.angular/
+out-tsc/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+README.md
