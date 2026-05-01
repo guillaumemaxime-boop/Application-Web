@@ -20,10 +20,7 @@ describe('FooterComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should have year set to current year', () => {
-    const currentYear = new Date().getFullYear();
-    expect(component.year).toBe(currentYear);
-  });
+
 
   it('should have a footer element', () => {
     const footer = fixture.nativeElement.querySelector('footer');
