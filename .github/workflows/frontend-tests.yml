@@ -32,7 +32,7 @@ jobs:
 
       - name: Run tests
         working-directory: frontend
-        run: npx ng test --no-watch
+        run: npx ng test
 
       - name: Upload test results
         if: always()
