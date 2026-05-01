@@ -47,6 +47,18 @@
             "development": { "buildTarget": "portfolio-frontend:build:development" }
           },
           "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "karmaConfig": "karma.conf.js",
+            "polyfills": ["zone.js"],
+            "tsConfig": "tsconfig.spec.json",
+            "inlineStyleLanguage": "css",
+            "assets": [],
+            "styles": ["src/styles.css"],
+            "scripts": []
+          }
         }
       }
     }
