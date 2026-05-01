@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { PortfolioService } from './portfolio.service';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Furniture } from '../models/furniture.model';
 import { Exhibition } from '../models/exhibition.model';
 import { Profile } from '../models/profile.model';
@@ -11,8 +12,11 @@ describe('PortfolioService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [PortfolioService],
+      providers: [
+        PortfolioService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     });
 
     service = TestBed.inject(PortfolioService);
@@ -20,14 +24,13 @@ describe('PortfolioService', () => {
   });
 
   afterEach(() => {
-    httpMock.verify(); // Verify that no unmatched requests are outstanding
+    httpMock.verify();
   });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  // Furniture tests
   describe('Furniture API', () => {
     const mockFurnitureList: Furniture[] = [
       {
@@ -94,7 +97,6 @@ describe('PortfolioService', () => {
     });
   });
 
-  // Exhibition tests
   describe('Exhibition API', () => {
     const mockExhibitionList: Exhibition[] = [
       {
@@ -152,7 +154,6 @@ describe('PortfolioService', () => {
     });
   });
 
-  // Profile tests
   describe('Profile API', () => {
     const mockProfile: Profile = {
       studio: 'Atelier Lumen',
@@ -180,7 +181,6 @@ describe('PortfolioService', () => {
     });
   });
 
-  // Error handling tests
   describe('Error Handling', () => {
     it('should handle 404 error for furniture', () => {
       const slug = 'non-existent';

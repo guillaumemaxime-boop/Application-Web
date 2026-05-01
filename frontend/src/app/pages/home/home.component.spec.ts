@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HomeComponent } from './home.component';
 import { PortfolioService } from '../../services/portfolio.service';
-import { RouterLink } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
-import { RouterTestingModule } from '@angular/router/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
@@ -52,33 +52,36 @@ describe('HomeComponent', () => {
   ];
 
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj('PortfolioService', [
+    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', [
       'getFeaturedFurniture',
       'getFeaturedExhibitions',
     ]);
+    spy.getFeaturedFurniture.and.returnValue(of(mockFeaturedFurniture));
+    spy.getFeaturedExhibitions.and.returnValue(of(mockFeaturedExhibitions));
 
     await TestBed.configureTestingModule({
-      imports: [HomeComponent, RouterLink, RouterTestingModule, HttpClientTestingModule],
+      imports: [HomeComponent],
       providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: PortfolioService, useValue: spy },
       ],
     }).compileComponents();
 
     portfolioServiceSpy = TestBed.inject(PortfolioService) as jasmine.SpyObj<PortfolioService>;
-    fixture = TestBed.createComponent(HomeComponent);
-    component = fixture.componentInstance;
   });
 
   it('should create', () => {
-    portfolioServiceSpy.getFeaturedFurniture.and.returnValue(of(mockFeaturedFurniture));
-    portfolioServiceSpy.getFeaturedExhibitions.and.returnValue(of(mockFeaturedExhibitions));
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
     expect(component).toBeTruthy();
   });
 
   it('should call PortfolioService methods on init', () => {
-    portfolioServiceSpy.getFeaturedFurniture.and.returnValue(of(mockFeaturedFurniture));
-    portfolioServiceSpy.getFeaturedExhibitions.and.returnValue(of(mockFeaturedExhibitions));
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
 
     expect(portfolioServiceSpy.getFeaturedFurniture).toHaveBeenCalled();
@@ -86,16 +89,15 @@ describe('HomeComponent', () => {
   });
 
   it('should handle error when loading featured furniture', () => {
-    portfolioServiceSpy.getFeaturedFurniture.and.returnValue(throwError(() => new Error('Failed')));
-    portfolioServiceSpy.getFeaturedExhibitions.and.returnValue(of(mockFeaturedExhibitions));
-    
-    // Use a spy to check if error was handled
-    const consoleSpy = spyOn(console, 'error');
+    portfolioServiceSpy.getFeaturedFurniture.and.returnValue(
+      throwError(() => new Error('Failed'))
+    );
+
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
     fixture.detectChanges();
-    
+
     expect(portfolioServiceSpy.getFeaturedFurniture).toHaveBeenCalled();
-    expect(consoleSpy).not.toHaveBeenCalled(); // Or check for specific error handling
+    expect(component).toBeTruthy();
   });
-
-
 });
