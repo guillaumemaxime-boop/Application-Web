@@ -32,7 +32,7 @@ jobs:
 
       - name: Run tests
         working-directory: frontend
-        run: npx ng test --no-watch --browsers=FirefoxHeadless
+        run: npx ng test --no-watch --browser=FirefoxHeadless
 
       - name: Upload test results
         if: always()
