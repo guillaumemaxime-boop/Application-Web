@@ -4,6 +4,7 @@ import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { RouterOutlet } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { RouterTestingModule } from '@angular/router/testing';
 
 describe('AppComponent', () => {
   let component: AppComponent;
@@ -11,7 +12,7 @@ describe('AppComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AppComponent, HeaderComponent, FooterComponent, RouterOutlet],
+      imports: [AppComponent, HeaderComponent, FooterComponent, RouterOutlet, RouterTestingModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);

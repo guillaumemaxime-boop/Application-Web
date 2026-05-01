@@ -5,6 +5,8 @@ import { RouterLink } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
@@ -56,7 +58,7 @@ describe('HomeComponent', () => {
     ]);
 
     await TestBed.configureTestingModule({
-      imports: [HomeComponent, RouterLink],
+      imports: [HomeComponent, RouterLink, RouterTestingModule, HttpClientTestingModule],
       providers: [
         { provide: PortfolioService, useValue: spy },
       ],
