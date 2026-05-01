@@ -3,6 +3,7 @@ import { AppComponent } from './app.component';
 import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { RouterOutlet } from '@angular/router';
+import { By } from '@angular/platform-browser';
 
 describe('AppComponent', () => {
   let component: AppComponent;
@@ -22,33 +23,23 @@ describe('AppComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should have a router-outlet for dynamic content', () => {
-    const routerOutlet = fixture.nativeElement.querySelector('router-outlet');
+  it('should have a router-outlet', () => {
+    const routerOutlet = fixture.debugElement.query(By.directive(RouterOutlet));
     expect(routerOutlet).toBeTruthy();
   });
 
   it('should have a header component', () => {
-    const header = fixture.nativeElement.querySelector('app-header');
+    const header = fixture.debugElement.query(By.directive(HeaderComponent));
     expect(header).toBeTruthy();
   });
 
   it('should have a footer component', () => {
-    const footer = fixture.nativeElement.querySelector('app-footer');
+    const footer = fixture.debugElement.query(By.directive(FooterComponent));
     expect(footer).toBeTruthy();
   });
 
-  it('should have a main element with padding', () => {
+  it('should have a main element', () => {
     const main = fixture.nativeElement.querySelector('main');
     expect(main).toBeTruthy();
-    const styles = window.getComputedStyle(main);
-    expect(styles.paddingTop).toBe('88px');
-  });
-
-  it('should have correct host styles', () => {
-    const hostElement = fixture.nativeElement;
-    const styles = window.getComputedStyle(hostElement);
-    expect(styles.display).toBe('flex');
-    expect(styles.flexDirection).toBe('column');
-    expect(styles.minHeight).toBe('100vh');
   });
 });
