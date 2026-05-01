@@ -57,7 +57,7 @@ jobs:
 
       - name: Build backend
         working-directory: backend
-        run: ./mvnw clean package -DskipTests
+        run: mvn clean package -DskipTests
 
       - name: Install frontend dependencies
         working-directory: frontend

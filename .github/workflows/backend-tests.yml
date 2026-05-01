@@ -43,7 +43,7 @@ jobs:
       - name: Build and test backend
         working-directory: backend
         run: |
-          ./mvnw clean test
+          mvn clean test
         env:
           MAVEN_OPTS: -Dmaven.repo.local=.m2/repository
 
