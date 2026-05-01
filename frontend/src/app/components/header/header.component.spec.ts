@@ -24,11 +24,20 @@ describe('HeaderComponent', () => {
   it('should have toggleMenu method', () => {
     expect(component.toggleMenu).toBeTruthy();
     expect(typeof component.toggleMenu).toBe('function');
+    expect(() => component.toggleMenu()).not.toThrow();
+    expect(() => component.toggleMenu()).not.toThrow();
   });
 
   it('should have closeMenu method', () => {
     expect(component.closeMenu).toBeTruthy();
     expect(typeof component.closeMenu).toBe('function');
+    expect(() => component.closeMenu()).not.toThrow();
+  });
+
+  it('should react to window scroll events', () => {
+    expect(() => window.dispatchEvent(new Event('scroll'))).not.toThrow();
+    fixture.detectChanges();
+    expect(component).toBeTruthy();
   });
 
   it('should have a header element', () => {

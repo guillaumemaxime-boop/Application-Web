@@ -100,4 +100,17 @@ describe('HomeComponent', () => {
     expect(portfolioServiceSpy.getFeaturedFurniture).toHaveBeenCalled();
     expect(component).toBeTruthy();
   });
+
+  it('should handle error when loading featured exhibitions', () => {
+    portfolioServiceSpy.getFeaturedExhibitions.and.returnValue(
+      throwError(() => new Error('Failed'))
+    );
+
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(portfolioServiceSpy.getFeaturedExhibitions).toHaveBeenCalled();
+    expect(component).toBeTruthy();
+  });
 });
