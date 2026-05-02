@@ -95,6 +95,52 @@ describe('PortfolioService', () => {
       expect(req.request.method).toBe('GET');
       req.flush(mockFurniture);
     });
+
+    it('should create a furniture via POST', () => {
+      const payload: Partial<Furniture> = {
+        title: 'Nouvelle pièce',
+        category: 'Sièges',
+        year: 2026,
+        featured: false,
+      };
+
+      service.createFurniture(payload).subscribe((created) => {
+        expect(created).toEqual(mockFurniture);
+      });
+
+      const req = httpMock.expectOne('/api/furniture');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(payload);
+      req.flush(mockFurniture);
+    });
+
+    it('should update a furniture via PUT', () => {
+      const slug = 'onde-fauteuil-sculpte';
+      const payload: Partial<Furniture> = { title: 'Onde — Édition limitée', featured: true };
+
+      service.updateFurniture(slug, payload).subscribe((updated) => {
+        expect(updated).toEqual(mockFurniture);
+      });
+
+      const req = httpMock.expectOne(`/api/furniture/${slug}`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(payload);
+      req.flush(mockFurniture);
+    });
+
+    it('should delete a furniture via DELETE', () => {
+      const slug = 'onde-fauteuil-sculpte';
+      let completed = false;
+
+      service.deleteFurniture(slug).subscribe({
+        next: () => { completed = true; },
+      });
+
+      const req = httpMock.expectOne(`/api/furniture/${slug}`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      expect(completed).toBe(true);
+    });
   });
 
   describe('Exhibition API', () => {
@@ -151,6 +197,52 @@ describe('PortfolioService', () => {
       const req = httpMock.expectOne(`/api/exhibitions/${slug}`);
       expect(req.request.method).toBe('GET');
       req.flush(mockExhibition);
+    });
+
+    it('should create an exhibition via POST', () => {
+      const payload: Partial<Exhibition> = {
+        title: 'Nouvelle exposition',
+        startDate: '2026-06-01',
+        endDate: '2026-08-30',
+        featured: false,
+      };
+
+      service.createExhibition(payload).subscribe((created) => {
+        expect(created).toEqual(mockExhibition);
+      });
+
+      const req = httpMock.expectOne('/api/exhibitions');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(payload);
+      req.flush(mockExhibition);
+    });
+
+    it('should update an exhibition via PUT', () => {
+      const slug = 'matieres-silencieuses';
+      const payload: Partial<Exhibition> = { title: 'Matières — édition 2', featured: true };
+
+      service.updateExhibition(slug, payload).subscribe((updated) => {
+        expect(updated).toEqual(mockExhibition);
+      });
+
+      const req = httpMock.expectOne(`/api/exhibitions/${slug}`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(payload);
+      req.flush(mockExhibition);
+    });
+
+    it('should delete an exhibition via DELETE', () => {
+      const slug = 'matieres-silencieuses';
+      let completed = false;
+
+      service.deleteExhibition(slug).subscribe({
+        next: () => { completed = true; },
+      });
+
+      const req = httpMock.expectOne(`/api/exhibitions/${slug}`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      expect(completed).toBe(true);
     });
   });
 

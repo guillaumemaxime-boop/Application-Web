@@ -27,6 +27,18 @@ export class PortfolioService {
     return this.http.get<Furniture>(`${API}/furniture/${slug}`);
   }
 
+  createFurniture(input: Partial<Furniture>): Observable<Furniture> {
+    return this.http.post<Furniture>(`${API}/furniture`, input);
+  }
+
+  updateFurniture(slug: string, input: Partial<Furniture>): Observable<Furniture> {
+    return this.http.put<Furniture>(`${API}/furniture/${slug}`, input);
+  }
+
+  deleteFurniture(slug: string): Observable<void> {
+    return this.http.delete<void>(`${API}/furniture/${slug}`);
+  }
+
   getAllExhibitions(): Observable<Exhibition[]> {
     return this.http.get<Exhibition[]>(`${API}/exhibitions`);
   }
@@ -37,6 +49,18 @@ export class PortfolioService {
 
   getExhibition(slug: string): Observable<Exhibition> {
     return this.http.get<Exhibition>(`${API}/exhibitions/${slug}`);
+  }
+
+  createExhibition(input: Partial<Exhibition>): Observable<Exhibition> {
+    return this.http.post<Exhibition>(`${API}/exhibitions`, input);
+  }
+
+  updateExhibition(slug: string, input: Partial<Exhibition>): Observable<Exhibition> {
+    return this.http.put<Exhibition>(`${API}/exhibitions/${slug}`, input);
+  }
+
+  deleteExhibition(slug: string): Observable<void> {
+    return this.http.delete<void>(`${API}/exhibitions/${slug}`);
   }
 
   getProfile(): Observable<Profile> {

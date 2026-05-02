@@ -29,5 +29,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/studio/studio.component').then(m => m.StudioComponent),
     title: 'Studio — Atelier Lumen',
   },
+  {
+    path: 'admin',
+    loadComponent: () => import('./pages/admin/admin.component').then(m => m.AdminComponent),
+    title: 'Administration — Atelier Lumen',
+  },
   { path: '**', redirectTo: '' },
 ];
