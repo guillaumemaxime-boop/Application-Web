@@ -78,13 +78,13 @@ jobs:
       - name: Build and push backend Docker image
         if: github.ref == 'refs/heads/main'
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/portfolio-backend:latest -f backend/Dockerfile .
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/portfolio-backend:latest -f backend/Dockerfile backend
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/portfolio-backend:latest
 
       - name: Build and push frontend Docker image
         if: github.ref == 'refs/heads/main'
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/portfolio-frontend:latest -f frontend/Dockerfile .
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/portfolio-frontend:latest -f frontend/Dockerfile frontend
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/portfolio-frontend:latest
 
   deploy:
