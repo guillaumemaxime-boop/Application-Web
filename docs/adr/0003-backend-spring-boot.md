@@ -18,7 +18,7 @@ L'écosystème Java reste l'un des plus matures pour le web d'entreprise. Spring
 
 ## Décision
 
-Implémenter le backend en **Java 25** (LTS) avec **Spring Boot 3.4** :
+Implémenter le backend en **Java 25** (LTS) avec **Spring Boot 4.0** :
 
 - `spring-boot-starter-web` pour l'API REST
 - `spring-boot-starter-validation` pour les contraintes Jakarta Bean Validation

@@ -1,5 +1,5 @@
-# --- Build stage : Maven + JDK 17 ---
-FROM maven:3.9-eclipse-temurin-17 AS build
+# --- Build stage : Maven + JDK 25 ---
+FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /workspace
 
 COPY pom.xml ./
@@ -8,8 +8,8 @@ RUN mvn -B -q dependency:go-offline
 COPY src ./src
 RUN mvn -B -q clean package -DskipTests
 
-# --- Runtime stage : JRE 17 minimal ---
-FROM eclipse-temurin:17-jre-alpine
+# --- Runtime stage : JRE 25 minimal ---
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 RUN addgroup -S app && adduser -S app -G app
