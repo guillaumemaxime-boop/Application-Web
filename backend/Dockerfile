@@ -14,11 +14,13 @@ WORKDIR /app
 
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build /workspace/target/portfolio-backend-*.jar app.jar
-RUN chown -R app:app /app
+COPY entrypoint.sh /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh && chown -R app:app /app
 USER app
 
 EXPOSE 8080
 HEALTHCHECK --interval=20s --timeout=3s --start-period=30s --retries=3 \
   CMD wget -q -O- http://localhost:8080/actuator/health | grep -q UP || exit 1
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["java", "-jar", "/app/app.jar"]
