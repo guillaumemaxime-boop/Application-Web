@@ -14,7 +14,7 @@ FROM nginx:1.27-alpine
 # Templated config: nginx's docker-entrypoint runs envsubst on /etc/nginx/templates/*.template
 # at startup. Defaults match docker-compose; Railway overrides via service env vars.
 ENV PORT=80 \
-    BACKEND_HOST=backend \
+    BACKEND_HOST=overflowing-stillness.railway.internal \
     BACKEND_PORT=8080 \
     NGINX_ENVSUBST_FILTER='^(PORT|BACKEND_HOST|BACKEND_PORT)$'
 
