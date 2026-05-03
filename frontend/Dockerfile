@@ -10,11 +10,19 @@ RUN npx ng build --configuration production
 
 # --- Runtime stage : Nginx ---
 FROM nginx:1.27-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Templated config: nginx's docker-entrypoint runs envsubst on /etc/nginx/templates/*.template
+# at startup. Defaults match docker-compose; Railway overrides via service env vars.
+ENV PORT=80 \
+    BACKEND_HOST=backend \
+    BACKEND_PORT=8080 \
+    NGINX_ENVSUBST_FILTER='^(PORT|BACKEND_HOST|BACKEND_PORT)$'
+
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /workspace/dist/portfolio-frontend/browser /usr/share/nginx/html
 
 EXPOSE 80
 HEALTHCHECK --interval=20s --timeout=3s --retries=3 \
-  CMD wget -q -O- http://localhost/ >/dev/null || exit 1
+  CMD wget -q -O- "http://localhost:${PORT}/" >/dev/null || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
