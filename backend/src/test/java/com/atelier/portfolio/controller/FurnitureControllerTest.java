@@ -154,6 +154,64 @@ class FurnitureControllerTest {
     }
 
     @Test
+    void testCreate_ReturnsCreatedWithLocationHeader() {
+        when(furnitureService.create(sampleFurniture)).thenReturn(sampleFurniture);
+
+        ResponseEntity<Furniture> result = furnitureController.create(sampleFurniture);
+
+        assertEquals(201, result.getStatusCode().value());
+        assertEquals(sampleFurniture, result.getBody());
+        assertNotNull(result.getHeaders().getLocation());
+        assertEquals("/api/furniture/" + sampleFurniture.slug(), result.getHeaders().getLocation().toString());
+        verify(furnitureService, times(1)).create(sampleFurniture);
+    }
+
+    @Test
+    void testUpdate_ExistingSlug_ReturnsOk() {
+        String slug = sampleFurniture.slug();
+        when(furnitureService.update(slug, sampleFurniture)).thenReturn(Optional.of(sampleFurniture));
+
+        ResponseEntity<Furniture> result = furnitureController.update(slug, sampleFurniture);
+
+        assertTrue(result.getStatusCode().is2xxSuccessful());
+        assertEquals(sampleFurniture, result.getBody());
+        verify(furnitureService, times(1)).update(slug, sampleFurniture);
+    }
+
+    @Test
+    void testUpdate_NonExistingSlug_ReturnsNotFound() {
+        String slug = "missing";
+        when(furnitureService.update(slug, sampleFurniture)).thenReturn(Optional.empty());
+
+        ResponseEntity<Furniture> result = furnitureController.update(slug, sampleFurniture);
+
+        assertEquals(404, result.getStatusCode().value());
+        verify(furnitureService, times(1)).update(slug, sampleFurniture);
+    }
+
+    @Test
+    void testDelete_ExistingSlug_ReturnsNoContent() {
+        String slug = sampleFurniture.slug();
+        when(furnitureService.deleteBySlug(slug)).thenReturn(true);
+
+        ResponseEntity<Void> result = furnitureController.delete(slug);
+
+        assertEquals(204, result.getStatusCode().value());
+        verify(furnitureService, times(1)).deleteBySlug(slug);
+    }
+
+    @Test
+    void testDelete_NonExistingSlug_ReturnsNotFound() {
+        String slug = "missing";
+        when(furnitureService.deleteBySlug(slug)).thenReturn(false);
+
+        ResponseEntity<Void> result = furnitureController.delete(slug);
+
+        assertEquals(404, result.getStatusCode().value());
+        verify(furnitureService, times(1)).deleteBySlug(slug);
+    }
+
+    @Test
     void testCategories_EmptyList_ReturnsEmptyList() {
         // Arrange
         when(furnitureService.categories()).thenReturn(List.of());

@@ -141,6 +141,64 @@ class ExhibitionControllerTest {
     }
 
     @Test
+    void testCreate_ReturnsCreatedWithLocationHeader() {
+        when(exhibitionService.create(sampleExhibition)).thenReturn(sampleExhibition);
+
+        ResponseEntity<Exhibition> result = exhibitionController.create(sampleExhibition);
+
+        assertEquals(201, result.getStatusCode().value());
+        assertEquals(sampleExhibition, result.getBody());
+        assertNotNull(result.getHeaders().getLocation());
+        assertEquals("/api/exhibitions/" + sampleExhibition.slug(), result.getHeaders().getLocation().toString());
+        verify(exhibitionService, times(1)).create(sampleExhibition);
+    }
+
+    @Test
+    void testUpdate_ExistingSlug_ReturnsOk() {
+        String slug = sampleExhibition.slug();
+        when(exhibitionService.update(slug, sampleExhibition)).thenReturn(Optional.of(sampleExhibition));
+
+        ResponseEntity<Exhibition> result = exhibitionController.update(slug, sampleExhibition);
+
+        assertTrue(result.getStatusCode().is2xxSuccessful());
+        assertEquals(sampleExhibition, result.getBody());
+        verify(exhibitionService, times(1)).update(slug, sampleExhibition);
+    }
+
+    @Test
+    void testUpdate_NonExistingSlug_ReturnsNotFound() {
+        String slug = "missing";
+        when(exhibitionService.update(slug, sampleExhibition)).thenReturn(Optional.empty());
+
+        ResponseEntity<Exhibition> result = exhibitionController.update(slug, sampleExhibition);
+
+        assertEquals(404, result.getStatusCode().value());
+        verify(exhibitionService, times(1)).update(slug, sampleExhibition);
+    }
+
+    @Test
+    void testDelete_ExistingSlug_ReturnsNoContent() {
+        String slug = sampleExhibition.slug();
+        when(exhibitionService.deleteBySlug(slug)).thenReturn(true);
+
+        ResponseEntity<Void> result = exhibitionController.delete(slug);
+
+        assertEquals(204, result.getStatusCode().value());
+        verify(exhibitionService, times(1)).deleteBySlug(slug);
+    }
+
+    @Test
+    void testDelete_NonExistingSlug_ReturnsNotFound() {
+        String slug = "missing";
+        when(exhibitionService.deleteBySlug(slug)).thenReturn(false);
+
+        ResponseEntity<Void> result = exhibitionController.delete(slug);
+
+        assertEquals(404, result.getStatusCode().value());
+        verify(exhibitionService, times(1)).deleteBySlug(slug);
+    }
+
+    @Test
     void testBySlug_WithSpecialCharacters_ReturnsExhibition() {
         // Arrange
         String slug = "l-atelier-ouvert";
