@@ -9,7 +9,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     <header [class.scrolled]="scrolled()">
       <div class="container nav">
         <a routerLink="/" class="brand" (click)="closeMenu()">
-          <span class="brand-mark">A·L</span>
+          <span class="brand-mark">M·G</span>
           <span class="brand-name">Milo GUILLAUME Design</span>
         </a>
 
