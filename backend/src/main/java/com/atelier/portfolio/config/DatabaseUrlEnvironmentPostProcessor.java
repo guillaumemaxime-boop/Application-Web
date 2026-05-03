@@ -55,6 +55,8 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
             }
 
             env.getPropertySources().addFirst(new MapPropertySource("databaseUrlPostProcessor", props));
+            System.out.println("[DatabaseUrlEnvironmentPostProcessor] rewrote datasource URL to " + jdbcUrl
+                    + " (user=" + (userInfo == null ? "<none>" : userInfo.split(":", 2)[0]) + ")");
         } catch (IllegalArgumentException ignored) {
             // Leave the original value untouched if it is not a valid URI.
         }
