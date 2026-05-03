@@ -2,7 +2,7 @@
 
 Application Web full-stack présentant un portfolio de **mobilier sculpté** et de **scénographies d'exposition artistiques**.
 
-- **Backend** : Java 25 + Spring Boot 3.4 (REST API)
+- **Backend** : Java 25 + Spring Boot 4.0 (REST API)
 - **Frontend** : Angular 21 (composants standalone, signaux, nouveau control flow `@if` / `@for`)
 
 ## Structure
@@ -86,7 +86,7 @@ Les données (6 pièces de mobilier, 5 expositions, 1 profil) sont **chargées e
 
 ### Backend
 - Java 25 (records, text blocks)
-- Spring Boot 3.4 — Web, Validation, Actuator
+- Spring Boot 4.0 — Web, Validation, Actuator
 - CORS configuré pour le dev front (`localhost:4200`)
 - Sérialisation JSON des dates en `yyyy-MM-dd`
 

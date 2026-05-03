@@ -22,6 +22,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           <a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()">Mobilier</a>
           <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
           <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
+          <a routerLink="/admin" routerLinkActive="active" class="admin-link" (click)="closeMenu()">Admin</a>
         </nav>
       </div>
     </header>
@@ -87,6 +88,19 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       bottom: -2px;
       height: 1px;
       background: var(--color-accent);
+    }
+    nav a.admin-link {
+      padding: 6px 14px;
+      border: 1px solid var(--color-line);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+    nav a.admin-link.active::after { display: none; }
+    nav a.admin-link.active,
+    nav a.admin-link:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent-deep);
     }
     .burger {
       display: none;

@@ -1,0 +1,115 @@
+package com.atelier.portfolio.entity;
+
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.Table;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "exhibition")
+public class ExhibitionEntity {
+
+    @Id
+    @Column(length = 50)
+    private String id;
+
+    @Column(nullable = false)
+    private String title;
+
+    @Column(nullable = false, unique = true)
+    private String slug;
+
+    private String venue;
+
+    @Column(length = 100)
+    private String city;
+
+    @Column(length = 100)
+    private String country;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    @Column(name = "cover_image", length = 500)
+    private String coverImage;
+
+    private String curator;
+
+    @Column(name = "short_description", length = 1000)
+    private String shortDescription;
+
+    @Column(length = 4000)
+    private String description;
+
+    @Column(nullable = false)
+    private boolean featured;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "exhibition_gallery", joinColumns = @JoinColumn(name = "exhibition_id"))
+    @OrderColumn(name = "position")
+    @Column(name = "url", length = 500, nullable = false)
+    private List<String> gallery = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "exhibition_tag", joinColumns = @JoinColumn(name = "exhibition_id"))
+    @OrderColumn(name = "position")
+    @Column(name = "entry_value", nullable = false)
+    private List<String> tags = new ArrayList<>();
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getSlug() { return slug; }
+    public void setSlug(String slug) { this.slug = slug; }
+
+    public String getVenue() { return venue; }
+    public void setVenue(String venue) { this.venue = venue; }
+
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
+
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
+    public String getCoverImage() { return coverImage; }
+    public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
+
+    public String getCurator() { return curator; }
+    public void setCurator(String curator) { this.curator = curator; }
+
+    public String getShortDescription() { return shortDescription; }
+    public void setShortDescription(String shortDescription) { this.shortDescription = shortDescription; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public boolean isFeatured() { return featured; }
+    public void setFeatured(boolean featured) { this.featured = featured; }
+
+    public List<String> getGallery() { return gallery; }
+    public void setGallery(List<String> gallery) { this.gallery = gallery; }
+
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
+}

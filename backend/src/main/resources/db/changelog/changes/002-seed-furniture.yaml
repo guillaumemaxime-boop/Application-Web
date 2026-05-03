@@ -1,0 +1,316 @@
+databaseChangeLog:
+  - changeSet:
+      id: seed-furniture-001-onde
+      author: atelier-lumen
+      changes:
+        - insert:
+            tableName: furniture
+            columns:
+              - column: { name: id, value: f-001 }
+              - column: { name: title, value: "Onde — Fauteuil sculpté" }
+              - column: { name: slug, value: onde-fauteuil-sculpte }
+              - column: { name: category, value: Sièges }
+              - column: { name: material, value: "Chêne massif & cuir tanné" }
+              - column: { name: year_made, valueNumeric: 2024 }
+              - column: { name: cover_image, value: "https://picsum.photos/seed/onde-cover/1200/800" }
+              - column: { name: short_description, value: "Une silhouette inspirée du mouvement de la mer, façonnée d'un seul bloc." }
+              - column:
+                  name: description
+                  value: |
+                    Onde est un fauteuil pensé comme une vague figée. Le piétement, taillé dans une bille
+                    de chêne d'une seule pièce, supporte une assise enveloppante recouverte d'un cuir
+                    végétal teinté à la main. La courbure du dossier, calculée pour offrir un soutien
+                    ergonomique, joue avec la lumière du matin et révèle le veinage profond du bois.
+                    Pièce signée et numérotée, éditée à 12 exemplaires.
+              - column: { name: designer, value: "Atelier Lumen" }
+              - column: { name: featured, valueBoolean: true }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-001 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: url, value: "https://picsum.photos/seed/onde-1/1200/800" }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-001 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: url, value: "https://picsum.photos/seed/onde-2/1200/800" }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-001 }
+              - column: { name: position, valueNumeric: 2 }
+              - column: { name: url, value: "https://picsum.photos/seed/onde-3/1200/800" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-001 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: entry_value, value: "Hauteur 92 cm" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-001 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: entry_value, value: "Largeur 78 cm" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-001 }
+              - column: { name: position, valueNumeric: 2 }
+              - column: { name: entry_value, value: "Profondeur 84 cm" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-001 }
+              - column: { name: position, valueNumeric: 3 }
+              - column: { name: entry_value, value: "Assise 42 cm" }
+
+  - changeSet:
+      id: seed-furniture-002-strate
+      author: atelier-lumen
+      changes:
+        - insert:
+            tableName: furniture
+            columns:
+              - column: { name: id, value: f-002 }
+              - column: { name: title, value: "Strate — Table basse en marbre" }
+              - column: { name: slug, value: strate-table-basse-marbre }
+              - column: { name: category, value: Tables }
+              - column: { name: material, value: "Marbre Calacatta & laiton brossé" }
+              - column: { name: year_made, valueNumeric: 2023 }
+              - column: { name: cover_image, value: "https://picsum.photos/seed/strate-cover/1200/800" }
+              - column: { name: short_description, value: "Trois plateaux superposés évoquant les couches géologiques." }
+              - column:
+                  name: description
+                  value: |
+                    Strate joue sur la rencontre du minéral et du métal. Le plateau supérieur en marbre
+                    Calacatta accueille les objets du quotidien, tandis que les niveaux inférieurs en
+                    laiton brossé renvoient une lumière feutrée. Les arêtes ont été polies à la main
+                    pour suggérer une érosion lente et naturelle.
+              - column: { name: designer, value: "Atelier Lumen" }
+              - column: { name: featured, valueBoolean: true }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-002 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: url, value: "https://picsum.photos/seed/strate-1/1200/800" }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-002 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: url, value: "https://picsum.photos/seed/strate-2/1200/800" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-002 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: entry_value, value: "Hauteur 38 cm" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-002 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: entry_value, value: "Diamètre 110 cm" }
+
+  - changeSet:
+      id: seed-furniture-003-voile
+      author: atelier-lumen
+      changes:
+        - insert:
+            tableName: furniture
+            columns:
+              - column: { name: id, value: f-003 }
+              - column: { name: title, value: "Voile — Bibliothèque modulaire" }
+              - column: { name: slug, value: voile-bibliotheque-modulaire }
+              - column: { name: category, value: Rangements }
+              - column: { name: material, value: "Frêne thermo-traité & acier patiné" }
+              - column: { name: year_made, valueNumeric: 2024 }
+              - column: { name: cover_image, value: "https://picsum.photos/seed/voile-cover/1200/800" }
+              - column: { name: short_description, value: "Une bibliothèque qui se déploie comme une voile au vent." }
+              - column:
+                  name: description
+                  value: |
+                    Voile propose un système modulaire de rangement adaptable aux espaces résidentiels
+                    comme tertiaires. Les modules en frêne thermo-traité s'assemblent sans visserie
+                    apparente sur une structure d'acier patiné. Chaque configuration est unique.
+              - column: { name: designer, value: "Atelier Lumen" }
+              - column: { name: featured, valueBoolean: false }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-003 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: url, value: "https://picsum.photos/seed/voile-1/1200/800" }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-003 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: url, value: "https://picsum.photos/seed/voile-2/1200/800" }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-003 }
+              - column: { name: position, valueNumeric: 2 }
+              - column: { name: url, value: "https://picsum.photos/seed/voile-3/1200/800" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-003 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: entry_value, value: "Module H 220 × L 90 × P 32 cm" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-003 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: entry_value, value: "Configurations 1 à 6 modules" }
+
+  - changeSet:
+      id: seed-furniture-004-halo
+      author: atelier-lumen
+      changes:
+        - insert:
+            tableName: furniture
+            columns:
+              - column: { name: id, value: f-004 }
+              - column: { name: title, value: "Halo — Suspension lumineuse" }
+              - column: { name: slug, value: halo-suspension-lumineuse }
+              - column: { name: category, value: Luminaires }
+              - column: { name: material, value: "Verre soufflé & laiton" }
+              - column: { name: year_made, valueNumeric: 2023 }
+              - column: { name: cover_image, value: "https://picsum.photos/seed/halo-cover/1200/800" }
+              - column: { name: short_description, value: "Un halo de lumière diffuse, soufflé à la bouche en Bohême." }
+              - column:
+                  name: description
+                  value: |
+                    Halo est une suspension réalisée en collaboration avec un maître verrier de Bohême.
+                    Le verre, soufflé à la bouche, capte la lumière d'une source LED dissimulée et
+                    la diffuse en un halo doux. La structure en laiton apparente met en valeur le
+                    geste artisanal.
+              - column: { name: designer, value: "Atelier Lumen" }
+              - column: { name: featured, valueBoolean: false }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-004 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: url, value: "https://picsum.photos/seed/halo-1/1200/800" }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-004 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: url, value: "https://picsum.photos/seed/halo-2/1200/800" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-004 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: entry_value, value: "Diamètre 45 cm" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-004 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: entry_value, value: "Hauteur réglable jusqu'à 180 cm" }
+
+  - changeSet:
+      id: seed-furniture-005-racine
+      author: atelier-lumen
+      changes:
+        - insert:
+            tableName: furniture
+            columns:
+              - column: { name: id, value: f-005 }
+              - column: { name: title, value: "Racine — Banc d'entrée" }
+              - column: { name: slug, value: racine-banc-entree }
+              - column: { name: category, value: Sièges }
+              - column: { name: material, value: "Noyer brut & lin huilé" }
+              - column: { name: year_made, valueNumeric: 2022 }
+              - column: { name: cover_image, value: "https://picsum.photos/seed/racine-cover/1200/800" }
+              - column: { name: short_description, value: "Un banc taillé dans une racine centenaire de noyer." }
+              - column:
+                  name: description
+                  value: |
+                    Chaque banc Racine est une pièce unique. La sélection de la racine, son séchage
+                    de plus de deux ans et sa taille à la main préservent les irrégularités naturelles
+                    du bois. L'assise est garnie d'un coussin en lin lavé et huilé.
+              - column: { name: designer, value: "Atelier Lumen" }
+              - column: { name: featured, valueBoolean: true }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-005 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: url, value: "https://picsum.photos/seed/racine-1/1200/800" }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-005 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: url, value: "https://picsum.photos/seed/racine-2/1200/800" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-005 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: entry_value, value: "Variable selon la pièce" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-005 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: entry_value, value: "Longueur ≈ 160 cm" }
+
+  - changeSet:
+      id: seed-furniture-006-brume
+      author: atelier-lumen
+      changes:
+        - insert:
+            tableName: furniture
+            columns:
+              - column: { name: id, value: f-006 }
+              - column: { name: title, value: "Brume — Paravent textile" }
+              - column: { name: slug, value: brume-paravent-textile }
+              - column: { name: category, value: Cloisons }
+              - column: { name: material, value: "Lin tissé main & frêne" }
+              - column: { name: year_made, valueNumeric: 2024 }
+              - column: { name: cover_image, value: "https://picsum.photos/seed/brume-cover/1200/800" }
+              - column: { name: short_description, value: "Un paravent qui filtre la lumière comme une brume matinale." }
+              - column:
+                  name: description
+                  value: |
+                    Brume articule trois panneaux de lin tissé sur un cadre en frêne huilé. Le tissage,
+                    réalisé sur métier traditionnel, alterne fils mats et fils de soie pour créer un
+                    jeu de transparences subtil au passage de la lumière.
+              - column: { name: designer, value: "Atelier Lumen" }
+              - column: { name: featured, valueBoolean: false }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-006 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: url, value: "https://picsum.photos/seed/brume-1/1200/800" }
+        - insert:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: furniture_id, value: f-006 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: url, value: "https://picsum.photos/seed/brume-2/1200/800" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-006 }
+              - column: { name: position, valueNumeric: 0 }
+              - column: { name: entry_value, value: "Hauteur 180 cm" }
+        - insert:
+            tableName: furniture_dimension
+            columns:
+              - column: { name: furniture_id, value: f-006 }
+              - column: { name: position, valueNumeric: 1 }
+              - column: { name: entry_value, value: "Largeur déployée 240 cm" }

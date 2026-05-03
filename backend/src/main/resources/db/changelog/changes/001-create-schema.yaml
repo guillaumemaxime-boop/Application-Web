@@ -1,0 +1,232 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-furniture
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: furniture
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slug
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: category
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: material
+                  type: varchar(255)
+              - column:
+                  name: year_made
+                  type: int
+              - column:
+                  name: cover_image
+                  type: varchar(500)
+              - column:
+                  name: short_description
+                  type: varchar(1000)
+              - column:
+                  name: description
+                  type: varchar(4000)
+              - column:
+                  name: designer
+                  type: varchar(255)
+              - column:
+                  name: featured
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 002-create-furniture-gallery
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: furniture_gallery
+            columns:
+              - column:
+                  name: furniture_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_furniture_gallery_furniture
+                    references: furniture(id)
+                    deleteCascade: true
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: url
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: furniture_gallery
+            columnNames: furniture_id, position
+            constraintName: pk_furniture_gallery
+
+  - changeSet:
+      id: 003-create-furniture-dimension
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: furniture_dimension
+            columns:
+              - column:
+                  name: furniture_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_furniture_dimension_furniture
+                    references: furniture(id)
+                    deleteCascade: true
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entry_value
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: furniture_dimension
+            columnNames: furniture_id, position
+            constraintName: pk_furniture_dimension
+
+  - changeSet:
+      id: 004-create-exhibition
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: exhibition
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slug
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: venue
+                  type: varchar(255)
+              - column:
+                  name: city
+                  type: varchar(100)
+              - column:
+                  name: country
+                  type: varchar(100)
+              - column:
+                  name: start_date
+                  type: date
+              - column:
+                  name: end_date
+                  type: date
+              - column:
+                  name: cover_image
+                  type: varchar(500)
+              - column:
+                  name: curator
+                  type: varchar(255)
+              - column:
+                  name: short_description
+                  type: varchar(1000)
+              - column:
+                  name: description
+                  type: varchar(4000)
+              - column:
+                  name: featured
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 005-create-exhibition-gallery
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: exhibition_gallery
+            columns:
+              - column:
+                  name: exhibition_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_exhibition_gallery_exhibition
+                    references: exhibition(id)
+                    deleteCascade: true
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: url
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: exhibition_gallery
+            columnNames: exhibition_id, position
+            constraintName: pk_exhibition_gallery
+
+  - changeSet:
+      id: 006-create-exhibition-tag
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: exhibition_tag
+            columns:
+              - column:
+                  name: exhibition_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_exhibition_tag_exhibition
+                    references: exhibition(id)
+                    deleteCascade: true
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entry_value
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: exhibition_tag
+            columnNames: exhibition_id, position
+            constraintName: pk_exhibition_tag

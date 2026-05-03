@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn -B test)",
+      "PowerShell(Get-Command mvn -ErrorAction SilentlyContinue; Get-Command mvnw -ErrorAction SilentlyContinue; if \\($env:MAVEN_HOME\\) { \"MAVEN_HOME=$env:MAVEN_HOME\" }; if \\($env:M2_HOME\\) { \"M2_HOME=$env:M2_HOME\" }; if \\($env:JAVA_HOME\\) { \"JAVA_HOME=$env:JAVA_HOME\" }; java -version)",
+      "PowerShell(docker --version)"
+    ]
+  }
+}

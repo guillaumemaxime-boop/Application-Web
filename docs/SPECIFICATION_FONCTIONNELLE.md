@@ -428,7 +428,7 @@ Guillaume Maxime Boop, artisan et designer, a besoin d'une **vitrine numérique*
 ### **8.2 Frameworks et Librairies**
 | Technologie | Version | Usage |
 |-------------|---------|-------|
-| **Spring Boot** | 3.4 | Backend (API REST) |
+| **Spring Boot** | 4.0 | Backend (API REST) |
 | **Angular** | 21 | Frontend (UI) |
 | **RxJS** | 7+ | Gestion des flux |
 | **HttpClient** | - | Requêtes API |

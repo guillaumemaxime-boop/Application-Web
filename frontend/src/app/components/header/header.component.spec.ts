@@ -57,6 +57,11 @@ describe('HeaderComponent', () => {
 
   it('should have navigation links', () => {
     const navLinks = fixture.nativeElement.querySelectorAll('nav a');
-    expect(navLinks.length).toBe(4);
+    expect(navLinks.length).toBe(5);
+  });
+
+  it('should have an admin link', () => {
+    const adminLink = fixture.nativeElement.querySelector('nav a.admin-link');
+    expect(adminLink).toBeTruthy();
   });
 });
