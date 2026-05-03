@@ -4,7 +4,7 @@
 # GHCR image as :staging and tells Railway to redeploy.
 backend:
   image: ghcr.io/guillaumemaxime-boop/portfolio-backend
-  tag: ""   # filled in by the bump-staging job (commit SHA)
+  tag: "3a92a1ed2f49"
 frontend:
   image: ghcr.io/guillaumemaxime-boop/portfolio-frontend
-  tag: ""   # filled in by the bump-staging job (commit SHA)
+  tag: "3a92a1ed2f49"
