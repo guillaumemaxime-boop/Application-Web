@@ -10,8 +10,8 @@ import { RouterLink } from '@angular/router';
       <div class="container">
         <div class="grid">
           <div>
-            <h3 class="title">Atelier Lumen</h3>
-            <p>Mobilier sculpté & scénographies sensibles, depuis Lyon.</p>
+            <h3 class="title">Milo GUILLAUME Design</h3>
+            <p>Mobilier sculpté & scénographies sensibles, depuis Paris.</p>
           </div>
 
           <div>
@@ -28,13 +28,13 @@ import { RouterLink } from '@angular/router';
             <ul>
               <li><a href="mailto:studio@atelier-lumen.fr">studio&#64;atelier-lumen.fr</a></li>
               <li>+33 (0)4 78 00 00 00</li>
-              <li>3 quai Saint-Vincent, 69001 Lyon</li>
+              <li>3 quai Saint-Vincent, 75001 Paris</li>
             </ul>
           </div>
         </div>
 
         <div class="legal">
-          <span>© {{ year }} Atelier Lumen — Tous droits réservés.</span>
+          <span>© {{ year }} Milo GUILLAUME Design — Tous droits réservés.</span>
           <span>Conçu en France.</span>
         </div>
       </div>

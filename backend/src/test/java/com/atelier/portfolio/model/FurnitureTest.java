@@ -23,7 +23,7 @@ class FurnitureTest {
                 "Une silhouette inspirée du mouvement de la mer",
                 "Description détaillée",
                 List.of("Hauteur 92 cm", "Largeur 78 cm"),
-                "Atelier Lumen",
+                "Milo GUILLAUME Design",
                 true
         );
 
@@ -40,7 +40,7 @@ class FurnitureTest {
         assertEquals("Une silhouette inspirée du mouvement de la mer", furniture.shortDescription());
         assertEquals("Description détaillée", furniture.description());
         assertEquals(List.of("Hauteur 92 cm", "Largeur 78 cm"), furniture.dimensions());
-        assertEquals("Atelier Lumen", furniture.designer());
+        assertEquals("Milo GUILLAUME Design", furniture.designer());
         assertTrue(furniture.featured());
     }
 

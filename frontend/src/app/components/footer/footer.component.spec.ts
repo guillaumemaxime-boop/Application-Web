@@ -26,7 +26,7 @@ describe('FooterComponent', () => {
     expect(footer).toBeTruthy();
   });
 
-  it('should have Atelier Lumen title', () => {
+  it('should have Milo GUILLAUME Design title', () => {
     const title = fixture.nativeElement.querySelector('.title');
     expect(title).toBeTruthy();
   });

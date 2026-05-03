@@ -442,7 +442,7 @@ export class AdminComponent {
     category: ['', Validators.required],
     year: [new Date().getFullYear(), Validators.required],
     material: [''],
-    designer: ['Atelier Lumen'],
+    designer: ['Milo GUILLAUME Design'],
     coverImage: [''],
     gallery: [''],
     dimensions: [''],
@@ -498,7 +498,7 @@ export class AdminComponent {
     this.editingFurnitureSlug.set(null);
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
-      material: '', designer: 'Atelier Lumen', coverImage: '',
+      material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
       gallery: '', dimensions: '', shortDescription: '', description: '', featured: false,
     });
     this.message.set(null);

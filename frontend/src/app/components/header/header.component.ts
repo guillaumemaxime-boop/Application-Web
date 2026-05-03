@@ -10,7 +10,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <div class="container nav">
         <a routerLink="/" class="brand" (click)="closeMenu()">
           <span class="brand-mark">A·L</span>
-          <span class="brand-name">Atelier Lumen</span>
+          <span class="brand-name">Milo GUILLAUME Design</span>
         </a>
 
         <button class="burger" type="button" (click)="toggleMenu()" [attr.aria-expanded]="open()">

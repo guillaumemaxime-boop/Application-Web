@@ -169,7 +169,7 @@ export class ExhibitionDetailComponent {
       next: data => {
         this.item.set(data);
         this.loading.set(false);
-        document.title = `${data.title} — Atelier Lumen`;
+        document.title = `${data.title} — Milo GUILLAUME Design`;
       },
       error: () => { this.notFound.set(true); this.loading.set(false); }
     });

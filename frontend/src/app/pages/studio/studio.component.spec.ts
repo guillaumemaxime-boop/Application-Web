@@ -8,10 +8,10 @@ describe('StudioComponent', () => {
   let portfolioServiceSpy: jasmine.SpyObj<PortfolioService>;
 
   const mockProfile: Profile = {
-    studio: 'Atelier Lumen',
+    studio: 'Milo GUILLAUME Design',
     tagline: 'Mobilier sculpté',
     bio: 'bio',
-    location: 'Lyon',
+    location: 'Paris',
     contactEmail: 'studio@atelier-lumen.fr',
     awards: ['Prix 2024'],
     press: [{ title: 'AD Magazine', year: '2024' }],

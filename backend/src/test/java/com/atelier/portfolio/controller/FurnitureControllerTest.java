@@ -43,7 +43,7 @@ class FurnitureControllerTest {
                 "Une silhouette inspirée du mouvement de la mer",
                 "Description détaillée",
                 List.of("Hauteur 92 cm", "Largeur 78 cm"),
-                "Atelier Lumen",
+                "Milo GUILLAUME Design",
                 true
         );
 

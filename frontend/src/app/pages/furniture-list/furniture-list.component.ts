@@ -14,7 +14,7 @@ import { Furniture } from '../../models/furniture.model';
         <h1>Mobilier</h1>
         <p class="lead">
           Une collection de pièces sculptées, dessinées et fabriquées dans notre atelier
-          lyonnais. Chaque édition est numérotée et signée à la main.
+          parisiens. Chaque édition est numérotée et signée à la main.
         </p>
       </div>
     </section>

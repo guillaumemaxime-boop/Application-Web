@@ -26,7 +26,7 @@ describe('HomeComponent', () => {
       shortDescription: 'Une silhouette inspirée du mouvement de la mer',
       description: 'Description détaillée',
       dimensions: ['Hauteur 92 cm'],
-      designer: 'Atelier Lumen',
+      designer: 'Milo GUILLAUME Design',
       featured: true,
     },
   ];

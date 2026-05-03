@@ -4,12 +4,12 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent),
-    title: 'Atelier Lumen — Mobilier sculpté & expositions',
+    title: 'Milo GUILLAUME Design — Mobilier sculpté & expositions',
   },
   {
     path: 'mobilier',
     loadComponent: () => import('./pages/furniture-list/furniture-list.component').then(m => m.FurnitureListComponent),
-    title: 'Mobilier — Atelier Lumen',
+    title: 'Mobilier — Milo GUILLAUME Design',
   },
   {
     path: 'mobilier/:slug',
@@ -18,7 +18,7 @@ export const routes: Routes = [
   {
     path: 'expositions',
     loadComponent: () => import('./pages/exhibitions-list/exhibitions-list.component').then(m => m.ExhibitionsListComponent),
-    title: 'Expositions — Atelier Lumen',
+    title: 'Expositions — Milo GUILLAUME Design',
   },
   {
     path: 'expositions/:slug',
@@ -27,12 +27,12 @@ export const routes: Routes = [
   {
     path: 'studio',
     loadComponent: () => import('./pages/studio/studio.component').then(m => m.StudioComponent),
-    title: 'Studio — Atelier Lumen',
+    title: 'Studio — Milo GUILLAUME Design',
   },
   {
     path: 'admin',
     loadComponent: () => import('./pages/admin/admin.component').then(m => m.AdminComponent),
-    title: 'Administration — Atelier Lumen',
+    title: 'Administration — Milo GUILLAUME Design',
   },
   { path: '**', redirectTo: '' },
 ];

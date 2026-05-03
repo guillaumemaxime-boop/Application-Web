@@ -62,7 +62,7 @@ import { Profile } from '../../models/profile.model';
           <div class="step">
             <span class="num">03</span>
             <h3>Façonnage</h3>
-            <p>La taille, l'assemblage et la finition sont réalisés à la main dans nos ateliers lyonnais.</p>
+            <p>La taille, l'assemblage et la finition sont réalisés à la main dans nos ateliers parisiens.</p>
           </div>
           <div class="step">
             <span class="num">04</span>

@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: rename-studio-brand-furniture
+      author: milo-guillaume
+      changes:
+        - update:
+            tableName: furniture
+            columns:
+              - column: { name: designer, value: "Milo GUILLAUME Design" }
+            where: "designer = 'Atelier Lumen'"
+
+  - changeSet:
+      id: rename-studio-brand-exhibition-venue
+      author: milo-guillaume
+      changes:
+        - update:
+            tableName: exhibition
+            columns:
+              - column: { name: venue, value: "Milo GUILLAUME Design" }
+            where: "venue = 'Atelier Lumen'"
+
+  - changeSet:
+      id: rename-studio-brand-exhibition-curator
+      author: milo-guillaume
+      changes:
+        - update:
+            tableName: exhibition
+            columns:
+              - column: { name: curator, value: "Milo GUILLAUME Design" }
+            where: "curator = 'Atelier Lumen'"
+
+  - changeSet:
+      id: rename-city-lyon-to-paris
+      author: milo-guillaume
+      changes:
+        - update:
+            tableName: exhibition
+            columns:
+              - column: { name: city, value: Paris }
+            where: "city = 'Lyon'"

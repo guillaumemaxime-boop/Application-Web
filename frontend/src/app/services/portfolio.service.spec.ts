@@ -45,7 +45,7 @@ describe('PortfolioService', () => {
         shortDescription: 'Une silhouette inspirée du mouvement de la mer',
         description: 'Description détaillée',
         dimensions: ['Hauteur 92 cm'],
-        designer: 'Atelier Lumen',
+        designer: 'Milo GUILLAUME Design',
         featured: true,
       },
     ];
@@ -248,11 +248,11 @@ describe('PortfolioService', () => {
 
   describe('Profile API', () => {
     const mockProfile: Profile = {
-      studio: 'Atelier Lumen',
+      studio: 'Milo GUILLAUME Design',
       tagline: 'Mobilier sculpté & scénographies sensibles',
-      bio: 'Fondé en 2017 dans une ancienne menuiserie lyonnaise...',
+      bio: 'Fondé en 2017 dans une ancienne menuiserie parisienne...',
       contactEmail: 'studio@atelier-lumen.fr',
-      location: 'Lyon, France',
+      location: 'Paris, France',
       press: [
         { title: 'AD Magazine — Portrait', year: '2024' },
         { title: 'Wallpaper* — Design Awards Nominee', year: '2024' },

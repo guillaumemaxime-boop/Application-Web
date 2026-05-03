@@ -11,7 +11,7 @@ import { Exhibition } from '../../models/exhibition.model';
   template: `
     <section class="hero">
       <div class="container hero-inner">
-        <span class="eyebrow fade-in">Atelier Lumen — Lyon, France</span>
+        <span class="eyebrow fade-in">Milo GUILLAUME Design — Paris, France</span>
         <h1 class="fade-in">Mobilier sculpté<br/>& scénographies sensibles.</h1>
         <p class="lead fade-in">
           Depuis 2017, l'atelier conçoit des pièces uniques et des éditions limitées,
@@ -89,7 +89,7 @@ import { Exhibition } from '../../models/exhibition.model';
           « Le mobilier juste, c'est celui qui se tait quand on ne le regarde pas
           et qui éclaire la pièce dès qu'on s'en approche. »
         </blockquote>
-        <cite>— Atelier Lumen</cite>
+        <cite>— Milo GUILLAUME Design</cite>
       </div>
     </section>
   `,

@@ -79,7 +79,7 @@ class FurnitureServiceTest {
                 List.of("https://example.com/linea-1.jpg"),
                 "Banc épuré", "Description longue",
                 List.of("L 180 cm", "H 45 cm"),
-                "Atelier Lumen", false
+                "Milo GUILLAUME Design", false
         );
 
         Furniture created = furnitureService.create(input);
@@ -97,7 +97,7 @@ class FurnitureServiceTest {
                 null, "Echo", "echo-custom-slug",
                 "Sièges", "Chêne", 2026,
                 null, List.of(), "court", "long",
-                List.of(), "Atelier Lumen", false
+                List.of(), "Milo GUILLAUME Design", false
         );
 
         Furniture created = furnitureService.create(input);
@@ -169,7 +169,7 @@ class FurnitureServiceTest {
         assertEquals("Tables", item.category());
         assertEquals("Marbre Calacatta & laiton brossé", item.material());
         assertEquals(2023, item.year());
-        assertEquals("Atelier Lumen", item.designer());
+        assertEquals("Milo GUILLAUME Design", item.designer());
         assertTrue(item.featured());
         assertNotNull(item.gallery());
         assertFalse(item.gallery().isEmpty());

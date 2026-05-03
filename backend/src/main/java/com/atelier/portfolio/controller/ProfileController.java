@@ -25,16 +25,16 @@ public class ProfileController {
     @GetMapping
     public Profile profile() {
         return new Profile(
-                "Atelier Lumen",
+                "Milo GUILLAUME Design",
                 "Mobilier sculpté & scénographies sensibles",
                 """
-                Fondé en 2017 dans une ancienne menuiserie lyonnaise, Atelier Lumen conçoit des
+                Fondé en 2017 dans une ancienne menuiserie parisienne, Milo GUILLAUME Design conçoit des
                 pièces de mobilier en éditions limitées et signe des scénographies d'exposition
                 pour des institutions culturelles européennes. Notre travail explore la rencontre
                 entre savoir-faire artisanal et écriture contemporaine.
                 """,
-                "studio@atelier-lumen.fr",
-                "Lyon, France",
+                "contact@miloguillaume.fr",
+                "Paris, France",
                 List.of(
                         Map.of("title", "AD Magazine — Portrait", "year", "2024"),
                         Map.of("title", "Wallpaper* — Design Awards Nominee", "year", "2024"),

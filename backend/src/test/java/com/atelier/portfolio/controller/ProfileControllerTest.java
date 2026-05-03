@@ -26,7 +26,7 @@ class ProfileControllerTest {
         ProfileController.Profile result = profileController.profile();
 
         // Assert
-        assertEquals("Atelier Lumen", result.studio());
+        assertEquals("Milo GUILLAUME Design", result.studio());
     }
 
     @Test
@@ -46,7 +46,7 @@ class ProfileControllerTest {
         // Assert
         assertNotNull(result.bio());
         assertFalse(result.bio().isEmpty());
-        assertTrue(result.bio().contains("Atelier Lumen"));
+        assertTrue(result.bio().contains("Milo GUILLAUME Design"));
         assertTrue(result.bio().contains("2017"));
     }
 
@@ -56,7 +56,7 @@ class ProfileControllerTest {
         ProfileController.Profile result = profileController.profile();
 
         // Assert
-        assertEquals("studio@atelier-lumen.fr", result.contactEmail());
+        assertEquals("contact@miloguillaume.fr", result.contactEmail());
     }
 
     @Test
@@ -65,7 +65,7 @@ class ProfileControllerTest {
         ProfileController.Profile result = profileController.profile();
 
         // Assert
-        assertEquals("Lyon, France", result.location());
+        assertEquals("Paris, France", result.location());
     }
 
     @Test
