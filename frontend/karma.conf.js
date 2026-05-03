@@ -44,6 +44,12 @@ module.exports = function (config) {
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: false, // Disable auto-watch for CI
+    customLaunchers: {
+      ChromeHeadlessNoSandbox: {
+        base: 'ChromeHeadless',
+        flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+      }
+    },
     browsers: ['FirefoxHeadless'],
     singleRun: true, // Run tests once and exit
     restartOnFileChange: false

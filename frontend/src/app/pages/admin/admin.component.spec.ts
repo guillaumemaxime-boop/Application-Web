@@ -284,5 +284,110 @@ describe('AdminComponent', () => {
 
       expect(component['messageType']()).toBe('error');
     });
+
+    it('should display an error when exhibition loading fails', () => {
+      portfolioServiceSpy.getAllExhibitions.and.returnValue(throwError(() => new Error('boom')));
+
+      const fix = TestBed.createComponent(AdminComponent);
+      fix.detectChanges();
+
+      expect(fix.componentInstance['message']()).toContain('Impossible');
+      expect(fix.componentInstance['messageType']()).toBe('error');
+    });
+
+    it('should display an error when exhibition save fails', () => {
+      portfolioServiceSpy.createExhibition.and.returnValue(throwError(() => new Error('boom')));
+
+      component.newExhibition();
+      component['exhibitionForm'].patchValue({
+        title: 'X', startDate: '2026-01-01', endDate: '2026-02-01',
+      });
+      component.saveExhibition();
+
+      expect(component['messageType']()).toBe('error');
+      expect(component['saving']()).toBe(false);
+    });
+
+    it('should display an error when furniture delete fails', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      portfolioServiceSpy.deleteFurniture.and.returnValue(throwError(() => new Error('boom')));
+
+      component.removeFurniture(mockFurniture);
+
+      expect(component['messageType']()).toBe('error');
+    });
+  });
+
+  describe('Edge cases for nullable fields', () => {
+    it('should handle furniture with nullable optional fields', () => {
+      const partial = {
+        ...mockFurniture,
+        material: undefined as any,
+        designer: undefined as any,
+        coverImage: undefined as any,
+        gallery: undefined as any,
+        dimensions: undefined as any,
+        shortDescription: undefined as any,
+        description: undefined as any,
+      };
+      component.loadFurniture(partial);
+      const v = component['furnitureForm'].value;
+      expect(v.material).toBe('');
+      expect(v.designer).toBe('');
+      expect(v.coverImage).toBe('');
+      expect(v.gallery).toBe('');
+      expect(v.dimensions).toBe('');
+    });
+
+    it('should handle exhibition with nullable optional fields', () => {
+      const partial = {
+        ...mockExhibition,
+        venue: undefined as any,
+        city: undefined as any,
+        country: undefined as any,
+        curator: undefined as any,
+        coverImage: undefined as any,
+        gallery: undefined as any,
+        tags: undefined as any,
+        shortDescription: undefined as any,
+        description: undefined as any,
+      };
+      component.loadExhibition(partial);
+      const v = component['exhibitionForm'].value;
+      expect(v.venue).toBe('');
+      expect(v.city).toBe('');
+      expect(v.gallery).toBe('');
+      expect(v.tags).toBe('');
+    });
+
+    it('should treat empty slug input as undefined when creating', () => {
+      component.newFurniture();
+      component['furnitureForm'].patchValue({
+        title: 'New', category: 'Tables', year: 2026, slug: '',
+      });
+      component.saveFurniture();
+      const payload = portfolioServiceSpy.createFurniture.calls.mostRecent().args[0];
+      expect(payload.slug).toBeUndefined();
+    });
+
+    it('should reset editing form when removing the furniture currently being edited', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      component.loadFurniture(mockFurniture);
+      expect(component['editingFurnitureSlug']()).toBe(mockFurniture.slug);
+
+      component.removeFurniture(mockFurniture);
+
+      expect(component['editingFurnitureSlug']()).toBeNull();
+    });
+
+    it('should reset editing form when removing the exhibition currently being edited', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      component.loadExhibition(mockExhibition);
+      expect(component['editingExhibitionSlug']()).toBe(mockExhibition.slug);
+
+      component.removeExhibition(mockExhibition);
+
+      expect(component['editingExhibitionSlug']()).toBeNull();
+    });
   });
 });
