@@ -1,0 +1,66 @@
+name: Sync Production (Railway)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'deploy/envs/production/versions.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-production
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Promote SHA → :production and redeploy on Railway
+    runs-on: ubuntu-latest
+    # Required reviewers + secret scope are configured on this Environment.
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read target SHA from versions.yaml
+        id: tag
+        run: |
+          BACKEND_TAG=$(yq '.backend.tag' deploy/envs/production/versions.yaml)
+          FRONTEND_TAG=$(yq '.frontend.tag' deploy/envs/production/versions.yaml)
+          if [[ -z "$BACKEND_TAG" || -z "$FRONTEND_TAG" || "$BACKEND_TAG" == "null" || "$FRONTEND_TAG" == "null" ]]; then
+            echo "::error::production/versions.yaml has empty tag(s); refuse to deploy"
+            exit 1
+          fi
+          echo "backend_tag=$BACKEND_TAG" >> "$GITHUB_OUTPUT"
+          echo "frontend_tag=$FRONTEND_TAG" >> "$GITHUB_OUTPUT"
+          echo "owner=${OWNER,,}" >> "$GITHUB_OUTPUT"
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Install crane
+        run: |
+          curl -fsSL https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz \
+            | sudo tar xz -C /usr/local/bin crane
+
+      - name: Authenticate crane to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | crane auth login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Move :production tag to target SHA
+        run: |
+          crane tag ghcr.io/${{ steps.tag.outputs.owner }}/portfolio-backend:${{ steps.tag.outputs.backend_tag }}  production
+          crane tag ghcr.io/${{ steps.tag.outputs.owner }}/portfolio-frontend:${{ steps.tag.outputs.frontend_tag }} production
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Trigger Railway redeploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRODUCTION }}
+          BACKEND_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_BACKEND_PRODUCTION }}
+          FRONTEND_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_FRONTEND_PRODUCTION }}
+        run: |
+          railway redeploy --service "$BACKEND_SERVICE_ID" --yes
+          railway redeploy --service "$FRONTEND_SERVICE_ID" --yes

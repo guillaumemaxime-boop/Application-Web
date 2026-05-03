@@ -1,0 +1,11 @@
+# Source of truth for production on Railway.
+# NEVER bumped automatically. Promotion = a human PR copying the SHA from
+# deploy/envs/staging/versions.yaml after staging has been validated.
+# A merged change here triggers .github/workflows/sync-production.yml,
+# which is gated by the "production" GitHub Environment (required reviewers).
+backend:
+  image: ghcr.io/guillaumemaxime-boop/portfolio-backend
+  tag: ""
+frontend:
+  image: ghcr.io/guillaumemaxime-boop/portfolio-frontend
+  tag: ""

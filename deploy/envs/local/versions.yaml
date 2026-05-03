@@ -1,0 +1,9 @@
+# Source of truth for what runs on the Rancher Desktop machine.
+# Bumped automatically by the build pipeline after each main push.
+# Mirror deploy/envs/local/.env if you edit by hand.
+backend:
+  image: ghcr.io/guillaumemaxime-boop/portfolio-backend
+  tag: latest
+frontend:
+  image: ghcr.io/guillaumemaxime-boop/portfolio-frontend
+  tag: latest

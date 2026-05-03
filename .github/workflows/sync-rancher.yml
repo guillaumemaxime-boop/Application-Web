@@ -1,0 +1,56 @@
+name: Sync Rancher Desktop
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'deploy/base/docker-compose.yml'
+      - 'deploy/envs/local/**'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-rancher
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    name: Apply local stack
+    runs-on: [self-hosted, rancher-desktop]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR (so docker compose pull can fetch private images)
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Pull and (re)start the stack
+        run: |
+          docker compose \
+            -f deploy/base/docker-compose.yml \
+            --env-file deploy/envs/local/.env \
+            pull
+          docker compose \
+            -f deploy/base/docker-compose.yml \
+            --env-file deploy/envs/local/.env \
+            up -d --remove-orphans
+
+      - name: Show running services
+        run: docker compose -f deploy/base/docker-compose.yml --env-file deploy/envs/local/.env ps
+
+      - name: Health check (backend)
+        shell: bash
+        run: |
+          for i in {1..12}; do
+            if curl -fsS http://localhost:8080/actuator/health 2>/dev/null | grep -q UP; then
+              echo "Backend healthy"; exit 0
+            fi
+            echo "Waiting for backend... ($i/12)"; sleep 10
+          done
+          echo "Backend health check failed — dumping logs:"
+          docker compose -f deploy/base/docker-compose.yml --env-file deploy/envs/local/.env logs --tail=200
+          exit 1
+
+      - name: Prune dangling images
+        if: success()
+        run: docker image prune -f

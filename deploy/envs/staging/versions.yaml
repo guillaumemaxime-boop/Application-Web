@@ -1,0 +1,10 @@
+# Source of truth for staging on Railway.
+# Bumped automatically by build-and-deploy.yml on every successful main build.
+# A change here triggers .github/workflows/sync-staging.yml which retags the
+# GHCR image as :staging and tells Railway to redeploy.
+backend:
+  image: ghcr.io/guillaumemaxime-boop/portfolio-backend
+  tag: ""   # filled in by the bump-staging job (commit SHA)
+frontend:
+  image: ghcr.io/guillaumemaxime-boop/portfolio-frontend
+  tag: ""   # filled in by the bump-staging job (commit SHA)
