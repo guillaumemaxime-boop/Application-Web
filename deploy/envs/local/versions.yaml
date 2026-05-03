@@ -3,7 +3,7 @@
 # Mirror deploy/envs/local/.env if you edit by hand.
 backend:
   image: ghcr.io/guillaumemaxime-boop/portfolio-backend
-  tag: "49652df7d473"
+  tag: "3b97721c69d2"
 frontend:
   image: ghcr.io/guillaumemaxime-boop/portfolio-frontend
-  tag: "49652df7d473"
+  tag: "3b97721c69d2"
