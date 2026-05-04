@@ -3,12 +3,10 @@ package com.atelier.portfolio.config;
 import com.atelier.portfolio.model.LoginRequest;
 import com.atelier.portfolio.model.LoginResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -17,21 +15,26 @@ import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Transactional
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "spring.datasource.url=jdbc:h2:mem:security-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE"
+)
 class SecurityIntegrationTest {
 
     @Value("${local.server.port}")
     private int port;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient client = HttpClient.newHttpClient();
 
-    private HttpClient client;
-
-    @BeforeEach
-    void setUp() {
-        client = HttpClient.newHttpClient();
+    @AfterEach
+    void cleanup() throws Exception {
+        String token = getValidToken();
+        var req = HttpRequest.newBuilder()
+                .uri(uri("/api/furniture/test-securite"))
+                .header("Authorization", "Bearer " + token)
+                .DELETE().build();
+        client.send(req, HttpResponse.BodyHandlers.discarding());
     }
 
     private URI uri(String path) {
@@ -161,8 +164,8 @@ class SecurityIntegrationTest {
     @Test
     void testPostFurniture_ValidToken_Returns201() throws Exception {
         String token = getValidToken();
-
-        String payload = "{\"title\":\"Test Sécurité\",\"category\":\"Test\",\"year\":2026,\"featured\":false}";
+        String payload = "{\"title\":\"Test Securite\",\"slug\":\"test-securite\","
+                + "\"category\":\"Test\",\"year\":2026,\"featured\":false}";
         var request = HttpRequest.newBuilder()
                 .uri(uri("/api/furniture"))
                 .header("Content-Type", "application/json")
@@ -185,7 +188,6 @@ class SecurityIntegrationTest {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
-
         var response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return objectMapper.readValue(response.body(), LoginResponse.class).token();
     }

@@ -8,7 +8,9 @@
       "PowerShell(docker exec atelier-backend sh -c \"java -cp app.jar org.springframework.boot.loader.launch.JarLauncher --spring.main.web-application-type=none 2>&1 | head -5\")",
       "PowerShell(docker run --rm python:3-alpine sh -c \"pip install bcrypt -q && python -c `\"import bcrypt; print\\(bcrypt.hashpw\\(b'admin', bcrypt.gensalt\\(10\\)\\).decode\\(\\)\\)`\"\")",
       "PowerShell(docker compose ps --format \"table {{.Name}}`t{{.Status}}`t{{.Ports}}\" 2>&1)",
-      "PowerShell(docker exec atelier-backend env | Where-Object { $_ -match \"ADMIN\" })"
+      "PowerShell(docker exec atelier-backend env | Where-Object { $_ -match \"ADMIN\" })",
+      "Bash(docker --version)",
+      "Bash(docker run *)"
     ]
   }
 }
