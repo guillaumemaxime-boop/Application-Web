@@ -1,17 +1,17 @@
 :root {
-  --color-bg: #f6f3ee;
-  --color-bg-alt: #efeae1;
-  --color-ink: #1c1a17;
-  --color-ink-soft: #4a4641;
-  --color-mute: #8a8278;
-  --color-line: #d8d2c5;
-  --color-accent: #8b6f47;
-  --color-accent-deep: #5a4630;
+  --color-bg: #ffffff;
+  --color-bg-alt: #f7f7f7;
+  --color-ink: #111111;
+  --color-ink-soft: #555555;
+  --color-mute: #999999;
+  --color-line: #e8e8e8;
+  --color-accent: #111111;
+  --color-accent-deep: #111111;
   --serif: 'Cormorant Garamond', Georgia, serif;
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --shadow-soft: 0 1px 2px rgba(28, 26, 23, 0.04), 0 8px 24px rgba(28, 26, 23, 0.06);
-  --radius: 2px;
-  --transition: 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-soft: none;
+  --radius: 0px;
+  --transition: 280ms ease;
 }
 
 * {
@@ -95,10 +95,10 @@ button {
   color: var(--color-ink);
   border-bottom: 1px solid var(--color-ink);
   padding-bottom: 4px;
-  transition: gap var(--transition);
+  transition: opacity var(--transition);
 }
 
-.btn-link:hover { gap: 18px; }
+.btn-link:hover { opacity: 0.5; }
 
 .section {
   padding: 96px 0;
@@ -110,10 +110,10 @@ button {
 }
 
 .fade-in {
-  animation: fadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fadeIn 500ms ease both;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }

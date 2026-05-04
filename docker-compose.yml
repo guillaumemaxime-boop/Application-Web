@@ -33,6 +33,9 @@ services:
       PGDATABASE: portfolio
       PGUSER: portfolio
       PGPASSWORD: portfolio
+      JWT_SECRET: "portfolio-dev-secret-key-must-be-changed-in-production"
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD_HASH: "$$2b$$10$$ylcY5PaYQeX8u3/tuDdSi.awSBx1KQ8ztLAyRTO6lOnqxPFzZUHZm"
     expose:
       - "8080"
     ports:

@@ -29,6 +29,7 @@ Référence : [adr.github.io](https://adr.github.io/) — format inspiré de [MA
 | 0007 | [CI GitHub Actions avec workflows réutilisables](0007-ci-github-actions-workflows-reutilisables.md) | Accepted  | 2026-05-02 |
 | 0008 | [Stratégie de tests : JUnit + Karma/Jasmine](0008-strategie-de-tests.md) | Accepted  | 2026-05-02 |
 | 0009 | [CORS restreint aux origines de développement local](0009-cors-developpement-local.md) | Accepted  | 2026-05-02 |
+| 0010 | [Supervision et monitoring — Actuator + healthchecks natifs + Railway](0010-supervision-et-monitoring.md) | Accepted  | 2026-05-04 |
 
 ## Créer un nouvel ADR
 
