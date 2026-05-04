@@ -29,6 +29,7 @@ import { RouterLink } from '@angular/router';
               <li><a href="mailto:studio@atelier-lumen.fr">studio&#64;atelier-lumen.fr</a></li>
               <li>+33 (0)4 78 00 00 00</li>
               <li>3 quai Saint-Vincent, 75001 Paris</li>
+              <li><a href="https://www.instagram.com/milo_gllm?igsh=MWZpYmUxOHZmenZnZg==" target="_blank" rel="noopener noreferrer">Instagram</a></li>
             </ul>
           </div>
         </div>
