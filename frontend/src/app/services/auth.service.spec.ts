@@ -21,8 +21,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
 
-  beforeEach(() => {
-    localStorage.clear();
+  function configureModule() {
     TestBed.configureTestingModule({
       providers: [
         AuthService,
@@ -30,38 +29,52 @@ describe('AuthService', () => {
         provideHttpClientTesting(),
       ],
     });
-    service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
   });
 
   afterEach(() => {
-    httpMock.verify();
+    httpMock?.verify();
     localStorage.clear();
   });
 
   it('should be created', () => {
+    configureModule();
+    service = TestBed.inject(AuthService);
     expect(service).toBeTruthy();
   });
 
   describe('isLoggedIn', () => {
     it('should be false when no token in localStorage', () => {
+      configureModule();
+      service = TestBed.inject(AuthService);
       expect(service.isLoggedIn()).toBeFalse();
     });
 
     it('should be false when token is expired', () => {
       localStorage.setItem(TOKEN_KEY, makeJwt(-60_000)); // expiré il y a 1 min
-      const freshService = TestBed.inject(AuthService);
-      expect(freshService.isLoggedIn()).toBeFalse();
+      configureModule();
+      service = TestBed.inject(AuthService);
+      expect(service.isLoggedIn()).toBeFalse();
     });
 
     it('should be true when valid token in localStorage', () => {
       localStorage.setItem(TOKEN_KEY, makeJwt(3_600_000)); // expire dans 1h
-      const freshService = TestBed.inject(AuthService);
-      expect(freshService.isLoggedIn()).toBeTrue();
+      configureModule();
+      service = TestBed.inject(AuthService);
+      expect(service.isLoggedIn()).toBeTrue();
     });
   });
 
   describe('login()', () => {
+    beforeEach(() => {
+      configureModule();
+      service = TestBed.inject(AuthService);
+    });
+
     it('should POST to /api/auth/login with credentials', () => {
       service.login('admin', 'admin').subscribe();
 
@@ -106,6 +119,11 @@ describe('AuthService', () => {
   });
 
   describe('logout()', () => {
+    beforeEach(() => {
+      configureModule();
+      service = TestBed.inject(AuthService);
+    });
+
     it('should remove token from localStorage', () => {
       localStorage.setItem(TOKEN_KEY, 'some.token');
 
@@ -123,6 +141,11 @@ describe('AuthService', () => {
   });
 
   describe('getToken()', () => {
+    beforeEach(() => {
+      configureModule();
+      service = TestBed.inject(AuthService);
+    });
+
     it('should return null when no token stored', () => {
       expect(service.getToken()).toBeNull();
     });
