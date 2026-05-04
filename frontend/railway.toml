@@ -1,0 +1,13 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Variables requises (à définir dans Railway > Variables) :
+#   BACKEND_HOST — hostname interne du service backend Railway (ex : backend.railway.internal)
+#   BACKEND_PORT — port du backend (défaut : 8080)

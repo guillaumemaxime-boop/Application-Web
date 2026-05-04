@@ -1,0 +1,21 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/actuator/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Variables requises (à définir dans Railway > Variables) :
+#   JWT_SECRET          — secret HMAC-SHA384, min. 32 caractères aléatoires
+#   ADMIN_PASSWORD_HASH — hash BCrypt du mot de passe admin
+#                         générer avec : python3 -c "import bcrypt; print(bcrypt.hashpw(b'monmotdepasse', bcrypt.gensalt(10)).decode())"
+#
+# Variables injectées automatiquement par le plugin PostgreSQL de Railway :
+#   PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
+#
+# Variable optionnelle :
+#   JWT_EXPIRATION_MS   — durée de vie du token en ms (défaut : 86400000 = 24h)
+#   ADMIN_USERNAME      — nom d'utilisateur admin (défaut : admin)
