@@ -10,7 +10,11 @@
       "PowerShell(docker compose ps --format \"table {{.Name}}`t{{.Status}}`t{{.Ports}}\" 2>&1)",
       "PowerShell(docker exec atelier-backend env | Where-Object { $_ -match \"ADMIN\" })",
       "Bash(docker --version)",
-      "Bash(docker run *)"
+      "Bash(docker run *)",
+      "Bash(npx ng *)",
+      "Bash(npm --version)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Program Files\\\\nodejs\", \"C:\\\\Program Files \\(x86\\)\\\\nodejs\", \"$env:APPDATA\\\\npm\", \"$env:LOCALAPPDATA\\\\nvm\", \"$env:ProgramFiles\\\\nvm\" -ErrorAction SilentlyContinue | Select-Object FullName)",
+      "PowerShell(docker run --rm frontend-test 2>&1)"
     ]
   }
 }
