@@ -2,6 +2,7 @@ package com.atelier.portfolio.controller;
 
 import com.atelier.portfolio.model.Furniture;
 import com.atelier.portfolio.service.FurnitureService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,13 +49,13 @@ public class FurnitureController {
     }
 
     @PostMapping
-    public ResponseEntity<Furniture> create(@RequestBody Furniture input) {
+    public ResponseEntity<Furniture> create(@Valid @RequestBody Furniture input) {
         Furniture created = service.create(input);
         return ResponseEntity.created(URI.create("/api/furniture/" + created.slug())).body(created);
     }
 
     @PutMapping("/{slug}")
-    public ResponseEntity<Furniture> update(@PathVariable String slug, @RequestBody Furniture input) {
+    public ResponseEntity<Furniture> update(@PathVariable String slug, @Valid @RequestBody Furniture input) {
         return service.update(slug, input)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

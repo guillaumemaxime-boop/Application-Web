@@ -2,6 +2,7 @@ package com.atelier.portfolio.controller;
 
 import com.atelier.portfolio.model.Exhibition;
 import com.atelier.portfolio.service.ExhibitionService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,13 +44,13 @@ public class ExhibitionController {
     }
 
     @PostMapping
-    public ResponseEntity<Exhibition> create(@RequestBody Exhibition input) {
+    public ResponseEntity<Exhibition> create(@Valid @RequestBody Exhibition input) {
         Exhibition created = service.create(input);
         return ResponseEntity.created(URI.create("/api/exhibitions/" + created.slug())).body(created);
     }
 
     @PutMapping("/{slug}")
-    public ResponseEntity<Exhibition> update(@PathVariable String slug, @RequestBody Exhibition input) {
+    public ResponseEntity<Exhibition> update(@PathVariable String slug, @Valid @RequestBody Exhibition input) {
         return service.update(slug, input)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
