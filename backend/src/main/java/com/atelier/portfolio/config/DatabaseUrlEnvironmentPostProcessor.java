@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -17,6 +19,7 @@ import org.springframework.core.env.MapPropertySource;
  */
 public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
+    private static final Logger log = LoggerFactory.getLogger(DatabaseUrlEnvironmentPostProcessor.class);
     private static final String JDBC_PREFIX = "jdbc:postgresql://";
 
     @Override
@@ -55,8 +58,7 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
             }
 
             env.getPropertySources().addFirst(new MapPropertySource("databaseUrlPostProcessor", props));
-            System.out.println("[DatabaseUrlEnvironmentPostProcessor] rewrote datasource URL to " + jdbcUrl
-                    + " (user=" + (userInfo == null ? "<none>" : userInfo.split(":", 2)[0]) + ")");
+            log.info("Datasource URL rewritten from DATABASE_URL (host={})", host);
         } catch (IllegalArgumentException ignored) {
             // Leave the original value untouched if it is not a valid URI.
         }

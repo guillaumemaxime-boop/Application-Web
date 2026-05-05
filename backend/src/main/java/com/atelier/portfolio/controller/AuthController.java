@@ -3,6 +3,7 @@ package com.atelier.portfolio.controller;
 import com.atelier.portfolio.config.JwtUtil;
 import com.atelier.portfolio.model.LoginRequest;
 import com.atelier.portfolio.model.LoginResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,9 +31,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest req) {
-        if (!adminUsername.equals(req.username())
-                || !passwordEncoder.matches(req.password(), adminPasswordHash)) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest req) {
+        boolean usernameMatch = adminUsername.equals(req.username());
+        // Always run passwordEncoder.matches() to prevent timing attacks
+        boolean passwordMatch = passwordEncoder.matches(req.password(), adminPasswordHash);
+        if (!usernameMatch || !passwordMatch) {
             return ResponseEntity.status(401).build();
         }
         String token = jwtUtil.generateToken(req.username());
