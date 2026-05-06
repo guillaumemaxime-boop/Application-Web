@@ -23,6 +23,6 @@ COPY --from=build /workspace/dist/portfolio-frontend/browser /usr/share/nginx/ht
 
 EXPOSE 80
 HEALTHCHECK --interval=20s --timeout=3s --retries=3 \
-  CMD wget -q -O- "http://localhost:${PORT}/" >/dev/null || exit 1
+  CMD wget -q -O- "http://127.0.0.1:${PORT}/" >/dev/null || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

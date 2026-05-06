@@ -9,43 +9,42 @@ import { Exhibition } from '../../models/exhibition.model';
   standalone: true,
   imports: [RouterLink],
   template: `
+    <!-- HERO -->
     <section class="hero">
-      <div class="container hero-inner">
-        <span class="eyebrow fade-in">Milo GUILLAUME Design — Paris, France</span>
-        <h1 class="fade-in">Mobilier sculpté<br/>& scénographies sensibles.</h1>
+      <div class="container">
+        <span class="eyebrow fade-in">Milo GUILLAUME Design · Paris, France</span>
+        <h1 class="fade-in">Mobilier sculpté<br>& scénographies sensibles.</h1>
         <p class="lead fade-in">
           Depuis 2017, l'atelier conçoit des pièces uniques et des éditions limitées,
           et signe des expositions pour des institutions culturelles européennes.
         </p>
-        <div class="hero-actions fade-in">
-          <a routerLink="/mobilier" class="btn-link">Découvrir le mobilier</a>
-          <a routerLink="/expositions" class="btn-link">Voir les expositions</a>
-        </div>
+        <a routerLink="/mobilier" class="btn-link fade-in">Découvrir les pièces</a>
       </div>
     </section>
 
-    <section class="section featured">
+    <!-- FEATURED FURNITURE -->
+    <section class="section ruled">
       <div class="container">
-        <div class="section-head">
+        <div class="sec-head">
           <span class="eyebrow">Pièces phares</span>
-          <h2>Une sélection d'éditions récentes</h2>
+          <a routerLink="/mobilier" class="sec-more">Voir tout le catalogue →</a>
         </div>
 
         @if (loadingFurniture()) {
           <p class="status">Chargement…</p>
         } @else if (errorFurniture()) {
-          <p class="status error">Impossible de charger les pièces. Vérifiez que le backend est lancé sur le port 8080.</p>
+          <p class="status error">Impossible de charger les pièces. Vérifiez le backend.</p>
         } @else {
-          <div class="grid">
+          <div class="proj-grid">
             @for (item of featuredFurniture(); track item.id) {
-              <a class="card" [routerLink]="['/mobilier', item.slug]">
-                <div class="thumb">
+              <a class="proj-card" [routerLink]="['/mobilier', item.slug]">
+                <div class="proj-img">
                   <img [src]="item.coverImage" [alt]="item.title" loading="lazy" />
                 </div>
-                <div class="meta">
-                  <span class="cat">{{ item.category }} · {{ item.year }}</span>
-                  <h3>{{ item.title }}</h3>
-                  <p>{{ item.shortDescription }}</p>
+                <div class="proj-info">
+                  <span class="proj-cat">{{ item.category }}</span>
+                  <h3 class="proj-title">{{ item.title }}</h3>
+                  <span class="proj-year">{{ item.year }}</span>
                 </div>
               </a>
             }
@@ -54,160 +53,190 @@ import { Exhibition } from '../../models/exhibition.model';
       </div>
     </section>
 
-    <section class="section exhibitions">
+    <!-- EXHIBITIONS -->
+    <section class="section ruled">
       <div class="container">
-        <div class="section-head">
+        <div class="sec-head">
           <span class="eyebrow">Expositions à l'affiche</span>
-          <h2>Là où nos pièces prennent vie</h2>
+          <a routerLink="/expositions" class="sec-more">Toutes les expositions →</a>
         </div>
 
-        @if (loadingExhibitions()) {
-          <p class="status">Chargement…</p>
-        } @else {
-          <div class="exh-list">
+        @if (!loadingExhibitions() && featuredExhibitions().length) {
+          <ul class="exh-rows">
             @for (exh of featuredExhibitions(); track exh.id) {
-              <a class="exh-row" [routerLink]="['/expositions', exh.slug]">
-                <div class="exh-img">
-                  <img [src]="exh.coverImage" [alt]="exh.title" loading="lazy" />
-                </div>
-                <div class="exh-meta">
-                  <span class="cat">{{ exh.venue }} · {{ exh.city }}, {{ exh.country }}</span>
-                  <h3>{{ exh.title }}</h3>
-                  <p>{{ exh.shortDescription }}</p>
-                  <span class="dates">{{ formatRange(exh.startDate, exh.endDate) }}</span>
-                </div>
-              </a>
+              <li>
+                <a class="exh-row" [routerLink]="['/expositions', exh.slug]">
+                  <span class="exh-year">{{ exhYear(exh.startDate) }}</span>
+                  <h3 class="exh-title">{{ exh.title }}</h3>
+                  <span class="exh-venue">{{ exh.venue }}, {{ exh.city }}</span>
+                </a>
+              </li>
             }
-          </div>
+          </ul>
         }
       </div>
     </section>
 
-    <section class="section quote">
+    <!-- QUOTE -->
+    <section class="section ruled">
       <div class="container">
         <blockquote>
           « Le mobilier juste, c'est celui qui se tait quand on ne le regarde pas
           et qui éclaire la pièce dès qu'on s'en approche. »
+          <cite>— Milo GUILLAUME Design</cite>
         </blockquote>
-        <cite>— Milo GUILLAUME Design</cite>
       </div>
     </section>
   `,
   styles: [`
+    /* ── HERO ───────────────────────────────────────────────────── */
     .hero {
-      padding: 120px 0 128px;
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      padding: 140px 0 100px;
     }
-    .hero-inner { max-width: 880px; }
-    .hero h1 { margin-top: 24px; }
+    .hero .eyebrow { display: block; margin-bottom: 32px; }
+    .hero h1 { max-width: 820px; margin-bottom: 32px; }
     .lead {
-      margin-top: 32px;
-      max-width: 620px;
-      font-size: 1.125rem;
-      line-height: 1.7;
-    }
-    .hero-actions {
-      display: flex;
-      gap: 32px;
-      margin-top: 48px;
-      flex-wrap: wrap;
+      max-width: 520px;
+      font-size: 1.0625rem;
+      line-height: 1.75;
+      margin-bottom: 48px;
     }
 
-    .section-head {
+    /* ── SECTION STRUCTURE ──────────────────────────────────────── */
+    .ruled { border-top: 1px solid var(--color-line); }
+    .sec-head {
       display: flex;
-      flex-direction: column;
-      gap: 16px;
-      margin-bottom: 56px;
-      max-width: 720px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 48px;
     }
+    .sec-more {
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      transition: color var(--transition);
+    }
+    .sec-more:hover { color: var(--color-ink); }
 
-    .grid {
+    /* ── PROJECT GRID ───────────────────────────────────────────── */
+    .proj-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 48px;
+      gap: 24px;
     }
-    .card {
-      display: block;
-      transition: transform 360ms ease;
-    }
-    .card:hover { transform: translateY(-6px); }
-    .thumb {
+    .proj-card { display: block; }
+    .proj-img {
+      aspect-ratio: 3 / 4;
       overflow: hidden;
       background: var(--color-bg-alt);
-      aspect-ratio: 4 / 5;
+      margin-bottom: 16px;
     }
-    .thumb img {
+    .proj-img img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 400ms ease;
+      filter: grayscale(18%);
+      transition: transform var(--transition-img), filter var(--transition-img);
     }
-    .card:hover .thumb img { transform: scale(1.04); }
-    .meta { padding: 20px 0 0; }
-    .cat {
-      font-size: 0.75rem;
+    .proj-card:hover .proj-img img {
+      transform: scale(1.04);
+      filter: grayscale(0%);
+    }
+    .proj-info {
+      border-top: 1px solid var(--color-line);
+      padding-top: 14px;
+    }
+    .proj-cat {
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    .proj-title {
+      font-family: var(--serif);
+      font-size: 1.375rem;
+      font-weight: 500;
+      color: var(--color-ink);
+      margin: 6px 0;
+    }
+    .proj-year {
+      font-size: 0.62rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--color-mute);
     }
-    .meta h3 {
-      margin: 12px 0 8px;
-      font-size: 1.5rem;
-    }
-    .meta p { font-size: 0.95rem; color: var(--color-ink-soft); }
 
-    .exh-list { display: flex; flex-direction: column; }
+    /* ── EXHIBITION ROWS ────────────────────────────────────────── */
+    .exh-rows { list-style: none; }
     .exh-row {
       display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 48px;
-      padding: 32px 0;
-      border-top: 1px solid var(--color-line);
-      transition: border-color var(--transition);
+      grid-template-columns: 72px 1fr auto;
+      gap: 40px;
+      align-items: baseline;
+      padding: 22px 0;
+      border-bottom: 1px solid var(--color-line);
+      transition: opacity var(--transition);
     }
-    .exh-row:hover { border-top-color: var(--color-accent); }
-    .exh-img { aspect-ratio: 3 / 2; overflow: hidden; }
-    .exh-img img { width: 100%; height: 100%; object-fit: cover; }
-    .exh-meta { display: flex; flex-direction: column; justify-content: center; gap: 12px; }
-    .exh-meta h3 { font-size: 1.75rem; }
-    .dates {
-      font-size: 0.8rem;
-      letter-spacing: 0.1em;
+    .exh-rows li:first-child .exh-row { border-top: 1px solid var(--color-line); }
+    .exh-row:hover { opacity: 0.50; }
+    .exh-year {
+      font-family: var(--serif);
+      font-size: 1.0625rem;
+      font-style: italic;
+      color: var(--color-mute);
+    }
+    .exh-title {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--color-ink);
+    }
+    .exh-venue {
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--color-mute);
     }
 
-    .quote {
-      text-align: center;
-      padding: 128px 0;
-      border-top: 1px solid var(--color-line);
-    }
+    /* ── QUOTE ──────────────────────────────────────────────────── */
     blockquote {
-      font-family: var(--serif);
-      font-size: clamp(1.5rem, 3vw, 2.5rem);
-      line-height: 1.3;
       max-width: 880px;
-      margin: 0 auto;
+      font-family: var(--serif);
+      font-size: clamp(1.875rem, 3vw, 2.75rem);
+      font-weight: 400;
+      font-style: italic;
+      line-height: 1.38;
       color: var(--color-ink);
     }
     cite {
       display: block;
-      margin-top: 32px;
+      margin-top: 28px;
+      font-family: var(--sans);
       font-style: normal;
-      font-size: 0.875rem;
-      letter-spacing: 0.16em;
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--color-mute);
     }
 
     .status { color: var(--color-mute); }
-    .status.error { color: #c0392b; }
+    .status.error { color: #b53535; }
 
+    /* ── RESPONSIVE ─────────────────────────────────────────────── */
     @media (max-width: 960px) {
-      .grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
-      .exh-row { grid-template-columns: 1fr; gap: 24px; }
+      .proj-grid { grid-template-columns: repeat(2, 1fr); }
+      .exh-row { grid-template-columns: 56px 1fr; }
+      .exh-venue { display: none; }
     }
-    @media (max-width: 600px) {
-      .grid { grid-template-columns: 1fr; }
+    @media (max-width: 640px) {
+      .hero { min-height: auto; padding: 120px 0 80px; }
+      .proj-grid { grid-template-columns: 1fr; }
+      .exh-row { grid-template-columns: 1fr; }
+      .exh-year { display: none; }
     }
   `]
 })
@@ -231,10 +260,7 @@ export class HomeComponent {
     });
   }
 
-  protected formatRange(start: string, end: string): string {
-    const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-    const s = new Date(start).toLocaleDateString('fr-FR', opts);
-    const e = new Date(end).toLocaleDateString('fr-FR', opts);
-    return `${s} → ${e}`;
+  protected exhYear(d: string): string {
+    return new Date(d).getFullYear().toString();
   }
 }

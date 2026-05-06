@@ -24,7 +24,18 @@
       "Bash(git push *)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\" -Force)",
       "Bash(Select-Object Name, PSIsContainer)",
-      "PowerShell(tree /F \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\\\\src\" -L 2)"
+      "PowerShell(tree /F \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\\\\src\" -L 2)",
+      "Bash(docker info *)",
+      "Bash(gh auth *)",
+      "Bash(docker login *)",
+      "PowerShell(gh auth token)",
+      "PowerShell(docker login ghcr.io -u guillaumemaxime-boop --password-stdin)",
+      "Bash(docker pull *)",
+      "Bash(git -C \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\" rev-parse --short=12 HEAD)",
+      "Bash(docker build *)",
+      "WebFetch(domain:www.squarespace.com)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4200/)",
+      "Bash(Start-Sleep -Seconds 25)"
     ]
   }
 }

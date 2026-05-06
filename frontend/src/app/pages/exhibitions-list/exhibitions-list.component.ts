@@ -8,7 +8,7 @@ import { Exhibition } from '../../models/exhibition.model';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <section class="section page-head">
+    <section class="page-head">
       <div class="container">
         <span class="eyebrow">Scénographies & expositions</span>
         <h1>Expositions</h1>
@@ -19,27 +19,27 @@ import { Exhibition } from '../../models/exhibition.model';
       </div>
     </section>
 
-    <section class="section list">
+    <section class="section">
       <div class="container">
         @if (loading()) {
           <p class="status">Chargement…</p>
         } @else if (error()) {
-          <p class="status error">Impossible de charger les expositions. Vérifiez le backend.</p>
+          <p class="status error">Impossible de charger les expositions.</p>
         } @else {
           <ul class="timeline">
             @for (exh of items(); track exh.id) {
               <li>
-                <a class="exh-card fade-in" [routerLink]="['/expositions', exh.slug]">
-                  <div class="dates">
+                <a class="row fade-in" [routerLink]="['/expositions', exh.slug]">
+                  <div class="date-col">
                     <span class="year">{{ year(exh.startDate) }}</span>
                     <span class="month">{{ month(exh.startDate) }}</span>
                   </div>
 
-                  <div class="img">
+                  <div class="img-col">
                     <img [src]="exh.coverImage" [alt]="exh.title" loading="lazy" />
                   </div>
 
-                  <div class="meta">
+                  <div class="meta-col">
                     <span class="venue">{{ exh.venue }} · {{ exh.city }}, {{ exh.country }}</span>
                     <h2>{{ exh.title }}</h2>
                     <p>{{ exh.shortDescription }}</p>
@@ -56,76 +56,89 @@ import { Exhibition } from '../../models/exhibition.model';
     </section>
   `,
   styles: [`
-    .page-head { padding-top: 64px; padding-bottom: 32px; }
-    .page-head h1 { margin-top: 16px; }
-    .lead { max-width: 640px; margin-top: 24px; font-size: 1.05rem; }
+    .page-head {
+      padding-top: 120px;
+      padding-bottom: 80px;
+      border-bottom: 1px solid var(--color-line);
+    }
+    .page-head .eyebrow { display: block; margin-bottom: 20px; }
+    .page-head h1 { margin-bottom: 24px; }
+    .lead { max-width: 600px; font-size: 1rem; }
 
     .timeline { list-style: none; display: flex; flex-direction: column; }
-    .exh-card {
+    .row {
       display: grid;
-      grid-template-columns: 80px 320px 1fr;
+      grid-template-columns: 80px 280px 1fr;
       gap: 48px;
-      padding: 40px 0;
-      border-top: 1px solid var(--color-line);
-      transition: border-color var(--transition);
+      padding: 48px 0;
+      border-bottom: 1px solid var(--color-line);
+      align-items: start;
+      transition: opacity var(--transition);
     }
-    .exh-card:hover { border-top-color: var(--color-accent); }
+    .timeline li:first-child .row { border-top: 1px solid var(--color-line); }
+    .row:hover { opacity: 0.55; }
 
-    .dates { padding-top: 4px; }
+    .date-col { padding-top: 4px; }
     .year {
       display: block;
       font-family: var(--serif);
-      font-size: 1.75rem;
-      color: var(--color-ink);
+      font-size: 1.625rem;
+      font-style: italic;
+      color: var(--color-mute);
       line-height: 1;
     }
     .month {
       display: block;
-      font-size: 0.7rem;
-      letter-spacing: 0.14em;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
       color: var(--color-mute);
-      margin-top: 6px;
+      margin-top: 8px;
     }
 
-    .img { aspect-ratio: 3 / 2; overflow: hidden; background: var(--color-bg-alt); }
-    .img img {
+    .img-col {
+      aspect-ratio: 3 / 2;
+      overflow: hidden;
+      background: var(--color-bg-alt);
+    }
+    .img-col img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      filter: grayscale(15%);
+      transition: transform var(--transition-img), filter var(--transition-img);
     }
+    .row:hover .img-col img { transform: scale(1.03); filter: grayscale(0%); }
 
-    .meta { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+    .meta-col { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
     .venue {
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
       color: var(--color-mute);
     }
-    .meta h2 { font-size: 2rem; }
-    .meta p { font-size: 0.95rem; }
-    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .meta-col h2 { font-size: 2rem; }
+    .meta-col p { font-size: 0.9375rem; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
     .tag {
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
+      font-size: 0.60rem;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      padding: 3px 10px;
+      padding: 4px 10px;
       border: 1px solid var(--color-line);
       color: var(--color-mute);
-      transition: border-color var(--transition), color var(--transition);
-    }
-    .exh-card:hover .tag {
-      border-color: var(--color-accent);
-      color: var(--color-accent);
     }
 
     .status { color: var(--color-mute); }
-    .status.error { color: #c0392b; }
+    .status.error { color: #b53535; }
 
     @media (max-width: 960px) {
-      .exh-card { grid-template-columns: 1fr; gap: 16px; }
-      .img { aspect-ratio: 16 / 10; }
-      .dates { display: flex; align-items: baseline; gap: 12px; }
+      .row { grid-template-columns: 64px 1fr; gap: 24px; }
+      .img-col { display: none; }
+    }
+    @media (max-width: 600px) {
+      .row { grid-template-columns: 1fr; }
+      .date-col { display: flex; align-items: baseline; gap: 12px; }
     }
   `]
 })
