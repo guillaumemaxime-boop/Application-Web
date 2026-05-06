@@ -67,9 +67,9 @@ import { Exhibition } from '../../models/exhibition.model';
       gap: 48px;
       padding: 40px 0;
       border-top: 1px solid var(--color-line);
-      transition: opacity var(--transition);
+      transition: border-color var(--transition);
     }
-    .exh-card:hover { opacity: 0.65; }
+    .exh-card:hover { border-top-color: var(--color-accent); }
 
     .dates { padding-top: 4px; }
     .year {
@@ -109,9 +109,14 @@ import { Exhibition } from '../../models/exhibition.model';
       font-size: 0.7rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 3px 8px;
+      padding: 3px 10px;
       border: 1px solid var(--color-line);
       color: var(--color-mute);
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .exh-card:hover .tag {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
     }
 
     .status { color: var(--color-mute); }

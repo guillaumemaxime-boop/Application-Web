@@ -6,7 +6,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <header>
+    <header [class.scrolled]="scrolled()">
       <div class="container nav">
         <a routerLink="/" class="brand" (click)="closeMenu()">
           <span class="brand-mark">M·G</span>
@@ -36,6 +36,14 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       z-index: 100;
       background: var(--color-bg);
       border-bottom: 1px solid var(--color-line);
+      transition: box-shadow var(--transition), background var(--transition), backdrop-filter var(--transition);
+    }
+    header.scrolled {
+      background: rgba(250, 250, 248, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-soft);
+      border-bottom-color: transparent;
     }
     .nav {
       display: flex;
@@ -71,11 +79,11 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       color: var(--color-mute);
       transition: color var(--transition);
     }
-    nav a:hover,
-    nav a.active { color: var(--color-ink); }
+    nav a:hover { color: var(--color-ink); }
+    nav a.active { color: var(--color-accent); }
     nav a.admin-link { color: var(--color-mute); }
-    nav a.admin-link:hover,
-    nav a.admin-link.active { color: var(--color-ink); }
+    nav a.admin-link:hover { color: var(--color-ink); }
+    nav a.admin-link.active { color: var(--color-accent); }
     .burger {
       display: none;
       width: 24px;

@@ -78,8 +78,8 @@ import { Furniture } from '../../models/furniture.model';
     }
     .filters button:hover { color: var(--color-ink); }
     .filters button.active {
-      color: var(--color-ink);
-      border-bottom-color: var(--color-ink);
+      color: var(--color-accent);
+      border-bottom-color: var(--color-accent);
     }
 
     .grid {
@@ -87,7 +87,11 @@ import { Furniture } from '../../models/furniture.model';
       grid-template-columns: repeat(3, 1fr);
       gap: 56px 40px;
     }
-    .card { display: block; }
+    .card {
+      display: block;
+      transition: transform 360ms ease;
+    }
+    .card:hover { transform: translateY(-6px); }
     .thumb {
       overflow: hidden;
       background: var(--color-bg-alt);
@@ -97,9 +101,9 @@ import { Furniture } from '../../models/furniture.model';
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: opacity var(--transition);
+      transition: transform 400ms ease;
     }
-    .card:hover .thumb img { opacity: 0.8; }
+    .card:hover .thumb img { transform: scale(1.04); }
     .meta { padding-top: 20px; }
     .cat {
       font-size: 0.75rem;

@@ -92,7 +92,7 @@ import { Furniture } from '../../models/furniture.model';
       color: var(--color-mute);
       transition: color var(--transition);
     }
-    .back:hover { color: var(--color-ink); }
+    .back:hover { color: var(--color-accent); }
     .hero-text h1 { margin: 16px 0 24px; }
     .lead { font-size: 1.1rem; max-width: 540px; }
 

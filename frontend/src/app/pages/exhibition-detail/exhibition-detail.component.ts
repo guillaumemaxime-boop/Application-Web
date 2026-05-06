@@ -132,6 +132,11 @@ import { Exhibition } from '../../models/exhibition.model';
       padding: 3px 10px;
       border: 1px solid var(--color-line);
       color: var(--color-mute);
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .tag:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
     }
 
     .gallery .g-grid {

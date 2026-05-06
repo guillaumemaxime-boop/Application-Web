@@ -62,7 +62,7 @@ import { RouterLink } from '@angular/router';
     .eyebrow { display: block; margin-bottom: 20px; }
     ul { list-style: none; }
     li { padding: 6px 0; font-size: 0.9rem; color: var(--color-ink-soft); }
-    li a:hover { color: var(--color-ink); }
+    li a:hover { color: var(--color-accent); }
     .legal {
       display: flex;
       justify-content: space-between;

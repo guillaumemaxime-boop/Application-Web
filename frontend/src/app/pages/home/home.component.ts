@@ -125,7 +125,11 @@ import { Exhibition } from '../../models/exhibition.model';
       grid-template-columns: repeat(3, 1fr);
       gap: 48px;
     }
-    .card { display: block; }
+    .card {
+      display: block;
+      transition: transform 360ms ease;
+    }
+    .card:hover { transform: translateY(-6px); }
     .thumb {
       overflow: hidden;
       background: var(--color-bg-alt);
@@ -135,9 +139,9 @@ import { Exhibition } from '../../models/exhibition.model';
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: opacity var(--transition);
+      transition: transform 400ms ease;
     }
-    .card:hover .thumb img { opacity: 0.8; }
+    .card:hover .thumb img { transform: scale(1.04); }
     .meta { padding: 20px 0 0; }
     .cat {
       font-size: 0.75rem;
@@ -158,9 +162,9 @@ import { Exhibition } from '../../models/exhibition.model';
       gap: 48px;
       padding: 32px 0;
       border-top: 1px solid var(--color-line);
-      transition: opacity var(--transition);
+      transition: border-color var(--transition);
     }
-    .exh-row:hover { opacity: 0.65; }
+    .exh-row:hover { border-top-color: var(--color-accent); }
     .exh-img { aspect-ratio: 3 / 2; overflow: hidden; }
     .exh-img img { width: 100%; height: 100%; object-fit: cover; }
     .exh-meta { display: flex; flex-direction: column; justify-content: center; gap: 12px; }
