@@ -6,13 +6,13 @@ import { Profile } from '../../models/profile.model';
   selector: 'app-studio',
   standalone: true,
   template: `
-    <section class="section page-head">
+    <section class="page-head">
       <div class="container">
         <span class="eyebrow">Studio</span>
 
         @if (profile(); as p) {
           <h1 class="fade-in">{{ p.tagline }}</h1>
-          <div class="grid">
+          <div class="bio-grid">
             <div>
               <p class="bio">{{ p.bio }}</p>
               <p class="contact">
@@ -22,20 +22,24 @@ import { Profile } from '../../models/profile.model';
             </div>
 
             <aside>
-              <h3>Distinctions</h3>
-              <ul class="awards">
-                @for (a of p.awards; track a) { <li>{{ a }}</li> }
-              </ul>
+              <div class="aside-block">
+                <h3>Distinctions</h3>
+                <ul class="list">
+                  @for (a of p.awards; track a) { <li>{{ a }}</li> }
+                </ul>
+              </div>
 
-              <h3>Presse</h3>
-              <ul class="press">
-                @for (item of p.press; track item.title) {
-                  <li>
-                    <span class="t">{{ item.title }}</span>
-                    <span class="y">{{ item.year }}</span>
-                  </li>
-                }
-              </ul>
+              <div class="aside-block">
+                <h3>Presse</h3>
+                <ul class="list press">
+                  @for (item of p.press; track item.title) {
+                    <li>
+                      <span class="press-title">{{ item.title }}</span>
+                      <span class="press-year">{{ item.year }}</span>
+                    </li>
+                  }
+                </ul>
+              </div>
             </aside>
           </div>
         } @else if (loading()) {
@@ -46,10 +50,10 @@ import { Profile } from '../../models/profile.model';
       </div>
     </section>
 
-    <section class="section process">
+    <section class="section ruled">
       <div class="container">
-        <span class="eyebrow proc-label">Processus</span>
-        <div class="proc-list">
+        <span class="eyebrow sec-label">Processus</span>
+        <div class="steps">
           <div class="step">
             <span class="num">01</span>
             <div>
@@ -83,20 +87,23 @@ import { Profile } from '../../models/profile.model';
     </section>
   `,
   styles: [`
-    .page-head { padding-top: 64px; }
-    .page-head h1 { margin-top: 16px; max-width: 880px; }
+    .page-head {
+      padding-top: 120px;
+      padding-bottom: 80px;
+      border-bottom: 1px solid var(--color-line);
+    }
+    .page-head .eyebrow { display: block; margin-bottom: 20px; }
+    .page-head h1 { max-width: 880px; margin-bottom: 64px; }
 
-    .grid {
+    .bio-grid {
       display: grid;
       grid-template-columns: 1.4fr 1fr;
       gap: 80px;
-      margin-top: 64px;
     }
-
     .bio {
       font-family: var(--serif);
-      font-size: 1.5rem;
-      line-height: 1.5;
+      font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+      line-height: 1.55;
       color: var(--color-ink);
       white-space: pre-line;
     }
@@ -105,50 +112,47 @@ import { Profile } from '../../models/profile.model';
       flex-direction: column;
       gap: 6px;
       margin-top: 40px;
-      padding-top: 32px;
+      padding-top: 28px;
       border-top: 1px solid var(--color-line);
-      font-size: 0.95rem;
-      color: var(--color-ink-soft);
+      font-size: 0.9375rem;
+      color: var(--color-mute);
     }
-    .contact a {
-      color: var(--color-ink);
-      transition: opacity var(--transition);
-    }
-    .contact a:hover { opacity: 0.5; }
+    .contact a { color: var(--color-ink); transition: opacity var(--transition); }
+    .contact a:hover { opacity: 0.50; }
 
+    .aside-block { margin-bottom: 40px; }
+    .aside-block:last-child { margin-bottom: 0; }
     aside h3 {
-      font-size: 0.75rem;
-      letter-spacing: 0.16em;
+      font-family: var(--sans);
+      font-size: 0.62rem;
+      letter-spacing: 0.20em;
       text-transform: uppercase;
       color: var(--color-mute);
-      font-family: var(--sans);
       font-weight: 500;
       margin-bottom: 16px;
     }
-    aside h3:not(:first-child) { margin-top: 40px; }
 
-    .awards, .press { list-style: none; }
-    .awards li {
+    .list { list-style: none; }
+    .list li {
       padding: 10px 0;
-      font-size: 0.95rem;
+      font-size: 0.9375rem;
+      color: var(--color-ink-soft);
       border-bottom: 1px solid var(--color-line);
     }
     .press li {
       display: flex;
       justify-content: space-between;
       gap: 16px;
-      padding: 10px 0;
-      font-size: 0.95rem;
-      border-bottom: 1px solid var(--color-line);
     }
-    .press .y { color: var(--color-mute); flex-shrink: 0; }
+    .press-year { color: var(--color-mute); flex-shrink: 0; font-size: 0.875rem; }
 
-    .process { border-top: 1px solid var(--color-line); }
-    .proc-label { display: block; margin-bottom: 40px; }
-    .proc-list { display: flex; flex-direction: column; }
+    .ruled { border-top: 1px solid var(--color-line); }
+    .sec-label { display: block; margin-bottom: 48px; }
+
+    .steps { display: flex; flex-direction: column; }
     .step {
       display: grid;
-      grid-template-columns: 80px 1fr;
+      grid-template-columns: 72px 1fr;
       gap: 32px;
       padding: 40px 0;
       border-bottom: 1px solid var(--color-line);
@@ -156,21 +160,23 @@ import { Profile } from '../../models/profile.model';
     }
     .num {
       font-family: var(--serif);
-      font-size: 2rem;
-      color: var(--color-ink);
+      font-size: 1.875rem;
+      font-style: italic;
+      color: var(--color-mute);
       line-height: 1;
+      padding-top: 4px;
     }
     .step h3 { font-size: 1.375rem; margin-bottom: 12px; }
-    .step p { font-size: 0.95rem; }
+    .step p { font-size: 0.9375rem; }
 
     .status { color: var(--color-mute); margin-top: 32px; }
-    .status.error { color: #c0392b; }
+    .status.error { color: #b53535; }
 
     @media (max-width: 960px) {
-      .grid { grid-template-columns: 1fr; gap: 48px; }
+      .bio-grid { grid-template-columns: 1fr; gap: 48px; }
     }
     @media (max-width: 600px) {
-      .step { grid-template-columns: 56px 1fr; gap: 16px; }
+      .step { grid-template-columns: 48px 1fr; gap: 20px; }
     }
   `]
 })

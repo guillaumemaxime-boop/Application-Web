@@ -14,7 +14,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         </a>
 
         <button class="burger" type="button" (click)="toggleMenu()" [attr.aria-expanded]="open()">
-          <span></span><span></span><span></span>
+          <span></span><span></span>
         </button>
 
         <nav [class.open]="open()">
@@ -30,20 +30,17 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   styles: [`
     header {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       z-index: 100;
-      background: var(--color-bg);
-      border-bottom: 1px solid var(--color-line);
-      transition: box-shadow var(--transition), background var(--transition), backdrop-filter var(--transition);
+      background: transparent;
+      border-bottom: 1px solid transparent;
+      transition: background var(--transition), border-color var(--transition);
     }
     header.scrolled {
-      background: rgba(250, 250, 248, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: var(--shadow-soft);
-      border-bottom-color: transparent;
+      background: rgba(248, 247, 244, 0.96);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom-color: var(--color-line);
     }
     .nav {
       display: flex;
@@ -51,73 +48,59 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       justify-content: space-between;
       height: 72px;
     }
-    .brand {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-    }
+    .brand { display: flex; align-items: baseline; gap: 14px; }
     .brand-mark {
       font-family: var(--serif);
       font-size: 1.375rem;
       font-weight: 500;
+      font-style: italic;
       color: var(--color-ink);
+      letter-spacing: -0.01em;
     }
     .brand-name {
-      font-size: 0.75rem;
-      letter-spacing: 0.16em;
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--color-ink);
     }
-    nav {
-      display: flex;
-      gap: 36px;
-    }
+    nav { display: flex; gap: 40px; }
     nav a {
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--color-mute);
       transition: color var(--transition);
     }
     nav a:hover { color: var(--color-ink); }
-    nav a.active { color: var(--color-accent); }
-    nav a.admin-link { color: var(--color-mute); }
-    nav a.admin-link:hover { color: var(--color-ink); }
-    nav a.admin-link.active { color: var(--color-accent); }
+    nav a.active { color: var(--color-ink); }
+    nav a.admin-link { opacity: 0.5; }
+    nav a.admin-link:hover { opacity: 1; }
+
     .burger {
       display: none;
-      width: 24px;
-      height: 18px;
+      width: 22px;
+      height: 12px;
       flex-direction: column;
       justify-content: space-between;
     }
-    .burger span {
-      display: block;
-      height: 1px;
-      background: var(--color-ink);
-    }
+    .burger span { display: block; height: 1px; background: var(--color-ink); }
 
     @media (max-width: 720px) {
       .brand-name { display: none; }
       .burger { display: flex; }
       nav {
         position: absolute;
-        top: 72px;
-        left: 0;
-        right: 0;
+        top: 72px; left: 0; right: 0;
         flex-direction: column;
         gap: 0;
         background: var(--color-bg);
         border-bottom: 1px solid var(--color-line);
         max-height: 0;
         overflow: hidden;
-        transition: max-height 280ms ease;
+        transition: max-height 300ms ease;
       }
       nav.open { max-height: 280px; }
-      nav a {
-        padding: 16px 24px;
-        border-top: 1px solid var(--color-line);
-      }
+      nav a { padding: 16px 24px; border-top: 1px solid var(--color-line); }
     }
   `]
 })

@@ -8,18 +8,18 @@ import { Furniture } from '../../models/furniture.model';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <section class="section page-head">
+    <section class="page-head">
       <div class="container">
         <span class="eyebrow">Catalogue · Éditions limitées</span>
         <h1>Mobilier</h1>
         <p class="lead">
           Une collection de pièces sculptées, dessinées et fabriquées dans notre atelier
-          parisiens. Chaque édition est numérotée et signée à la main.
+          parisien. Chaque édition est numérotée et signée à la main.
         </p>
       </div>
     </section>
 
-    <section class="section list">
+    <section class="section ruled">
       <div class="container">
         <div class="filters">
           <button [class.active]="active() === 'all'" (click)="active.set('all')">Toutes</button>
@@ -31,7 +31,7 @@ import { Furniture } from '../../models/furniture.model';
         @if (loading()) {
           <p class="status">Chargement…</p>
         } @else if (error()) {
-          <p class="status error">Impossible de charger le catalogue. Vérifiez le backend (port 8080).</p>
+          <p class="status error">Impossible de charger le catalogue.</p>
         } @else {
           <div class="grid">
             @for (item of filtered(); track item.id) {
@@ -39,10 +39,10 @@ import { Furniture } from '../../models/furniture.model';
                 <div class="thumb">
                   <img [src]="item.coverImage" [alt]="item.title" loading="lazy" />
                 </div>
-                <div class="meta">
-                  <span class="cat">{{ item.category }} · {{ item.year }}</span>
+                <div class="info">
+                  <span class="cat">{{ item.category }}</span>
                   <h3>{{ item.title }}</h3>
-                  <p>{{ item.material }}</p>
+                  <span class="mat">{{ item.material }}</span>
                 </div>
               </a>
             }
@@ -55,67 +55,81 @@ import { Furniture } from '../../models/furniture.model';
     </section>
   `,
   styles: [`
-    .page-head { padding-top: 64px; padding-bottom: 32px; }
-    .page-head h1 { margin-top: 16px; }
-    .lead { max-width: 640px; margin-top: 24px; font-size: 1.05rem; }
+    .page-head {
+      padding-top: 120px;
+      padding-bottom: 80px;
+      border-bottom: 1px solid var(--color-line);
+    }
+    .page-head .eyebrow { display: block; margin-bottom: 20px; }
+    .page-head h1 { margin-bottom: 24px; }
+    .lead { max-width: 600px; font-size: 1rem; }
+
+    .ruled { border-top: none; }
 
     .filters {
       display: flex;
-      gap: 24px;
+      gap: 0;
       flex-wrap: wrap;
-      margin-bottom: 56px;
-      padding-bottom: 24px;
+      margin-bottom: 64px;
       border-bottom: 1px solid var(--color-line);
     }
     .filters button {
-      padding: 0 0 4px;
-      font-size: 0.8rem;
-      letter-spacing: 0.1em;
+      padding: 14px 20px;
+      font-family: var(--sans);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
       color: var(--color-mute);
-      border-bottom: 1px solid transparent;
-      transition: color var(--transition), border-color var(--transition);
+      border: none;
+      border-right: 1px solid var(--color-line);
+      background: transparent;
+      transition: color var(--transition), background var(--transition);
     }
+    .filters button:first-child { border-left: 1px solid var(--color-line); }
     .filters button:hover { color: var(--color-ink); }
     .filters button.active {
-      color: var(--color-accent);
-      border-bottom-color: var(--color-accent);
+      color: var(--color-bg);
+      background: var(--color-ink);
     }
 
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 56px 40px;
+      gap: 40px 24px;
     }
-    .card {
-      display: block;
-      transition: transform 360ms ease;
-    }
-    .card:hover { transform: translateY(-6px); }
+    .card { display: block; }
     .thumb {
       overflow: hidden;
       background: var(--color-bg-alt);
-      aspect-ratio: 4 / 5;
+      aspect-ratio: 3 / 4;
+      margin-bottom: 16px;
     }
     .thumb img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 400ms ease;
+      filter: grayscale(15%);
+      transition: transform var(--transition-img), filter var(--transition-img);
     }
-    .card:hover .thumb img { transform: scale(1.04); }
-    .meta { padding-top: 20px; }
+    .card:hover .thumb img { transform: scale(1.04); filter: grayscale(0%); }
+    .info { border-top: 1px solid var(--color-line); padding-top: 14px; }
     .cat {
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
+      display: block;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
       color: var(--color-mute);
+      margin-bottom: 6px;
     }
-    .meta h3 { margin: 10px 0 6px; }
-    .meta p { font-size: 0.9rem; color: var(--color-ink-soft); }
+    .info h3 { font-size: 1.375rem; color: var(--color-ink); margin-bottom: 4px; }
+    .mat {
+      font-size: 0.8125rem;
+      color: var(--color-mute);
+    }
 
     .status { color: var(--color-mute); }
-    .status.error { color: #c0392b; }
+    .status.error { color: #b53535; }
 
     @media (max-width: 960px) { .grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
@@ -132,7 +146,6 @@ export class FurnitureListComponent {
   protected readonly categories = computed(() =>
     [...new Set(this.all().map(f => f.category))].sort()
   );
-
   protected readonly filtered = computed(() => {
     const a = this.active();
     return a === 'all' ? this.all() : this.all().filter(f => f.category === a);
