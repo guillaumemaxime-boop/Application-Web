@@ -8,15 +8,14 @@ on:
   workflow_call:
   workflow_dispatch:
 
-concurrency:
-  group: sync-staging
-  cancel-in-progress: true
-
 jobs:
   apply:
     name: Promote SHA → :staging and redeploy on Railway
     runs-on: ubuntu-latest
     environment: staging
+    concurrency:
+      group: sync-staging
+      cancel-in-progress: true
     permissions:
       contents: read
       packages: write
