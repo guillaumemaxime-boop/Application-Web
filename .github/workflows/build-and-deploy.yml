@@ -113,3 +113,6 @@ jobs:
     needs: [bump-staging]
     uses: ./.github/workflows/sync-staging.yml
     secrets: inherit
+    permissions:
+      contents: read
+      packages: write
