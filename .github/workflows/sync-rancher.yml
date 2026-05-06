@@ -24,6 +24,21 @@ jobs:
       - name: Log in to GHCR (so docker compose pull can fetch private images)
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+      - name: Inject secrets into env file
+        env:
+          JWT_SECRET: ${{ secrets.LOCAL_JWT_SECRET }}
+          ADMIN_PASSWORD_HASH: ${{ secrets.LOCAL_ADMIN_PASSWORD_HASH }}
+        run: |
+          # Override JWT_SECRET if the GitHub secret is set
+          if [ -n "$JWT_SECRET" ]; then
+            sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" deploy/envs/local/.env
+          fi
+          # BCrypt hash needs $$ escaping for Docker Compose YAML interpolation
+          if [ -n "$ADMIN_PASSWORD_HASH" ]; then
+            ESCAPED="${ADMIN_PASSWORD_HASH//'$'/'$$'}"
+            sed -i "s|^ADMIN_PASSWORD_HASH=.*|ADMIN_PASSWORD_HASH=${ESCAPED}|" deploy/envs/local/.env
+          fi
+
       - name: Pull and (re)start the stack
         run: |
           docker compose \

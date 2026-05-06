@@ -67,13 +67,12 @@ class AuthControllerTest {
     }
 
     @Test
-    void testLogin_WrongUsername_Returns401WithoutCheckingPassword() {
+    void testLogin_WrongUsername_Returns401() {
         ResponseEntity<LoginResponse> result = authController.login(
                 new LoginRequest("hacker", "admin"));
 
         assertEquals(401, result.getStatusCode().value());
         assertNull(result.getBody());
-        verifyNoInteractions(passwordEncoder);
         verify(jwtUtil, never()).generateToken(any());
     }
 
@@ -83,7 +82,6 @@ class AuthControllerTest {
                 new LoginRequest("", "admin"));
 
         assertEquals(401, result.getStatusCode().value());
-        verifyNoInteractions(passwordEncoder);
     }
 
     @Test

@@ -50,7 +50,7 @@ module.exports = function (config) {
         flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
       }
     },
-    browsers: ['FirefoxHeadless'],
+    browsers: [process.env.CI ? 'ChromeHeadlessNoSandbox' : 'FirefoxHeadless'],
     singleRun: true, // Run tests once and exit
     restartOnFileChange: false
   });

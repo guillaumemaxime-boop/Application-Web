@@ -19,21 +19,30 @@ export class AuthService {
     return this.http
       .post<LoginResponse>('/api/auth/login', { username, password })
       .pipe(tap(res => {
-        sessionStorage.setItem(TOKEN_KEY, res.token);
+        localStorage.setItem(TOKEN_KEY, res.token);
         this.isLoggedIn.set(true);
       }));
   }
 
   logout(): void {
-    sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     this.isLoggedIn.set(false);
   }
 
   getToken(): string | null {
-    return sessionStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(TOKEN_KEY);
   }
 
   private hasToken(): boolean {
-    return sessionStorage.getItem(TOKEN_KEY) !== null;
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return false;
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return false;
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return typeof payload.exp === 'number' && payload.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
   }
 }
