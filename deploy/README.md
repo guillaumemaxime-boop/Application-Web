@@ -7,12 +7,14 @@ push to main
 build-and-deploy.yml
   ├─ run tests (backend + frontend)
   ├─ build & push images to GHCR (tag :<sha> + :latest)
-  └─ commit deploy/envs/staging/versions.yaml with the new SHA  [skip ci]
+  ├─ commit deploy/envs/staging/versions.yaml with the new SHA  [skip ci]
+  └─ call sync-staging.yml directly (workflow_call)
         │
         ▼
-sync-staging.yml  (triggered by the bump commit)
+sync-staging.yml
   ├─ retag GHCR image :<sha> → :staging
-  └─ railway redeploy (staging service)
+  ├─ railway redeploy (staging service)
+  └─ verify deployment status
 
 humain ─► PR copying the SHA from staging → production/versions.yaml
         │
@@ -53,6 +55,9 @@ sync-rancher.yml  (self-hosted runner on Rancher Desktop)
 | `RAILWAY_SERVICE_FRONTEND_STAGING` | repo vars | service id of the staging frontend |
 | `RAILWAY_SERVICE_BACKEND_PRODUCTION` | environment `production` vars | id of the prod backend |
 | `RAILWAY_SERVICE_FRONTEND_PRODUCTION` | environment `production` vars | id of the prod frontend |
+
+> **Note :** `sync-staging.yml` est appelé directement via `workflow_call` depuis `build-and-deploy.yml`.
+> Il reste aussi déclenché par tout push manuel sur `deploy/envs/staging/versions.yaml` (rollback, hotfix).
 
 ## Railway service one-time setup
 

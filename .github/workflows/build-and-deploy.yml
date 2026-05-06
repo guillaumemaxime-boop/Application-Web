@@ -107,3 +107,9 @@ jobs:
           git add deploy/envs/staging/versions.yaml deploy/envs/local/versions.yaml deploy/envs/local/.env
           git commit -m "chore(deploy): bump staging + local to ${SHA} [skip ci]"
           git push
+
+  deploy-staging:
+    name: Deploy to Staging (Railway)
+    needs: [bump-staging]
+    uses: ./.github/workflows/sync-staging.yml
+    secrets: inherit

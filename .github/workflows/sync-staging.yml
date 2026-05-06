@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'deploy/envs/staging/versions.yaml'
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
@@ -24,6 +25,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Read target SHA from versions.yaml
         id: tag
         run: |
@@ -39,9 +46,9 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
 
-      - name: Install crane (for retagging without pulling layers)
+      - name: Install crane (pinned)
         run: |
-          curl -fsSL https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz \
+          curl -fsSL https://github.com/google/go-containerregistry/releases/download/v0.20.3/go-containerregistry_Linux_x86_64.tar.gz \
             | sudo tar xz -C /usr/local/bin crane
 
       - name: Authenticate crane to GHCR
@@ -63,3 +70,20 @@ jobs:
         run: |
           railway redeploy --service "$BACKEND_SERVICE_ID" --yes
           railway redeploy --service "$FRONTEND_SERVICE_ID" --yes
+
+      - name: Wait for Railway deployments to stabilise
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_STAGING }}
+          BACKEND_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_BACKEND_STAGING }}
+          FRONTEND_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_FRONTEND_STAGING }}
+        run: |
+          echo "Waiting 30s for Railway to pick up new deployments..."
+          sleep 30
+          for SERVICE_ID in "$BACKEND_SERVICE_ID" "$FRONTEND_SERVICE_ID"; do
+            STATUS=$(railway status --service "$SERVICE_ID" --json 2>/dev/null | jq -r '.deploymentStatus // "UNKNOWN"' || echo "UNKNOWN")
+            echo "Service $SERVICE_ID status: $STATUS"
+            if [[ "$STATUS" == "FAILED" || "$STATUS" == "CRASHED" ]]; then
+              echo "::error::Service $SERVICE_ID deployment failed (status: $STATUS)"
+              exit 1
+            fi
+          done
