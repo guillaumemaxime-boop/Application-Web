@@ -7,23 +7,35 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   imports: [RouterLink, RouterLinkActive],
   template: `
     <header [class.scrolled]="scrolled()">
-      <div class="container nav">
+      <div class="wrap nav-wrap">
+
         <a routerLink="/" class="brand" (click)="closeMenu()">
-          <span class="brand-mark">M·G</span>
-          <span class="brand-name">Milo GUILLAUME Design</span>
+          <em>M·G</em>
+          <span>Milo GUILLAUME Design</span>
         </a>
 
-        <button class="burger" type="button" (click)="toggleMenu()" [attr.aria-expanded]="open()">
-          <span></span><span></span>
+        <button class="burger" type="button"
+          (click)="toggleMenu()"
+          [attr.aria-expanded]="open()"
+          aria-label="Menu">
+          <span></span>
+          <span></span>
         </button>
 
         <nav [class.open]="open()">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Accueil</a>
-          <a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()">Mobilier</a>
-          <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
-          <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
-          <a routerLink="/admin" routerLinkActive="active" class="admin-link" (click)="closeMenu()">Admin</a>
+          <a routerLink="/" routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            (click)="closeMenu()">Accueil</a>
+          <a routerLink="/mobilier" routerLinkActive="active"
+            (click)="closeMenu()">Mobilier</a>
+          <a routerLink="/expositions" routerLinkActive="active"
+            (click)="closeMenu()">Expositions</a>
+          <a routerLink="/studio" routerLinkActive="active"
+            (click)="closeMenu()">Studio</a>
+          <a routerLink="/admin" routerLinkActive="active" class="admin"
+            (click)="closeMenu()">Admin</a>
         </nav>
+
       </div>
     </header>
   `,
@@ -32,75 +44,101 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 100;
+      height: 60px;
       background: transparent;
       border-bottom: 1px solid transparent;
-      transition: background var(--transition), border-color var(--transition);
+      transition: background var(--ease), border-color var(--ease);
     }
     header.scrolled {
-      background: rgba(248, 247, 244, 0.96);
+      background: rgba(249, 249, 248, 0.94);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border-bottom-color: var(--color-line);
+      border-bottom-color: var(--line);
     }
-    .nav {
+
+    .nav-wrap {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 72px;
+      height: 100%;
     }
-    .brand { display: flex; align-items: baseline; gap: 14px; }
-    .brand-mark {
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .brand em {
       font-family: var(--serif);
-      font-size: 1.375rem;
-      font-weight: 500;
       font-style: italic;
-      color: var(--color-ink);
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: var(--ink);
       letter-spacing: -0.01em;
     }
-    .brand-name {
-      font-size: 0.65rem;
-      letter-spacing: 0.22em;
+    .brand span {
+      font-size: 0.58rem;
+      font-weight: 500;
+      letter-spacing: 0.24em;
       text-transform: uppercase;
-      color: var(--color-ink);
+      color: var(--ink);
     }
-    nav { display: flex; gap: 40px; }
+
+    nav {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
     nav a {
-      font-size: 0.68rem;
-      letter-spacing: 0.14em;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: var(--color-mute);
-      transition: color var(--transition);
+      color: var(--muted);
+      transition: color var(--ease);
     }
-    nav a:hover { color: var(--color-ink); }
-    nav a.active { color: var(--color-ink); }
-    nav a.admin-link { opacity: 0.5; }
-    nav a.admin-link:hover { opacity: 1; }
+    nav a:hover,
+    nav a.active { color: var(--ink); }
+    nav a.admin { opacity: 0.35; }
+    nav a.admin:hover { opacity: 1; }
 
     .burger {
       display: none;
-      width: 22px;
-      height: 12px;
       flex-direction: column;
       justify-content: space-between;
+      width: 22px;
+      height: 11px;
+      padding: 0;
     }
-    .burger span { display: block; height: 1px; background: var(--color-ink); }
+    .burger span {
+      display: block;
+      height: 1px;
+      background: var(--ink);
+      transition: opacity var(--ease);
+    }
 
     @media (max-width: 720px) {
-      .brand-name { display: none; }
+      .brand span { display: none; }
       .burger { display: flex; }
+
       nav {
         position: absolute;
-        top: 72px; left: 0; right: 0;
+        top: 60px; left: 0; right: 0;
         flex-direction: column;
         gap: 0;
-        background: var(--color-bg);
-        border-bottom: 1px solid var(--color-line);
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
         max-height: 0;
         overflow: hidden;
-        transition: max-height 300ms ease;
+        transition: max-height 280ms ease;
       }
-      nav.open { max-height: 280px; }
-      nav a { padding: 16px 24px; border-top: 1px solid var(--color-line); }
+      nav.open { max-height: 300px; }
+      nav a {
+        display: block;
+        padding: 15px clamp(20px, 5vw, 96px);
+        border-top: 1px solid var(--line);
+        font-size: 0.65rem;
+      }
     }
   `]
 })
@@ -111,7 +149,7 @@ export class HeaderComponent {
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('scroll', () => {
-        this.scrolled.set(window.scrollY > 8);
+        this.scrolled.set(window.scrollY > 4);
       }, { passive: true });
     }
   }

@@ -15,15 +15,8 @@ import { FooterComponent } from './components/footer/footer.component';
     <app-footer />
   `,
   styles: [`
-    :host {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    main {
-      flex: 1;
-      padding-top: 88px;
-    }
+    :host { display: flex; flex-direction: column; min-height: 100vh; }
+    main { flex: 1; padding-top: 60px; }
   `]
 })
 export class AppComponent {}

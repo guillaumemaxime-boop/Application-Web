@@ -6,177 +6,192 @@ import { Profile } from '../../models/profile.model';
   selector: 'app-studio',
   standalone: true,
   template: `
-    <section class="page-head">
-      <div class="container">
-        <span class="eyebrow">Studio</span>
+    <div class="page-head">
+      <div class="wrap">
+        <span class="label">Studio</span>
 
-        @if (profile(); as p) {
-          <h1 class="fade-in">{{ p.tagline }}</h1>
+        @if (loading()) {
+          <p class="status">Chargement…</p>
+        } @else if (!profile()) {
+          <p class="status err">Impossible de charger le profil. Vérifiez le backend.</p>
+        } @else if (profile(); as p) {
+          <h1>{{ p.tagline }}</h1>
+
           <div class="bio-grid">
-            <div>
+            <div class="bio-col">
               <p class="bio">{{ p.bio }}</p>
-              <p class="contact">
+              <div class="contact">
                 <span>{{ p.location }}</span>
                 <a [href]="'mailto:' + p.contactEmail">{{ p.contactEmail }}</a>
-              </p>
+              </div>
             </div>
 
-            <aside>
-              <div class="aside-block">
-                <h3>Distinctions</h3>
-                <ul class="list">
-                  @for (a of p.awards; track a) { <li>{{ a }}</li> }
+            <aside class="side-col">
+              <section class="side-block">
+                <h4>Distinctions</h4>
+                <ul>
+                  @for (a of p.awards; track a) {
+                    <li>{{ a }}</li>
+                  }
                 </ul>
-              </div>
+              </section>
 
-              <div class="aside-block">
-                <h3>Presse</h3>
-                <ul class="list press">
+              <section class="side-block">
+                <h4>Presse</h4>
+                <ul class="press">
                   @for (item of p.press; track item.title) {
                     <li>
-                      <span class="press-title">{{ item.title }}</span>
-                      <span class="press-year">{{ item.year }}</span>
+                      <span>{{ item.title }}</span>
+                      <span class="yr">{{ item.year }}</span>
                     </li>
                   }
                 </ul>
-              </div>
+              </section>
             </aside>
           </div>
-        } @else if (loading()) {
-          <p class="status">Chargement…</p>
-        } @else {
-          <p class="status error">Impossible de charger le profil. Vérifiez le backend.</p>
         }
       </div>
-    </section>
+    </div>
 
-    <section class="section ruled">
-      <div class="container">
-        <span class="eyebrow sec-label">Processus</span>
-        <div class="steps">
-          <div class="step">
+    <hr />
+
+    <section class="section">
+      <div class="wrap">
+        <span class="label process-label">Processus</span>
+        <ol class="steps">
+          <li class="step">
             <span class="num">01</span>
             <div>
               <h3>Dessin</h3>
               <p>Chaque pièce naît d'une succession de croquis et de maquettes à l'échelle, jusqu'à ce que la silhouette s'impose.</p>
             </div>
-          </div>
-          <div class="step">
+          </li>
+          <li class="step">
             <span class="num">02</span>
             <div>
               <h3>Matière</h3>
               <p>Le bois est sélectionné en forêt, séché plusieurs années. Marbres et cuirs proviennent d'ateliers européens partenaires.</p>
             </div>
-          </div>
-          <div class="step">
+          </li>
+          <li class="step">
             <span class="num">03</span>
             <div>
               <h3>Façonnage</h3>
               <p>La taille, l'assemblage et la finition sont réalisés à la main dans nos ateliers parisiens.</p>
             </div>
-          </div>
-          <div class="step">
+          </li>
+          <li class="step">
             <span class="num">04</span>
             <div>
               <h3>Signature</h3>
               <p>Chaque pièce est numérotée, signée et accompagnée d'un certificat d'édition.</p>
             </div>
-          </div>
-        </div>
+          </li>
+        </ol>
       </div>
     </section>
   `,
   styles: [`
     .page-head {
-      padding-top: 120px;
-      padding-bottom: 80px;
-      border-bottom: 1px solid var(--color-line);
+      padding: 100px 0 80px;
     }
-    .page-head .eyebrow { display: block; margin-bottom: 20px; }
-    .page-head h1 { max-width: 880px; margin-bottom: 64px; }
+    .page-head .label { display: block; margin-bottom: 20px; }
+    .page-head h1 { margin-bottom: 56px; max-width: 900px; }
 
     .bio-grid {
       display: grid;
       grid-template-columns: 1.4fr 1fr;
-      gap: 80px;
+      gap: 72px;
+      align-items: start;
     }
+
     .bio {
       font-family: var(--serif);
-      font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+      font-size: clamp(1.125rem, 2.5vw, 1.625rem);
       line-height: 1.55;
-      color: var(--color-ink);
+      color: var(--ink);
       white-space: pre-line;
     }
+
     .contact {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-top: 40px;
-      padding-top: 28px;
-      border-top: 1px solid var(--color-line);
-      font-size: 0.9375rem;
-      color: var(--color-mute);
+      gap: 4px;
+      margin-top: 36px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+      font-size: 0.9rem;
+      color: var(--muted);
     }
-    .contact a { color: var(--color-ink); transition: opacity var(--transition); }
-    .contact a:hover { opacity: 0.50; }
+    .contact a {
+      color: var(--ink);
+      transition: opacity var(--ease);
+    }
+    .contact a:hover { opacity: 0.5; }
 
-    .aside-block { margin-bottom: 40px; }
-    .aside-block:last-child { margin-bottom: 0; }
-    aside h3 {
+    .side-col { display: flex; flex-direction: column; gap: 36px; }
+    .side-block {}
+    .side-block h4 {
       font-family: var(--sans);
-      font-size: 0.62rem;
-      letter-spacing: 0.20em;
-      text-transform: uppercase;
-      color: var(--color-mute);
+      font-size: 0.6rem;
       font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
       margin-bottom: 16px;
     }
 
-    .list { list-style: none; }
-    .list li {
-      padding: 10px 0;
-      font-size: 0.9375rem;
-      color: var(--color-ink-soft);
-      border-bottom: 1px solid var(--color-line);
+    .side-block ul { list-style: none; }
+    .side-block li {
+      padding: 9px 0;
+      font-size: 0.9rem;
+      color: var(--dim);
+      border-bottom: 1px solid var(--line);
     }
+    .side-block li:first-child { border-top: 1px solid var(--line); }
+
     .press li {
       display: flex;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
     }
-    .press-year { color: var(--color-mute); flex-shrink: 0; font-size: 0.875rem; }
+    .yr {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
 
-    .ruled { border-top: 1px solid var(--color-line); }
-    .sec-label { display: block; margin-bottom: 48px; }
+    .process-label { display: block; margin-bottom: 40px; }
 
-    .steps { display: flex; flex-direction: column; }
+    .steps { list-style: none; }
     .step {
       display: grid;
-      grid-template-columns: 72px 1fr;
-      gap: 32px;
-      padding: 40px 0;
-      border-bottom: 1px solid var(--color-line);
+      grid-template-columns: 60px 1fr;
+      gap: 28px;
+      padding: 36px 0;
+      border-bottom: 1px solid var(--line);
       align-items: start;
     }
+    .steps li:first-child { border-top: 1px solid var(--line); }
     .num {
       font-family: var(--serif);
-      font-size: 1.875rem;
+      font-size: 1.75rem;
       font-style: italic;
-      color: var(--color-mute);
+      color: var(--muted);
       line-height: 1;
       padding-top: 4px;
     }
-    .step h3 { font-size: 1.375rem; margin-bottom: 12px; }
-    .step p { font-size: 0.9375rem; }
+    .step h3 { margin-bottom: 10px; }
+    .step p { font-size: 0.9rem; }
 
-    .status { color: var(--color-mute); margin-top: 32px; }
-    .status.error { color: #b53535; }
+    .status { color: var(--muted); margin-top: 24px; }
+    .status.err { color: #b53030; }
 
     @media (max-width: 960px) {
       .bio-grid { grid-template-columns: 1fr; gap: 48px; }
     }
-    @media (max-width: 600px) {
-      .step { grid-template-columns: 48px 1fr; gap: 20px; }
+    @media (max-width: 540px) {
+      .step { grid-template-columns: 44px 1fr; gap: 16px; }
     }
   `]
 })

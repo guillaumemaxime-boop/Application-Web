@@ -9,42 +9,42 @@ import { Exhibition } from '../../models/exhibition.model';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <!-- HERO -->
     <section class="hero">
-      <div class="container">
-        <span class="eyebrow fade-in">Milo GUILLAUME Design · Paris, France</span>
-        <h1 class="fade-in">Mobilier sculpté<br>& scénographies sensibles.</h1>
-        <p class="lead fade-in">
-          Depuis 2017, l'atelier conçoit des pièces uniques et des éditions limitées,
-          et signe des expositions pour des institutions culturelles européennes.
+      <div class="wrap">
+        <span class="label">Milo GUILLAUME Design · Paris, France</span>
+        <h1>Mobilier sculpté<br>&amp; scénographies.</h1>
+        <p>
+          Depuis 2017, éditions limitées fabriquées en atelier
+          et scénographies pour institutions culturelles européennes.
         </p>
-        <a routerLink="/mobilier" class="btn-link fade-in">Découvrir les pièces</a>
+        <a routerLink="/mobilier" class="cta">Découvrir le catalogue →</a>
       </div>
     </section>
 
-    <!-- FEATURED FURNITURE -->
-    <section class="section ruled">
-      <div class="container">
+    <hr />
+
+    <section class="section">
+      <div class="wrap">
         <div class="sec-head">
-          <span class="eyebrow">Pièces phares</span>
-          <a routerLink="/mobilier" class="sec-more">Voir tout le catalogue →</a>
+          <span class="label">Pièces phares</span>
+          <a routerLink="/mobilier" class="see-all">Tout le catalogue →</a>
         </div>
 
         @if (loadingFurniture()) {
           <p class="status">Chargement…</p>
         } @else if (errorFurniture()) {
-          <p class="status error">Impossible de charger les pièces. Vérifiez le backend.</p>
+          <p class="status err">Impossible de charger les pièces.</p>
         } @else {
-          <div class="proj-grid">
+          <div class="grid">
             @for (item of featuredFurniture(); track item.id) {
-              <a class="proj-card" [routerLink]="['/mobilier', item.slug]">
-                <div class="proj-img">
+              <a class="card" [routerLink]="['/mobilier', item.slug]">
+                <div class="img-wrap">
                   <img [src]="item.coverImage" [alt]="item.title" loading="lazy" />
                 </div>
-                <div class="proj-info">
-                  <span class="proj-cat">{{ item.category }}</span>
-                  <h3 class="proj-title">{{ item.title }}</h3>
-                  <span class="proj-year">{{ item.year }}</span>
+                <div class="card-body">
+                  <span class="label">{{ item.category }}</span>
+                  <h3>{{ item.title }}</h3>
+                  <span class="yr">{{ item.year }}</span>
                 </div>
               </a>
             }
@@ -53,22 +53,23 @@ import { Exhibition } from '../../models/exhibition.model';
       </div>
     </section>
 
-    <!-- EXHIBITIONS -->
-    <section class="section ruled">
-      <div class="container">
+    <hr />
+
+    <section class="section">
+      <div class="wrap">
         <div class="sec-head">
-          <span class="eyebrow">Expositions à l'affiche</span>
-          <a routerLink="/expositions" class="sec-more">Toutes les expositions →</a>
+          <span class="label">Expositions</span>
+          <a routerLink="/expositions" class="see-all">Toutes les expositions →</a>
         </div>
 
         @if (!loadingExhibitions() && featuredExhibitions().length) {
-          <ul class="exh-rows">
-            @for (exh of featuredExhibitions(); track exh.id) {
+          <ul class="exh-list">
+            @for (e of featuredExhibitions(); track e.id) {
               <li>
-                <a class="exh-row" [routerLink]="['/expositions', exh.slug]">
-                  <span class="exh-year">{{ exhYear(exh.startDate) }}</span>
-                  <h3 class="exh-title">{{ exh.title }}</h3>
-                  <span class="exh-venue">{{ exh.venue }}, {{ exh.city }}</span>
+                <a class="exh-row" [routerLink]="['/expositions', e.slug]">
+                  <span class="exh-yr">{{ exhYear(e.startDate) }}</span>
+                  <h3 class="exh-title">{{ e.title }}</h3>
+                  <span class="label exh-venue">{{ e.venue }}, {{ e.city }}</span>
                 </a>
               </li>
             }
@@ -76,167 +77,126 @@ import { Exhibition } from '../../models/exhibition.model';
         }
       </div>
     </section>
-
-    <!-- QUOTE -->
-    <section class="section ruled">
-      <div class="container">
-        <blockquote>
-          « Le mobilier juste, c'est celui qui se tait quand on ne le regarde pas
-          et qui éclaire la pièce dès qu'on s'en approche. »
-          <cite>— Milo GUILLAUME Design</cite>
-        </blockquote>
-      </div>
-    </section>
   `,
   styles: [`
-    /* ── HERO ───────────────────────────────────────────────────── */
+    /* ── Hero ── */
     .hero {
-      min-height: 90vh;
-      display: flex;
-      align-items: center;
-      padding: 140px 0 100px;
+      padding: 160px 0 120px;
     }
-    .hero .eyebrow { display: block; margin-bottom: 32px; }
-    .hero h1 { max-width: 820px; margin-bottom: 32px; }
-    .lead {
-      max-width: 520px;
-      font-size: 1.0625rem;
-      line-height: 1.75;
-      margin-bottom: 48px;
+    .hero .label {
+      display: block;
+      margin-bottom: 28px;
     }
+    .hero h1 {
+      max-width: 880px;
+      margin-bottom: 28px;
+    }
+    .hero p {
+      max-width: 440px;
+      font-size: 1rem;
+      margin-bottom: 40px;
+    }
+    .cta {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--dim);
+      transition: color var(--ease);
+    }
+    .cta:hover { color: var(--ink); }
 
-    /* ── SECTION STRUCTURE ──────────────────────────────────────── */
-    .ruled { border-top: 1px solid var(--color-line); }
+    /* ── Section header ── */
     .sec-head {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 48px;
+      justify-content: space-between;
+      margin-bottom: 36px;
     }
-    .sec-more {
-      font-size: 0.65rem;
-      letter-spacing: 0.14em;
+    .see-all {
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: var(--color-mute);
-      transition: color var(--transition);
+      color: var(--muted);
+      transition: color var(--ease);
     }
-    .sec-more:hover { color: var(--color-ink); }
+    .see-all:hover { color: var(--ink); }
 
-    /* ── PROJECT GRID ───────────────────────────────────────────── */
-    .proj-grid {
+    /* ── Furniture grid ── */
+    .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 24px;
     }
-    .proj-card { display: block; }
-    .proj-img {
+    .card { display: block; }
+    .img-wrap {
       aspect-ratio: 3 / 4;
       overflow: hidden;
-      background: var(--color-bg-alt);
-      margin-bottom: 16px;
+      background: #eeede9;
+      margin-bottom: 14px;
     }
-    .proj-img img {
-      width: 100%;
-      height: 100%;
+    .img-wrap img {
+      width: 100%; height: 100%;
       object-fit: cover;
-      filter: grayscale(18%);
-      transition: transform var(--transition-img), filter var(--transition-img);
+      transition: opacity var(--ease);
     }
-    .proj-card:hover .proj-img img {
-      transform: scale(1.04);
-      filter: grayscale(0%);
+    .card:hover .img-wrap img { opacity: 0.82; }
+    .card-body {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
     }
-    .proj-info {
-      border-top: 1px solid var(--color-line);
-      padding-top: 14px;
-    }
-    .proj-cat {
-      font-size: 0.62rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-    }
-    .proj-title {
-      font-family: var(--serif);
+    .card-body .label { display: block; margin-bottom: 6px; }
+    .card-body h3 {
       font-size: 1.375rem;
-      font-weight: 500;
-      color: var(--color-ink);
-      margin: 6px 0;
+      margin-bottom: 4px;
     }
-    .proj-year {
-      font-size: 0.62rem;
+    .yr {
+      font-size: 0.6rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--color-mute);
+      color: var(--muted);
     }
 
-    /* ── EXHIBITION ROWS ────────────────────────────────────────── */
-    .exh-rows { list-style: none; }
+    /* ── Exhibition list ── */
+    .exh-list {}
     .exh-row {
       display: grid;
       grid-template-columns: 72px 1fr auto;
-      gap: 40px;
       align-items: baseline;
+      gap: 32px;
       padding: 22px 0;
-      border-bottom: 1px solid var(--color-line);
-      transition: opacity var(--transition);
+      border-bottom: 1px solid var(--line);
+      transition: opacity var(--ease);
     }
-    .exh-rows li:first-child .exh-row { border-top: 1px solid var(--color-line); }
-    .exh-row:hover { opacity: 0.50; }
-    .exh-year {
+    .exh-list li:first-child .exh-row { border-top: 1px solid var(--line); }
+    .exh-row:hover { opacity: 0.45; }
+    .exh-yr {
       font-family: var(--serif);
-      font-size: 1.0625rem;
+      font-size: 1.125rem;
       font-style: italic;
-      color: var(--color-mute);
+      color: var(--muted);
     }
     .exh-title {
-      font-family: var(--serif);
-      font-size: 1.5rem;
-      font-weight: 500;
-      color: var(--color-ink);
+      font-size: clamp(1.25rem, 2vw, 1.625rem);
     }
-    .exh-venue {
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-    }
+    .exh-venue { text-align: right; }
 
-    /* ── QUOTE ──────────────────────────────────────────────────── */
-    blockquote {
-      max-width: 880px;
-      font-family: var(--serif);
-      font-size: clamp(1.875rem, 3vw, 2.75rem);
-      font-weight: 400;
-      font-style: italic;
-      line-height: 1.38;
-      color: var(--color-ink);
-    }
-    cite {
-      display: block;
-      margin-top: 28px;
-      font-family: var(--sans);
-      font-style: normal;
-      font-size: 0.65rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-    }
+    /* ── Status ── */
+    .status { color: var(--muted); }
+    .status.err { color: #b53030; }
 
-    .status { color: var(--color-mute); }
-    .status.error { color: #b53535; }
-
-    /* ── RESPONSIVE ─────────────────────────────────────────────── */
+    /* ── Responsive ── */
     @media (max-width: 960px) {
-      .proj-grid { grid-template-columns: repeat(2, 1fr); }
+      .grid { grid-template-columns: repeat(2, 1fr); }
       .exh-row { grid-template-columns: 56px 1fr; }
       .exh-venue { display: none; }
     }
-    @media (max-width: 640px) {
-      .hero { min-height: auto; padding: 120px 0 80px; }
-      .proj-grid { grid-template-columns: 1fr; }
-      .exh-row { grid-template-columns: 1fr; }
-      .exh-year { display: none; }
+    @media (max-width: 600px) {
+      .hero { padding: 110px 0 72px; }
+      .grid { grid-template-columns: 1fr; }
+      .exh-row { grid-template-columns: 1fr; gap: 8px; }
+      .exh-yr { display: none; }
     }
   `]
 })
