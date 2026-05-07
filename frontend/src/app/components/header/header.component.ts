@@ -1,13 +1,12 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <header [class.scrolled]="scrolled()">
+    <header>
       <div class="container nav">
         <a routerLink="/" class="brand" (click)="closeMenu()">
           <span class="brand-mark">M·G</span>
@@ -23,9 +22,7 @@ import { AuthService } from '../../services/auth.service';
           <a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()">Mobilier</a>
           <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
           <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
-          @if (auth.isLoggedIn()) {
-            <a routerLink="/admin" routerLinkActive="active" class="admin-link" (click)="closeMenu()">Admin</a>
-          }
+          <a routerLink="/admin" routerLinkActive="active" class="admin-link" (click)="closeMenu()">Admin</a>
         </nav>
       </div>
     </header>
@@ -37,80 +34,54 @@ import { AuthService } from '../../services/auth.service';
       left: 0;
       right: 0;
       z-index: 100;
-      background: rgba(246, 243, 238, 0.86);
-      backdrop-filter: saturate(160%) blur(14px);
-      -webkit-backdrop-filter: saturate(160%) blur(14px);
-      border-bottom: 1px solid transparent;
-      transition: border-color 320ms ease, background 320ms ease;
-    }
-    header.scrolled {
-      border-bottom-color: var(--color-line);
+      background: var(--color-bg);
+      border-bottom: 1px solid var(--color-line);
     }
     .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 88px;
+      height: 72px;
     }
     .brand {
       display: flex;
       align-items: baseline;
-      gap: 14px;
-      letter-spacing: 0.02em;
+      gap: 12px;
     }
     .brand-mark {
       font-family: var(--serif);
-      font-size: 1.5rem;
+      font-size: 1.375rem;
       font-weight: 500;
-      color: var(--color-accent-deep);
+      color: var(--color-ink);
     }
     .brand-name {
-      font-size: 0.875rem;
+      font-size: 0.75rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: var(--color-ink);
     }
     nav {
       display: flex;
-      gap: 40px;
+      gap: 36px;
     }
     nav a {
-      position: relative;
-      font-size: 0.875rem;
-      letter-spacing: 0.06em;
-      color: var(--color-ink-soft);
-      padding: 4px 0;
-    }
-    nav a:hover { color: var(--color-ink); }
-    nav a.active { color: var(--color-ink); }
-    nav a.active::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: -2px;
-      height: 1px;
-      background: var(--color-accent);
-    }
-    nav a.admin-link {
-      padding: 6px 14px;
-      border: 1px solid var(--color-line);
-      letter-spacing: 0.1em;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      font-size: 0.75rem;
+      color: var(--color-mute);
+      transition: color var(--transition);
     }
-    nav a.admin-link.active::after { display: none; }
-    nav a.admin-link.active,
-    nav a.admin-link:hover {
-      border-color: var(--color-accent);
-      color: var(--color-accent-deep);
-    }
+    nav a:hover,
+    nav a.active { color: var(--color-ink); }
+    nav a.admin-link { color: var(--color-mute); }
+    nav a.admin-link:hover,
+    nav a.admin-link.active { color: var(--color-ink); }
     .burger {
       display: none;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 18px;
       flex-direction: column;
-      justify-content: space-around;
+      justify-content: space-between;
     }
     .burger span {
       display: block;
@@ -123,7 +94,7 @@ import { AuthService } from '../../services/auth.service';
       .burger { display: flex; }
       nav {
         position: absolute;
-        top: 88px;
+        top: 72px;
         left: 0;
         right: 0;
         flex-direction: column;
@@ -132,18 +103,17 @@ import { AuthService } from '../../services/auth.service';
         border-bottom: 1px solid var(--color-line);
         max-height: 0;
         overflow: hidden;
-        transition: max-height 320ms ease;
+        transition: max-height 280ms ease;
       }
-      nav.open { max-height: 320px; }
+      nav.open { max-height: 280px; }
       nav a {
-        padding: 18px 24px;
+        padding: 16px 24px;
         border-top: 1px solid var(--color-line);
       }
     }
   `]
 })
 export class HeaderComponent {
-  protected readonly auth = inject(AuthService);
   protected readonly open = signal(false);
   protected readonly scrolled = signal(false);
 

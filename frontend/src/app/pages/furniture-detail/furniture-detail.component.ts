@@ -74,8 +74,8 @@ import { Furniture } from '../../models/furniture.model';
   `,
   styles: [`
     .hero {
-      background: var(--color-bg-alt);
       padding: 64px 0 96px;
+      border-bottom: 1px solid var(--color-line);
     }
     .hero-grid {
       display: grid;
@@ -86,8 +86,11 @@ import { Furniture } from '../../models/furniture.model';
     .back {
       display: inline-block;
       margin-bottom: 32px;
-      font-size: 0.85rem;
-      color: var(--color-ink-soft);
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      transition: color var(--transition);
     }
     .back:hover { color: var(--color-ink); }
     .hero-text h1 { margin: 16px 0 24px; }
@@ -113,7 +116,7 @@ import { Furniture } from '../../models/furniture.model';
     .specs ul { list-style: none; }
     .specs li { padding: 2px 0; }
 
-    .hero-img { aspect-ratio: 4 / 5; overflow: hidden; box-shadow: var(--shadow-soft); }
+    .hero-img { aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-bg-alt); }
     .hero-img img { width: 100%; height: 100%; object-fit: cover; }
 
     .narrow { max-width: 760px; }
@@ -129,7 +132,7 @@ import { Furniture } from '../../models/furniture.model';
     .gallery .g-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
+      gap: 12px;
     }
     figure {
       overflow: hidden;
@@ -139,7 +142,7 @@ import { Furniture } from '../../models/furniture.model';
     figure.tall { aspect-ratio: 3 / 4; }
     figure img { width: 100%; height: 100%; object-fit: cover; }
 
-    .cta { text-align: center; }
+    .cta { text-align: center; border-top: 1px solid var(--color-line); }
     .cta p { margin: 16px 0 32px; }
     .cta .btn-link { margin: 0 auto; }
 
@@ -169,7 +172,7 @@ export class FurnitureDetailComponent {
       next: data => {
         this.item.set(data);
         this.loading.set(false);
-        document.title = `${data.title.replace(/[<>"]/g, '').substring(0, 100)} — Milo GUILLAUME Design`;
+        document.title = `${data.title} — Milo GUILLAUME Design`;
       },
       error: () => { this.notFound.set(true); this.loading.set(false); }
     });

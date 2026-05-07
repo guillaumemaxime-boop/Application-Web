@@ -58,10 +58,10 @@ import { Exhibition } from '../../models/exhibition.model';
   styles: [`
     .hero {
       position: relative;
-      min-height: 70vh;
+      min-height: 65vh;
       display: flex;
       align-items: flex-end;
-      padding: 120px 0 80px;
+      padding: 120px 0 72px;
       overflow: hidden;
     }
     .hero-bg {
@@ -78,31 +78,34 @@ import { Exhibition } from '../../models/exhibition.model';
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba(28, 26, 23, 0.85) 0%, rgba(28, 26, 23, 0.2) 60%, transparent 100%);
+      background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 60%, transparent 100%);
     }
     .hero-content {
       position: relative;
       z-index: 1;
-      color: #f6f3ee;
+      color: #ffffff;
     }
     .hero-content .eyebrow,
     .hero-content .dates {
-      color: rgba(246, 243, 238, 0.78);
+      color: rgba(255, 255, 255, 0.6);
     }
     .hero-content h1 {
-      color: #f6f3ee;
+      color: #ffffff;
       margin: 16px 0 24px;
       max-width: 880px;
     }
     .back {
       display: inline-block;
       margin-bottom: 32px;
-      font-size: 0.85rem;
-      color: rgba(246, 243, 238, 0.86);
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.6);
+      transition: color var(--transition);
     }
-    .back:hover { color: #fff; }
+    .back:hover { color: #ffffff; }
     .dates {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       letter-spacing: 0.08em;
     }
 
@@ -126,15 +129,15 @@ import { Exhibition } from '../../models/exhibition.model';
       font-size: 0.7rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 4px 12px;
+      padding: 3px 10px;
       border: 1px solid var(--color-line);
-      color: var(--color-ink-soft);
+      color: var(--color-mute);
     }
 
     .gallery .g-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
+      gap: 12px;
     }
     figure {
       overflow: hidden;
@@ -169,7 +172,7 @@ export class ExhibitionDetailComponent {
       next: data => {
         this.item.set(data);
         this.loading.set(false);
-        document.title = `${data.title.replace(/[<>"]/g, '').substring(0, 100)} — Milo GUILLAUME Design`;
+        document.title = `${data.title} — Milo GUILLAUME Design`;
       },
       error: () => { this.notFound.set(true); this.loading.set(false); }
     });

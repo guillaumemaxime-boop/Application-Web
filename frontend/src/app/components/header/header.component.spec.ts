@@ -1,96 +1,66 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeaderComponent } from './header.component';
 import { provideRouter } from '@angular/router';
-import { signal } from '@angular/core';
-import { AuthService } from '../../services/auth.service';
-
-function buildAuthMock(loggedIn: boolean) {
-  return { isLoggedIn: signal(loggedIn) };
-}
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
 
-  async function setup(loggedIn = false) {
+  beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
-      providers: [
-        provideRouter([]),
-        { provide: AuthService, useValue: buildAuthMock(loggedIn) },
-      ],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HeaderComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-  }
+  });
 
-  it('should create', async () => {
-    await setup();
+  it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should have toggleMenu method', async () => {
-    await setup();
+  it('should have toggleMenu method', () => {
     expect(component.toggleMenu).toBeTruthy();
     expect(typeof component.toggleMenu).toBe('function');
     expect(() => component.toggleMenu()).not.toThrow();
     expect(() => component.toggleMenu()).not.toThrow();
   });
 
-  it('should have closeMenu method', async () => {
-    await setup();
+  it('should have closeMenu method', () => {
     expect(component.closeMenu).toBeTruthy();
     expect(typeof component.closeMenu).toBe('function');
     expect(() => component.closeMenu()).not.toThrow();
   });
 
-  it('should react to window scroll events', async () => {
-    await setup();
+  it('should react to window scroll events', () => {
     expect(() => window.dispatchEvent(new Event('scroll'))).not.toThrow();
     fixture.detectChanges();
     expect(component).toBeTruthy();
   });
 
-  it('should have a header element', async () => {
-    await setup();
+  it('should have a header element', () => {
     const header = fixture.nativeElement.querySelector('header');
     expect(header).toBeTruthy();
   });
 
-  it('should have a brand link', async () => {
-    await setup();
+  it('should have a brand link', () => {
     const brandLink = fixture.nativeElement.querySelector('.brand');
     expect(brandLink).toBeTruthy();
   });
 
-  it('should have a burger menu button', async () => {
-    await setup();
+  it('should have a burger menu button', () => {
     const burger = fixture.nativeElement.querySelector('.burger');
     expect(burger).toBeTruthy();
   });
 
-  it('should show 4 navigation links when logged out', async () => {
-    await setup(false);
-    const navLinks = fixture.nativeElement.querySelectorAll('nav a');
-    expect(navLinks.length).toBe(4);
-  });
-
-  it('should show 5 navigation links when logged in', async () => {
-    await setup(true);
+  it('should have navigation links', () => {
     const navLinks = fixture.nativeElement.querySelectorAll('nav a');
     expect(navLinks.length).toBe(5);
   });
 
-  it('should hide admin link when logged out', async () => {
-    await setup(false);
-    const adminLink = fixture.nativeElement.querySelector('nav a.admin-link');
-    expect(adminLink).toBeNull();
-  });
-
-  it('should show admin link when logged in', async () => {
-    await setup(true);
+  it('should have an admin link', () => {
     const adminLink = fixture.nativeElement.querySelector('nav a.admin-link');
     expect(adminLink).toBeTruthy();
   });

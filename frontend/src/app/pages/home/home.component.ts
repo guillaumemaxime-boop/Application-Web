@@ -34,7 +34,7 @@ import { Exhibition } from '../../models/exhibition.model';
         @if (loadingFurniture()) {
           <p class="status">Chargement…</p>
         } @else if (errorFurniture()) {
-          <p class="status error">Impossible de charger les pièces. Veuillez réessayer ultérieurement.</p>
+          <p class="status error">Impossible de charger les pièces. Vérifiez que le backend est lancé sur le port 8080.</p>
         } @else {
           <div class="grid">
             @for (item of featuredFurniture(); track item.id) {
@@ -95,10 +95,7 @@ import { Exhibition } from '../../models/exhibition.model';
   `,
   styles: [`
     .hero {
-      padding: 96px 0 128px;
-      background:
-        radial-gradient(1200px 600px at 80% -10%, rgba(139, 111, 71, 0.12), transparent 60%),
-        var(--color-bg);
+      padding: 120px 0 128px;
     }
     .hero-inner { max-width: 880px; }
     .hero h1 { margin-top: 24px; }
@@ -138,9 +135,9 @@ import { Exhibition } from '../../models/exhibition.model';
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+      transition: opacity var(--transition);
     }
-    .card:hover .thumb img { transform: scale(1.04); }
+    .card:hover .thumb img { opacity: 0.8; }
     .meta { padding: 20px 0 0; }
     .cat {
       font-size: 0.75rem;
@@ -154,18 +151,16 @@ import { Exhibition } from '../../models/exhibition.model';
     }
     .meta p { font-size: 0.95rem; color: var(--color-ink-soft); }
 
-    .exhibitions { background: var(--color-bg-alt); }
-    .exh-list { display: flex; flex-direction: column; gap: 24px; }
+    .exh-list { display: flex; flex-direction: column; }
     .exh-row {
       display: grid;
       grid-template-columns: 360px 1fr;
       gap: 48px;
-      padding: 24px;
-      background: var(--color-bg);
-      border: 1px solid var(--color-line);
-      transition: border-color var(--transition);
+      padding: 32px 0;
+      border-top: 1px solid var(--color-line);
+      transition: opacity var(--transition);
     }
-    .exh-row:hover { border-color: var(--color-accent); }
+    .exh-row:hover { opacity: 0.65; }
     .exh-img { aspect-ratio: 3 / 2; overflow: hidden; }
     .exh-img img { width: 100%; height: 100%; object-fit: cover; }
     .exh-meta { display: flex; flex-direction: column; justify-content: center; gap: 12px; }
@@ -174,12 +169,13 @@ import { Exhibition } from '../../models/exhibition.model';
       font-size: 0.8rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--color-accent-deep);
+      color: var(--color-mute);
     }
 
     .quote {
       text-align: center;
       padding: 128px 0;
+      border-top: 1px solid var(--color-line);
     }
     blockquote {
       font-family: var(--serif);
@@ -200,7 +196,7 @@ import { Exhibition } from '../../models/exhibition.model';
     }
 
     .status { color: var(--color-mute); }
-    .status.error { color: #b1532a; }
+    .status.error { color: #c0392b; }
 
     @media (max-width: 960px) {
       .grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
