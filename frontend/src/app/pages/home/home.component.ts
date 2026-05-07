@@ -34,7 +34,7 @@ import { Exhibition } from '../../models/exhibition.model';
         @if (loadingFurniture()) {
           <p class="status">Chargement…</p>
         } @else if (errorFurniture()) {
-          <p class="status error">Impossible de charger les pièces. Veuillez réessayer ultérieurement.</p>
+          <p class="status error">Impossible de charger les pièces. Vérifiez que le backend est lancé sur le port 8080.</p>
         } @else {
           <div class="grid">
             @for (item of featuredFurniture(); track item.id) {

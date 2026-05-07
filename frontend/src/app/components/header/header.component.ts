@@ -1,6 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -23,9 +22,7 @@ import { AuthService } from '../../services/auth.service';
           <a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()">Mobilier</a>
           <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
           <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
-          @if (auth.isLoggedIn()) {
-            <a routerLink="/admin" routerLinkActive="active" class="admin-link" (click)="closeMenu()">Admin</a>
-          }
+          <a routerLink="/admin" routerLinkActive="active" class="admin-link" (click)="closeMenu()">Admin</a>
         </nav>
       </div>
     </header>
@@ -143,7 +140,6 @@ import { AuthService } from '../../services/auth.service';
   `]
 })
 export class HeaderComponent {
-  protected readonly auth = inject(AuthService);
   protected readonly open = signal(false);
   protected readonly scrolled = signal(false);
 
