@@ -48,26 +48,35 @@ import { Profile } from '../../models/profile.model';
 
     <section class="section process">
       <div class="container">
-        <div class="proc-grid">
+        <span class="eyebrow proc-label">Processus</span>
+        <div class="proc-list">
           <div class="step">
             <span class="num">01</span>
-            <h3>Dessin</h3>
-            <p>Chaque pièce naît d'une succession de croquis et de maquettes à l'échelle, jusqu'à ce que la silhouette s'impose.</p>
+            <div>
+              <h3>Dessin</h3>
+              <p>Chaque pièce naît d'une succession de croquis et de maquettes à l'échelle, jusqu'à ce que la silhouette s'impose.</p>
+            </div>
           </div>
           <div class="step">
             <span class="num">02</span>
-            <h3>Matière</h3>
-            <p>Le bois est sélectionné en forêt, séché plusieurs années. Marbres et cuirs proviennent d'ateliers européens partenaires.</p>
+            <div>
+              <h3>Matière</h3>
+              <p>Le bois est sélectionné en forêt, séché plusieurs années. Marbres et cuirs proviennent d'ateliers européens partenaires.</p>
+            </div>
           </div>
           <div class="step">
             <span class="num">03</span>
-            <h3>Façonnage</h3>
-            <p>La taille, l'assemblage et la finition sont réalisés à la main dans nos ateliers parisiens.</p>
+            <div>
+              <h3>Façonnage</h3>
+              <p>La taille, l'assemblage et la finition sont réalisés à la main dans nos ateliers parisiens.</p>
+            </div>
           </div>
           <div class="step">
             <span class="num">04</span>
-            <h3>Signature</h3>
-            <p>Chaque pièce est numérotée, signée et accompagnée d'un certificat d'édition.</p>
+            <div>
+              <h3>Signature</h3>
+              <p>Chaque pièce est numérotée, signée et accompagnée d'un certificat d'édition.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -99,8 +108,13 @@ import { Profile } from '../../models/profile.model';
       padding-top: 32px;
       border-top: 1px solid var(--color-line);
       font-size: 0.95rem;
+      color: var(--color-ink-soft);
     }
-    .contact a { color: var(--color-accent-deep); border-bottom: 1px solid var(--color-line); padding-bottom: 2px; }
+    .contact a {
+      color: var(--color-ink);
+      transition: opacity var(--transition);
+    }
+    .contact a:hover { opacity: 0.5; }
 
     aside h3 {
       font-size: 0.75rem;
@@ -127,38 +141,36 @@ import { Profile } from '../../models/profile.model';
       font-size: 0.95rem;
       border-bottom: 1px solid var(--color-line);
     }
-    .press .y { color: var(--color-mute); }
+    .press .y { color: var(--color-mute); flex-shrink: 0; }
 
-    .process { background: var(--color-bg-alt); }
-    .proc-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 32px;
-    }
+    .process { border-top: 1px solid var(--color-line); }
+    .proc-label { display: block; margin-bottom: 40px; }
+    .proc-list { display: flex; flex-direction: column; }
     .step {
-      padding: 32px;
-      background: var(--color-bg);
-      border: 1px solid var(--color-line);
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 32px;
+      padding: 40px 0;
+      border-bottom: 1px solid var(--color-line);
+      align-items: start;
     }
     .num {
-      display: inline-block;
       font-family: var(--serif);
-      font-size: 2.5rem;
-      color: var(--color-accent);
-      margin-bottom: 12px;
+      font-size: 2rem;
+      color: var(--color-ink);
+      line-height: 1;
     }
-    .step h3 { font-size: 1.25rem; margin-bottom: 8px; }
-    .step p { font-size: 0.9rem; }
+    .step h3 { font-size: 1.375rem; margin-bottom: 12px; }
+    .step p { font-size: 0.95rem; }
 
     .status { color: var(--color-mute); margin-top: 32px; }
-    .status.error { color: #b1532a; }
+    .status.error { color: #c0392b; }
 
     @media (max-width: 960px) {
       .grid { grid-template-columns: 1fr; gap: 48px; }
-      .proc-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 600px) {
-      .proc-grid { grid-template-columns: 1fr; }
+      .step { grid-template-columns: 56px 1fr; gap: 16px; }
     }
   `]
 })
