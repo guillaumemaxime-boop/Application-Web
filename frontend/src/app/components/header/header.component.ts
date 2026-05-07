@@ -6,138 +6,109 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <header [class.scrolled]="scrolled()">
-      <div class="wrap nav-wrap">
-
+    <header>
+      <div class="container nav">
         <a routerLink="/" class="brand" (click)="closeMenu()">
-          <em>M·G</em>
-          <span>Milo GUILLAUME Design</span>
+          <span class="brand-mark">M·G</span>
+          <span class="brand-name">Milo GUILLAUME Design</span>
         </a>
 
-        <button class="burger" type="button"
-          (click)="toggleMenu()"
-          [attr.aria-expanded]="open()"
-          aria-label="Menu">
-          <span></span>
-          <span></span>
+        <button class="burger" type="button" (click)="toggleMenu()" [attr.aria-expanded]="open()">
+          <span></span><span></span><span></span>
         </button>
 
         <nav [class.open]="open()">
-          <a routerLink="/" routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: true }"
-            (click)="closeMenu()">Accueil</a>
-          <a routerLink="/mobilier" routerLinkActive="active"
-            (click)="closeMenu()">Mobilier</a>
-          <a routerLink="/expositions" routerLinkActive="active"
-            (click)="closeMenu()">Expositions</a>
-          <a routerLink="/studio" routerLinkActive="active"
-            (click)="closeMenu()">Studio</a>
-          <a routerLink="/admin" routerLinkActive="active" class="admin"
-            (click)="closeMenu()">Admin</a>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Accueil</a>
+          <a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()">Mobilier</a>
+          <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
+          <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
+          <a routerLink="/admin" routerLinkActive="active" class="admin-link" (click)="closeMenu()">Admin</a>
         </nav>
-
       </div>
     </header>
   `,
   styles: [`
     header {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 0;
+      right: 0;
       z-index: 100;
-      height: 60px;
-      background: transparent;
-      border-bottom: 1px solid transparent;
-      transition: background var(--ease), border-color var(--ease);
+      background: var(--color-bg);
+      border-bottom: 1px solid var(--color-line);
     }
-    header.scrolled {
-      background: rgba(249, 249, 248, 0.94);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom-color: var(--line);
-    }
-
-    .nav-wrap {
+    .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 100%;
+      height: 72px;
     }
-
     .brand {
       display: flex;
       align-items: baseline;
       gap: 12px;
     }
-    .brand em {
+    .brand-mark {
       font-family: var(--serif);
-      font-style: italic;
-      font-size: 1.25rem;
-      font-weight: 400;
-      color: var(--ink);
-      letter-spacing: -0.01em;
-    }
-    .brand span {
-      font-size: 0.58rem;
+      font-size: 1.375rem;
       font-weight: 500;
-      letter-spacing: 0.24em;
-      text-transform: uppercase;
-      color: var(--ink);
+      color: var(--color-ink);
     }
-
+    .brand-name {
+      font-size: 0.75rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-ink);
+    }
     nav {
       display: flex;
-      gap: 32px;
-      align-items: center;
+      gap: 36px;
     }
     nav a {
-      font-size: 0.62rem;
-      font-weight: 500;
-      letter-spacing: 0.18em;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--muted);
-      transition: color var(--ease);
+      color: var(--color-mute);
+      transition: color var(--transition);
     }
     nav a:hover,
-    nav a.active { color: var(--ink); }
-    nav a.admin { opacity: 0.35; }
-    nav a.admin:hover { opacity: 1; }
-
+    nav a.active { color: var(--color-ink); }
+    nav a.admin-link { color: var(--color-mute); }
+    nav a.admin-link:hover,
+    nav a.admin-link.active { color: var(--color-ink); }
     .burger {
       display: none;
+      width: 24px;
+      height: 18px;
       flex-direction: column;
       justify-content: space-between;
-      width: 22px;
-      height: 11px;
-      padding: 0;
     }
     .burger span {
       display: block;
       height: 1px;
-      background: var(--ink);
-      transition: opacity var(--ease);
+      background: var(--color-ink);
     }
 
     @media (max-width: 720px) {
-      .brand span { display: none; }
+      .brand-name { display: none; }
       .burger { display: flex; }
-
       nav {
         position: absolute;
-        top: 60px; left: 0; right: 0;
+        top: 72px;
+        left: 0;
+        right: 0;
         flex-direction: column;
         gap: 0;
-        background: var(--bg);
-        border-bottom: 1px solid var(--line);
+        background: var(--color-bg);
+        border-bottom: 1px solid var(--color-line);
         max-height: 0;
         overflow: hidden;
         transition: max-height 280ms ease;
       }
-      nav.open { max-height: 300px; }
+      nav.open { max-height: 280px; }
       nav a {
-        display: block;
-        padding: 15px clamp(20px, 5vw, 96px);
-        border-top: 1px solid var(--line);
-        font-size: 0.65rem;
+        padding: 16px 24px;
+        border-top: 1px solid var(--color-line);
       }
     }
   `]
@@ -149,7 +120,7 @@ export class HeaderComponent {
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('scroll', () => {
-        this.scrolled.set(window.scrollY > 4);
+        this.scrolled.set(window.scrollY > 8);
       }, { passive: true });
     }
   }

@@ -8,53 +8,45 @@ import { Exhibition } from '../../models/exhibition.model';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <div class="page-head">
-      <div class="wrap">
-        <span class="label">Scénographies & expositions</span>
+    <section class="section page-head">
+      <div class="container">
+        <span class="eyebrow">Scénographies & expositions</span>
         <h1>Expositions</h1>
-        <p>
-          Galeries, foires internationales, fondations et institutions culturelles.
+        <p class="lead">
           Là où les pièces de l'atelier rencontrent un public, un lieu, une lumière.
+          Galeries, foires internationales, fondations et institutions culturelles.
         </p>
       </div>
-    </div>
+    </section>
 
-    <hr />
-
-    <section class="section">
-      <div class="wrap">
+    <section class="section list">
+      <div class="container">
         @if (loading()) {
           <p class="status">Chargement…</p>
         } @else if (error()) {
-          <p class="status err">Impossible de charger les expositions.</p>
+          <p class="status error">Impossible de charger les expositions. Vérifiez le backend.</p>
         } @else {
-          <ul class="list">
-            @for (e of items(); track e.id) {
+          <ul class="timeline">
+            @for (exh of items(); track exh.id) {
               <li>
-                <a class="row" [routerLink]="['/expositions', e.slug]">
-                  <div class="date">
-                    <span class="yr">{{ year(e.startDate) }}</span>
-                    <span class="mo label">{{ month(e.startDate) }}</span>
+                <a class="exh-card fade-in" [routerLink]="['/expositions', exh.slug]">
+                  <div class="dates">
+                    <span class="year">{{ year(exh.startDate) }}</span>
+                    <span class="month">{{ month(exh.startDate) }}</span>
                   </div>
 
-                  <div class="thumb">
-                    <img [src]="e.coverImage" [alt]="e.title" loading="lazy" />
+                  <div class="img">
+                    <img [src]="exh.coverImage" [alt]="exh.title" loading="lazy" />
                   </div>
 
                   <div class="meta">
-                    <span class="label venue">{{ e.venue }} · {{ e.city }}, {{ e.country }}</span>
-                    <h2>{{ e.title }}</h2>
-                    <p>{{ e.shortDescription }}</p>
-                    @if (e.tags?.length) {
-                      <div class="tags">
-                        @for (t of e.tags; track t) {
-                          <span class="tag">{{ t }}</span>
-                        }
-                      </div>
-                    }
+                    <span class="venue">{{ exh.venue }} · {{ exh.city }}, {{ exh.country }}</span>
+                    <h2>{{ exh.title }}</h2>
+                    <p>{{ exh.shortDescription }}</p>
+                    <div class="tags">
+                      @for (t of exh.tags; track t) { <span class="tag">{{ t }}</span> }
+                    </div>
                   </div>
-
-                  <span class="arrow" aria-hidden="true">→</span>
                 </a>
               </li>
             }
@@ -64,104 +56,71 @@ import { Exhibition } from '../../models/exhibition.model';
     </section>
   `,
   styles: [`
-    .page-head {
-      padding: 100px 0 72px;
-    }
-    .page-head .label { display: block; margin-bottom: 20px; }
-    .page-head h1 { margin-bottom: 20px; }
-    .page-head p { max-width: 540px; }
+    .page-head { padding-top: 64px; padding-bottom: 32px; }
+    .page-head h1 { margin-top: 16px; }
+    .lead { max-width: 640px; margin-top: 24px; font-size: 1.05rem; }
 
-    .list {}
-    .row {
+    .timeline { list-style: none; display: flex; flex-direction: column; }
+    .exh-card {
       display: grid;
-      grid-template-columns: 72px 220px 1fr 24px;
-      gap: 40px;
-      align-items: start;
+      grid-template-columns: 80px 320px 1fr;
+      gap: 48px;
       padding: 40px 0;
-      border-bottom: 1px solid var(--line);
-      transition: opacity var(--ease);
+      border-top: 1px solid var(--color-line);
+      transition: opacity var(--transition);
     }
-    .list li:first-child .row { border-top: 1px solid var(--line); }
-    .row:hover { opacity: 0.5; }
+    .exh-card:hover { opacity: 0.65; }
 
-    .date { padding-top: 2px; }
-    .yr {
+    .dates { padding-top: 4px; }
+    .year {
       display: block;
       font-family: var(--serif);
-      font-size: 1.5rem;
-      font-style: italic;
-      color: var(--muted);
+      font-size: 1.75rem;
+      color: var(--color-ink);
       line-height: 1;
     }
-    .mo {
+    .month {
       display: block;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-mute);
       margin-top: 6px;
     }
 
-    .thumb {
-      aspect-ratio: 3 / 2;
-      overflow: hidden;
-      background: #eeede9;
-    }
-    .thumb img {
-      width: 100%; height: 100%;
+    .img { aspect-ratio: 3 / 2; overflow: hidden; background: var(--color-bg-alt); }
+    .img img {
+      width: 100%;
+      height: 100%;
       object-fit: cover;
-      transition: opacity var(--ease);
     }
-    .row:hover .thumb img { opacity: 0.85; }
 
-    .meta {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding-top: 2px;
-    }
-    .venue { display: block; }
-    .meta h2 {
-      font-size: clamp(1.5rem, 2.5vw, 2.25rem);
-    }
-    .meta p { font-size: 0.9rem; }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 4px;
-    }
-    .tag {
-      font-size: 0.58rem;
-      font-weight: 500;
-      letter-spacing: 0.16em;
+    .meta { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+    .venue {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      padding: 3px 9px;
-      border: 1px solid var(--line);
-      color: var(--muted);
+      color: var(--color-mute);
+    }
+    .meta h2 { font-size: 2rem; }
+    .meta p { font-size: 0.95rem; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .tag {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border: 1px solid var(--color-line);
+      color: var(--color-mute);
     }
 
-    .arrow {
-      font-size: 0.9rem;
-      color: var(--muted);
-      padding-top: 4px;
-      align-self: center;
-      transition: color var(--ease);
-    }
-    .row:hover .arrow { color: var(--ink); }
-
-    .status { color: var(--muted); }
-    .status.err { color: #b53030; }
+    .status { color: var(--color-mute); }
+    .status.error { color: #c0392b; }
 
     @media (max-width: 960px) {
-      .row { grid-template-columns: 56px 1fr 24px; gap: 24px; }
-      .thumb { display: none; }
-    }
-    @media (max-width: 600px) {
-      .row { grid-template-columns: 1fr 24px; gap: 16px; }
-      .date { display: flex; align-items: baseline; gap: 10px; }
-      .mo { margin-top: 0; }
-    }
-    @media (max-width: 420px) {
-      .row { grid-template-columns: 1fr; }
-      .arrow { display: none; }
+      .exh-card { grid-template-columns: 1fr; gap: 16px; }
+      .img { aspect-ratio: 16 / 10; }
+      .dates { display: flex; align-items: baseline; gap: 12px; }
     }
   `]
 })

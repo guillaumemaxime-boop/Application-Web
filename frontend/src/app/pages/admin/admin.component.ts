@@ -11,123 +11,119 @@ type Tab = 'furniture' | 'exhibitions';
   standalone: true,
   imports: [ReactiveFormsModule],
   template: `
-    <div class="page">
-      <div class="wrap">
-
-        <div class="page-head">
-          <span class="label">Console d'administration</span>
-          <h1>Contenu</h1>
+    <section class="section">
+      <div class="container">
+        <div class="head">
+          <span class="eyebrow">Console d'administration</span>
+          <h1>Gérer le contenu</h1>
+          <p class="lead">Ajoutez, modifiez ou supprimez les pièces de mobilier et les expositions présentées sur le site.</p>
         </div>
 
         <div class="tabs" role="tablist">
-          <button type="button" role="tab"
+          <button
+            type="button"
+            role="tab"
             [attr.aria-selected]="tab() === 'furniture'"
             [class.active]="tab() === 'furniture'"
             (click)="switchTab('furniture')">Mobilier</button>
-          <button type="button" role="tab"
+          <button
+            type="button"
+            role="tab"
             [attr.aria-selected]="tab() === 'exhibitions'"
             [class.active]="tab() === 'exhibitions'"
             (click)="switchTab('exhibitions')">Expositions</button>
         </div>
 
         @if (message()) {
-          <div class="flash" [class.flash-err]="messageType() === 'error'">
-            {{ message() }}
-          </div>
+          <p class="flash" [class.error]="messageType() === 'error'">{{ message() }}</p>
         }
 
         @if (tab() === 'furniture') {
-          <div class="layout">
-            <aside class="sidebar">
-              <div class="sidebar-head">
-                <span class="label">Pièces</span>
-                <button type="button" class="new-btn" (click)="newFurniture()">+ Nouveau</button>
+          <div class="grid-admin">
+            <aside class="list">
+              <div class="list-head">
+                <h2>Pièces existantes</h2>
+                <button type="button" class="btn-link" (click)="newFurniture()">+ Nouvelle pièce</button>
               </div>
-
               @if (loadingFurniture()) {
                 <p class="status">Chargement…</p>
               } @else if (furniture().length === 0) {
                 <p class="status">Aucune pièce.</p>
               } @else {
-                <ul class="item-list">
+                <ul>
                   @for (item of furniture(); track item.id) {
                     <li [class.selected]="editingFurnitureSlug() === item.slug">
-                      <button type="button" class="item-btn" (click)="loadFurniture(item)">
-                        <span class="item-title">{{ item.title }}</span>
-                        <span class="label item-meta">{{ item.category }} · {{ item.year }}</span>
+                      <button type="button" class="row" (click)="loadFurniture(item)">
+                        <span class="row-title">{{ item.title }}</span>
+                        <span class="row-meta">{{ item.category }} · {{ item.year }}</span>
                       </button>
-                      <button type="button" class="del-btn"
-                        (click)="removeFurniture(item)"
-                        aria-label="Supprimer">×</button>
+                      <button type="button" class="row-del" (click)="removeFurniture(item)" aria-label="Supprimer">×</button>
                     </li>
                   }
                 </ul>
               }
             </aside>
 
-            <form class="form-panel" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
+            <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
               <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
 
-              <div class="fields">
-                <div class="field">
-                  <label class="label" for="f-title">Titre *</label>
-                  <input id="f-title" type="text" formControlName="title" />
-                </div>
-                <div class="field">
-                  <label class="label" for="f-slug">Slug</label>
-                  <input id="f-slug" type="text" formControlName="slug" placeholder="auto-généré si vide" />
-                </div>
-                <div class="row-2">
-                  <div class="field">
-                    <label class="label" for="f-cat">Catégorie *</label>
-                    <input id="f-cat" type="text" formControlName="category" placeholder="Sièges, Tables…" />
-                  </div>
-                  <div class="field">
-                    <label class="label" for="f-yr">Année</label>
-                    <input id="f-yr" type="number" formControlName="year" />
-                  </div>
-                </div>
-                <div class="field">
-                  <label class="label" for="f-mat">Matériaux</label>
-                  <input id="f-mat" type="text" formControlName="material" />
-                </div>
-                <div class="field">
-                  <label class="label" for="f-des">Designer</label>
-                  <input id="f-des" type="text" formControlName="designer" />
-                </div>
-                <div class="field">
-                  <label class="label" for="f-cover">Image principale (URL)</label>
-                  <input id="f-cover" type="url" formControlName="coverImage" />
-                </div>
-                <div class="field">
-                  <label class="label" for="f-gallery">Galerie (une URL par ligne)</label>
-                  <textarea id="f-gallery" rows="3" formControlName="gallery"></textarea>
-                </div>
-                <div class="field">
-                  <label class="label" for="f-dims">Dimensions (une par ligne)</label>
-                  <textarea id="f-dims" rows="3" formControlName="dimensions"></textarea>
-                </div>
-                <div class="field">
-                  <label class="label" for="f-short">Description courte</label>
-                  <textarea id="f-short" rows="2" formControlName="shortDescription"></textarea>
-                </div>
-                <div class="field">
-                  <label class="label" for="f-desc">Description longue</label>
-                  <textarea id="f-desc" rows="5" formControlName="description"></textarea>
-                </div>
-                <div class="field field-check">
-                  <input id="f-featured" type="checkbox" formControlName="featured" />
-                  <label for="f-featured">Mettre en avant sur l'accueil</label>
-                </div>
+              <label>
+                <span>Titre *</span>
+                <input type="text" formControlName="title" />
+              </label>
+              <label>
+                <span>Slug</span>
+                <input type="text" formControlName="slug" placeholder="auto-généré si vide" />
+              </label>
+              <div class="row-2">
+                <label>
+                  <span>Catégorie *</span>
+                  <input type="text" formControlName="category" placeholder="Sièges, Tables…" />
+                </label>
+                <label>
+                  <span>Année</span>
+                  <input type="number" formControlName="year" />
+                </label>
               </div>
+              <label>
+                <span>Matériaux</span>
+                <input type="text" formControlName="material" />
+              </label>
+              <label>
+                <span>Designer</span>
+                <input type="text" formControlName="designer" />
+              </label>
+              <label>
+                <span>Image principale (URL)</span>
+                <input type="url" formControlName="coverImage" />
+              </label>
+              <label>
+                <span>Galerie (une URL par ligne)</span>
+                <textarea rows="3" formControlName="gallery"></textarea>
+              </label>
+              <label>
+                <span>Dimensions (une par ligne)</span>
+                <textarea rows="3" formControlName="dimensions"></textarea>
+              </label>
+              <label>
+                <span>Description courte</span>
+                <textarea rows="2" formControlName="shortDescription"></textarea>
+              </label>
+              <label>
+                <span>Description longue</span>
+                <textarea rows="5" formControlName="description"></textarea>
+              </label>
+              <label class="check">
+                <input type="checkbox" formControlName="featured" />
+                <span>Pièce phare (mise en avant sur l'accueil)</span>
+              </label>
 
-              <div class="form-actions">
-                <button type="submit" class="save-btn"
-                  [disabled]="furnitureForm.invalid || saving()">
+              <div class="actions">
+                <button type="submit" class="btn-primary" [disabled]="furnitureForm.invalid || saving()">
                   {{ saving() ? 'Enregistrement…' : (editingFurnitureSlug() ? 'Mettre à jour' : 'Créer') }}
                 </button>
                 @if (editingFurnitureSlug()) {
-                  <button type="button" class="cancel-btn" (click)="newFurniture()">Annuler</button>
+                  <button type="button" class="btn-link" (click)="newFurniture()">Annuler</button>
                 }
               </div>
             </form>
@@ -135,324 +131,293 @@ type Tab = 'furniture' | 'exhibitions';
         }
 
         @if (tab() === 'exhibitions') {
-          <div class="layout">
-            <aside class="sidebar">
-              <div class="sidebar-head">
-                <span class="label">Expositions</span>
-                <button type="button" class="new-btn" (click)="newExhibition()">+ Nouveau</button>
+          <div class="grid-admin">
+            <aside class="list">
+              <div class="list-head">
+                <h2>Expositions existantes</h2>
+                <button type="button" class="btn-link" (click)="newExhibition()">+ Nouvelle exposition</button>
               </div>
-
               @if (loadingExhibitions()) {
                 <p class="status">Chargement…</p>
               } @else if (exhibitions().length === 0) {
                 <p class="status">Aucune exposition.</p>
               } @else {
-                <ul class="item-list">
+                <ul>
                   @for (item of exhibitions(); track item.id) {
                     <li [class.selected]="editingExhibitionSlug() === item.slug">
-                      <button type="button" class="item-btn" (click)="loadExhibition(item)">
-                        <span class="item-title">{{ item.title }}</span>
-                        <span class="label item-meta">{{ item.venue }} · {{ item.city }}</span>
+                      <button type="button" class="row" (click)="loadExhibition(item)">
+                        <span class="row-title">{{ item.title }}</span>
+                        <span class="row-meta">{{ item.venue }} · {{ item.city }}</span>
                       </button>
-                      <button type="button" class="del-btn"
-                        (click)="removeExhibition(item)"
-                        aria-label="Supprimer">×</button>
+                      <button type="button" class="row-del" (click)="removeExhibition(item)" aria-label="Supprimer">×</button>
                     </li>
                   }
                 </ul>
               }
             </aside>
 
-            <form class="form-panel" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
+            <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
               <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
 
-              <div class="fields">
-                <div class="field">
-                  <label class="label" for="e-title">Titre *</label>
-                  <input id="e-title" type="text" formControlName="title" />
-                </div>
-                <div class="field">
-                  <label class="label" for="e-slug">Slug</label>
-                  <input id="e-slug" type="text" formControlName="slug" placeholder="auto-généré si vide" />
-                </div>
-                <div class="field">
-                  <label class="label" for="e-venue">Lieu</label>
-                  <input id="e-venue" type="text" formControlName="venue" />
-                </div>
-                <div class="row-2">
-                  <div class="field">
-                    <label class="label" for="e-city">Ville</label>
-                    <input id="e-city" type="text" formControlName="city" />
-                  </div>
-                  <div class="field">
-                    <label class="label" for="e-country">Pays</label>
-                    <input id="e-country" type="text" formControlName="country" />
-                  </div>
-                </div>
-                <div class="row-2">
-                  <div class="field">
-                    <label class="label" for="e-start">Date de début *</label>
-                    <input id="e-start" type="date" formControlName="startDate" />
-                  </div>
-                  <div class="field">
-                    <label class="label" for="e-end">Date de fin *</label>
-                    <input id="e-end" type="date" formControlName="endDate" />
-                  </div>
-                </div>
-                <div class="field">
-                  <label class="label" for="e-curator">Commissaire</label>
-                  <input id="e-curator" type="text" formControlName="curator" />
-                </div>
-                <div class="field">
-                  <label class="label" for="e-cover">Image principale (URL)</label>
-                  <input id="e-cover" type="url" formControlName="coverImage" />
-                </div>
-                <div class="field">
-                  <label class="label" for="e-gallery">Galerie (une URL par ligne)</label>
-                  <textarea id="e-gallery" rows="3" formControlName="gallery"></textarea>
-                </div>
-                <div class="field">
-                  <label class="label" for="e-tags">Tags (un par ligne)</label>
-                  <textarea id="e-tags" rows="2" formControlName="tags"></textarea>
-                </div>
-                <div class="field">
-                  <label class="label" for="e-short">Description courte</label>
-                  <textarea id="e-short" rows="2" formControlName="shortDescription"></textarea>
-                </div>
-                <div class="field">
-                  <label class="label" for="e-desc">Description longue</label>
-                  <textarea id="e-desc" rows="5" formControlName="description"></textarea>
-                </div>
-                <div class="field field-check">
-                  <input id="e-featured" type="checkbox" formControlName="featured" />
-                  <label for="e-featured">Exposition phare</label>
-                </div>
+              <label>
+                <span>Titre *</span>
+                <input type="text" formControlName="title" />
+              </label>
+              <label>
+                <span>Slug</span>
+                <input type="text" formControlName="slug" placeholder="auto-généré si vide" />
+              </label>
+              <label>
+                <span>Lieu</span>
+                <input type="text" formControlName="venue" />
+              </label>
+              <div class="row-2">
+                <label>
+                  <span>Ville</span>
+                  <input type="text" formControlName="city" />
+                </label>
+                <label>
+                  <span>Pays</span>
+                  <input type="text" formControlName="country" />
+                </label>
               </div>
+              <div class="row-2">
+                <label>
+                  <span>Date de début *</span>
+                  <input type="date" formControlName="startDate" />
+                </label>
+                <label>
+                  <span>Date de fin *</span>
+                  <input type="date" formControlName="endDate" />
+                </label>
+              </div>
+              <label>
+                <span>Commissaire</span>
+                <input type="text" formControlName="curator" />
+              </label>
+              <label>
+                <span>Image principale (URL)</span>
+                <input type="url" formControlName="coverImage" />
+              </label>
+              <label>
+                <span>Galerie (une URL par ligne)</span>
+                <textarea rows="3" formControlName="gallery"></textarea>
+              </label>
+              <label>
+                <span>Tags (un par ligne)</span>
+                <textarea rows="2" formControlName="tags"></textarea>
+              </label>
+              <label>
+                <span>Description courte</span>
+                <textarea rows="2" formControlName="shortDescription"></textarea>
+              </label>
+              <label>
+                <span>Description longue</span>
+                <textarea rows="5" formControlName="description"></textarea>
+              </label>
+              <label class="check">
+                <input type="checkbox" formControlName="featured" />
+                <span>Exposition phare</span>
+              </label>
 
-              <div class="form-actions">
-                <button type="submit" class="save-btn"
-                  [disabled]="exhibitionForm.invalid || saving()">
+              <div class="actions">
+                <button type="submit" class="btn-primary" [disabled]="exhibitionForm.invalid || saving()">
                   {{ saving() ? 'Enregistrement…' : (editingExhibitionSlug() ? 'Mettre à jour' : 'Créer') }}
                 </button>
                 @if (editingExhibitionSlug()) {
-                  <button type="button" class="cancel-btn" (click)="newExhibition()">Annuler</button>
+                  <button type="button" class="btn-link" (click)="newExhibition()">Annuler</button>
                 }
               </div>
             </form>
           </div>
         }
-
       </div>
-    </div>
+    </section>
   `,
   styles: [`
-    .page { padding: 88px 0 80px; }
+    .section { padding: 128px 0 96px; }
+    .head { max-width: 720px; margin-bottom: 48px; }
+    .head h1 { margin-top: 16px; }
+    .lead { margin-top: 16px; color: var(--color-ink-soft); }
 
-    .page-head { margin-bottom: 32px; }
-    .page-head .label { display: block; margin-bottom: 12px; }
-    .page-head h1 { font-size: clamp(2rem, 4vw, 3rem); }
-
-    /* ── Tabs ── */
     .tabs {
       display: flex;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 24px;
+      gap: 8px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--color-line);
     }
     .tabs button {
-      padding: 12px 16px;
-      font-size: 0.65rem;
-      font-weight: 500;
-      letter-spacing: 0.16em;
+      background: transparent;
+      border: 0;
+      padding: 14px 20px;
+      font-size: 0.875rem;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--color-ink-soft);
+      cursor: pointer;
       border-bottom: 2px solid transparent;
       margin-bottom: -1px;
-      transition: color var(--ease), border-color var(--ease);
     }
-    .tabs button:hover { color: var(--dim); }
     .tabs button.active {
-      color: var(--ink);
-      border-bottom-color: var(--ink);
+      color: var(--color-ink);
+      border-bottom-color: var(--color-accent);
     }
 
-    /* ── Flash ── */
     .flash {
-      padding: 10px 14px;
-      margin-bottom: 20px;
-      border-left: 2px solid var(--ink);
-      font-size: 0.875rem;
-      color: var(--dim);
-      background: rgba(0, 0, 0, 0.03);
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      background: rgba(139, 111, 71, 0.08);
+      border-left: 3px solid var(--color-accent);
+      font-size: 0.95rem;
     }
-    .flash-err {
-      border-left-color: #b53030;
-      color: #b53030;
-      background: rgba(181, 48, 48, 0.04);
+    .flash.error {
+      background: rgba(177, 83, 42, 0.08);
+      border-left-color: #b1532a;
+      color: #8a3d1f;
     }
 
-    /* ── Layout ── */
-    .layout {
+    .grid-admin {
       display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 32px;
+      grid-template-columns: 320px 1fr;
+      gap: 48px;
       align-items: start;
     }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      border: 1px solid var(--line);
+    .list {
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
       position: sticky;
-      top: 80px;
-      max-height: calc(100vh - 112px);
+      top: 112px;
+      max-height: calc(100vh - 144px);
       overflow-y: auto;
     }
-    .sidebar-head {
+    .list-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--line);
-      background: var(--bg);
-      position: sticky;
-      top: 0;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-line);
+      background: var(--color-bg-alt);
     }
-    .new-btn {
-      font-size: 0.62rem;
-      font-weight: 500;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--muted);
-      transition: color var(--ease);
-    }
-    .new-btn:hover { color: var(--ink); }
-
-    .item-list {}
-    .item-list li {
+    .list-head h2 { font-size: 1rem; margin: 0; letter-spacing: 0.04em; }
+    .list ul { list-style: none; margin: 0; padding: 0; }
+    .list li {
       display: flex;
       align-items: stretch;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid var(--color-line);
     }
-    .item-list li:last-child { border-bottom: none; }
-    .item-list li.selected { background: rgba(0,0,0,0.03); }
-
-    .item-btn {
+    .list li:last-child { border-bottom: 0; }
+    .list li.selected { background: rgba(139, 111, 71, 0.08); }
+    .row {
       flex: 1;
       text-align: left;
-      padding: 12px 16px;
+      background: transparent;
+      border: 0;
+      padding: 14px 20px;
+      cursor: pointer;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
+    }
+    .row:hover { background: var(--color-bg-alt); }
+    .row-title { color: var(--color-ink); font-size: 0.95rem; }
+    .row-meta { font-size: 0.75rem; color: var(--color-mute); letter-spacing: 0.06em; text-transform: uppercase; }
+    .row-del {
       background: transparent;
-      transition: background var(--ease);
-    }
-    .item-btn:hover { background: rgba(0,0,0,0.03); }
-    .item-title { font-size: 0.875rem; color: var(--ink); }
-    .item-meta { display: block; }
-
-    .del-btn {
-      padding: 0 12px;
-      font-size: 1.25rem;
-      line-height: 1;
-      color: var(--muted);
-      transition: color var(--ease);
-    }
-    .del-btn:hover { color: #b53030; }
-
-    .status { padding: 14px 16px; color: var(--muted); font-size: 0.875rem; }
-
-    /* ── Form ── */
-    .form-panel {
-      border: 1px solid var(--line);
-      padding: 28px;
-    }
-    .form-panel h2 {
+      border: 0;
+      padding: 0 16px;
+      color: var(--color-mute);
       font-size: 1.5rem;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      line-height: 1;
     }
+    .row-del:hover { color: #b1532a; }
 
-    .fields { display: flex; flex-direction: column; gap: 16px; }
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 32px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
+    }
+    .form h2 { margin: 0 0 8px; font-size: 1.5rem; }
 
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field .label { display: block; }
-
-    input[type="text"],
-    input[type="number"],
-    input[type="url"],
-    input[type="date"],
-    textarea {
-      width: 100%;
-      padding: 9px 11px;
-      border: 1px solid var(--line);
-      background: var(--bg);
+    .form label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form label > span {
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    .form input[type="text"],
+    .form input[type="number"],
+    .form input[type="url"],
+    .form input[type="date"],
+    .form textarea {
+      padding: 10px 12px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
       font: inherit;
-      font-size: 0.9375rem;
-      color: var(--ink);
-      transition: border-color var(--ease);
+      color: var(--color-ink);
+      border-radius: 0;
     }
-    input:focus,
-    textarea:focus {
+    .form input:focus,
+    .form textarea:focus {
       outline: none;
-      border-color: var(--ink);
+      border-color: var(--color-accent);
     }
-    textarea { resize: vertical; font-family: var(--sans); }
+    .form textarea {
+      font-family: var(--sans, inherit);
+      resize: vertical;
+    }
 
     .row-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 16px;
     }
-
-    .field-check {
+    .check {
       flex-direction: row !important;
       align-items: center;
-      gap: 8px !important;
+      gap: 10px !important;
     }
-    .field-check input[type="checkbox"] {
-      width: auto;
-      padding: 0;
-    }
-    .field-check label {
-      font-size: 0.875rem;
-      color: var(--dim);
-      cursor: pointer;
+    .check span {
+      text-transform: none !important;
+      letter-spacing: 0 !important;
+      font-size: 0.95rem !important;
+      color: var(--color-ink) !important;
     }
 
-    .form-actions {
+    .actions {
       display: flex;
       align-items: center;
-      gap: 20px;
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid var(--line);
+      gap: 24px;
+      margin-top: 8px;
     }
-    .save-btn {
-      padding: 10px 22px;
-      background: var(--ink);
-      color: var(--bg);
-      font-size: 0.65rem;
-      font-weight: 500;
-      letter-spacing: 0.18em;
+    .btn-primary {
+      padding: 12px 28px;
+      background: var(--color-ink);
+      color: var(--color-bg);
+      border: 0;
+      font-size: 0.875rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      transition: opacity var(--ease);
+      cursor: pointer;
+      transition: background var(--transition);
     }
-    .save-btn:hover:not(:disabled) { opacity: 0.72; }
-    .save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary:hover:not(:disabled) { background: var(--color-accent-deep); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .cancel-btn {
-      font-size: 0.65rem;
-      font-weight: 500;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--muted);
-      transition: color var(--ease);
-    }
-    .cancel-btn:hover { color: var(--ink); }
+    .status { color: var(--color-mute); padding: 16px 20px; }
 
     @media (max-width: 960px) {
-      .layout { grid-template-columns: 1fr; }
-      .sidebar { position: static; max-height: 360px; }
+      .grid-admin { grid-template-columns: 1fr; }
+      .list { position: static; max-height: none; }
     }
   `]
 })

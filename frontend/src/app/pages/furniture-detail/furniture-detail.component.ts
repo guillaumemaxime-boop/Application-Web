@@ -9,212 +9,151 @@ import { Furniture } from '../../models/furniture.model';
   imports: [RouterLink],
   template: `
     @if (loading()) {
-      <div class="wrap section"><p class="status">Chargement…</p></div>
+      <div class="container section"><p class="status">Chargement…</p></div>
     } @else if (notFound()) {
-      <div class="wrap section not-found">
+      <div class="container section">
         <h2>Pièce introuvable</h2>
-        <a routerLink="/mobilier" class="back-link">← Retour au catalogue</a>
+        <p><a class="btn-link" routerLink="/mobilier">Retour au catalogue</a></p>
       </div>
     } @else if (item(); as f) {
-      <article>
-
-        <div class="hero">
-          <div class="wrap hero-inner">
+      <article class="fade-in">
+        <header class="hero">
+          <div class="container hero-grid">
             <div class="hero-text">
-              <a routerLink="/mobilier" class="back">← Mobilier</a>
-              <span class="label">{{ f.category }} · {{ f.year }}</span>
+              <a class="back" routerLink="/mobilier">← Retour au mobilier</a>
+              <span class="eyebrow">{{ f.category }} · {{ f.year }}</span>
               <h1>{{ f.title }}</h1>
               <p class="lead">{{ f.shortDescription }}</p>
-
               <dl class="specs">
-                <div>
-                  <dt>Matériaux</dt>
-                  <dd>{{ f.material }}</dd>
-                </div>
-                <div>
-                  <dt>Designer</dt>
-                  <dd>{{ f.designer }}</dd>
-                </div>
+                <div><dt>Matériaux</dt><dd>{{ f.material }}</dd></div>
+                <div><dt>Designer</dt><dd>{{ f.designer }}</dd></div>
                 <div>
                   <dt>Dimensions</dt>
                   <dd>
-                    <ul class="dims">
+                    <ul>
                       @for (d of f.dimensions; track d) { <li>{{ d }}</li> }
                     </ul>
                   </dd>
                 </div>
               </dl>
             </div>
-
             <div class="hero-img">
               <img [src]="f.coverImage" [alt]="f.title" />
             </div>
           </div>
-        </div>
+        </header>
 
-        <hr />
-
-        <section class="section">
-          <div class="wrap narrow">
-            <span class="label">Description</span>
-            <p class="body-text">{{ f.description }}</p>
+        <section class="section description">
+          <div class="container narrow">
+            <span class="eyebrow">Description</span>
+            <p class="body">{{ f.description }}</p>
           </div>
         </section>
 
-        @if (f.gallery?.length) {
-          <hr />
-          <section class="section">
-            <div class="wrap">
-              <div class="gallery">
-                @for (img of f.gallery; track img; let i = $index) {
-                  <figure [class.tall]="i % 3 === 0">
-                    <img [src]="img" [alt]="f.title + ' — vue ' + (i + 1)" loading="lazy" />
-                  </figure>
-                }
-              </div>
+        <section class="section gallery">
+          <div class="container">
+            <div class="g-grid">
+              @for (img of f.gallery; track img; let i = $index) {
+                <figure [class.tall]="i % 3 === 0">
+                  <img [src]="img" [alt]="f.title + ' — vue ' + (i + 1)" loading="lazy" />
+                </figure>
+              }
             </div>
-          </section>
-        }
-
-        <hr />
+          </div>
+        </section>
 
         <section class="section cta">
-          <div class="wrap">
+          <div class="container">
             <h2>Une pièce vous intéresse ?</h2>
             <p>Contactez le studio pour les disponibilités et les conditions d'édition.</p>
-            <a href="mailto:studio&#64;atelier-lumen.fr" class="cta-link">
-              Écrire au studio →
-            </a>
+            <a class="btn-link" href="mailto:studio&#64;atelier-lumen.fr">Écrire au studio</a>
           </div>
         </section>
-
       </article>
     }
   `,
   styles: [`
-    /* ── Hero ── */
-    .hero { padding: 100px 0 80px; }
-    .hero-inner {
+    .hero {
+      padding: 64px 0 96px;
+      border-bottom: 1px solid var(--color-line);
+    }
+    .hero-grid {
       display: grid;
       grid-template-columns: 1fr 1.1fr;
-      gap: 72px;
-      align-items: start;
+      gap: 80px;
+      align-items: center;
     }
-
     .back {
       display: inline-block;
       margin-bottom: 32px;
-      font-size: 0.62rem;
-      font-weight: 500;
-      letter-spacing: 0.16em;
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--muted);
-      transition: color var(--ease);
+      color: var(--color-mute);
+      transition: color var(--transition);
     }
-    .back:hover { color: var(--ink); }
-
-    .hero-text .label {
-      display: block;
-      margin-bottom: 14px;
-    }
-    .hero-text h1 { margin-bottom: 22px; }
-    .lead {
-      font-size: 1rem;
-      max-width: 460px;
-      line-height: 1.7;
-    }
+    .back:hover { color: var(--color-ink); }
+    .hero-text h1 { margin: 16px 0 24px; }
+    .lead { font-size: 1.1rem; max-width: 540px; }
 
     .specs {
       margin-top: 40px;
-      border-top: 1px solid var(--line);
-      padding-top: 28px;
       display: flex;
       flex-direction: column;
       gap: 18px;
+      border-top: 1px solid var(--color-line);
+      padding-top: 28px;
     }
-    .specs > div {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 12px;
-      align-items: baseline;
-    }
-    dt {
-      font-size: 0.6rem;
-      font-weight: 500;
-      letter-spacing: 0.2em;
+    .specs > div { display: grid; grid-template-columns: 140px 1fr; gap: 16px; }
+    .specs dt {
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--muted);
-      padding-top: 1px;
+      color: var(--color-mute);
+      padding-top: 4px;
     }
-    dd { font-size: 0.9375rem; color: var(--ink); }
-    .dims { list-style: none; }
-    .dims li { padding: 1px 0; }
+    .specs dd { color: var(--color-ink); font-size: 0.95rem; }
+    .specs ul { list-style: none; }
+    .specs li { padding: 2px 0; }
 
-    .hero-img {
-      aspect-ratio: 4 / 5;
-      overflow: hidden;
-      background: #eeede9;
-    }
+    .hero-img { aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-bg-alt); }
     .hero-img img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* ── Description ── */
-    .narrow { max-width: 720px; }
-    .narrow .label { display: block; margin-bottom: 20px; }
-    .body-text {
+    .narrow { max-width: 760px; }
+    .body {
       font-family: var(--serif);
-      font-size: clamp(1.125rem, 2.5vw, 1.625rem);
-      line-height: 1.6;
-      color: var(--ink);
+      font-size: 1.5rem;
+      line-height: 1.5;
+      color: var(--color-ink);
+      margin-top: 24px;
       white-space: pre-line;
     }
 
-    /* ── Gallery ── */
-    .gallery {
+    .gallery .g-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+      gap: 12px;
     }
     figure {
       overflow: hidden;
-      background: #eeede9;
+      background: var(--color-bg-alt);
       aspect-ratio: 4 / 3;
     }
-    figure.tall { aspect-ratio: 2 / 3; }
+    figure.tall { aspect-ratio: 3 / 4; }
     figure img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* ── CTA ── */
-    .cta { text-align: center; }
-    .cta h2 { margin-bottom: 14px; }
-    .cta p { margin-bottom: 28px; }
-    .cta-link {
-      font-size: 0.65rem;
-      font-weight: 500;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--dim);
-      transition: color var(--ease);
-    }
-    .cta-link:hover { color: var(--ink); }
+    .cta { text-align: center; border-top: 1px solid var(--color-line); }
+    .cta p { margin: 16px 0 32px; }
+    .cta .btn-link { margin: 0 auto; }
 
-    /* ── States ── */
-    .status { color: var(--muted); }
-    .not-found { display: flex; flex-direction: column; gap: 20px; padding-top: 120px; }
-    .back-link {
-      font-size: 0.65rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--muted);
-      transition: color var(--ease);
-    }
-    .back-link:hover { color: var(--ink); }
+    .status { color: var(--color-mute); }
 
-    /* ── Responsive ── */
     @media (max-width: 960px) {
-      .hero-inner { grid-template-columns: 1fr; gap: 48px; }
-      .gallery { grid-template-columns: repeat(2, 1fr); }
+      .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+      .gallery .g-grid { grid-template-columns: repeat(2, 1fr); }
     }
-    @media (max-width: 540px) {
-      .gallery { grid-template-columns: 1fr; }
+    @media (max-width: 600px) {
+      .gallery .g-grid { grid-template-columns: 1fr; }
       .specs > div { grid-template-columns: 1fr; gap: 4px; }
     }
   `]

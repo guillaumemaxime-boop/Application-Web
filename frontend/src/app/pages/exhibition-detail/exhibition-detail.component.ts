@@ -9,195 +9,151 @@ import { Exhibition } from '../../models/exhibition.model';
   imports: [RouterLink],
   template: `
     @if (loading()) {
-      <div class="wrap section"><p class="status">Chargement…</p></div>
+      <div class="container section"><p class="status">Chargement…</p></div>
     } @else if (notFound()) {
-      <div class="wrap section not-found">
+      <div class="container section">
         <h2>Exposition introuvable</h2>
-        <a routerLink="/expositions" class="back-link">← Retour aux expositions</a>
+        <p><a class="btn-link" routerLink="/expositions">Retour aux expositions</a></p>
       </div>
     } @else if (item(); as e) {
-      <article>
-
-        <div class="cover">
-          <img [src]="e.coverImage" [alt]="e.title" />
-        </div>
-
-        <div class="hero-meta">
-          <div class="wrap">
-            <a routerLink="/expositions" class="back">← Expositions</a>
-            <div class="hero-grid">
-              <div>
-                <span class="label">{{ e.venue }} · {{ e.city }}, {{ e.country }}</span>
-                <h1>{{ e.title }}</h1>
-              </div>
-              <div class="hero-side">
-                <div class="detail-row">
-                  <span class="dt-label label">Dates</span>
-                  <span>{{ formatRange(e.startDate, e.endDate) }}</span>
-                </div>
-                @if (e.curator) {
-                  <div class="detail-row">
-                    <span class="dt-label label">Commissariat</span>
-                    <span>{{ e.curator }}</span>
-                  </div>
-                }
-              </div>
-            </div>
+      <article class="fade-in">
+        <header class="hero">
+          <div class="hero-bg">
+            <img [src]="e.coverImage" [alt]="e.title" />
           </div>
-        </div>
+          <div class="container hero-content">
+            <a class="back" routerLink="/expositions">← Retour aux expositions</a>
+            <span class="eyebrow">{{ e.venue }} · {{ e.city }}, {{ e.country }}</span>
+            <h1>{{ e.title }}</h1>
+            <p class="dates">{{ formatRange(e.startDate, e.endDate) }}</p>
+          </div>
+        </header>
 
-        <hr />
-
-        <section class="section">
-          <div class="wrap narrow">
+        <section class="section intro">
+          <div class="container narrow">
+            <span class="eyebrow">Commissariat — {{ e.curator }}</span>
             <p class="lead">{{ e.shortDescription }}</p>
             <p class="body">{{ e.description }}</p>
 
-            @if (e.tags?.length) {
-              <div class="tags">
-                @for (t of e.tags; track t) {
-                  <span class="tag">{{ t }}</span>
-                }
-              </div>
-            }
+            <div class="tags">
+              @for (t of e.tags; track t) { <span class="tag">{{ t }}</span> }
+            </div>
           </div>
         </section>
 
-        @if (e.gallery?.length) {
-          <hr />
-          <section class="section">
-            <div class="wrap">
-              <div class="gallery">
-                @for (img of e.gallery; track img; let i = $index) {
-                  <figure [class.wide]="i === 0">
-                    <img [src]="img" [alt]="e.title + ' — vue ' + (i + 1)" loading="lazy" />
-                  </figure>
-                }
-              </div>
+        <section class="section gallery">
+          <div class="container">
+            <div class="g-grid">
+              @for (img of e.gallery; track img; let i = $index) {
+                <figure [class.wide]="i === 0">
+                  <img [src]="img" [alt]="e.title + ' — vue ' + (i + 1)" loading="lazy" />
+                </figure>
+              }
             </div>
-          </section>
-        }
-
+          </div>
+        </section>
       </article>
     }
   `,
   styles: [`
-    /* ── Cover ── */
-    .cover {
-      width: 100%;
-      aspect-ratio: 16 / 7;
+    .hero {
+      position: relative;
+      min-height: 65vh;
+      display: flex;
+      align-items: flex-end;
+      padding: 120px 0 72px;
       overflow: hidden;
-      background: #eeede9;
     }
-    .cover img { width: 100%; height: 100%; object-fit: cover; }
-
-    /* ── Hero meta ── */
-    .hero-meta { padding: 48px 0 64px; }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    .hero-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 60%, transparent 100%);
+    }
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      color: #ffffff;
+    }
+    .hero-content .eyebrow,
+    .hero-content .dates {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .hero-content h1 {
+      color: #ffffff;
+      margin: 16px 0 24px;
+      max-width: 880px;
+    }
     .back {
       display: inline-block;
       margin-bottom: 32px;
-      font-size: 0.62rem;
-      font-weight: 500;
-      letter-spacing: 0.16em;
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--muted);
-      transition: color var(--ease);
+      color: rgba(255, 255, 255, 0.6);
+      transition: color var(--transition);
     }
-    .back:hover { color: var(--ink); }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 60px;
-      align-items: start;
-    }
-    .hero-grid .label { display: block; margin-bottom: 14px; }
-    .hero-grid h1 { max-width: 640px; }
-
-    .hero-side {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      padding-top: 8px;
-    }
-    .detail-row {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .dt-label { display: block; }
-    .detail-row > span:last-child {
-      font-size: 0.9375rem;
-      color: var(--dim);
+    .back:hover { color: #ffffff; }
+    .dates {
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
     }
 
-    /* ── Description ── */
-    .narrow { max-width: 720px; }
+    .narrow { max-width: 760px; }
     .lead {
+      margin-top: 24px;
       font-family: var(--serif);
-      font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-      line-height: 1.45;
-      color: var(--ink);
-      margin-bottom: 28px;
+      font-size: 1.75rem;
+      line-height: 1.4;
+      color: var(--color-ink);
     }
     .body {
-      font-size: 1rem;
+      margin-top: 32px;
+      font-size: 1.05rem;
       line-height: 1.8;
       white-space: pre-line;
     }
 
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 36px;
-    }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 40px; }
     .tag {
-      font-size: 0.58rem;
-      font-weight: 500;
-      letter-spacing: 0.16em;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 3px 9px;
-      border: 1px solid var(--line);
-      color: var(--muted);
+      padding: 3px 10px;
+      border: 1px solid var(--color-line);
+      color: var(--color-mute);
     }
 
-    /* ── Gallery ── */
-    .gallery {
+    .gallery .g-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
+      gap: 12px;
     }
     figure {
       overflow: hidden;
-      background: #eeede9;
+      background: var(--color-bg-alt);
       aspect-ratio: 4 / 3;
     }
     figure.wide {
       grid-column: 1 / -1;
-      aspect-ratio: 21 / 9;
+      aspect-ratio: 16 / 9;
     }
     figure img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* ── States ── */
-    .status { color: var(--muted); }
-    .not-found { display: flex; flex-direction: column; gap: 20px; padding-top: 120px; }
-    .back-link {
-      font-size: 0.65rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--muted);
-      transition: color var(--ease);
-    }
-    .back-link:hover { color: var(--ink); }
+    .status { color: var(--color-mute); }
 
-    /* ── Responsive ── */
-    @media (max-width: 960px) {
-      .hero-grid { grid-template-columns: 1fr; gap: 32px; }
-      .cover { aspect-ratio: 4 / 3; }
-    }
-    @media (max-width: 600px) {
-      .gallery { grid-template-columns: 1fr; }
+    @media (max-width: 720px) {
+      .gallery .g-grid { grid-template-columns: 1fr; }
       figure.wide { aspect-ratio: 4 / 3; }
     }
   `]

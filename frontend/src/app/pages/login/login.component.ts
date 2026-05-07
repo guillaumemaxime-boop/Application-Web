@@ -8,129 +8,81 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [ReactiveFormsModule],
   template: `
-    <div class="page">
-      <div class="card">
-        <div class="card-head">
-          <em class="brand">M·G</em>
-          <span class="label">Administration</span>
-        </div>
+    <section class="wrap">
+      <div class="box">
+        <span class="eyebrow">Administration</span>
+        <h1>Connexion</h1>
 
         @if (error()) {
-          <p class="error-msg">Identifiants incorrects.</p>
+          <p class="flash-error">Identifiants incorrects.</p>
         }
 
         <form [formGroup]="form" (ngSubmit)="submit()">
-          <div class="field">
-            <label for="username" class="label">Identifiant</label>
-            <input
-              id="username"
-              type="text"
-              formControlName="username"
-              autocomplete="username"
-              placeholder="admin" />
-          </div>
-
-          <div class="field">
-            <label for="password" class="label">Mot de passe</label>
-            <input
-              id="password"
-              type="password"
-              formControlName="password"
-              autocomplete="current-password"
-              placeholder="••••••••" />
-          </div>
-
-          <button
-            type="submit"
-            class="submit"
-            [disabled]="form.invalid || loading()">
+          <label>
+            <span>Identifiant</span>
+            <input type="text" formControlName="username" autocomplete="username" />
+          </label>
+          <label>
+            <span>Mot de passe</span>
+            <input type="password" formControlName="password" autocomplete="current-password" />
+          </label>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
             {{ loading() ? 'Connexion…' : 'Se connecter' }}
           </button>
         </form>
       </div>
-    </div>
+    </section>
   `,
   styles: [`
-    .page {
+    .wrap {
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 40px 24px;
+      padding: 0 24px;
     }
+    .box { max-width: 400px; width: 100%; }
+    h1 { margin: 16px 0 40px; }
 
-    .card {
-      width: 100%;
-      max-width: 380px;
-    }
-
-    .card-head {
-      display: flex;
-      align-items: baseline;
-      gap: 14px;
-      margin-bottom: 40px;
-      padding-bottom: 28px;
-      border-bottom: 1px solid var(--line);
-    }
-    .brand {
-      font-family: var(--serif);
-      font-style: italic;
-      font-size: 1.5rem;
-      font-weight: 400;
-      color: var(--ink);
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-    }
-    .field .label { display: block; }
-
-    input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      background: var(--bg);
-      font: inherit;
-      font-size: 0.9375rem;
-      color: var(--ink);
-      transition: border-color var(--ease);
-    }
-    input::placeholder { color: var(--muted); }
-    input:focus {
-      outline: none;
-      border-color: var(--ink);
-    }
-
-    .submit {
-      margin-top: 8px;
-      padding: 12px 24px;
-      background: var(--ink);
-      color: var(--bg);
-      font-size: 0.65rem;
-      font-weight: 500;
-      letter-spacing: 0.18em;
+    form { display: flex; flex-direction: column; gap: 20px; }
+    label { display: flex; flex-direction: column; gap: 6px; }
+    label > span {
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      align-self: flex-start;
-      transition: opacity var(--ease);
+      color: var(--color-mute);
     }
-    .submit:hover:not(:disabled) { opacity: 0.72; }
-    .submit:disabled { opacity: 0.4; cursor: not-allowed; }
+    input {
+      padding: 10px 12px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
+      font: inherit;
+      color: var(--color-ink);
+    }
+    input:focus { outline: none; border-color: var(--color-ink); }
 
-    .error-msg {
-      padding: 10px 14px;
-      margin-bottom: 8px;
-      border-left: 2px solid #b53030;
-      color: #b53030;
+    .btn-primary {
+      margin-top: 8px;
+      padding: 14px 28px;
+      background: var(--color-ink);
+      color: var(--color-bg);
+      border: 0;
       font-size: 0.875rem;
-      background: rgba(181, 48, 48, 0.04);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      align-self: flex-start;
+      transition: opacity var(--transition);
+    }
+    .btn-primary:hover:not(:disabled) { opacity: 0.7; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .flash-error {
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-left: 3px solid #c0392b;
+      color: #c0392b;
+      font-size: 0.95rem;
+      background: rgba(192, 57, 43, 0.05);
     }
   `]
 })

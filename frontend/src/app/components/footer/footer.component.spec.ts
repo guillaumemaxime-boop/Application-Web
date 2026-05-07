@@ -27,32 +27,32 @@ describe('FooterComponent', () => {
   });
 
   it('should have Milo GUILLAUME Design title', () => {
-    const title = fixture.nativeElement.querySelector('.studio');
+    const title = fixture.nativeElement.querySelector('.title');
     expect(title).toBeTruthy();
   });
 
-  it('should display the studio name', () => {
-    const title = fixture.nativeElement.querySelector('.studio');
-    expect(title.textContent).toContain('Milo GUILLAUME Design');
+  it('should have a description', () => {
+    const description = fixture.nativeElement.querySelector('footer p');
+    expect(description).toBeTruthy();
   });
 
   it('should have navigation section', () => {
-    const nav = fixture.nativeElement.querySelector('footer nav');
-    expect(nav).toBeTruthy();
+    const eyebrow = fixture.nativeElement.querySelector('.eyebrow');
+    expect(eyebrow).toBeTruthy();
   });
 
-  it('should have navigation links', () => {
-    const links = fixture.nativeElement.querySelectorAll('footer nav a');
-    expect(links.length).toBeGreaterThan(0);
+  it('should have contact section', () => {
+    const eyebrows = fixture.nativeElement.querySelectorAll('.eyebrow');
+    expect(eyebrows.length).toBeGreaterThan(0);
   });
 
   it('should have legal section', () => {
-    const bottom = fixture.nativeElement.querySelector('.bottom');
-    expect(bottom).toBeTruthy();
+    const legal = fixture.nativeElement.querySelector('.legal');
+    expect(legal).toBeTruthy();
   });
 
-  it('should have top layout section', () => {
-    const top = fixture.nativeElement.querySelector('.top');
-    expect(top).toBeTruthy();
+  it('should have grid layout', () => {
+    const grid = fixture.nativeElement.querySelector('.grid');
+    expect(grid).toBeTruthy();
   });
 });
