@@ -6,7 +6,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <header>
+    <header [class.scrolled]="scrolled()">
       <div class="container nav">
         <a routerLink="/" class="brand" (click)="closeMenu()">
           <span class="brand-mark">M·G</span>
@@ -34,54 +34,80 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       left: 0;
       right: 0;
       z-index: 100;
-      background: var(--color-bg);
-      border-bottom: 1px solid var(--color-line);
+      background: rgba(246, 243, 238, 0.86);
+      backdrop-filter: saturate(160%) blur(14px);
+      -webkit-backdrop-filter: saturate(160%) blur(14px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 320ms ease, background 320ms ease;
+    }
+    header.scrolled {
+      border-bottom-color: var(--color-line);
     }
     .nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 72px;
+      height: 88px;
     }
     .brand {
       display: flex;
       align-items: baseline;
-      gap: 12px;
+      gap: 14px;
+      letter-spacing: 0.02em;
     }
     .brand-mark {
       font-family: var(--serif);
-      font-size: 1.375rem;
+      font-size: 1.5rem;
       font-weight: 500;
-      color: var(--color-ink);
+      color: var(--color-accent-deep);
     }
     .brand-name {
-      font-size: 0.75rem;
+      font-size: 0.875rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: var(--color-ink);
     }
     nav {
       display: flex;
-      gap: 36px;
+      gap: 40px;
     }
     nav a {
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-      transition: color var(--transition);
+      position: relative;
+      font-size: 0.875rem;
+      letter-spacing: 0.06em;
+      color: var(--color-ink-soft);
+      padding: 4px 0;
     }
-    nav a:hover,
+    nav a:hover { color: var(--color-ink); }
     nav a.active { color: var(--color-ink); }
-    nav a.admin-link { color: var(--color-mute); }
-    nav a.admin-link:hover,
-    nav a.admin-link.active { color: var(--color-ink); }
+    nav a.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -2px;
+      height: 1px;
+      background: var(--color-accent);
+    }
+    nav a.admin-link {
+      padding: 6px 14px;
+      border: 1px solid var(--color-line);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+    nav a.admin-link.active::after { display: none; }
+    nav a.admin-link.active,
+    nav a.admin-link:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent-deep);
+    }
     .burger {
       display: none;
-      width: 24px;
-      height: 18px;
+      width: 28px;
+      height: 28px;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: space-around;
     }
     .burger span {
       display: block;
@@ -94,7 +120,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       .burger { display: flex; }
       nav {
         position: absolute;
-        top: 72px;
+        top: 88px;
         left: 0;
         right: 0;
         flex-direction: column;
@@ -103,11 +129,11 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         border-bottom: 1px solid var(--color-line);
         max-height: 0;
         overflow: hidden;
-        transition: max-height 280ms ease;
+        transition: max-height 320ms ease;
       }
-      nav.open { max-height: 280px; }
+      nav.open { max-height: 320px; }
       nav a {
-        padding: 16px 24px;
+        padding: 18px 24px;
         border-top: 1px solid var(--color-line);
       }
     }

@@ -61,25 +61,24 @@ import { Furniture } from '../../models/furniture.model';
 
     .filters {
       display: flex;
-      gap: 24px;
+      gap: 8px;
       flex-wrap: wrap;
       margin-bottom: 56px;
       padding-bottom: 24px;
       border-bottom: 1px solid var(--color-line);
     }
     .filters button {
-      padding: 0 0 4px;
-      font-size: 0.8rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-      border-bottom: 1px solid transparent;
-      transition: color var(--transition), border-color var(--transition);
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      color: var(--color-ink-soft);
+      border: 1px solid transparent;
+      transition: all var(--transition);
     }
     .filters button:hover { color: var(--color-ink); }
     .filters button.active {
       color: var(--color-ink);
-      border-bottom-color: var(--color-ink);
+      border-color: var(--color-ink);
     }
 
     .grid {
@@ -97,9 +96,9 @@ import { Furniture } from '../../models/furniture.model';
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: opacity var(--transition);
+      transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .card:hover .thumb img { opacity: 0.8; }
+    .card:hover .thumb img { transform: scale(1.04); }
     .meta { padding-top: 20px; }
     .cat {
       font-size: 0.75rem;
@@ -111,7 +110,7 @@ import { Furniture } from '../../models/furniture.model';
     .meta p { font-size: 0.9rem; color: var(--color-ink-soft); }
 
     .status { color: var(--color-mute); }
-    .status.error { color: #c0392b; }
+    .status.error { color: #b1532a; }
 
     @media (max-width: 960px) { .grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }

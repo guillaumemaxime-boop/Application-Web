@@ -58,10 +58,10 @@ import { Exhibition } from '../../models/exhibition.model';
   styles: [`
     .hero {
       position: relative;
-      min-height: 65vh;
+      min-height: 70vh;
       display: flex;
       align-items: flex-end;
-      padding: 120px 0 72px;
+      padding: 120px 0 80px;
       overflow: hidden;
     }
     .hero-bg {
@@ -78,34 +78,31 @@ import { Exhibition } from '../../models/exhibition.model';
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 60%, transparent 100%);
+      background: linear-gradient(to top, rgba(28, 26, 23, 0.85) 0%, rgba(28, 26, 23, 0.2) 60%, transparent 100%);
     }
     .hero-content {
       position: relative;
       z-index: 1;
-      color: #ffffff;
+      color: #f6f3ee;
     }
     .hero-content .eyebrow,
     .hero-content .dates {
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(246, 243, 238, 0.78);
     }
     .hero-content h1 {
-      color: #ffffff;
+      color: #f6f3ee;
       margin: 16px 0 24px;
       max-width: 880px;
     }
     .back {
       display: inline-block;
       margin-bottom: 32px;
-      font-size: 0.8rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.6);
-      transition: color var(--transition);
-    }
-    .back:hover { color: #ffffff; }
-    .dates {
       font-size: 0.85rem;
+      color: rgba(246, 243, 238, 0.86);
+    }
+    .back:hover { color: #fff; }
+    .dates {
+      font-size: 0.9rem;
       letter-spacing: 0.08em;
     }
 
@@ -129,15 +126,15 @@ import { Exhibition } from '../../models/exhibition.model';
       font-size: 0.7rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 3px 10px;
+      padding: 4px 12px;
       border: 1px solid var(--color-line);
-      color: var(--color-mute);
+      color: var(--color-ink-soft);
     }
 
     .gallery .g-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
+      gap: 24px;
     }
     figure {
       overflow: hidden;

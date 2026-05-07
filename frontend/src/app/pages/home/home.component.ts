@@ -95,7 +95,10 @@ import { Exhibition } from '../../models/exhibition.model';
   `,
   styles: [`
     .hero {
-      padding: 120px 0 128px;
+      padding: 96px 0 128px;
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(139, 111, 71, 0.12), transparent 60%),
+        var(--color-bg);
     }
     .hero-inner { max-width: 880px; }
     .hero h1 { margin-top: 24px; }
@@ -135,9 +138,9 @@ import { Exhibition } from '../../models/exhibition.model';
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: opacity var(--transition);
+      transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .card:hover .thumb img { opacity: 0.8; }
+    .card:hover .thumb img { transform: scale(1.04); }
     .meta { padding: 20px 0 0; }
     .cat {
       font-size: 0.75rem;
@@ -151,16 +154,18 @@ import { Exhibition } from '../../models/exhibition.model';
     }
     .meta p { font-size: 0.95rem; color: var(--color-ink-soft); }
 
-    .exh-list { display: flex; flex-direction: column; }
+    .exhibitions { background: var(--color-bg-alt); }
+    .exh-list { display: flex; flex-direction: column; gap: 24px; }
     .exh-row {
       display: grid;
       grid-template-columns: 360px 1fr;
       gap: 48px;
-      padding: 32px 0;
-      border-top: 1px solid var(--color-line);
-      transition: opacity var(--transition);
+      padding: 24px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-line);
+      transition: border-color var(--transition);
     }
-    .exh-row:hover { opacity: 0.65; }
+    .exh-row:hover { border-color: var(--color-accent); }
     .exh-img { aspect-ratio: 3 / 2; overflow: hidden; }
     .exh-img img { width: 100%; height: 100%; object-fit: cover; }
     .exh-meta { display: flex; flex-direction: column; justify-content: center; gap: 12px; }
@@ -169,13 +174,12 @@ import { Exhibition } from '../../models/exhibition.model';
       font-size: 0.8rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--color-mute);
+      color: var(--color-accent-deep);
     }
 
     .quote {
       text-align: center;
       padding: 128px 0;
-      border-top: 1px solid var(--color-line);
     }
     blockquote {
       font-family: var(--serif);
@@ -196,7 +200,7 @@ import { Exhibition } from '../../models/exhibition.model';
     }
 
     .status { color: var(--color-mute); }
-    .status.error { color: #c0392b; }
+    .status.error { color: #b1532a; }
 
     @media (max-width: 960px) {
       .grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
