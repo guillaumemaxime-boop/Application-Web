@@ -169,7 +169,7 @@ export class FurnitureDetailComponent {
       next: data => {
         this.item.set(data);
         this.loading.set(false);
-        document.title = `${data.title} — Milo GUILLAUME Design`;
+        document.title = `${data.title.replace(/[<>"]/g, '').substring(0, 100)} — Milo GUILLAUME Design`;
       },
       error: () => { this.notFound.set(true); this.loading.set(false); }
     });
