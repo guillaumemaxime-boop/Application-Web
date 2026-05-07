@@ -31,7 +31,7 @@ import { Furniture } from '../../models/furniture.model';
         @if (loading()) {
           <p class="status">Chargement…</p>
         } @else if (error()) {
-          <p class="status error">Impossible de charger le catalogue. Vérifiez le backend (port 8080).</p>
+          <p class="status error">Impossible de charger le catalogue. Veuillez réessayer ultérieurement.</p>
         } @else {
           <div class="grid">
             @for (item of filtered(); track item.id) {
