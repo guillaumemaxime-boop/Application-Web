@@ -8,46 +8,52 @@ import { Furniture } from '../../models/furniture.model';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <section class="page-head">
-      <div class="container">
-        <span class="eyebrow">Catalogue · Éditions limitées</span>
+    <div class="page-head">
+      <div class="wrap">
+        <span class="label">Catalogue · Éditions limitées</span>
         <h1>Mobilier</h1>
-        <p class="lead">
-          Une collection de pièces sculptées, dessinées et fabriquées dans notre atelier
-          parisien. Chaque édition est numérotée et signée à la main.
+        <p>
+          Pièces sculptées, dessinées et fabriquées dans notre atelier parisien.
+          Chaque édition est numérotée et signée à la main.
         </p>
       </div>
-    </section>
+    </div>
 
-    <section class="section ruled">
-      <div class="container">
+    <hr />
+
+    <section class="section">
+      <div class="wrap">
         <div class="filters">
-          <button [class.active]="active() === 'all'" (click)="active.set('all')">Toutes</button>
+          <button
+            [class.active]="active() === 'all'"
+            (click)="active.set('all')">Toutes</button>
           @for (cat of categories(); track cat) {
-            <button [class.active]="active() === cat" (click)="active.set(cat)">{{ cat }}</button>
+            <button
+              [class.active]="active() === cat"
+              (click)="active.set(cat)">{{ cat }}</button>
           }
         </div>
 
         @if (loading()) {
           <p class="status">Chargement…</p>
         } @else if (error()) {
-          <p class="status error">Impossible de charger le catalogue.</p>
+          <p class="status err">Impossible de charger le catalogue.</p>
         } @else {
           <div class="grid">
             @for (item of filtered(); track item.id) {
-              <a class="card fade-in" [routerLink]="['/mobilier', item.slug]">
-                <div class="thumb">
+              <a class="card" [routerLink]="['/mobilier', item.slug]">
+                <div class="img-wrap">
                   <img [src]="item.coverImage" [alt]="item.title" loading="lazy" />
                 </div>
-                <div class="info">
-                  <span class="cat">{{ item.category }}</span>
+                <div class="card-body">
+                  <span class="label">{{ item.category }}</span>
                   <h3>{{ item.title }}</h3>
                   <span class="mat">{{ item.material }}</span>
                 </div>
               </a>
             }
             @empty {
-              <p class="status">Aucune pièce ne correspond à ce filtre.</p>
+              <p class="status">Aucune pièce dans cette catégorie.</p>
             }
           </div>
         }
@@ -56,83 +62,71 @@ import { Furniture } from '../../models/furniture.model';
   `,
   styles: [`
     .page-head {
-      padding-top: 120px;
-      padding-bottom: 80px;
-      border-bottom: 1px solid var(--color-line);
+      padding: 100px 0 72px;
     }
-    .page-head .eyebrow { display: block; margin-bottom: 20px; }
-    .page-head h1 { margin-bottom: 24px; }
-    .lead { max-width: 600px; font-size: 1rem; }
-
-    .ruled { border-top: none; }
+    .page-head .label { display: block; margin-bottom: 20px; }
+    .page-head h1 { margin-bottom: 20px; }
+    .page-head p { max-width: 540px; }
 
     .filters {
       display: flex;
-      gap: 0;
       flex-wrap: wrap;
-      margin-bottom: 64px;
-      border-bottom: 1px solid var(--color-line);
+      gap: 0;
+      margin-bottom: 56px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
     }
     .filters button {
-      padding: 14px 20px;
-      font-family: var(--sans);
-      font-size: 0.65rem;
+      padding: 13px 18px;
+      font-size: 0.62rem;
       font-weight: 500;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: var(--color-mute);
-      border: none;
-      border-right: 1px solid var(--color-line);
-      background: transparent;
-      transition: color var(--transition), background var(--transition);
+      color: var(--muted);
+      border-right: 1px solid var(--line);
+      transition: color var(--ease), background var(--ease);
     }
-    .filters button:first-child { border-left: 1px solid var(--color-line); }
-    .filters button:hover { color: var(--color-ink); }
+    .filters button:first-child { border-left: 1px solid var(--line); }
+    .filters button:hover { color: var(--ink); }
     .filters button.active {
-      color: var(--color-bg);
-      background: var(--color-ink);
+      color: var(--bg);
+      background: var(--ink);
     }
 
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 40px 24px;
+      gap: 32px 20px;
     }
     .card { display: block; }
-    .thumb {
-      overflow: hidden;
-      background: var(--color-bg-alt);
+    .img-wrap {
       aspect-ratio: 3 / 4;
-      margin-bottom: 16px;
+      overflow: hidden;
+      background: #eeede9;
+      margin-bottom: 14px;
     }
-    .thumb img {
-      width: 100%;
-      height: 100%;
+    .img-wrap img {
+      width: 100%; height: 100%;
       object-fit: cover;
-      filter: grayscale(15%);
-      transition: transform var(--transition-img), filter var(--transition-img);
+      transition: opacity var(--ease);
     }
-    .card:hover .thumb img { transform: scale(1.04); filter: grayscale(0%); }
-    .info { border-top: 1px solid var(--color-line); padding-top: 14px; }
-    .cat {
-      display: block;
-      font-size: 0.62rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-      margin-bottom: 6px;
+    .card:hover .img-wrap img { opacity: 0.82; }
+    .card-body {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
     }
-    .info h3 { font-size: 1.375rem; color: var(--color-ink); margin-bottom: 4px; }
+    .card-body .label { display: block; margin-bottom: 6px; }
+    .card-body h3 { font-size: 1.375rem; margin-bottom: 4px; }
     .mat {
       font-size: 0.8125rem;
-      color: var(--color-mute);
+      color: var(--muted);
     }
 
-    .status { color: var(--color-mute); }
-    .status.error { color: #b53535; }
+    .status { color: var(--muted); }
+    .status.err { color: #b53030; }
 
     @media (max-width: 960px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+    @media (max-width: 540px) { .grid { grid-template-columns: 1fr; } }
   `]
 })
 export class FurnitureListComponent {

@@ -82,13 +82,13 @@ describe('LoginComponent', () => {
     component['submit']();
     fixture.detectChanges();
 
-    const errorEl = fixture.nativeElement.querySelector('.flash-error');
+    const errorEl = fixture.nativeElement.querySelector('.error-msg');
     expect(errorEl).toBeTruthy();
     expect(errorEl.textContent).toContain('Identifiants incorrects');
   });
 
   it('should not show error message initially', () => {
-    const errorEl = fixture.nativeElement.querySelector('.flash-error');
+    const errorEl = fixture.nativeElement.querySelector('.error-msg');
     expect(errorEl).toBeNull();
   });
 

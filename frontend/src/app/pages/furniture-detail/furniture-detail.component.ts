@@ -9,30 +9,39 @@ import { Furniture } from '../../models/furniture.model';
   imports: [RouterLink],
   template: `
     @if (loading()) {
-      <div class="container section"><p class="status">Chargement…</p></div>
+      <div class="wrap section"><p class="status">Chargement…</p></div>
     } @else if (notFound()) {
-      <div class="container section">
+      <div class="wrap section not-found">
         <h2>Pièce introuvable</h2>
-        <p style="margin-top:16px"><a class="btn-link" routerLink="/mobilier">Retour au catalogue</a></p>
+        <a routerLink="/mobilier" class="back-link">← Retour au catalogue</a>
       </div>
     } @else if (item(); as f) {
-      <article class="fade-in">
+      <article>
 
-        <!-- HERO -->
         <div class="hero">
-          <div class="container hero-grid">
+          <div class="wrap hero-inner">
             <div class="hero-text">
-              <a class="back" routerLink="/mobilier">← Mobilier</a>
-              <span class="eyebrow">{{ f.category }} · {{ f.year }}</span>
+              <a routerLink="/mobilier" class="back">← Mobilier</a>
+              <span class="label">{{ f.category }} · {{ f.year }}</span>
               <h1>{{ f.title }}</h1>
               <p class="lead">{{ f.shortDescription }}</p>
 
               <dl class="specs">
-                <div><dt>Matériaux</dt><dd>{{ f.material }}</dd></div>
-                <div><dt>Designer</dt><dd>{{ f.designer }}</dd></div>
+                <div>
+                  <dt>Matériaux</dt>
+                  <dd>{{ f.material }}</dd>
+                </div>
+                <div>
+                  <dt>Designer</dt>
+                  <dd>{{ f.designer }}</dd>
+                </div>
                 <div>
                   <dt>Dimensions</dt>
-                  <dd><ul>@for (d of f.dimensions; track d) { <li>{{ d }}</li> }</ul></dd>
+                  <dd>
+                    <ul class="dims">
+                      @for (d of f.dimensions; track d) { <li>{{ d }}</li> }
+                    </ul>
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -43,33 +52,39 @@ import { Furniture } from '../../models/furniture.model';
           </div>
         </div>
 
-        <!-- DESCRIPTION -->
-        <section class="section ruled">
-          <div class="container narrow">
-            <span class="eyebrow">Description</span>
+        <hr />
+
+        <section class="section">
+          <div class="wrap narrow">
+            <span class="label">Description</span>
             <p class="body-text">{{ f.description }}</p>
           </div>
         </section>
 
-        <!-- GALLERY -->
-        <section class="section ruled">
-          <div class="container">
-            <div class="gallery">
-              @for (img of f.gallery; track img; let i = $index) {
-                <figure [class.tall]="i % 3 === 0">
-                  <img [src]="img" [alt]="f.title + ' — vue ' + (i + 1)" loading="lazy" />
-                </figure>
-              }
+        @if (f.gallery?.length) {
+          <hr />
+          <section class="section">
+            <div class="wrap">
+              <div class="gallery">
+                @for (img of f.gallery; track img; let i = $index) {
+                  <figure [class.tall]="i % 3 === 0">
+                    <img [src]="img" [alt]="f.title + ' — vue ' + (i + 1)" loading="lazy" />
+                  </figure>
+                }
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        }
 
-        <!-- CTA -->
-        <section class="section ruled cta-section">
-          <div class="container">
+        <hr />
+
+        <section class="section cta">
+          <div class="wrap">
             <h2>Une pièce vous intéresse ?</h2>
             <p>Contactez le studio pour les disponibilités et les conditions d'édition.</p>
-            <a class="btn-link" href="mailto:studio&#64;atelier-lumen.fr">Écrire au studio</a>
+            <a href="mailto:studio&#64;atelier-lumen.fr" class="cta-link">
+              Écrire au studio →
+            </a>
           </div>
         </section>
 
@@ -77,90 +92,128 @@ import { Furniture } from '../../models/furniture.model';
     }
   `,
   styles: [`
-    .hero {
-      padding: 120px 0 100px;
-      border-bottom: 1px solid var(--color-line);
-    }
-    .hero-grid {
+    /* ── Hero ── */
+    .hero { padding: 100px 0 80px; }
+    .hero-inner {
       display: grid;
       grid-template-columns: 1fr 1.1fr;
-      gap: 80px;
+      gap: 72px;
       align-items: start;
     }
+
     .back {
       display: inline-block;
-      margin-bottom: 36px;
-      font-size: 0.65rem;
-      letter-spacing: 0.14em;
+      margin-bottom: 32px;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: var(--color-mute);
-      transition: color var(--transition);
+      color: var(--muted);
+      transition: color var(--ease);
     }
-    .back:hover { color: var(--color-ink); }
-    .hero-text .eyebrow { display: block; margin-bottom: 16px; }
-    .hero-text h1 { margin-bottom: 24px; }
-    .lead { font-size: 1.0625rem; max-width: 480px; line-height: 1.65; }
+    .back:hover { color: var(--ink); }
+
+    .hero-text .label {
+      display: block;
+      margin-bottom: 14px;
+    }
+    .hero-text h1 { margin-bottom: 22px; }
+    .lead {
+      font-size: 1rem;
+      max-width: 460px;
+      line-height: 1.7;
+    }
 
     .specs {
-      margin-top: 48px;
-      border-top: 1px solid var(--color-line);
-      padding-top: 32px;
+      margin-top: 40px;
+      border-top: 1px solid var(--line);
+      padding-top: 28px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
     }
-    .specs > div { display: grid; grid-template-columns: 130px 1fr; gap: 16px; }
-    .specs dt {
-      font-size: 0.62rem;
-      letter-spacing: 0.18em;
+    .specs > div {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      align-items: baseline;
+    }
+    dt {
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: var(--color-mute);
-      padding-top: 2px;
+      color: var(--muted);
+      padding-top: 1px;
     }
-    .specs dd { font-size: 0.9375rem; color: var(--color-ink); }
-    .specs ul { list-style: none; }
-    .specs li { padding: 2px 0; }
+    dd { font-size: 0.9375rem; color: var(--ink); }
+    .dims { list-style: none; }
+    .dims li { padding: 1px 0; }
 
     .hero-img {
       aspect-ratio: 4 / 5;
       overflow: hidden;
-      background: var(--color-bg-alt);
+      background: #eeede9;
     }
     .hero-img img { width: 100%; height: 100%; object-fit: cover; }
 
-    .ruled { border-top: 1px solid var(--color-line); }
-
+    /* ── Description ── */
     .narrow { max-width: 720px; }
+    .narrow .label { display: block; margin-bottom: 20px; }
     .body-text {
       font-family: var(--serif);
-      font-size: clamp(1.25rem, 2.5vw, 1.625rem);
-      line-height: 1.55;
-      color: var(--color-ink);
-      margin-top: 24px;
+      font-size: clamp(1.125rem, 2.5vw, 1.625rem);
+      line-height: 1.6;
+      color: var(--ink);
       white-space: pre-line;
     }
 
+    /* ── Gallery ── */
     .gallery {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: 6px;
     }
-    figure { overflow: hidden; background: var(--color-bg-alt); aspect-ratio: 4 / 3; }
-    figure.tall { aspect-ratio: 3 / 4; }
+    figure {
+      overflow: hidden;
+      background: #eeede9;
+      aspect-ratio: 4 / 3;
+    }
+    figure.tall { aspect-ratio: 2 / 3; }
     figure img { width: 100%; height: 100%; object-fit: cover; }
 
-    .cta-section { text-align: center; }
-    .cta-section h2 { margin-bottom: 16px; }
-    .cta-section p { margin-bottom: 32px; }
-    .cta-section .btn-link { margin: 0 auto; }
+    /* ── CTA ── */
+    .cta { text-align: center; }
+    .cta h2 { margin-bottom: 14px; }
+    .cta p { margin-bottom: 28px; }
+    .cta-link {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--dim);
+      transition: color var(--ease);
+    }
+    .cta-link:hover { color: var(--ink); }
 
-    .status { color: var(--color-mute); }
+    /* ── States ── */
+    .status { color: var(--muted); }
+    .not-found { display: flex; flex-direction: column; gap: 20px; padding-top: 120px; }
+    .back-link {
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: color var(--ease);
+    }
+    .back-link:hover { color: var(--ink); }
 
+    /* ── Responsive ── */
     @media (max-width: 960px) {
-      .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+      .hero-inner { grid-template-columns: 1fr; gap: 48px; }
       .gallery { grid-template-columns: repeat(2, 1fr); }
     }
-    @media (max-width: 600px) {
+    @media (max-width: 540px) {
       .gallery { grid-template-columns: 1fr; }
       .specs > div { grid-template-columns: 1fr; gap: 4px; }
     }
