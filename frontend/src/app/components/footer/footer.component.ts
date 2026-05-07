@@ -7,77 +7,72 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `
     <footer>
-      <div class="wrap">
-        <div class="top">
-          <em class="studio">Milo GUILLAUME Design</em>
-          <nav>
-            <a routerLink="/mobilier">Mobilier</a>
-            <a routerLink="/expositions">Expositions</a>
-            <a routerLink="/studio">Studio</a>
-            <a href="mailto:studio&#64;atelier-lumen.fr">Contact</a>
-          </nav>
+      <div class="container">
+        <div class="grid">
+          <div>
+            <h3 class="title">Milo GUILLAUME Design</h3>
+            <p>Mobilier sculpté & scénographies sensibles, depuis Paris.</p>
+          </div>
+
+          <div>
+            <span class="eyebrow">Navigation</span>
+            <ul>
+              <li><a routerLink="/mobilier">Mobilier</a></li>
+              <li><a routerLink="/expositions">Expositions</a></li>
+              <li><a routerLink="/studio">Studio</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <span class="eyebrow">Contact</span>
+            <ul>
+              <li><a href="mailto:studio@atelier-lumen.fr">studio&#64;atelier-lumen.fr</a></li>
+              <li>+33 (0)4 78 00 00 00</li>
+              <li>3 quai Saint-Vincent, 75001 Paris</li>
+            </ul>
+          </div>
         </div>
-        <div class="bottom">
-          <span>© {{ year }} Milo GUILLAUME Design</span>
-          <span>Paris, France</span>
+
+        <div class="legal">
+          <span>© {{ year }} Milo GUILLAUME Design — Tous droits réservés.</span>
+          <span>Conçu en France.</span>
         </div>
       </div>
     </footer>
   `,
   styles: [`
     footer {
-      border-top: 1px solid var(--line);
-      padding: 40px 0;
+      padding: 80px 0 32px;
+      margin-top: 96px;
+      border-top: 1px solid var(--color-line);
     }
-
-    .top {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 20px;
-      padding-bottom: 28px;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 20px;
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 64px;
+      padding-bottom: 64px;
+      border-bottom: 1px solid var(--color-line);
     }
-
-    .studio {
+    .title {
       font-family: var(--serif);
-      font-style: italic;
-      font-size: 1.625rem;
-      font-weight: 400;
-      color: var(--ink);
-      letter-spacing: -0.01em;
+      font-size: 1.75rem;
+      margin-bottom: 16px;
     }
-
-    nav {
-      display: flex;
-      gap: 28px;
-      flex-wrap: wrap;
-    }
-    nav a {
-      font-size: 0.62rem;
-      font-weight: 500;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted);
-      transition: color var(--ease);
-    }
-    nav a:hover { color: var(--ink); }
-
-    .bottom {
+    .eyebrow { display: block; margin-bottom: 20px; }
+    ul { list-style: none; }
+    li { padding: 6px 0; font-size: 0.9rem; color: var(--color-ink-soft); }
+    li a:hover { color: var(--color-ink); }
+    .legal {
       display: flex;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 6px;
-      font-size: 0.6rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
+      padding-top: 32px;
+      font-size: 0.75rem;
+      color: var(--color-mute);
+      letter-spacing: 0.08em;
     }
-
-    @media (max-width: 540px) {
-      .top { flex-direction: column; gap: 16px; }
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; gap: 40px; }
+      .legal { flex-direction: column; gap: 8px; }
     }
   `]
 })
