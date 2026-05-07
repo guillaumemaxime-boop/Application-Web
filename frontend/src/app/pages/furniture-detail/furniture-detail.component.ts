@@ -74,8 +74,8 @@ import { Furniture } from '../../models/furniture.model';
   `,
   styles: [`
     .hero {
+      background: var(--color-bg-alt);
       padding: 64px 0 96px;
-      border-bottom: 1px solid var(--color-line);
     }
     .hero-grid {
       display: grid;
@@ -86,11 +86,8 @@ import { Furniture } from '../../models/furniture.model';
     .back {
       display: inline-block;
       margin-bottom: 32px;
-      font-size: 0.8rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-      transition: color var(--transition);
+      font-size: 0.85rem;
+      color: var(--color-ink-soft);
     }
     .back:hover { color: var(--color-ink); }
     .hero-text h1 { margin: 16px 0 24px; }
@@ -116,7 +113,7 @@ import { Furniture } from '../../models/furniture.model';
     .specs ul { list-style: none; }
     .specs li { padding: 2px 0; }
 
-    .hero-img { aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-bg-alt); }
+    .hero-img { aspect-ratio: 4 / 5; overflow: hidden; box-shadow: var(--shadow-soft); }
     .hero-img img { width: 100%; height: 100%; object-fit: cover; }
 
     .narrow { max-width: 760px; }
@@ -132,7 +129,7 @@ import { Furniture } from '../../models/furniture.model';
     .gallery .g-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
+      gap: 24px;
     }
     figure {
       overflow: hidden;
@@ -142,7 +139,7 @@ import { Furniture } from '../../models/furniture.model';
     figure.tall { aspect-ratio: 3 / 4; }
     figure img { width: 100%; height: 100%; object-fit: cover; }
 
-    .cta { text-align: center; border-top: 1px solid var(--color-line); }
+    .cta { text-align: center; }
     .cta p { margin: 16px 0 32px; }
     .cta .btn-link { margin: 0 auto; }
 

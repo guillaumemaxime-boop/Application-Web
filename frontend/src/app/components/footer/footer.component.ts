@@ -42,6 +42,7 @@ import { RouterLink } from '@angular/router';
   `,
   styles: [`
     footer {
+      background: var(--color-bg-alt);
       padding: 80px 0 32px;
       margin-top: 96px;
       border-top: 1px solid var(--color-line);
