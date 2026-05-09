@@ -1,0 +1,108 @@
+name: Deploy Tag to Production
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Promote ${{ github.ref_name }} → production (Railway)
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute short SHA from tag
+        id: sha
+        run: |
+          SHORT="${{ github.sha }}"
+          SHORT="${SHORT::12}"
+          echo "short=$SHORT" >> "$GITHUB_OUTPUT"
+          echo "owner=${OWNER,,}" >> "$GITHUB_OUTPUT"
+          echo "Tag ${{ github.ref_name }} → SHA $SHORT"
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Install crane
+        run: |
+          curl -fsSL https://github.com/google/go-containerregistry/releases/download/v0.20.3/go-containerregistry_Linux_x86_64.tar.gz \
+            | sudo tar xz -C /usr/local/bin crane
+
+      - name: Authenticate crane to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | crane auth login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Verify images exist in GHCR
+        env:
+          SHA: ${{ steps.sha.outputs.short }}
+          OWNER: ${{ steps.sha.outputs.owner }}
+        run: |
+          for SERVICE in portfolio-backend portfolio-frontend; do
+            IMAGE="ghcr.io/${OWNER}/${SERVICE}:${SHA}"
+            echo "Checking $IMAGE..."
+            crane manifest "$IMAGE" > /dev/null || {
+              echo "::error::Image $IMAGE not found in GHCR."
+              echo "::error::The tag must point to a commit that was already built by build-and-deploy.yml."
+              exit 1
+            }
+          done
+
+      - name: Move :production tag to target SHA
+        env:
+          SHA: ${{ steps.sha.outputs.short }}
+          OWNER: ${{ steps.sha.outputs.owner }}
+        run: |
+          crane tag ghcr.io/${OWNER}/portfolio-backend:${SHA}  production
+          crane tag ghcr.io/${OWNER}/portfolio-frontend:${SHA} production
+
+      - name: Bump production versions.yaml
+        env:
+          SHA: ${{ steps.sha.outputs.short }}
+        run: |
+          yq -i ".backend.tag = \"${SHA}\"" deploy/envs/production/versions.yaml
+          yq -i ".frontend.tag = \"${SHA}\"" deploy/envs/production/versions.yaml
+
+      - name: Commit and push to main
+        env:
+          SHA: ${{ steps.sha.outputs.short }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if git diff --quiet; then
+            echo "Production already at SHA ${SHA}; versions.yaml unchanged."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add deploy/envs/production/versions.yaml
+            git commit -m "chore(deploy): promote ${TAG} (${SHA}) to production [skip ci]"
+            git push
+          fi
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Trigger Railway redeploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRODUCTION }}
+          BACKEND_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_BACKEND_PRODUCTION }}
+          FRONTEND_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_FRONTEND_PRODUCTION }}
+        run: |
+          railway redeploy --service "$BACKEND_SERVICE_ID" --yes
+          railway redeploy --service "$FRONTEND_SERVICE_ID" --yes
