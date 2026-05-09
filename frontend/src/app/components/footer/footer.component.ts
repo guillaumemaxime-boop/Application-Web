@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PortfolioService } from '../../services/portfolio.service';
 
 @Component({
   selector: 'app-footer',
@@ -26,9 +27,15 @@ import { RouterLink } from '@angular/router';
           <div>
             <span class="eyebrow">Contact</span>
             <ul>
-              <li><a href="mailto:studio@atelier-lumen.fr">studio&#64;atelier-lumen.fr</a></li>
-              <li>+33 (0)4 78 00 00 00</li>
-              <li>3 quai Saint-Vincent, 75001 Paris</li>
+              @if (email()) {
+                <li><a href="mailto:{{ email() }}">{{ email() }}</a></li>
+              }
+              @if (phone()) {
+                <li>{{ phone() }}</li>
+              }
+              @if (location()) {
+                <li>{{ location() }}</li>
+              }
             </ul>
           </div>
         </div>
@@ -77,5 +84,18 @@ import { RouterLink } from '@angular/router';
   `]
 })
 export class FooterComponent {
+  private readonly portfolio = inject(PortfolioService);
+
   protected readonly year = new Date().getFullYear();
+  protected readonly email = signal('');
+  protected readonly phone = signal('');
+  protected readonly location = signal('');
+
+  constructor() {
+    this.portfolio.getContent().subscribe(content => {
+      this.email.set(content['profile.contactEmail'] ?? '');
+      this.phone.set(content['profile.phone'] ?? '');
+      this.location.set(content['profile.location'] ?? '');
+    });
+  }
 }

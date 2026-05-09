@@ -343,10 +343,16 @@ type Tab = 'furniture' | 'exhibitions' | 'texts';
                     <span>Biographie</span>
                     <textarea rows="5" formControlName="profile_bio"></textarea>
                   </label>
-                  <label>
-                    <span>Email de contact</span>
-                    <input type="email" formControlName="profile_contactEmail" />
-                  </label>
+                  <div class="row-2">
+                    <label>
+                      <span>Email de contact</span>
+                      <input type="email" formControlName="profile_contactEmail" />
+                    </label>
+                    <label>
+                      <span>Téléphone</span>
+                      <input type="tel" formControlName="profile_phone" />
+                    </label>
+                  </div>
                   <label>
                     <span>Distinctions (une par ligne)</span>
                     <textarea rows="4" formControlName="profile_awards"></textarea>
@@ -496,6 +502,7 @@ type Tab = 'furniture' | 'exhibitions' | 'texts';
     .form textarea,
     .texts-form input[type="text"],
     .texts-form input[type="email"],
+    .texts-form input[type="tel"],
     .texts-form textarea {
       padding: 10px 12px;
       border: 1px solid var(--color-line);
@@ -670,6 +677,7 @@ export class AdminComponent {
     profile_tagline: [''],
     profile_bio: [''],
     profile_contactEmail: [''],
+    profile_phone: [''],
     profile_location: [''],
     profile_awards: [''],
     profile_press: [''],
@@ -729,6 +737,7 @@ export class AdminComponent {
           profile_tagline: content['profile.tagline'] ?? '',
           profile_bio: content['profile.bio'] ?? '',
           profile_contactEmail: content['profile.contactEmail'] ?? '',
+          profile_phone: content['profile.phone'] ?? '',
           profile_location: content['profile.location'] ?? '',
           profile_awards: content['profile.awards'] ?? '',
           profile_press: content['profile.press'] ?? '',
@@ -762,6 +771,7 @@ export class AdminComponent {
       'profile.tagline': v.profile_tagline ?? '',
       'profile.bio': v.profile_bio ?? '',
       'profile.contactEmail': v.profile_contactEmail ?? '',
+      'profile.phone': v.profile_phone ?? '',
       'profile.location': v.profile_location ?? '',
       'profile.awards': v.profile_awards ?? '',
       'profile.press': v.profile_press ?? '',

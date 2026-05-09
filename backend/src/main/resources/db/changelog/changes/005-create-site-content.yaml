@@ -128,6 +128,11 @@ databaseChangeLog:
         - insert:
             tableName: site_content
             columns:
+              - column: { name: content_key, value: "profile.phone" }
+              - column: { name: content_value, value: "+33 (0)1 00 00 00 00" }
+        - insert:
+            tableName: site_content
+            columns:
               - column: { name: content_key, value: "profile.location" }
               - column: { name: content_value, value: "Paris, France" }
         - insert:
