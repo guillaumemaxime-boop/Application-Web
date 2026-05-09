@@ -115,4 +115,38 @@ describe('HomeComponent', () => {
     expect(portfolioServiceSpy.getFeaturedExhibitions).toHaveBeenCalled();
     expect(component).toBeTruthy();
   });
+
+  it('should remain functional when getContent errors', () => {
+    portfolioServiceSpy.getContent.and.returnValue(throwError(() => new Error('Failed')));
+
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component).toBeTruthy();
+    expect((component as any).content()).toEqual({});
+  });
+
+  it('should load and expose content values via txt()', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({
+      'home.hero.eyebrow': 'Mon Studio',
+      'home.quote.cite': '— Auteur',
+    }));
+
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect((component as any).txt('home.hero.eyebrow')).toBe('Mon Studio');
+    expect((component as any).txt('home.quote.cite')).toBe('— Auteur');
+    expect((component as any).txt('missing.key')).toBe('');
+  });
+
+  it('should call getContent on init', () => {
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(portfolioServiceSpy.getContent).toHaveBeenCalled();
+  });
 });

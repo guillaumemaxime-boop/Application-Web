@@ -395,4 +395,67 @@ describe('AdminComponent', () => {
       expect(component['editingExhibitionSlug']()).toBeNull();
     });
   });
+
+  describe('Texts tab', () => {
+    it('should switch to the texts tab', () => {
+      component.switchTab('texts');
+      fixture.detectChanges();
+
+      const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
+      expect(tabs[2].classList.contains('active')).toBe(true);
+      expect(tabs[0].classList.contains('active')).toBe(false);
+    });
+
+    it('should call getContent on init and populate the texts form', () => {
+      expect(portfolioServiceSpy.getContent).toHaveBeenCalled();
+      expect(component['textsForm'].value.home_hero_eyebrow).toBe('');
+    });
+
+    it('should populate texts form with content from the service', async () => {
+      portfolioServiceSpy.getContent.and.returnValue(of({
+        'home.hero.eyebrow': 'Mon Studio',
+        'home.hero.title': 'Titre héro',
+        'profile.studio': 'Studio Test',
+      }));
+
+      const fix = TestBed.createComponent(AdminComponent);
+      fix.detectChanges();
+      await fix.whenStable();
+
+      expect(fix.componentInstance['textsForm'].value.home_hero_eyebrow).toBe('Mon Studio');
+      expect(fix.componentInstance['textsForm'].value.profile_studio).toBe('Studio Test');
+    });
+
+    it('should call updateContent when saveTexts is invoked', () => {
+      component.saveTexts();
+
+      expect(portfolioServiceSpy.updateContent).toHaveBeenCalled();
+      expect(component['saving']()).toBeFalse();
+    });
+
+    it('should show success flash after saveTexts succeeds', () => {
+      component.saveTexts();
+
+      expect(component['message']()).toContain('succès');
+      expect(component['messageType']()).toBe('success');
+    });
+
+    it('should show error flash when saveTexts fails', () => {
+      portfolioServiceSpy.updateContent.and.returnValue(throwError(() => new Error('boom')));
+
+      component.saveTexts();
+
+      expect(component['messageType']()).toBe('error');
+      expect(component['saving']()).toBeFalse();
+    });
+
+    it('should show error flash when getContent fails on init', () => {
+      portfolioServiceSpy.getContent.and.returnValue(throwError(() => new Error('boom')));
+
+      const fix = TestBed.createComponent(AdminComponent);
+      fix.detectChanges();
+
+      expect(fix.componentInstance['loadingTexts']()).toBeFalse();
+    });
+  });
 });
