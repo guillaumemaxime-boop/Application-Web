@@ -3,6 +3,7 @@ package com.atelier.portfolio.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 
 @Entity
@@ -13,7 +14,8 @@ public class SiteContentEntity {
     @Column(name = "content_key", length = 100)
     private String key;
 
-    @Column(name = "content_value", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "content_value")
     private String value;
 
     public String getKey() { return key; }
