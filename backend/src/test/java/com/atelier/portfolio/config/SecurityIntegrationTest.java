@@ -73,6 +73,13 @@ class SecurityIntegrationTest {
         assertEquals(200, response.statusCode());
     }
 
+    @Test
+    void testGetContent_NoToken_Returns200() throws Exception {
+        var request = HttpRequest.newBuilder().uri(uri("/api/content")).GET().build();
+        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
+    }
+
     // -----------------------------------------------------------------------
     // Endpoints protégés sans token → 401
     // -----------------------------------------------------------------------
