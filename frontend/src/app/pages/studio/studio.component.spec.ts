@@ -106,4 +106,18 @@ describe('StudioComponent', () => {
     TestBed.createComponent(StudioComponent).detectChanges();
     expect(portfolioServiceSpy.getContent).toHaveBeenCalled();
   });
+
+  it('should display phone when profile.phone is in content', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({ 'profile.phone': '+33 1 00 00 00 00' }));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('+33 1 00 00 00 00');
+  });
+
+  it('should not display phone when profile.phone is absent from content', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({}));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('+33');
+  });
 });

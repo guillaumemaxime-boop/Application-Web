@@ -1,58 +1,76 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FooterComponent } from './footer.component';
+import { PortfolioService } from '../../services/portfolio.service';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
 describe('FooterComponent', () => {
-  let component: FooterComponent;
   let fixture: ComponentFixture<FooterComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
+  function setup(content: Record<string, string> = {}) {
+    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getContent']);
+    spy.getContent.and.returnValue(of(content));
+
+    TestBed.configureTestingModule({
       imports: [FooterComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        { provide: PortfolioService, useValue: spy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(FooterComponent);
-    component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+    return spy;
+  }
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    setup();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
   it('should have a footer element', () => {
-    const footer = fixture.nativeElement.querySelector('footer');
-    expect(footer).toBeTruthy();
+    setup();
+    expect(fixture.nativeElement.querySelector('footer')).toBeTruthy();
   });
 
-  it('should have Milo GUILLAUME Design title', () => {
-    const title = fixture.nativeElement.querySelector('.title');
-    expect(title).toBeTruthy();
+  it('should have grid layout with legal section', () => {
+    setup();
+    expect(fixture.nativeElement.querySelector('.grid')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.legal')).toBeTruthy();
   });
 
-  it('should have a description', () => {
-    const description = fixture.nativeElement.querySelector('footer p');
-    expect(description).toBeTruthy();
+  it('should display email, phone and location when provided', () => {
+    setup({
+      'profile.contactEmail': 'studio@atelier-lumen.fr',
+      'profile.phone': '+33 1 00 00 00 00',
+      'profile.location': 'Paris, France',
+    });
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('studio@atelier-lumen.fr');
+    expect(text).toContain('+33 1 00 00 00 00');
+    expect(text).toContain('Paris, France');
   });
 
-  it('should have navigation section', () => {
-    const eyebrow = fixture.nativeElement.querySelector('.eyebrow');
-    expect(eyebrow).toBeTruthy();
+  it('should not render contact items when content is empty', () => {
+    setup({});
+    const items = fixture.nativeElement.querySelectorAll('ul li');
+    const navLinks = fixture.nativeElement.querySelectorAll('ul')[0].querySelectorAll('li');
+    const contactItems = fixture.nativeElement.querySelectorAll('ul')[1].querySelectorAll('li');
+    expect(contactItems.length).toBe(0);
+    expect(navLinks.length).toBe(3);
   });
 
-  it('should have contact section', () => {
-    const eyebrows = fixture.nativeElement.querySelectorAll('.eyebrow');
-    expect(eyebrows.length).toBeGreaterThan(0);
+  it('should render a mailto link when email is set', () => {
+    setup({ 'profile.contactEmail': 'test@example.com' });
+    const link = fixture.nativeElement.querySelector('a[href^="mailto:"]');
+    expect(link).toBeTruthy();
+    expect(link.getAttribute('href')).toBe('mailto:test@example.com');
   });
 
-  it('should have legal section', () => {
-    const legal = fixture.nativeElement.querySelector('.legal');
-    expect(legal).toBeTruthy();
-  });
-
-  it('should have grid layout', () => {
-    const grid = fixture.nativeElement.querySelector('.grid');
-    expect(grid).toBeTruthy();
+  it('should not render phone when only email is provided', () => {
+    setup({ 'profile.contactEmail': 'test@example.com' });
+    const text = fixture.nativeElement.textContent;
+    expect(text).not.toContain('+33');
   });
 });
