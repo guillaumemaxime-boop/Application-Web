@@ -55,9 +55,11 @@ describe('HomeComponent', () => {
     const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', [
       'getFeaturedFurniture',
       'getFeaturedExhibitions',
+      'getContent',
     ]);
     spy.getFeaturedFurniture.and.returnValue(of(mockFeaturedFurniture));
     spy.getFeaturedExhibitions.and.returnValue(of(mockFeaturedExhibitions));
+    spy.getContent.and.returnValue(of({}));
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],

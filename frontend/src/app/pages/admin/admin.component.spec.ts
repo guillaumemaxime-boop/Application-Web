@@ -57,6 +57,8 @@ describe('AdminComponent', () => {
       'createExhibition',
       'updateExhibition',
       'deleteExhibition',
+      'getContent',
+      'updateContent',
     ]);
     spy.getAllFurniture.and.returnValue(of([mockFurniture]));
     spy.getAllExhibitions.and.returnValue(of([mockExhibition]));
@@ -66,6 +68,8 @@ describe('AdminComponent', () => {
     spy.createExhibition.and.returnValue(of(mockExhibition));
     spy.updateExhibition.and.returnValue(of(mockExhibition));
     spy.deleteExhibition.and.returnValue(of(void 0));
+    spy.getContent.and.returnValue(of({}));
+    spy.updateContent.and.returnValue(of({}));
 
     await TestBed.configureTestingModule({
       imports: [AdminComponent],
@@ -94,9 +98,10 @@ describe('AdminComponent', () => {
 
   it('should display the furniture tab by default', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-    expect(tabs.length).toBe(2);
+    expect(tabs.length).toBe(3);
     expect(tabs[0].classList.contains('active')).toBe(true);
     expect(tabs[1].classList.contains('active')).toBe(false);
+    expect(tabs[2].classList.contains('active')).toBe(false);
   });
 
   it('should switch to the exhibitions tab', () => {
