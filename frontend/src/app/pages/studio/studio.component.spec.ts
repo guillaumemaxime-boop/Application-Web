@@ -63,4 +63,47 @@ describe('StudioComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain(mockProfile.tagline);
   });
+
+  it('should remain functional when getContent errors', () => {
+    portfolioServiceSpy.getContent.and.returnValue(throwError(() => new Error('boom')));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    expect(c).toBeTruthy();
+    expect(c.content()).toEqual({});
+  });
+
+  it('should use fallback step titles when content is empty', () => {
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const steps = (fixture.componentInstance as any).steps();
+    expect(steps[0].title).toBe('Dessin');
+    expect(steps[1].title).toBe('Matière');
+    expect(steps[2].title).toBe('Façonnage');
+    expect(steps[3].title).toBe('Signature');
+  });
+
+  it('should use content values for steps when provided', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({
+      'studio.step1.title': 'Esquisse',
+      'studio.step1.desc': 'Description personnalisée',
+      'studio.step2.title': 'Bois',
+      'studio.step2.desc': 'Sélection du bois',
+      'studio.step3.title': 'Assemblage',
+      'studio.step3.desc': 'Assemblage à la main',
+      'studio.step4.title': 'Numérotation',
+      'studio.step4.desc': 'Numérotée et signée',
+    }));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    const steps = (fixture.componentInstance as any).steps();
+    expect(steps[0].title).toBe('Esquisse');
+    expect(steps[0].desc).toBe('Description personnalisée');
+    expect(steps[3].title).toBe('Numérotation');
+  });
+
+  it('should call getContent on init', () => {
+    TestBed.createComponent(StudioComponent).detectChanges();
+    expect(portfolioServiceSpy.getContent).toHaveBeenCalled();
+  });
 });
