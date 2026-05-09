@@ -36,7 +36,16 @@
       "WebFetch(domain:www.squarespace.com)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4200/)",
       "Bash(Start-Sleep -Seconds 25)",
-      "Bash(docker version *)"
+      "Bash(docker version *)",
+      "Bash(Find \"C:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\" -type f -name \"*.xml\")",
+      "Bash(Select-String -Pattern \"changelog|liquibase\")",
+      "Bash(mvn test *)",
+      "Bash(./mvnw test *)",
+      "PowerShell(docker run --rm -v \"${PWD}/backend:/workspace\" -w /workspace maven:3.9-eclipse-temurin-25 mvn test 2>&1 | Select-Object -Last 60)",
+      "PowerShell($backendPath = \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\backend\"; docker run --rm -v \"${backendPath}:/workspace\" -w /workspace maven:3.9-eclipse-temurin-25 mvn test 2>&1 | Select-Object -Last 60)",
+      "PowerShell($backendPath = \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\backend\"; docker run --rm -v \"${backendPath}:/workspace\" -w /workspace maven:3.9-eclipse-temurin-25 mvn test 2>&1 | Select-Object -Last 30)",
+      "Bash(xargs grep -l \"contactEmail\")",
+      "Bash(xargs grep -l \"footer\\\\|contact\")"
     ]
   }
 }
