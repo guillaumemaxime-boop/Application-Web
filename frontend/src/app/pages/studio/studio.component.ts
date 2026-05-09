@@ -18,6 +18,9 @@ import { SiteContent } from '../../models/site-content.model';
               <p class="bio">{{ p.bio }}</p>
               <p class="contact">
                 <span>{{ p.location }}</span>
+                @if (content()['profile.phone']) {
+                  <span>{{ content()['profile.phone'] }}</span>
+                }
                 <a [href]="'mailto:' + p.contactEmail">{{ p.contactEmail }}</a>
               </p>
             </div>
