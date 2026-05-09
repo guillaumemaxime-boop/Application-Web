@@ -1,0 +1,142 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-site-content-table
+      author: milo-guillaume
+      changes:
+        - createTable:
+            tableName: site_content
+            columns:
+              - column:
+                  name: content_key
+                  type: varchar(100)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: content_value
+                  type: clob
+
+  - changeSet:
+      id: 002-seed-site-content
+      author: milo-guillaume
+      changes:
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "home.hero.eyebrow" }
+              - column: { name: content_value, value: "Milo GUILLAUME Design — Paris, France" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "home.hero.title" }
+              - column: { name: content_value, value: "Mobilier sculpté\n& scénographies sensibles." }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "home.hero.lead" }
+              - column: { name: content_value, value: "Depuis 2017, l'atelier conçoit des pièces uniques et des éditions limitées,\net signe des expositions pour des institutions culturelles européennes." }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "home.featured.eyebrow" }
+              - column: { name: content_value, value: "Pièces phares" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "home.featured.title" }
+              - column: { name: content_value, value: "Une sélection d'éditions récentes" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "home.exhibitions.eyebrow" }
+              - column: { name: content_value, value: "Expositions à l'affiche" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "home.exhibitions.title" }
+              - column: { name: content_value, value: "Là où nos pièces prennent vie" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "home.quote.text" }
+              - column: { name: content_value, value: "« Le mobilier juste, c'est celui qui se tait quand on ne le regarde pas\net qui éclaire la pièce dès qu'on s'en approche. »" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "home.quote.cite" }
+              - column: { name: content_value, value: "— Milo GUILLAUME Design" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "studio.step1.title" }
+              - column: { name: content_value, value: "Dessin" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "studio.step1.desc" }
+              - column: { name: content_value, value: "Chaque pièce naît d'une succession de croquis et de maquettes à l'échelle, jusqu'à ce que la silhouette s'impose." }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "studio.step2.title" }
+              - column: { name: content_value, value: "Matière" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "studio.step2.desc" }
+              - column: { name: content_value, value: "Le bois est sélectionné en forêt, séché plusieurs années. Marbres et cuirs proviennent d'ateliers européens partenaires." }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "studio.step3.title" }
+              - column: { name: content_value, value: "Façonnage" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "studio.step3.desc" }
+              - column: { name: content_value, value: "La taille, l'assemblage et la finition sont réalisés à la main dans nos ateliers parisiens." }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "studio.step4.title" }
+              - column: { name: content_value, value: "Signature" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "studio.step4.desc" }
+              - column: { name: content_value, value: "Chaque pièce est numérotée, signée et accompagnée d'un certificat d'édition." }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "profile.studio" }
+              - column: { name: content_value, value: "Milo GUILLAUME Design" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "profile.tagline" }
+              - column: { name: content_value, value: "Mobilier sculpté & scénographies sensibles" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "profile.bio" }
+              - column: { name: content_value, value: "Fondé en 2017 dans une ancienne menuiserie parisienne, Milo GUILLAUME Design conçoit des pièces de mobilier en éditions limitées et signe des scénographies d'exposition pour des institutions culturelles européennes. Notre travail explore la rencontre entre savoir-faire artisanal et écriture contemporaine." }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "profile.contactEmail" }
+              - column: { name: content_value, value: "contact@miloguillaume.fr" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "profile.location" }
+              - column: { name: content_value, value: "Paris, France" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "profile.awards" }
+              - column: { name: content_value, value: "Prix Liliane Bettencourt pour l'intelligence de la main — 2023\nWallpaper* Design Awards — Best New Studio (nominé) — 2024" }
+        - insert:
+            tableName: site_content
+            columns:
+              - column: { name: content_key, value: "profile.press" }
+              - column: { name: content_value, value: "AD Magazine — Portrait|2024\nWallpaper* — Design Awards Nominee|2024\nLe Monde — Cahier Design|2023" }

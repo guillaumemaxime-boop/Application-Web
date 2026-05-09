@@ -18,8 +18,9 @@ describe('StudioComponent', () => {
   };
 
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getProfile']);
+    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getProfile', 'getContent']);
     spy.getProfile.and.returnValue(of(mockProfile));
+    spy.getContent.and.returnValue(of({}));
 
     await TestBed.configureTestingModule({
       imports: [StudioComponent],

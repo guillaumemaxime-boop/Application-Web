@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
+import { SiteContent } from '../../models/site-content.model';
 
 @Component({
   selector: 'app-home',
@@ -11,12 +12,9 @@ import { Exhibition } from '../../models/exhibition.model';
   template: `
     <section class="hero">
       <div class="container hero-inner">
-        <span class="eyebrow fade-in">Milo GUILLAUME Design — Paris, France</span>
-        <h1 class="fade-in">Mobilier sculpté<br/>& scénographies sensibles.</h1>
-        <p class="lead fade-in">
-          Depuis 2017, l'atelier conçoit des pièces uniques et des éditions limitées,
-          et signe des expositions pour des institutions culturelles européennes.
-        </p>
+        <span class="eyebrow fade-in">{{ txt('home.hero.eyebrow') }}</span>
+        <h1 class="fade-in" [innerHTML]="heroTitle()"></h1>
+        <p class="lead fade-in">{{ txt('home.hero.lead') }}</p>
         <div class="hero-actions fade-in">
           <a routerLink="/mobilier" class="btn-link">Découvrir le mobilier</a>
           <a routerLink="/expositions" class="btn-link">Voir les expositions</a>
@@ -27,8 +25,8 @@ import { Exhibition } from '../../models/exhibition.model';
     <section class="section featured">
       <div class="container">
         <div class="section-head">
-          <span class="eyebrow">Pièces phares</span>
-          <h2>Une sélection d'éditions récentes</h2>
+          <span class="eyebrow">{{ txt('home.featured.eyebrow') }}</span>
+          <h2>{{ txt('home.featured.title') }}</h2>
         </div>
 
         @if (loadingFurniture()) {
@@ -57,8 +55,8 @@ import { Exhibition } from '../../models/exhibition.model';
     <section class="section exhibitions">
       <div class="container">
         <div class="section-head">
-          <span class="eyebrow">Expositions à l'affiche</span>
-          <h2>Là où nos pièces prennent vie</h2>
+          <span class="eyebrow">{{ txt('home.exhibitions.eyebrow') }}</span>
+          <h2>{{ txt('home.exhibitions.title') }}</h2>
         </div>
 
         @if (loadingExhibitions()) {
@@ -85,11 +83,8 @@ import { Exhibition } from '../../models/exhibition.model';
 
     <section class="section quote">
       <div class="container">
-        <blockquote>
-          « Le mobilier juste, c'est celui qui se tait quand on ne le regarde pas
-          et qui éclaire la pièce dès qu'on s'en approche. »
-        </blockquote>
-        <cite>— Milo GUILLAUME Design</cite>
+        <blockquote [innerHTML]="quoteText()"></blockquote>
+        <cite>{{ txt('home.quote.cite') }}</cite>
       </div>
     </section>
   `,
@@ -215,6 +210,15 @@ export class HomeComponent {
   protected readonly loadingFurniture = signal(true);
   protected readonly loadingExhibitions = signal(true);
   protected readonly errorFurniture = signal(false);
+  protected readonly content = signal<SiteContent>({});
+
+  protected readonly heroTitle = computed(() =>
+    this.txt('home.hero.title').replace('\n', '<br/>')
+  );
+
+  protected readonly quoteText = computed(() =>
+    this.txt('home.quote.text').replace('\n', '<br/>')
+  );
 
   constructor() {
     this.portfolio.getFeaturedFurniture().subscribe({
@@ -225,6 +229,14 @@ export class HomeComponent {
       next: data => { this.featuredExhibitions.set(data); this.loadingExhibitions.set(false); },
       error: () => this.loadingExhibitions.set(false)
     });
+    this.portfolio.getContent().subscribe({
+      next: data => this.content.set(data),
+      error: () => {}
+    });
+  }
+
+  protected txt(key: string): string {
+    return this.content()[key] ?? '';
   }
 
   protected formatRange(start: string, end: string): string {

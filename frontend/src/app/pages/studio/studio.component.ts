@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Profile } from '../../models/profile.model';
+import { SiteContent } from '../../models/site-content.model';
 
 @Component({
   selector: 'app-studio',
@@ -50,34 +51,15 @@ import { Profile } from '../../models/profile.model';
       <div class="container">
         <span class="eyebrow proc-label">Processus</span>
         <div class="proc-list">
-          <div class="step">
-            <span class="num">01</span>
-            <div>
-              <h3>Dessin</h3>
-              <p>Chaque pièce naît d'une succession de croquis et de maquettes à l'échelle, jusqu'à ce que la silhouette s'impose.</p>
+          @for (step of steps(); track step.num) {
+            <div class="step">
+              <span class="num">{{ step.num }}</span>
+              <div>
+                <h3>{{ step.title }}</h3>
+                <p>{{ step.desc }}</p>
+              </div>
             </div>
-          </div>
-          <div class="step">
-            <span class="num">02</span>
-            <div>
-              <h3>Matière</h3>
-              <p>Le bois est sélectionné en forêt, séché plusieurs années. Marbres et cuirs proviennent d'ateliers européens partenaires.</p>
-            </div>
-          </div>
-          <div class="step">
-            <span class="num">03</span>
-            <div>
-              <h3>Façonnage</h3>
-              <p>La taille, l'assemblage et la finition sont réalisés à la main dans nos ateliers parisiens.</p>
-            </div>
-          </div>
-          <div class="step">
-            <span class="num">04</span>
-            <div>
-              <h3>Signature</h3>
-              <p>Chaque pièce est numérotée, signée et accompagnée d'un certificat d'édition.</p>
-            </div>
-          </div>
+          }
         </div>
       </div>
     </section>
@@ -179,11 +161,26 @@ export class StudioComponent {
 
   protected readonly profile = signal<Profile | null>(null);
   protected readonly loading = signal(true);
+  protected readonly content = signal<SiteContent>({});
+
+  protected readonly steps = computed(() => {
+    const c = this.content();
+    return [
+      { num: '01', title: c['studio.step1.title'] ?? 'Dessin', desc: c['studio.step1.desc'] ?? '' },
+      { num: '02', title: c['studio.step2.title'] ?? 'Matière', desc: c['studio.step2.desc'] ?? '' },
+      { num: '03', title: c['studio.step3.title'] ?? 'Façonnage', desc: c['studio.step3.desc'] ?? '' },
+      { num: '04', title: c['studio.step4.title'] ?? 'Signature', desc: c['studio.step4.desc'] ?? '' },
+    ];
+  });
 
   constructor() {
     this.portfolio.getProfile().subscribe({
       next: data => { this.profile.set(data); this.loading.set(false); },
       error: () => this.loading.set(false)
+    });
+    this.portfolio.getContent().subscribe({
+      next: data => this.content.set(data),
+      error: () => {}
     });
   }
 }
