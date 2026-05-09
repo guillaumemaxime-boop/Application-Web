@@ -45,7 +45,12 @@
       "PowerShell($backendPath = \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\backend\"; docker run --rm -v \"${backendPath}:/workspace\" -w /workspace maven:3.9-eclipse-temurin-25 mvn test 2>&1 | Select-Object -Last 60)",
       "PowerShell($backendPath = \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\backend\"; docker run --rm -v \"${backendPath}:/workspace\" -w /workspace maven:3.9-eclipse-temurin-25 mvn test 2>&1 | Select-Object -Last 30)",
       "Bash(xargs grep -l \"contactEmail\")",
-      "Bash(xargs grep -l \"footer\\\\|contact\")"
+      "Bash(xargs grep -l \"footer\\\\|contact\")",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(curl -s http://localhost:8080/api/content)",
+      "Bash(python -c \"import json,sys; c=json.load\\(sys.stdin\\); print\\('phone:', c.get\\('profile.phone','NON TROUVE'\\)\\)\")",
+      "PowerShell($frontendPath = \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; docker run --rm -v \"${frontendPath}:/workspace\" -w /workspace node:20-alpine sh -c \"npm ci --silent && npx ng test --watch=false --browsers=ChromeHeadless --code-coverage 2>&1\" | Select-Object -Last 30)"
     ]
   }
 }
