@@ -273,6 +273,37 @@ describe('PortfolioService', () => {
     });
   });
 
+  describe('Site Content API', () => {
+    const mockContent = {
+      'home.hero.eyebrow': 'Milo GUILLAUME Design — Paris, France',
+      'home.hero.title': 'Mobilier sculpté',
+      'profile.studio': 'Milo GUILLAUME Design',
+    };
+
+    it('should retrieve all site content', () => {
+      service.getContent().subscribe((content) => {
+        expect(content).toEqual(mockContent);
+      });
+
+      const req = httpMock.expectOne('/api/content');
+      expect(req.request.method).toBe('GET');
+      req.flush(mockContent);
+    });
+
+    it('should update site content via PUT', () => {
+      const updates = { 'home.hero.eyebrow': 'Nouveau titre' };
+
+      service.updateContent(updates).subscribe((result) => {
+        expect(result).toEqual(mockContent);
+      });
+
+      const req = httpMock.expectOne('/api/content');
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(updates);
+      req.flush(mockContent);
+    });
+  });
+
   describe('Error Handling', () => {
     it('should handle 404 error for furniture', () => {
       const slug = 'non-existent';
