@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Furniture } from '../models/furniture.model';
 import { Exhibition } from '../models/exhibition.model';
 import { Profile } from '../models/profile.model';
+import { SiteContent } from '../models/site-content.model';
 
 const API = '/api';
 
@@ -65,5 +66,13 @@ export class PortfolioService {
 
   getProfile(): Observable<Profile> {
     return this.http.get<Profile>(`${API}/profile`);
+  }
+
+  getContent(): Observable<SiteContent> {
+    return this.http.get<SiteContent>(`${API}/content`);
+  }
+
+  updateContent(content: SiteContent): Observable<SiteContent> {
+    return this.http.put<SiteContent>(`${API}/content`, content);
   }
 }

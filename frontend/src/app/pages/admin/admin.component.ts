@@ -2,9 +2,10 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
+import { SiteContent } from '../../models/site-content.model';
 import { PortfolioService } from '../../services/portfolio.service';
 
-type Tab = 'furniture' | 'exhibitions';
+type Tab = 'furniture' | 'exhibitions' | 'texts';
 
 @Component({
   selector: 'app-admin',
@@ -32,6 +33,12 @@ type Tab = 'furniture' | 'exhibitions';
             [attr.aria-selected]="tab() === 'exhibitions'"
             [class.active]="tab() === 'exhibitions'"
             (click)="switchTab('exhibitions')">Expositions</button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="tab() === 'texts'"
+            [class.active]="tab() === 'texts'"
+            (click)="switchTab('texts')">Textes du site</button>
         </div>
 
         @if (message()) {
@@ -231,6 +238,134 @@ type Tab = 'furniture' | 'exhibitions';
             </form>
           </div>
         }
+
+        @if (tab() === 'texts') {
+          @if (loadingTexts()) {
+            <p class="status">Chargement des textes…</p>
+          } @else {
+            <form class="texts-form" [formGroup]="textsForm" (ngSubmit)="saveTexts()">
+
+              <div class="texts-section">
+                <h2 class="texts-section-title">Page d'accueil</h2>
+
+                <div class="texts-group">
+                  <h3 class="texts-group-label">Bloc héro</h3>
+                  <label>
+                    <span>Chapeau</span>
+                    <input type="text" formControlName="home_hero_eyebrow" />
+                  </label>
+                  <label>
+                    <span>Titre (saut de ligne avec ↵)</span>
+                    <textarea rows="2" formControlName="home_hero_title"></textarea>
+                  </label>
+                  <label>
+                    <span>Accroche</span>
+                    <textarea rows="3" formControlName="home_hero_lead"></textarea>
+                  </label>
+                </div>
+
+                <div class="texts-group">
+                  <h3 class="texts-group-label">Section mobilier phare</h3>
+                  <label>
+                    <span>Chapeau</span>
+                    <input type="text" formControlName="home_featured_eyebrow" />
+                  </label>
+                  <label>
+                    <span>Titre</span>
+                    <input type="text" formControlName="home_featured_title" />
+                  </label>
+                </div>
+
+                <div class="texts-group">
+                  <h3 class="texts-group-label">Section expositions</h3>
+                  <label>
+                    <span>Chapeau</span>
+                    <input type="text" formControlName="home_exhibitions_eyebrow" />
+                  </label>
+                  <label>
+                    <span>Titre</span>
+                    <input type="text" formControlName="home_exhibitions_title" />
+                  </label>
+                </div>
+
+                <div class="texts-group">
+                  <h3 class="texts-group-label">Citation</h3>
+                  <label>
+                    <span>Texte de la citation</span>
+                    <textarea rows="2" formControlName="home_quote_text"></textarea>
+                  </label>
+                  <label>
+                    <span>Attribution</span>
+                    <input type="text" formControlName="home_quote_cite" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="texts-section">
+                <h2 class="texts-section-title">Studio — Processus de création</h2>
+
+                @for (i of [1,2,3,4]; track i) {
+                  <div class="texts-group">
+                    <h3 class="texts-group-label">Étape 0{{ i }}</h3>
+                    <div class="row-2">
+                      <label>
+                        <span>Titre</span>
+                        <input type="text" [formControlName]="'studio_step' + i + '_title'" />
+                      </label>
+                    </div>
+                    <label>
+                      <span>Description</span>
+                      <textarea rows="3" [formControlName]="'studio_step' + i + '_desc'"></textarea>
+                    </label>
+                  </div>
+                }
+              </div>
+
+              <div class="texts-section">
+                <h2 class="texts-section-title">Profil du studio</h2>
+
+                <div class="texts-group">
+                  <div class="row-2">
+                    <label>
+                      <span>Nom du studio</span>
+                      <input type="text" formControlName="profile_studio" />
+                    </label>
+                    <label>
+                      <span>Localisation</span>
+                      <input type="text" formControlName="profile_location" />
+                    </label>
+                  </div>
+                  <label>
+                    <span>Tagline</span>
+                    <input type="text" formControlName="profile_tagline" />
+                  </label>
+                  <label>
+                    <span>Biographie</span>
+                    <textarea rows="5" formControlName="profile_bio"></textarea>
+                  </label>
+                  <label>
+                    <span>Email de contact</span>
+                    <input type="email" formControlName="profile_contactEmail" />
+                  </label>
+                  <label>
+                    <span>Distinctions (une par ligne)</span>
+                    <textarea rows="4" formControlName="profile_awards"></textarea>
+                  </label>
+                  <label>
+                    <span>Presse (format : Titre|Année, une par ligne)</span>
+                    <textarea rows="4" formControlName="profile_press" placeholder="AD Magazine — Portrait|2024"></textarea>
+                  </label>
+                </div>
+              </div>
+
+              <div class="texts-actions">
+                <button type="submit" class="btn-primary" [disabled]="saving()">
+                  {{ saving() ? 'Enregistrement…' : 'Enregistrer les textes' }}
+                </button>
+              </div>
+            </form>
+          }
+        }
       </div>
     </section>
   `,
@@ -343,12 +478,12 @@ type Tab = 'furniture' | 'exhibitions';
     }
     .form h2 { margin: 0 0 8px; font-size: 1.5rem; }
 
-    .form label {
+    .form label, .texts-form label {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .form label > span {
+    .form label > span, .texts-form label > span {
       font-size: 0.75rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -358,7 +493,10 @@ type Tab = 'furniture' | 'exhibitions';
     .form input[type="number"],
     .form input[type="url"],
     .form input[type="date"],
-    .form textarea {
+    .form textarea,
+    .texts-form input[type="text"],
+    .texts-form input[type="email"],
+    .texts-form textarea {
       padding: 10px 12px;
       border: 1px solid var(--color-line);
       background: var(--color-bg);
@@ -367,11 +505,13 @@ type Tab = 'furniture' | 'exhibitions';
       border-radius: 0;
     }
     .form input:focus,
-    .form textarea:focus {
+    .form textarea:focus,
+    .texts-form input:focus,
+    .texts-form textarea:focus {
       outline: none;
       border-color: var(--color-accent);
     }
-    .form textarea {
+    .form textarea, .texts-form textarea {
       font-family: var(--sans, inherit);
       resize: vertical;
     }
@@ -415,9 +555,48 @@ type Tab = 'furniture' | 'exhibitions';
 
     .status { color: var(--color-mute); padding: 16px 20px; }
 
+    /* Texts tab */
+    .texts-form {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+    }
+    .texts-section {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    .texts-section-title {
+      font-size: 1.25rem;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--color-ink);
+      margin: 0;
+    }
+    .texts-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 24px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
+    }
+    .texts-group-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      font-family: var(--sans);
+      font-weight: 500;
+      margin: 0 0 4px;
+    }
+    .texts-actions {
+      padding-top: 8px;
+    }
+
     @media (max-width: 960px) {
       .grid-admin { grid-template-columns: 1fr; }
       .list { position: static; max-height: none; }
+      .row-2 { grid-template-columns: 1fr; }
     }
   `]
 })
@@ -430,6 +609,7 @@ export class AdminComponent {
   protected readonly exhibitions = signal<Exhibition[]>([]);
   protected readonly loadingFurniture = signal(true);
   protected readonly loadingExhibitions = signal(true);
+  protected readonly loadingTexts = signal(true);
   protected readonly editingFurnitureSlug = signal<string | null>(null);
   protected readonly editingExhibitionSlug = signal<string | null>(null);
   protected readonly saving = signal(false);
@@ -468,9 +648,37 @@ export class AdminComponent {
     featured: [false],
   });
 
+  protected readonly textsForm = this.fb.group({
+    home_hero_eyebrow: [''],
+    home_hero_title: [''],
+    home_hero_lead: [''],
+    home_featured_eyebrow: [''],
+    home_featured_title: [''],
+    home_exhibitions_eyebrow: [''],
+    home_exhibitions_title: [''],
+    home_quote_text: [''],
+    home_quote_cite: [''],
+    studio_step1_title: [''],
+    studio_step1_desc: [''],
+    studio_step2_title: [''],
+    studio_step2_desc: [''],
+    studio_step3_title: [''],
+    studio_step3_desc: [''],
+    studio_step4_title: [''],
+    studio_step4_desc: [''],
+    profile_studio: [''],
+    profile_tagline: [''],
+    profile_bio: [''],
+    profile_contactEmail: [''],
+    profile_location: [''],
+    profile_awards: [''],
+    profile_press: [''],
+  });
+
   constructor() {
     this.refreshFurniture();
     this.refreshExhibitions();
+    this.refreshTexts();
   }
 
   switchTab(tab: Tab) {
@@ -491,6 +699,84 @@ export class AdminComponent {
     this.portfolio.getAllExhibitions().subscribe({
       next: data => { this.exhibitions.set(data); this.loadingExhibitions.set(false); },
       error: () => { this.loadingExhibitions.set(false); this.flash('Impossible de charger les expositions.', 'error'); }
+    });
+  }
+
+  private refreshTexts() {
+    this.loadingTexts.set(true);
+    this.portfolio.getContent().subscribe({
+      next: content => {
+        this.loadingTexts.set(false);
+        this.textsForm.reset({
+          home_hero_eyebrow: content['home.hero.eyebrow'] ?? '',
+          home_hero_title: content['home.hero.title'] ?? '',
+          home_hero_lead: content['home.hero.lead'] ?? '',
+          home_featured_eyebrow: content['home.featured.eyebrow'] ?? '',
+          home_featured_title: content['home.featured.title'] ?? '',
+          home_exhibitions_eyebrow: content['home.exhibitions.eyebrow'] ?? '',
+          home_exhibitions_title: content['home.exhibitions.title'] ?? '',
+          home_quote_text: content['home.quote.text'] ?? '',
+          home_quote_cite: content['home.quote.cite'] ?? '',
+          studio_step1_title: content['studio.step1.title'] ?? '',
+          studio_step1_desc: content['studio.step1.desc'] ?? '',
+          studio_step2_title: content['studio.step2.title'] ?? '',
+          studio_step2_desc: content['studio.step2.desc'] ?? '',
+          studio_step3_title: content['studio.step3.title'] ?? '',
+          studio_step3_desc: content['studio.step3.desc'] ?? '',
+          studio_step4_title: content['studio.step4.title'] ?? '',
+          studio_step4_desc: content['studio.step4.desc'] ?? '',
+          profile_studio: content['profile.studio'] ?? '',
+          profile_tagline: content['profile.tagline'] ?? '',
+          profile_bio: content['profile.bio'] ?? '',
+          profile_contactEmail: content['profile.contactEmail'] ?? '',
+          profile_location: content['profile.location'] ?? '',
+          profile_awards: content['profile.awards'] ?? '',
+          profile_press: content['profile.press'] ?? '',
+        });
+      },
+      error: () => { this.loadingTexts.set(false); this.flash('Impossible de charger les textes.', 'error'); }
+    });
+  }
+
+  saveTexts() {
+    const v = this.textsForm.getRawValue();
+    const payload: SiteContent = {
+      'home.hero.eyebrow': v.home_hero_eyebrow ?? '',
+      'home.hero.title': v.home_hero_title ?? '',
+      'home.hero.lead': v.home_hero_lead ?? '',
+      'home.featured.eyebrow': v.home_featured_eyebrow ?? '',
+      'home.featured.title': v.home_featured_title ?? '',
+      'home.exhibitions.eyebrow': v.home_exhibitions_eyebrow ?? '',
+      'home.exhibitions.title': v.home_exhibitions_title ?? '',
+      'home.quote.text': v.home_quote_text ?? '',
+      'home.quote.cite': v.home_quote_cite ?? '',
+      'studio.step1.title': v.studio_step1_title ?? '',
+      'studio.step1.desc': v.studio_step1_desc ?? '',
+      'studio.step2.title': v.studio_step2_title ?? '',
+      'studio.step2.desc': v.studio_step2_desc ?? '',
+      'studio.step3.title': v.studio_step3_title ?? '',
+      'studio.step3.desc': v.studio_step3_desc ?? '',
+      'studio.step4.title': v.studio_step4_title ?? '',
+      'studio.step4.desc': v.studio_step4_desc ?? '',
+      'profile.studio': v.profile_studio ?? '',
+      'profile.tagline': v.profile_tagline ?? '',
+      'profile.bio': v.profile_bio ?? '',
+      'profile.contactEmail': v.profile_contactEmail ?? '',
+      'profile.location': v.profile_location ?? '',
+      'profile.awards': v.profile_awards ?? '',
+      'profile.press': v.profile_press ?? '',
+    };
+
+    this.saving.set(true);
+    this.portfolio.updateContent(payload).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.flash('Textes mis à jour avec succès.', 'success');
+      },
+      error: () => {
+        this.saving.set(false);
+        this.flash('Erreur lors de l\'enregistrement des textes.', 'error');
+      }
     });
   }
 
