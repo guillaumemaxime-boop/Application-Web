@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -145,7 +145,32 @@
 <a name='L80'></a><a href='#L80'>80</a>
 <a name='L81'></a><a href='#L81'>81</a>
 <a name='L82'></a><a href='#L82'>82</a>
-<a name='L83'></a><a href='#L83'>83</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -225,10 +250,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Component } from '@angular/core';
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PortfolioService } from '../../services/portfolio.service';
 &nbsp;
 @Component({
   selector: 'app-footer',
@@ -239,8 +278,8 @@ import { RouterLink } from '@angular/router';
       &lt;div class="container"&gt;
         &lt;div class="grid"&gt;
           &lt;div&gt;
-            &lt;h3 class="title"&gt;Atelier Lumen&lt;/h3&gt;
-            &lt;p&gt;Mobilier sculpté &amp; scénographies sensibles, depuis Lyon.&lt;/p&gt;
+            &lt;h3 class="title"&gt;Milo GUILLAUME Design&lt;/h3&gt;
+            &lt;p&gt;Mobilier sculpté &amp; scénographies sensibles, depuis Paris.&lt;/p&gt;
           &lt;/div&gt;
 &nbsp;
           &lt;div&gt;
@@ -255,15 +294,21 @@ import { RouterLink } from '@angular/router';
           &lt;div&gt;
             &lt;span class="eyebrow"&gt;Contact&lt;/span&gt;
             &lt;ul&gt;
-              &lt;li&gt;&lt;a href="mailto:studio@atelier-lumen.fr"&gt;studio&amp;#64;atelier-lumen.fr&lt;/a&gt;&lt;/li&gt;
-              &lt;li&gt;+33 (0)4 78 00 00 00&lt;/li&gt;
-              &lt;li&gt;3 quai Saint-Vincent, 69001 Lyon&lt;/li&gt;
+              @if (email()) {
+                &lt;li&gt;&lt;a href="mailto:{{ email() }}"&gt;{{ email() }}&lt;/a&gt;&lt;/li&gt;
+              }
+              @if (phone()) {
+                &lt;li&gt;{{ phone() }}&lt;/li&gt;
+              }
+              @if (location()) {
+                &lt;li&gt;{{ location() }}&lt;/li&gt;
+              }
             &lt;/ul&gt;
           &lt;/div&gt;
         &lt;/div&gt;
 &nbsp;
         &lt;div class="legal"&gt;
-          &lt;span&gt;© {{ year }} Atelier Lumen — Tous droits réservés.&lt;/span&gt;
+          &lt;span&gt;© {{ year }} Milo GUILLAUME Design — Tous droits réservés.&lt;/span&gt;
           &lt;span&gt;Conçu en France.&lt;/span&gt;
         &lt;/div&gt;
       &lt;/div&gt;
@@ -271,7 +316,6 @@ import { RouterLink } from '@angular/router';
   `,
   styles: [`
     footer {
-      background: var(--color-bg-alt);
       padding: 80px 0 32px;
       margin-top: 96px;
       border-top: 1px solid var(--color-line);
@@ -307,7 +351,20 @@ import { RouterLink } from '@angular/router';
   `]
 })
 export class FooterComponent {
+  private readonly portfolio = inject(PortfolioService);
+&nbsp;
   protected readonly year = new Date().getFullYear();
+  protected readonly email = signal('');
+  protected readonly phone = signal('');
+  protected readonly location = signal('');
+&nbsp;
+  constructor() {
+    this.portfolio.getContent().subscribe(content =&gt; {
+      this.email.set(content['profile.contactEmail'] ?? '');
+      this.phone.set(content['profile.phone'] ?? '');
+      this.location.set(content['profile.location'] ?? '');
+    });
+  }
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -316,7 +373,7 @@ export class FooterComponent {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T09:19:56.330Z
+                at 2026-05-10T19:46:35.172Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

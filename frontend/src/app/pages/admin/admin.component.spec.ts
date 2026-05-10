@@ -337,6 +337,15 @@ describe('AdminComponent', () => {
 
       expect(component['messageType']()).toBe('error');
     });
+
+    it('should set loadingPhotos to false when refreshPhotos fails', () => {
+      portfolioServiceSpy.getPhotos.and.returnValue(throwError(() => new Error('boom')));
+
+      const fix = TestBed.createComponent(AdminComponent);
+      fix.detectChanges();
+
+      expect(fix.componentInstance['loadingPhotos']()).toBeFalse();
+    });
   });
 
   describe('Edge cases for nullable fields', () => {
@@ -509,6 +518,38 @@ describe('AdminComponent', () => {
 
       expect(component['messageType']()).toBe('error');
     });
+
+    it('should do nothing when uploadFiles receives no files', () => {
+      const event = { target: { files: null, value: '' } } as unknown as Event;
+
+      component.uploadFiles(event);
+
+      expect(portfolioServiceSpy.uploadPhoto).not.toHaveBeenCalled();
+      expect(component['uploading']()).toBeFalse();
+    });
+
+    it('should show error flash and stop uploading when uploadPhoto fails', () => {
+      portfolioServiceSpy.uploadPhoto.and.returnValue(throwError(() => new Error('upload failed')));
+
+      const mockFile = new File([], 'fail.jpg', { type: 'image/jpeg' });
+      const mockFileList = { 0: mockFile, length: 1, item: (_: number) => mockFile } as unknown as FileList;
+      const event = { target: { files: mockFileList, value: '' } } as unknown as Event;
+
+      component.uploadFiles(event);
+
+      expect(component['messageType']()).toBe('error');
+      expect(component['uploading']()).toBeFalse();
+    });
+
+    it('should do nothing on Escape when viewer and picker are both closed', () => {
+      component.closeViewer();
+      component.closePicker();
+
+      component.onKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+      expect(component['viewingPhoto']()).toBeNull();
+      expect(component['photoPicker']()).toBeNull();
+    });
   });
 
   describe('Photo picker', () => {
@@ -589,6 +630,25 @@ describe('AdminComponent', () => {
 
       component.openPicker('exhibition-cover');
       expect(component['pickerIsGallery']()).toBe(false);
+    });
+
+    it('should not call getPhotos when photos are already loaded', () => {
+      component['photos'].set([mockPhoto]);
+      portfolioServiceSpy.getPhotos.calls.reset();
+
+      component.openPicker('furniture-cover');
+
+      expect(portfolioServiceSpy.getPhotos).not.toHaveBeenCalled();
+    });
+
+    it('should append url to exhibition-gallery when gallery field already has content', () => {
+      component['exhibitionForm'].patchValue({ gallery: 'https://existing.com/img.jpg' });
+      component.openPicker('exhibition-gallery');
+      component.selectPhoto(mockPhoto);
+
+      const gallery = component['exhibitionForm'].get('gallery')!.value as string;
+      expect(gallery).toContain('https://existing.com/img.jpg');
+      expect(gallery).toContain(mockPhoto.url);
     });
   });
 

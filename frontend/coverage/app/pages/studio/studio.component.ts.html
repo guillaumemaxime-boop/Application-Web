@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>14/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>16/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>7/7</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -240,10 +240,19 @@
 <a name='L175'></a><a href='#L175'>175</a>
 <a name='L176'></a><a href='#L176'>176</a>
 <a name='L177'></a><a href='#L177'>177</a>
-<a name='L178'></a><a href='#L178'>178</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -405,21 +414,37 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Component, inject, signal } from '@angular/core';
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Component, inject, signal, computed } from '@angular/core';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Profile } from '../../models/profile.model';
+import { SiteContent } from '../../models/site-content.model';
 &nbsp;
 @Component({
   selector: 'app-studio',
@@ -436,6 +461,9 @@ import { Profile } from '../../models/profile.model';
               &lt;p class="bio"&gt;{{ p.bio }}&lt;/p&gt;
               &lt;p class="contact"&gt;
                 &lt;span&gt;{{ p.location }}&lt;/span&gt;
+                @if (content()['profile.phone']) {
+                  &lt;span&gt;{{ content()['profile.phone'] }}&lt;/span&gt;
+                }
                 &lt;a [href]="'mailto:' + p.contactEmail"&gt;{{ p.contactEmail }}&lt;/a&gt;
               &lt;/p&gt;
             &lt;/div&gt;
@@ -467,27 +495,17 @@ import { Profile } from '../../models/profile.model';
 &nbsp;
     &lt;section class="section process"&gt;
       &lt;div class="container"&gt;
-        &lt;div class="proc-grid"&gt;
-          &lt;div class="step"&gt;
-            &lt;span class="num"&gt;01&lt;/span&gt;
-            &lt;h3&gt;Dessin&lt;/h3&gt;
-            &lt;p&gt;Chaque pièce naît d'une succession de croquis et de maquettes à l'échelle, jusqu'à ce que la silhouette s'impose.&lt;/p&gt;
-          &lt;/div&gt;
-          &lt;div class="step"&gt;
-            &lt;span class="num"&gt;02&lt;/span&gt;
-            &lt;h3&gt;Matière&lt;/h3&gt;
-            &lt;p&gt;Le bois est sélectionné en forêt, séché plusieurs années. Marbres et cuirs proviennent d'ateliers européens partenaires.&lt;/p&gt;
-          &lt;/div&gt;
-          &lt;div class="step"&gt;
-            &lt;span class="num"&gt;03&lt;/span&gt;
-            &lt;h3&gt;Façonnage&lt;/h3&gt;
-            &lt;p&gt;La taille, l'assemblage et la finition sont réalisés à la main dans nos ateliers lyonnais.&lt;/p&gt;
-          &lt;/div&gt;
-          &lt;div class="step"&gt;
-            &lt;span class="num"&gt;04&lt;/span&gt;
-            &lt;h3&gt;Signature&lt;/h3&gt;
-            &lt;p&gt;Chaque pièce est numérotée, signée et accompagnée d'un certificat d'édition.&lt;/p&gt;
-          &lt;/div&gt;
+        &lt;span class="eyebrow proc-label"&gt;Processus&lt;/span&gt;
+        &lt;div class="proc-list"&gt;
+          @for (step of steps(); track step.num) {
+            &lt;div class="step"&gt;
+              &lt;span class="num"&gt;{{ step.num }}&lt;/span&gt;
+              &lt;div&gt;
+                &lt;h3&gt;{{ step.title }}&lt;/h3&gt;
+                &lt;p&gt;{{ step.desc }}&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          }
         &lt;/div&gt;
       &lt;/div&gt;
     &lt;/section&gt;
@@ -518,8 +536,13 @@ import { Profile } from '../../models/profile.model';
       padding-top: 32px;
       border-top: 1px solid var(--color-line);
       font-size: 0.95rem;
+      color: var(--color-ink-soft);
     }
-    .contact a { color: var(--color-accent-deep); border-bottom: 1px solid var(--color-line); padding-bottom: 2px; }
+    .contact a {
+      color: var(--color-ink);
+      transition: opacity var(--transition);
+    }
+    .contact a:hover { opacity: 0.5; }
 &nbsp;
     aside h3 {
       font-size: 0.75rem;
@@ -546,38 +569,36 @@ import { Profile } from '../../models/profile.model';
       font-size: 0.95rem;
       border-bottom: 1px solid var(--color-line);
     }
-    .press .y { color: var(--color-mute); }
+    .press .y { color: var(--color-mute); flex-shrink: 0; }
 &nbsp;
-    .process { background: var(--color-bg-alt); }
-    .proc-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 32px;
-    }
+    .process { border-top: 1px solid var(--color-line); }
+    .proc-label { display: block; margin-bottom: 40px; }
+    .proc-list { display: flex; flex-direction: column; }
     .step {
-      padding: 32px;
-      background: var(--color-bg);
-      border: 1px solid var(--color-line);
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 32px;
+      padding: 40px 0;
+      border-bottom: 1px solid var(--color-line);
+      align-items: start;
     }
     .num {
-      display: inline-block;
       font-family: var(--serif);
-      font-size: 2.5rem;
-      color: var(--color-accent);
-      margin-bottom: 12px;
+      font-size: 2rem;
+      color: var(--color-ink);
+      line-height: 1;
     }
-    .step h3 { font-size: 1.25rem; margin-bottom: 8px; }
-    .step p { font-size: 0.9rem; }
+    .step h3 { font-size: 1.375rem; margin-bottom: 12px; }
+    .step p { font-size: 0.95rem; }
 &nbsp;
     .status { color: var(--color-mute); margin-top: 32px; }
-    .status.error { color: #b1532a; }
+    .status.error { color: #c0392b; }
 &nbsp;
     @media (max-width: 960px) {
       .grid { grid-template-columns: 1fr; gap: 48px; }
-      .proc-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 600px) {
-      .proc-grid { grid-template-columns: 1fr; }
+      .step { grid-template-columns: 56px 1fr; gap: 16px; }
     }
   `]
 })
@@ -586,11 +607,26 @@ export class StudioComponent {
 &nbsp;
   protected readonly profile = signal&lt;Profile | null&gt;(null);
   protected readonly loading = signal(true);
+  protected readonly content = signal&lt;SiteContent&gt;({});
+&nbsp;
+  protected readonly steps = computed(() =&gt; {
+    const c = this.content();
+    return [
+      { num: '01', title: c['studio.step1.title'] ?? 'Dessin', desc: c['studio.step1.desc'] ?? '' },
+      { num: '02', title: c['studio.step2.title'] ?? 'Matière', desc: c['studio.step2.desc'] ?? '' },
+      { num: '03', title: c['studio.step3.title'] ?? 'Façonnage', desc: c['studio.step3.desc'] ?? '' },
+      { num: '04', title: c['studio.step4.title'] ?? 'Signature', desc: c['studio.step4.desc'] ?? '' },
+    ];
+  });
 &nbsp;
   constructor() {
     this.portfolio.getProfile().subscribe({
       next: data =&gt; { this.profile.set(data); this.loading.set(false); },
       error: () =&gt; this.loading.set(false)
+    });
+    this.portfolio.getContent().subscribe({
+      next: data =&gt; this.content.set(data),
+      error: () =&gt; {}
     });
   }
 }
@@ -601,7 +637,7 @@ export class StudioComponent {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-03T09:19:56.330Z
+                at 2026-05-10T19:46:35.172Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
