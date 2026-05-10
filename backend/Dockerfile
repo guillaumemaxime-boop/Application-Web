@@ -15,7 +15,8 @@ WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build /workspace/target/portfolio-backend-*.jar app.jar
 COPY entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh && chown -R app:app /app
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh && chown -R app:app /app \
+    && mkdir -p /data/uploads && chown app:app /data/uploads
 USER app
 
 EXPOSE 8080

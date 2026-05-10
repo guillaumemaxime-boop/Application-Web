@@ -4,6 +4,7 @@ import { PortfolioService } from '../../services/portfolio.service';
 import { of, throwError } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
+import { Photo } from '../../models/photo.model';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -27,6 +28,14 @@ describe('AdminComponent', () => {
     dimensions: ['Hauteur 92 cm', 'Largeur 78 cm'],
     designer: 'Milo GUILLAUME Design',
     featured: true,
+  };
+
+  const mockPhoto: Photo = {
+    id: 'ph-abc12345',
+    filename: '8f3a1b2c-uuid.jpg',
+    originalName: 'portrait-studio.jpg',
+    url: '/api/photos/files/8f3a1b2c-uuid.jpg',
+    uploadedAt: '2026-05-10T18:47:54.746Z',
   };
 
   const mockExhibition: Exhibition = {
@@ -59,6 +68,9 @@ describe('AdminComponent', () => {
       'deleteExhibition',
       'getContent',
       'updateContent',
+      'getPhotos',
+      'uploadPhoto',
+      'deletePhoto',
     ]);
     spy.getAllFurniture.and.returnValue(of([mockFurniture]));
     spy.getAllExhibitions.and.returnValue(of([mockExhibition]));
@@ -70,6 +82,9 @@ describe('AdminComponent', () => {
     spy.deleteExhibition.and.returnValue(of(void 0));
     spy.getContent.and.returnValue(of({}));
     spy.updateContent.and.returnValue(of({}));
+    spy.getPhotos.and.returnValue(of([]));
+    spy.uploadPhoto.and.returnValue(of(mockPhoto));
+    spy.deletePhoto.and.returnValue(of(void 0));
 
     await TestBed.configureTestingModule({
       imports: [AdminComponent],
@@ -98,10 +113,11 @@ describe('AdminComponent', () => {
 
   it('should display the furniture tab by default', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-    expect(tabs.length).toBe(3);
+    expect(tabs.length).toBe(4);
     expect(tabs[0].classList.contains('active')).toBe(true);
     expect(tabs[1].classList.contains('active')).toBe(false);
     expect(tabs[2].classList.contains('active')).toBe(false);
+    expect(tabs[3].classList.contains('active')).toBe(false);
   });
 
   it('should switch to the exhibitions tab', () => {
@@ -393,6 +409,186 @@ describe('AdminComponent', () => {
       component.removeExhibition(mockExhibition);
 
       expect(component['editingExhibitionSlug']()).toBeNull();
+    });
+  });
+
+  describe('Photos tab', () => {
+    beforeEach(() => {
+      portfolioServiceSpy.getPhotos.and.returnValue(of([mockPhoto]));
+    });
+
+    it('should switch to the photos tab', () => {
+      component.switchTab('photos');
+      fixture.detectChanges();
+
+      const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
+      expect(tabs[3].classList.contains('active')).toBe(true);
+      expect(tabs[0].classList.contains('active')).toBe(false);
+    });
+
+    it('should call getPhotos on init', () => {
+      expect(portfolioServiceSpy.getPhotos).toHaveBeenCalled();
+    });
+
+    it('should display photos grid after loading', () => {
+      component['photos'].set([mockPhoto]);
+      component.switchTab('photos');
+      fixture.detectChanges();
+
+      const cards = fixture.nativeElement.querySelectorAll('.photo-card');
+      expect(cards.length).toBe(1);
+    });
+
+    it('should show empty state when no photos', () => {
+      component['photos'].set([]);
+      component.switchTab('photos');
+      fixture.detectChanges();
+
+      const empty = fixture.nativeElement.querySelector('.photos-empty');
+      expect(empty).toBeTruthy();
+    });
+
+    it('should open viewer when openViewer is called', () => {
+      component.openViewer(mockPhoto);
+
+      expect(component['viewingPhoto']()).toEqual(mockPhoto);
+    });
+
+    it('should close viewer when closeViewer is called', () => {
+      component.openViewer(mockPhoto);
+      component.closeViewer();
+
+      expect(component['viewingPhoto']()).toBeNull();
+    });
+
+    it('should close viewer on Escape key', () => {
+      component.openViewer(mockPhoto);
+      component.onKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+      expect(component['viewingPhoto']()).toBeNull();
+    });
+
+    it('should not close viewer on other keys', () => {
+      component.openViewer(mockPhoto);
+      component.onKeydown(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+      expect(component['viewingPhoto']()).toEqual(mockPhoto);
+    });
+
+    it('should remove photo when confirmed', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      component['photos'].set([mockPhoto]);
+
+      component.removePhoto(mockPhoto);
+
+      expect(portfolioServiceSpy.deletePhoto).toHaveBeenCalledWith(mockPhoto.id);
+    });
+
+    it('should not remove photo when not confirmed', () => {
+      spyOn(window, 'confirm').and.returnValue(false);
+
+      component.removePhoto(mockPhoto);
+
+      expect(portfolioServiceSpy.deletePhoto).not.toHaveBeenCalled();
+    });
+
+    it('should remove photo from local list after deletion', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      component['photos'].set([mockPhoto]);
+
+      component.removePhoto(mockPhoto);
+
+      expect(component['photos']()).toEqual([]);
+    });
+
+    it('should show error flash when deletePhoto fails', () => {
+      spyOn(window, 'confirm').and.returnValue(true);
+      portfolioServiceSpy.deletePhoto.and.returnValue(throwError(() => new Error('boom')));
+
+      component.removePhoto(mockPhoto);
+
+      expect(component['messageType']()).toBe('error');
+    });
+  });
+
+  describe('Photo picker', () => {
+    it('should open picker and set target', () => {
+      component.openPicker('furniture-cover');
+
+      expect(component['photoPicker']()).toBe('furniture-cover');
+    });
+
+    it('should close picker', () => {
+      component.openPicker('furniture-cover');
+      component.closePicker();
+
+      expect(component['photoPicker']()).toBeNull();
+    });
+
+    it('should close picker on Escape key', () => {
+      component.openPicker('furniture-gallery');
+      component.onKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+      expect(component['photoPicker']()).toBeNull();
+    });
+
+    it('should set coverImage when selecting photo for furniture-cover', () => {
+      component.openPicker('furniture-cover');
+      component.selectPhoto(mockPhoto);
+
+      expect(component['furnitureForm'].get('coverImage')!.value).toBe(mockPhoto.url);
+      expect(component['photoPicker']()).toBeNull();
+    });
+
+    it('should append url to gallery when selecting photo for furniture-gallery', () => {
+      component['furnitureForm'].patchValue({ gallery: 'https://existing.com/img.jpg' });
+      component.openPicker('furniture-gallery');
+      component.selectPhoto(mockPhoto);
+
+      const gallery = component['furnitureForm'].get('gallery')!.value as string;
+      expect(gallery).toContain('https://existing.com/img.jpg');
+      expect(gallery).toContain(mockPhoto.url);
+      expect(component['photoPicker']()).toBe('furniture-gallery');
+    });
+
+    it('should set gallery url directly when gallery field is empty', () => {
+      component['furnitureForm'].patchValue({ gallery: '' });
+      component.openPicker('furniture-gallery');
+      component.selectPhoto(mockPhoto);
+
+      expect(component['furnitureForm'].get('gallery')!.value).toBe(mockPhoto.url);
+    });
+
+    it('should set coverImage when selecting photo for exhibition-cover', () => {
+      component.openPicker('exhibition-cover');
+      component.selectPhoto(mockPhoto);
+
+      expect(component['exhibitionForm'].get('coverImage')!.value).toBe(mockPhoto.url);
+      expect(component['photoPicker']()).toBeNull();
+    });
+
+    it('should append url to gallery when selecting photo for exhibition-gallery', () => {
+      component.openPicker('exhibition-gallery');
+      component.selectPhoto(mockPhoto);
+
+      expect(component['exhibitionForm'].get('gallery')!.value).toBe(mockPhoto.url);
+      expect(component['photoPicker']()).toBe('exhibition-gallery');
+    });
+
+    it('pickerIsGallery should return true for gallery targets', () => {
+      component.openPicker('furniture-gallery');
+      expect(component['pickerIsGallery']()).toBe(true);
+
+      component.openPicker('exhibition-gallery');
+      expect(component['pickerIsGallery']()).toBe(true);
+    });
+
+    it('pickerIsGallery should return false for cover targets', () => {
+      component.openPicker('furniture-cover');
+      expect(component['pickerIsGallery']()).toBe(false);
+
+      component.openPicker('exhibition-cover');
+      expect(component['pickerIsGallery']()).toBe(false);
     });
   });
 

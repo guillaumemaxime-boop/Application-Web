@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-create-photos
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: photo
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: filename
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: original_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: url
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: uploaded_at
+                  type: varchar(50)
+                  constraints:
+                    nullable: false

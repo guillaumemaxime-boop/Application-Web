@@ -5,6 +5,7 @@ import { Furniture } from '../models/furniture.model';
 import { Exhibition } from '../models/exhibition.model';
 import { Profile } from '../models/profile.model';
 import { SiteContent } from '../models/site-content.model';
+import { Photo } from '../models/photo.model';
 
 const API = '/api';
 
@@ -74,5 +75,19 @@ export class PortfolioService {
 
   updateContent(content: SiteContent): Observable<SiteContent> {
     return this.http.put<SiteContent>(`${API}/content`, content);
+  }
+
+  getPhotos(): Observable<Photo[]> {
+    return this.http.get<Photo[]>(`${API}/photos`);
+  }
+
+  uploadPhoto(file: File): Observable<Photo> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<Photo>(`${API}/photos`, fd);
+  }
+
+  deletePhoto(id: string): Observable<void> {
+    return this.http.delete<void>(`${API}/photos/${id}`);
   }
 }

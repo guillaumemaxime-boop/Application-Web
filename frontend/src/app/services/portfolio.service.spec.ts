@@ -5,6 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Furniture } from '../models/furniture.model';
 import { Exhibition } from '../models/exhibition.model';
 import { Profile } from '../models/profile.model';
+import { Photo } from '../models/photo.model';
 
 describe('PortfolioService', () => {
   let service: PortfolioService;
@@ -301,6 +302,75 @@ describe('PortfolioService', () => {
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual(updates);
       req.flush(mockContent);
+    });
+  });
+
+  describe('Photos API', () => {
+    const mockPhoto: Photo = {
+      id: 'ph-abc12345',
+      filename: '8f3a1b2c-uuid.jpg',
+      originalName: 'portrait-studio.jpg',
+      url: '/api/photos/files/8f3a1b2c-uuid.jpg',
+      uploadedAt: '2026-05-10T18:47:54.746Z',
+    };
+
+    it('should retrieve all photos', () => {
+      service.getPhotos().subscribe((photos) => {
+        expect(photos.length).toBe(1);
+        expect(photos[0]).toEqual(mockPhoto);
+      });
+
+      const req = httpMock.expectOne('/api/photos');
+      expect(req.request.method).toBe('GET');
+      req.flush([mockPhoto]);
+    });
+
+    it('should return an empty list when no photos exist', () => {
+      service.getPhotos().subscribe((photos) => {
+        expect(photos).toEqual([]);
+      });
+
+      const req = httpMock.expectOne('/api/photos');
+      req.flush([]);
+    });
+
+    it('should upload a photo via POST with FormData', () => {
+      const file = new File([new Uint8Array([1, 2, 3])], 'portrait-studio.jpg', { type: 'image/jpeg' });
+
+      service.uploadPhoto(file).subscribe((photo) => {
+        expect(photo).toEqual(mockPhoto);
+      });
+
+      const req = httpMock.expectOne('/api/photos');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body instanceof FormData).toBe(true);
+      expect(req.request.body.get('file')).toBe(file);
+      req.flush(mockPhoto);
+    });
+
+    it('should delete a photo via DELETE', () => {
+      let completed = false;
+
+      service.deletePhoto('ph-abc12345').subscribe({
+        next: () => { completed = true; },
+      });
+
+      const req = httpMock.expectOne('/api/photos/ph-abc12345');
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+      expect(completed).toBe(true);
+    });
+
+    it('should handle 413 error when file is too large', () => {
+      const file = new File([], 'huge.jpg', { type: 'image/jpeg' });
+
+      service.uploadPhoto(file).subscribe({
+        next: () => fail('should have failed'),
+        error: (err) => expect(err.status).toBe(413),
+      });
+
+      const req = httpMock.expectOne('/api/photos');
+      req.flush('Payload Too Large', { status: 413, statusText: 'Payload Too Large' });
     });
   });
 

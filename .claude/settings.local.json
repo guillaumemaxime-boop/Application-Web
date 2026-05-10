@@ -50,7 +50,21 @@
       "Bash(git stash *)",
       "Bash(curl -s http://localhost:8080/api/content)",
       "Bash(python -c \"import json,sys; c=json.load\\(sys.stdin\\); print\\('phone:', c.get\\('profile.phone','NON TROUVE'\\)\\)\")",
-      "PowerShell($frontendPath = \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; docker run --rm -v \"${frontendPath}:/workspace\" -w /workspace node:20-alpine sh -c \"npm ci --silent && npx ng test --watch=false --browsers=ChromeHeadless --code-coverage 2>&1\" | Select-Object -Last 30)"
+      "PowerShell($frontendPath = \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; docker run --rm -v \"${frontendPath}:/workspace\" -w /workspace node:20-alpine sh -c \"npm ci --silent && npx ng test --watch=false --browsers=ChromeHeadless --code-coverage 2>&1\" | Select-Object -Last 30)",
+      "Bash(Get-Item .)",
+      "Bash(Select-Object Name)",
+      "Bash(BACKEND_IMAGE=portfolio-backend:local FRONTEND_IMAGE=portfolio-frontend:local docker compose -f deploy/base/docker-compose.yml --env-file deploy/envs/local/.env up -d --remove-orphans)",
+      "Bash(docker stop *)",
+      "Bash(docker rm *)",
+      "Bash(docker volume *)",
+      "Bash(BACKEND_IMAGE=portfolio-backend:local FRONTEND_IMAGE=portfolio-frontend:local docker compose -f deploy/base/docker-compose.yml --env-file deploy/envs/local/.env up -d)",
+      "Bash(curl -s http://localhost:8080/actuator/health)",
+      "Bash(BACKEND_IMAGE=portfolio-backend:local FRONTEND_IMAGE=portfolio-frontend:local docker compose -f deploy/base/docker-compose.yml --env-file deploy/envs/local/.env up -d frontend)",
+      "Bash(Get-ChildItem -Recurse -Path \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\backend\\\\src\\\\test\\\\java\" -Directory)",
+      "Bash(Measure-Object)",
+      "Bash(Select-Object -ExpandProperty Count)",
+      "PowerShell(Get-ChildItem -Recurse -Path \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\backend\\\\src\\\\test\\\\java\" | Where-Object {$_.PSIsContainer} | Measure-Object | Select-Object -ExpandProperty Count)",
+      "PowerShell(Get-Command mvn -ErrorAction SilentlyContinue; Get-Command mvnw -ErrorAction SilentlyContinue; docker run --rm --name mvn-test -v \"${PWD}\\\\backend:/workspace\" -w /workspace maven:3.9-eclipse-temurin-25 mvn test 2>&1 | Select-Object -Last 100)"
     ]
   }
 }

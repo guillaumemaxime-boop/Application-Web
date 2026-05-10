@@ -34,8 +34,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
+      UPLOAD_DIR: /data/uploads
     ports:
       - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - uploads-data:/data/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,3 +71,4 @@ networks:
 
 volumes:
   postgres-data:
+  uploads-data:

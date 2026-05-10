@@ -1,0 +1,16 @@
+{
+  "properties": [
+    {
+      "name": "app.upload.dir",
+      "type": "java.lang.String",
+      "description": "Directory where uploaded photos are stored on disk.",
+      "defaultValue": "./uploads"
+    },
+    {
+      "name": "app.upload.base-url",
+      "type": "java.lang.String",
+      "description": "Base URL prefix used to build public photo URLs.",
+      "defaultValue": "/api/photos/files"
+    }
+  ]
+}
