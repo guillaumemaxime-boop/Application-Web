@@ -70,7 +70,9 @@
       "PowerShell(docker --version 2>&1)",
       "PowerShell(docker run --rm -v \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend:/app\" -w /app node:20-alpine sh -c \"apk add --no-cache chromium && export CHROME_BIN=/usr/bin/chromium-browser && npm ci --silent 2>/dev/null || true && npx ng test --watch=false --browsers=ChromeHeadless --code-coverage 2>&1 | tail -30\" 2>&1)",
       "PowerShell(docker run --rm -e CI=true -v \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend:/app\" -w /app node:20-alpine sh -c \"apk add --no-cache chromium > /dev/null 2>&1 && export CHROME_BIN=/usr/bin/chromium-browser && npm ci --silent 2>/dev/null && npx ng test --watch=false --code-coverage 2>&1 | tail -40\")",
-      "Bash(git commit --allow-empty -m ' *)"
+      "Bash(git commit --allow-empty -m ' *)",
+      "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\" -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"username\\\\\":\\\\\"admin\\\\\",\\\\\"password\\\\\":\\\\\"admin\\\\\"}\")",
+      "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\" -X POST http://localhost:4200/api/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"username\\\\\":\\\\\"admin\\\\\",\\\\\"password\\\\\":\\\\\"admin\\\\\"}\")"
     ]
   }
 }
