@@ -67,8 +67,22 @@ jobs:
           BACKEND_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_BACKEND_STAGING }}
           FRONTEND_SERVICE_ID: ${{ vars.RAILWAY_SERVICE_FRONTEND_STAGING }}
         run: |
-          railway redeploy --service "$BACKEND_SERVICE_ID" --yes
-          railway redeploy --service "$FRONTEND_SERVICE_ID" --yes
+          redeploy_with_retry() {
+            local SERVICE_ID="$1"
+            local MAX_ATTEMPTS=6
+            local ATTEMPT=0
+            until railway redeploy --service "$SERVICE_ID" --yes 2>&1; do
+              ATTEMPT=$((ATTEMPT + 1))
+              if [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; then
+                echo "::error::Failed to redeploy service $SERVICE_ID after $MAX_ATTEMPTS attempts"
+                return 1
+              fi
+              echo "Service busy (attempt $ATTEMPT/$MAX_ATTEMPTS), retrying in 20s..."
+              sleep 20
+            done
+          }
+          redeploy_with_retry "$BACKEND_SERVICE_ID"
+          redeploy_with_retry "$FRONTEND_SERVICE_ID"
 
       - name: Wait for Railway deployments to stabilise
         env:
