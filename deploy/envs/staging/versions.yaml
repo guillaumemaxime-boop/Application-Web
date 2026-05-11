@@ -4,7 +4,7 @@
 # GHCR image as :staging and tells Railway to redeploy.
 backend:
   image: ghcr.io/guillaumemaxime-boop/portfolio-backend
-  tag: "8c76d3f6cfdd"
+  tag: "5a6be0f218af"
 frontend:
   image: ghcr.io/guillaumemaxime-boop/portfolio-frontend
-  tag: "8c76d3f6cfdd"
+  tag: "5a6be0f218af"

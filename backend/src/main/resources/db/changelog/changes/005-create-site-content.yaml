@@ -19,6 +19,7 @@ databaseChangeLog:
   - changeSet:
       id: 002-seed-site-content
       author: milo-guillaume
+      validCheckSum: 9:d2bf91acc81ae74b490b88ca61c22562
       changes:
         - insert:
             tableName: site_content
@@ -128,20 +129,5 @@ databaseChangeLog:
         - insert:
             tableName: site_content
             columns:
-              - column: { name: content_key, value: "profile.phone" }
-              - column: { name: content_value, value: "+33 (0)1 00 00 00 00" }
-        - insert:
-            tableName: site_content
-            columns:
               - column: { name: content_key, value: "profile.location" }
               - column: { name: content_value, value: "Paris, France" }
-        - insert:
-            tableName: site_content
-            columns:
-              - column: { name: content_key, value: "profile.awards" }
-              - column: { name: content_value, value: "Prix Liliane Bettencourt pour l'intelligence de la main — 2023\nWallpaper* Design Awards — Best New Studio (nominé) — 2024" }
-        - insert:
-            tableName: site_content
-            columns:
-              - column: { name: content_key, value: "profile.press" }
-              - column: { name: content_value, value: "AD Magazine — Portrait|2024\nWallpaper* — Design Awards Nominee|2024\nLe Monde — Cahier Design|2023" }
