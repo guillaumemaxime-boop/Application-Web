@@ -70,7 +70,7 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 - L'application est **hébergée sur Railway** (backend + base de données) avec un frontend servi par Nginx.
 - Les **images** sont référencées par URL externe (hébergement tiers, ex. CDN ou service cloud).
 - Aucune **transaction financière** n'est gérée via l'application.
-- L'interface d'administration est accessible sans authentification dans la version actuelle.
+- L'interface d'administration est **protégée par authentification JWT** (identifiants configurés via variables d'environnement).
 
 ---
 
@@ -265,7 +265,7 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 | **F031** | CRUD expositions | Créer, lire, modifier, supprimer des expositions. | ⭐⭐⭐ | ✅ Fait |
 | **F032** | Validation des formulaires | Champs obligatoires validés avant envoi. | ⭐⭐ | ✅ Fait |
 | **F033** | Retour visuel | Message de succès / erreur après chaque opération. | ⭐⭐ | ✅ Fait |
-| **F034** | Protection de l'admin | Accès restreint par authentification. | ⭐⭐⭐ | ⏳ À faire |
+| **F034** | Protection de l'admin | Accès restreint par authentification JWT (authGuard Angular + Spring Security). | ⭐⭐⭐ | ✅ Fait |
 
 ### 5.5 Navigation et UX
 
@@ -299,9 +299,9 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 
 | ID | Exigence | Description |
 |----|----------|-------------|
-| **NF010** | CORS | API accessible uniquement depuis les origines autorisées (`localhost:4200`, domaine de production). |
+| **NF010** | CORS | API accessible uniquement depuis les origines autorisées (`localhost:4200`, `127.0.0.1`, `127.0.0.1:4200`, domaine de production). |
 | **NF011** | Validation des entrées | Toutes les données en entrée d'API validées (`@Valid`, Bean Validation). |
-| **NF012** | Authentification admin | Interface `/admin` à protéger (non implémenté — voir F034). |
+| **NF012** | Authentification admin | Interface `/admin` protégée par JWT — authGuard Angular + Spring Security (`SecurityFilterChain`). Identifiants configurés via variables d'environnement. |
 
 ### 6.3 SEO
 
@@ -440,7 +440,10 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 #### Flux 3 — Gestion du Catalogue (Admin)
 
 ```
-[/admin] → onglet "Mobilier"
+[/admin] → authGuard → redirigé vers [/login]
+         → saisir identifiants (admin / mot de passe)
+         → [Enregistrer] → JWT stocké en localStorage
+         → redirigé vers [/admin] → onglet "Mobilier"
          → clic "+ Nouveau"
          → remplir le formulaire (titre, catégorie, images, description…)
          → [Enregistrer] → message de confirmation
@@ -585,7 +588,7 @@ PostgreSQL 16 (:5432)
 | **Phase 1** | MVP — Frontend Angular + API Spring Boot (données statiques) | ✅ Terminé |
 | **Phase 2** | Persistance PostgreSQL + migrations Liquibase | ✅ Terminé |
 | **Phase 3** | Interface d'administration CRUD | ✅ Terminé |
-| **Phase 4** | Protection de l'admin (authentification) | ⏳ À faire |
+| **Phase 4** | Protection de l'admin (authentification JWT) | ✅ Terminé |
 | **Phase 5** | Formulaire de contact (envoi d'e-mail) | ⏳ À faire |
 | **Phase 6** | Recherche texte dans le catalogue | ⏳ À faire |
 | **Phase 7** | Internationalisation FR/EN | ⏳ À faire |
@@ -599,6 +602,7 @@ PostgreSQL 16 (:5432)
 |---------|------|--------|---------------|
 | 1.0.0 | 01/05/2026 | Équipe Atelier Lumen | Création initiale |
 | 2.0.0 | 04/05/2026 | Maxime Guillaume | Rebrand Milo GUILLAUME Design · Mise à jour du modèle de données réel · Routes corrigées · Roadmap synchronisée · Admin CRUD documenté · Hébergement Railway |
+| 2.1.0 | 11/05/2026 | Maxime Guillaume | Authentification admin JWT (F034 ✅) · Suppression du lien Admin du menu de navigation · Correction CORS (`127.0.0.1:4200`) · Roadmap Phase 4 terminée |
 
 ---
 

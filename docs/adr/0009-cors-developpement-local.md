@@ -1,6 +1,6 @@
 # ADR-0009 : CORS restreint aux origines de développement local
 
-- **Statut** : Accepted
+- **Statut** : Accepted (mis à jour 2026-05-11)
 - **Date** : 2026-05-02
 - **Décideurs** : Équipe Atelier Lumen
 - **Tags** : backend, sécurité, cors
@@ -18,15 +18,16 @@ Les options classiques :
 
 ## Décision
 
-Configurer CORS dans `WebConfig.java` avec une **liste blanche d'origines** correspondant aux contextes attendus :
+Configurer CORS dans `SecurityConfig.java` (via `SecurityFilterChain`) avec une **liste blanche d'origines** correspondant aux contextes attendus :
 
 - `http://localhost:4200` — `ng serve` en développement
 - `http://localhost` — frontend conteneurisé servi sur le port 80
-- `http://127.0.0.1*` — variantes loopback pour la machine de démo
+- `http://127.0.0.1` — loopback sans port (accès direct)
+- `http://127.0.0.1:4200` — frontend Docker Compose accessible via IP loopback *(ajouté le 2026-05-11 — origine manquante qui causait des 403 depuis le navigateur)*
 - Méthodes autorisées : `GET, POST, PUT, DELETE, OPTIONS`
-- En-têtes : `*` (acceptables pour une API publique en lecture)
+- En-têtes autorisés : `Content-Type, Authorization, Accept`
 - `maxAge: 3600` — cache du preflight pendant 1h
-- **`allowCredentials` n'est PAS activé** : aucune donnée de session ne traverse l'origine, donc le risque CSRF lié aux credentials cross-origin est neutralisé même si les patterns d'origine étaient permissifs
+- **`allowCredentials` n'est PAS activé** : les tokens JWT transitent via l'en-tête `Authorization`, pas via des cookies — le risque CSRF lié aux credentials cross-origin est neutralisé
 
 La configuration est appliquée uniquement au préfixe `/api/**`.
 
@@ -35,14 +36,19 @@ La configuration est appliquée uniquement au préfixe `/api/**`.
 ### Positives
 - L'API reste utilisable depuis le frontend conteneurisé et depuis `ng serve` sans configuration côté client
 - Pas de wildcard `*` global qui exposerait l'API à n'importe quelle origine
-- Pas de cookies cross-origin → pas de surface CSRF même en cas de mauvaise configuration future
+- Pas de cookies cross-origin → pas de surface CSRF
+- Les quatre origines locales couvrent l'ensemble des contextes de développement réels
 
 ### Négatives / compromis
-- Le pattern `http://127.0.0.1*` est large : il matche par exemple `http://127.0.0.1.evil.com`. Tant que `allowCredentials` reste désactivé et que l'API reste en lecture seule, ce n'est pas exploitable. **À durcir lors de l'ouverture de toute route mutative ou de l'ajout de sessions** (cf. ADR à venir sur l'authentification).
 - Toute nouvelle origine de production devra être ajoutée explicitement (ce qui est intentionnel)
+- La liste est injectable via la variable `app.cors.allowed-origins` — une mauvaise valeur en production bloquerait le frontend
 
 ### Neutres
-- L'absence d'authentification ne nécessite pas, à ce stade, de complexifier la politique CORS
+- La CORS config est désormais intégrée dans `SecurityConfig` (Spring Security) plutôt que dans un `WebMvcConfigurer` séparé, ce qui centralise toute la configuration de sécurité
+
+## Correction appliquée (2026-05-11)
+
+L'origine `http://127.0.0.1:4200` était absente de la liste initiale. Les navigateurs accédant au frontend via `127.0.0.1` (plutôt que `localhost`) recevaient un 403 sur `POST /api/auth/login`. Corrigé en ajoutant l'origine manquante dans la valeur par défaut de `@Value("${app.cors.allowed-origins:...}")`.
 
 ## Alternatives envisagées
 
@@ -57,6 +63,6 @@ La configuration est appliquée uniquement au préfixe `/api/**`.
 
 ## Références
 
-- [`backend/src/main/java/com/atelier/portfolio/config/WebConfig.java`](../../backend/src/main/java/com/atelier/portfolio/config/WebConfig.java)
+- [`backend/src/main/java/com/atelier/portfolio/config/SecurityConfig.java`](../../backend/src/main/java/com/atelier/portfolio/config/SecurityConfig.java)
 - [Spring Framework — CORS](https://docs.spring.io/spring-framework/reference/web/webmvc-cors.html)
 - [OWASP — CORS Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)

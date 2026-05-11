@@ -1,7 +1,7 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.0.0
-**Date** : 04/05/2026
+**Version** : 2.1.0
+**Date** : 11/05/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
 
@@ -51,10 +51,11 @@
 - Catalogue mobilier : liste, filtrage par catégorie, fiche détaillée
 - Expositions : liste chronologique, fiche détaillée
 - Studio : profil, biographie, presse, distinctions
-- Administration : CRUD complet mobilier & expositions (interface web, pas d'auth)
+- Administration : CRUD complet mobilier & expositions (interface web, authentification JWT)
+- Authentification : login JWT via `POST /api/auth/login`, garde Angular (`authGuard`), intercepteur HTTP
 - Santé API : endpoint `/actuator/health` pour les healthchecks
 
-**Hors périmètre actuel :** authentification admin, formulaire de contact, paiement, internationalisation, SSR.
+**Hors périmètre actuel :** formulaire de contact, paiement, internationalisation, SSR.
 
 ---
 
@@ -78,7 +79,7 @@
 ┌──────────────────────────────────────────────────────────┐
 │               Spring Boot 4.0 — port 8080                │
 │  • API REST JSON                                         │
-│  • CORS autorisé : localhost:4200, localhost             │
+│  • CORS autorisé : localhost:4200, localhost, 127.0.0.1, 127.0.0.1:4200             │
 │  • Liquibase (migrations au démarrage)                   │
 │  • Actuator /health                                      │
 └────────────────────────┬─────────────────────────────────┘
@@ -97,10 +98,10 @@
 Application-Web/
 ├── backend/                     # Spring Boot
 │   ├── src/main/java/com/atelier/portfolio/
-│   │   ├── config/              # WebConfig (CORS)
-│   │   ├── controller/          # FurnitureController, ExhibitionController, ProfileController
+│   │   │   ├── config/              # SecurityConfig (CORS + JWT filter), JwtUtil
+│   │   ├── controller/          # FurnitureController, ExhibitionController, ProfileController, AuthController
 │   │   ├── entity/              # FurnitureEntity, ExhibitionEntity (JPA)
-│   │   ├── model/               # Furniture, Exhibition, Profile (records Java)
+│   │   ├── model/               # Furniture, Exhibition, Profile, LoginRequest, LoginResponse (records Java)
 │   │   ├── repository/          # FurnitureRepository, ExhibitionRepository (JPA)
 │   │   └── service/             # FurnitureService, ExhibitionService
 │   ├── src/main/resources/
@@ -110,10 +111,12 @@ Application-Web/
 ├── frontend/                    # Angular 21
 │   ├── src/app/
 │   │   ├── components/          # HeaderComponent, FooterComponent
+│   │   ├── guards/              # auth.guard.ts (protège /admin)
+│   │   ├── interceptors/        # auth.interceptor.ts (injecte Bearer token, gère 401)
 │   │   ├── models/              # furniture.model.ts, exhibition.model.ts, profile.model.ts
 │   │   ├── pages/               # home, furniture-list, furniture-detail,
-│   │   │                        # exhibitions-list, exhibition-detail, studio, admin
-│   │   ├── services/            # portfolio.service.ts
+│   │   │                        # exhibitions-list, exhibition-detail, studio, admin, login
+│   │   ├── services/            # portfolio.service.ts, auth.service.ts
 │   │   ├── app.routes.ts
 │   │   └── app.config.ts
 │   ├── nginx.conf               # Template Nginx (envsubst au démarrage)
@@ -265,7 +268,8 @@ interface Profile {
 
 **Base URL :** `http://localhost:8080`
 **Format :** JSON (`Content-Type: application/json`)
-**CORS :** `http://localhost:4200`, `http://localhost`, `http://127.0.0.1*`
+**CORS :** `http://localhost:4200`, `http://localhost`, `http://127.0.0.1`, `http://127.0.0.1:4200`
+**Auth :** routes mutatives protégées par JWT — header `Authorization: Bearer <token>`
 
 ### 4.1 Mobilier — `/api/furniture`
 
@@ -314,7 +318,17 @@ Ex. `"Chaise Éclat"` → `"chaise-eclat"`
 
 **Génération de l'ID :** `"e-" + UUID(8 chars)` — ex. `e-b7d1e345`
 
-### 4.3 Profil — `/api/profile`
+### 4.3 Authentification — `/api/auth`
+
+| Méthode | Endpoint | Description | Corps | Réponse |
+|---------|----------|-------------|-------|---------|
+| POST | `/api/auth/login` | Authentification admin | `{username, password}` | `{token, expiresIn}` 200 / 401 |
+
+- Identifiants configurés via `ADMIN_USERNAME` et `ADMIN_PASSWORD_HASH` (bcrypt)
+- Token JWT signé HS384, expiration 24h (`JWT_SECRET`, `JWT_EXPIRATION_MS`)
+- Endpoint `permitAll()` — aucun token requis pour s'authentifier
+
+### 4.4 Profil — `/api/profile`
 
 | Méthode | Endpoint | Description | Réponse |
 |---------|----------|-------------|---------|
@@ -322,7 +336,7 @@ Ex. `"Chaise Éclat"` → `"chaise-eclat"`
 
 > Données hardcodées dans `ProfileController`. Pour les modifier, éditer directement le contrôleur.
 
-### 4.4 Actuator
+### 4.5 Actuator
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
@@ -343,18 +357,21 @@ Ex. `"Chaise Éclat"` → `"chaise-eclat"`
 
 ### 5.2 Routes
 
-| Path | Composant | Lazy | Titre de page |
-|------|-----------|------|---------------|
-| `` (racine) | `HomeComponent` | ✅ | "Milo GUILLAUME Design — Mobilier sculpté & expositions" |
-| `mobilier` | `FurnitureListComponent` | ✅ | "Mobilier — Milo GUILLAUME Design" |
-| `mobilier/:slug` | `FurnitureDetailComponent` | ✅ | (dynamique : titre du meuble) |
-| `expositions` | `ExhibitionsListComponent` | ✅ | "Expositions — Milo GUILLAUME Design" |
-| `expositions/:slug` | `ExhibitionDetailComponent` | ✅ | (dynamique : titre de l'exposition) |
-| `studio` | `StudioComponent` | ✅ | "Studio — Milo GUILLAUME Design" |
-| `admin` | `AdminComponent` | ✅ | "Administration — Milo GUILLAUME Design" |
-| `**` | redirect → `/` | — | — |
+| Path | Composant | Lazy | Guard | Titre de page |
+|------|-----------|------|-------|---------------|
+| `` (racine) | `HomeComponent` | ✅ | — | "Milo GUILLAUME Design — Mobilier sculpté & expositions" |
+| `mobilier` | `FurnitureListComponent` | ✅ | — | "Mobilier — Milo GUILLAUME Design" |
+| `mobilier/:slug` | `FurnitureDetailComponent` | ✅ | — | (dynamique : titre du meuble) |
+| `expositions` | `ExhibitionsListComponent` | ✅ | — | "Expositions — Milo GUILLAUME Design" |
+| `expositions/:slug` | `ExhibitionDetailComponent` | ✅ | — | (dynamique : titre de l'exposition) |
+| `studio` | `StudioComponent` | ✅ | — | "Studio — Milo GUILLAUME Design" |
+| `login` | `LoginComponent` | ✅ | — | "Connexion — Milo GUILLAUME Design" |
+| `admin` | `AdminComponent` | ✅ | `authGuard` | "Administration — Milo GUILLAUME Design" |
+| `**` | redirect → `/` | — | — | — |
 
-### 5.3 Service — `PortfolioService`
+### 5.3 Services
+
+#### `PortfolioService`
 
 Singleton (`providedIn: 'root'`). Base : `/api`. Utilise `HttpClient` injecté via `inject()`.
 
@@ -374,6 +391,21 @@ Singleton (`providedIn: 'root'`). Base : `/api`. Utilise `HttpClient` injecté v
 | `updateExhibition(slug, input)` | PUT | `/api/exhibitions/{slug}` |
 | `deleteExhibition(slug)` | DELETE | `/api/exhibitions/{slug}` |
 | `getProfile()` | GET | `/api/profile` |
+
+#### `AuthService`
+
+Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
+
+| Méthode | Description |
+|---------|-------------|
+| `login(username, password)` | POST `/api/auth/login` → stocke le token en `localStorage` |
+| `logout()` | Supprime le token, met `isLoggedIn` à `false` |
+| `getToken()` | Retourne le token brut depuis `localStorage` |
+| `isLoggedIn` | Signal booléen — vrai si token présent et non expiré |
+
+**`authInterceptor`** : injecte `Authorization: Bearer <token>` sur chaque requête sortante ; redirige vers `/login` sur 401/403.
+
+**`authGuard`** : `CanActivateFn` — vérifie `isLoggedIn()`, redirige vers `/login` sinon.
 
 ### 5.4 Composants
 
@@ -401,12 +433,17 @@ Singleton (`providedIn: 'root'`). Base : `/api`. Utilise `HttpClient` injecté v
 #### `StudioComponent` (`/studio`)
 - Affiche `Profile` : bio, presse, distinctions, email, localisation
 
+#### `LoginComponent` (`/login`)
+- Formulaire réactif (username + password), `ReactiveFormsModule`
+- Appelle `AuthService.login()` → redirige vers `/admin` en cas de succès
+- Affiche un message d'erreur sur 401
+
 #### `AdminComponent` (`/admin`)
-- Onglets : Mobilier | Expositions
+- Protégé par `authGuard` — redirige vers `/login` si non authentifié
+- Onglets : Mobilier | Expositions | Textes du site | Médiathèque
 - Sidebar liste + panneau édition (ReactiveFormsModule)
 - CRUD complet avec messages flash (auto-dismiss 4s)
 - Signals : `tab`, `saving`, `message`, `messageType`, `editingFurnitureSlug`, `editingExhibitionSlug`
-- **Note :** Aucune protection d'accès (auth hors périmètre)
 
 ---
 
@@ -649,6 +686,10 @@ Le runner doit être taggé `self-hosted, rancher-desktop` dans les paramètres 
 | `PGUSER` | `portfolio` | Utilisateur |
 | `PGPASSWORD` | `portfolio` | Mot de passe |
 | `DATABASE_URL` | — | Alternative Railway-style (parsé par `entrypoint.sh`) |
+| `JWT_SECRET` | — | Clé HMAC-SHA384 (obligatoire) |
+| `JWT_EXPIRATION_MS` | `86400000` | Durée de vie du token JWT (ms) — défaut 24h |
+| `ADMIN_USERNAME` | — | Identifiant de l'administrateur |
+| `ADMIN_PASSWORD_HASH` | — | Hash bcrypt du mot de passe admin |
 
 **Variables d'environnement frontend (runtime nginx) :**
 
@@ -717,6 +758,8 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 0007 | CI GitHub Actions — workflows réutilisables |
 | 0008 | Stratégie de tests |
 | 0009 | CORS en développement local |
+| 0010 | Supervision et monitoring |
+| 0011 | Authentification JWT admin |
 
 ---
 
@@ -726,3 +769,4 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 |---------|------|---------------|
 | 1.0.0 | 01/05/2026 | Spécification fonctionnelle initiale (Atelier Lumen) |
 | 2.0.0 | 04/05/2026 | Refonte complète — spécification technique synchronisée avec l'implémentation réelle (rebrand Milo GUILLAUME Design, stack Java 25 / Angular 21, pipeline CI/CD GitOps, infrastructure Railway + Rancher) |
+| 2.1.0 | 11/05/2026 | Authentification JWT (AuthController, SecurityConfig, authGuard, authInterceptor, LoginComponent) · Suppression lien Admin du menu · Correction CORS (`127.0.0.1:4200`) · ADR-0011 ajouté |

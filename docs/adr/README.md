@@ -30,6 +30,7 @@ Référence : [adr.github.io](https://adr.github.io/) — format inspiré de [MA
 | 0008 | [Stratégie de tests : JUnit + Karma/Jasmine](0008-strategie-de-tests.md) | Accepted  | 2026-05-02 |
 | 0009 | [CORS restreint aux origines de développement local](0009-cors-developpement-local.md) | Accepted  | 2026-05-02 |
 | 0010 | [Supervision et monitoring — Actuator + healthchecks natifs + Railway](0010-supervision-et-monitoring.md) | Accepted  | 2026-05-04 |
+| 0011 | [Authentification JWT pour l'interface d'administration](0011-authentification-jwt-admin.md) | Accepted  | 2026-05-11 |
 
 ## Créer un nouvel ADR
 
