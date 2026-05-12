@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atelier Lumen — Home (Prototype UX)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-bg: #f5f1ea;
+      --color-bg-alt: #ebe4d7;
+      --color-ink: #1a1815;
+      --color-ink-soft: #4a453d;
+      --color-mute: #8a8378;
+      --color-line: #d8d0c2;
+      --serif: 'Cormorant Garamond', 'Times New Roman', serif;
+      --sans: 'Inter', -apple-system, sans-serif;
+      --transition: 220ms ease;
+      --header-h: 72px;
+      --stories-h: 152px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--color-bg); color: var(--color-ink); }
+    body {
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; background: none; border: none; color: inherit; }
+    img { display: block; max-width: 100%; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+
+    /* ---------- Header ---------- */
+    .site-header {
+      border-bottom: 1px solid var(--color-line);
+      background: var(--color-bg);
+      position: sticky; top: 0; z-index: 60;
+      height: var(--header-h);
+    }
+    .site-header .container {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 100%;
+    }
+    .brand { font-family: var(--serif); font-size: 1.35rem; font-weight: 500; letter-spacing: 0.02em; }
+    .nav { display: flex; gap: 36px; }
+    .nav a {
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      padding-bottom: 4px;
+      border-bottom: 1px solid transparent;
+      transition: color var(--transition), border-color var(--transition);
+    }
+    .nav a:hover { color: var(--color-ink); }
+    .nav a.active { color: var(--color-ink); border-bottom-color: var(--color-ink); }
+
+    /* ---------- Hero épuré (~50vh) ---------- */
+    .hero {
+      min-height: 50vh;
+      padding: 96px 0 64px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .eyebrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    .hero h1 {
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      line-height: 1.05;
+      margin-top: 20px;
+      max-width: 820px;
+    }
+    .hero .lead {
+      max-width: 540px;
+      margin-top: 28px;
+      font-size: 1.05rem;
+      color: var(--color-ink-soft);
+    }
+    .hero .scroll-hint {
+      margin-top: 56px;
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      display: inline-flex; align-items: center; gap: 12px;
+    }
+    .hero .scroll-hint::after {
+      content: '';
+      width: 32px; height: 1px;
+      background: var(--color-mute);
+    }
+
+    /* ---------- Stories sticky ---------- */
+    .stories {
+      position: sticky;
+      top: var(--header-h);
+      z-index: 50;
+      background: var(--color-bg);
+      border-top: 1px solid var(--color-line);
+      border-bottom: 1px solid var(--color-line);
+      padding: 24px 0;
+      transition: box-shadow var(--transition);
+    }
+    .stories.is-stuck {
+      box-shadow: 0 8px 24px -16px rgba(26, 24, 21, 0.18);
+    }
+    .stories-row {
+      display: flex;
+      gap: 32px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: thin;
+      align-items: flex-start;
+    }
+    .stories-row::-webkit-scrollbar { height: 4px; }
+    .stories-row::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 2px; }
+
+    .group-sep {
+      flex: 0 0 auto;
+      align-self: stretch;
+      display: flex; align-items: center;
+      padding: 0 4px;
+      color: var(--color-line);
+      font-size: 1.4rem;
+      user-select: none;
+    }
+
+    .story {
+      flex: 0 0 auto;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px;
+      scroll-snap-align: start;
+      cursor: pointer;
+      transition: transform var(--transition);
+      min-width: 88px;
+    }
+    .story:hover { transform: translateY(-2px); }
+    .story .ring {
+      width: 84px; height: 84px;
+      border-radius: 50%;
+      padding: 3px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-ink);
+      transition: border-color var(--transition);
+    }
+    .story:hover .ring { border-color: var(--color-ink-soft); }
+    .story .ring.expo {
+      border-style: solid;
+      border-color: var(--color-ink);
+      box-shadow: inset 0 0 0 1px var(--color-bg), inset 0 0 0 2px var(--color-ink);
+      border: none;
+      padding: 4px;
+    }
+    .story .ring img {
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .story .label {
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+      max-width: 100px;
+      text-align: center;
+    }
+    .story .kind {
+      font-size: 0.6rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      margin-top: -4px;
+    }
+
+    /* ---------- Masonry ---------- */
+    .feed { padding: 64px 0 140px; }
+    .masonry {
+      column-count: 3;
+      column-gap: 20px;
+    }
+    .post-card {
+      break-inside: avoid;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--color-bg-alt);
+      transition: transform var(--transition);
+    }
+    .post-card:hover { transform: translateY(-2px); }
+    .post-card img {
+      width: 100%; height: auto; display: block;
+      transition: transform var(--transition);
+    }
+    .post-card:hover img { transform: scale(1.02); }
+    .post-card .post-meta {
+      position: absolute; inset: auto 0 0 0;
+      padding: 20px;
+      background: linear-gradient(transparent, rgba(26, 24, 21, 0.7));
+      color: #fff;
+      opacity: 0;
+      transition: opacity var(--transition);
+      pointer-events: none;
+    }
+    .post-card:hover .post-meta { opacity: 1; }
+    .post-card .post-cat {
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      opacity: 0.85;
+      display: block;
+      margin-bottom: 6px;
+    }
+    .post-card .post-title {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      line-height: 1.15;
+    }
+    .post-card .badge-expo {
+      position: absolute; top: 14px; left: 14px;
+      background: var(--color-bg);
+      color: var(--color-ink);
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      border: 1px solid var(--color-ink);
+    }
+
+    /* ---------- Story Viewer ---------- */
+    .viewer-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(10, 10, 10, 0.96);
+      z-index: 200;
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    .viewer-backdrop.open { display: flex; }
+
+    .story-frame {
+      width: 100%;
+      max-width: 440px;
+      height: 100%;
+      max-height: 94vh;
+      background: #0a0a0a;
+      position: relative;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      font-family: var(--sans);
+      color: #fff;
+    }
+
+    .story-progress {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: flex; gap: 4px;
+      z-index: 3;
+    }
+    .story-progress .bar {
+      flex: 1;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.28);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    .story-progress .bar .fill { height: 100%; width: 0; background: #fff; }
+    .story-progress .bar.seen .fill { width: 100%; }
+
+    .story-header {
+      position: absolute; top: 28px; left: 16px; right: 16px;
+      display: flex; align-items: center; gap: 12px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .story-header.dark { color: var(--color-ink); }
+    .story-header .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--color-bg);
+      color: var(--color-ink);
+      font-family: var(--serif);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+    .story-header.dark .avatar { border-color: var(--color-line); }
+    .story-header .label { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .story-header .date { font-size: 0.72rem; opacity: 0.7; }
+    .story-header .close {
+      margin-left: auto;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      color: inherit;
+      pointer-events: auto;
+      opacity: 0.8;
+    }
+    .story-header .close:hover { opacity: 1; }
+
+    .story-media {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      background: #000;
+      overflow: hidden;
+    }
+    .story-media img { width: 100%; height: 100%; object-fit: cover; }
+
+    .story-caption {
+      position: absolute; bottom: 24px; left: 24px; right: 24px;
+      z-index: 3;
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      line-height: 1.4;
+      color: #fff;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+      pointer-events: none;
+    }
+
+    .story-tap-zones { position: absolute; inset: 0; display: flex; z-index: 2; }
+    .story-tap-zones .zone { flex: 1; cursor: pointer; }
+    .story-tap-zones .zone.left { flex: 0 0 33%; }
+
+    /* ---------- Slide variants ---------- */
+    .slide-spec, .slide-link, .slide-quote {
+      flex: 1;
+      background: var(--color-bg);
+      color: var(--color-ink);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 80px 36px 56px;
+      position: relative;
+    }
+    .slide-spec .spec-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    .slide-spec .spec-title {
+      font-family: var(--serif);
+      font-size: 2rem;
+      line-height: 1.1;
+      margin: 12px 0 32px;
+    }
+    .slide-spec dl { display: grid; grid-template-columns: 110px 1fr; gap: 14px 20px; }
+    .slide-spec dt {
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      align-self: center;
+    }
+    .slide-spec dd {
+      font-family: var(--serif);
+      font-size: 1.15rem;
+      color: var(--color-ink);
+    }
+
+    .slide-link { text-align: center; align-items: center; }
+    .slide-link .label-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    .slide-link h3 {
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: 1.8rem;
+      line-height: 1.2;
+      margin: 14px 0 8px;
+      max-width: 320px;
+    }
+    .slide-link p {
+      font-size: 0.92rem;
+      color: var(--color-ink-soft);
+      margin-bottom: 36px;
+      max-width: 320px;
+    }
+    .slide-link .cta {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 14px 28px;
+      border: 1px solid var(--color-ink);
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-ink);
+      transition: background var(--transition), color var(--transition);
+    }
+    .slide-link .cta:hover { background: var(--color-ink); color: var(--color-bg); }
+
+    .slide-quote { text-align: center; align-items: center; }
+    .slide-quote blockquote {
+      font-family: var(--serif);
+      font-style: normal;
+      font-size: 1.6rem;
+      line-height: 1.35;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+    .slide-quote cite {
+      display: block;
+      font-style: normal;
+      margin-top: 28px;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+
+    /* ---------- Note prototype ---------- */
+    .proto-note {
+      position: fixed; bottom: 16px; left: 16px; right: 16px;
+      max-width: 580px; margin: 0 auto;
+      background: var(--color-ink);
+      color: var(--color-bg);
+      padding: 14px 20px;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      z-index: 300;
+      display: flex; gap: 12px; align-items: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .proto-note strong { letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.7rem; }
+    .proto-note button { margin-left: auto; color: var(--color-bg); opacity: 0.7; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 960px) {
+      .nav { gap: 20px; }
+      .masonry { column-count: 2; }
+      .hero { padding: 64px 0 32px; }
+    }
+    @media (max-width: 600px) {
+      .container { padding: 0 20px; }
+      .nav a { font-size: 0.7rem; letter-spacing: 0.12em; }
+      .masonry { column-count: 1; }
+      .stories-row { gap: 20px; }
+      .story .ring { width: 72px; height: 72px; }
+      .story { min-width: 80px; }
+      .hero h1 { font-size: 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== Header ========== -->
+  <header class="site-header">
+    <div class="container">
+      <a href="#" class="brand">Atelier Lumen</a>
+      <nav class="nav">
+        <a href="#" class="active">Accueil</a>
+        <a href="#">Studio</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ========== Hero épuré ========== -->
+  <section class="hero">
+    <div class="container">
+      <span class="eyebrow">Atelier Lumen — Portfolio</span>
+      <h1>Mobilier sculpté,<br/>scénographies vivantes.</h1>
+      <p class="lead">
+        Six pièces en éditions limitées et trois expositions récentes.
+        À feuilleter en stories, à explorer en profondeur.
+      </p>
+      <span class="scroll-hint">Commencer</span>
+    </div>
+  </section>
+
+  <!-- ========== Stories sticky ========== -->
+  <section class="stories" id="storiesBar">
+    <div class="container">
+      <div class="stories-row" id="storiesRow"></div>
+    </div>
+  </section>
+
+  <!-- ========== Feed masonry ========== -->
+  <section class="feed">
+    <div class="container">
+      <div class="masonry" id="masonry"></div>
+    </div>
+  </section>
+
+  <!-- ========== Story Viewer ========== -->
+  <div class="viewer-backdrop" id="storyBackdrop" role="dialog" aria-modal="true" aria-label="Story viewer">
+    <div class="story-frame" id="storyFrame">
+      <div class="story-progress" id="storyProgress"></div>
+      <div class="story-header" id="storyHeader">
+        <div class="avatar">L</div>
+        <div>
+          <div class="label" id="storyLabel"></div>
+          <div class="date" id="storyDate"></div>
+        </div>
+        <button class="close" id="storyClose" aria-label="Fermer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div id="storyBody"></div>
+      <div class="story-tap-zones">
+        <div class="zone left" id="storyPrev"></div>
+        <div class="zone right" id="storyNext"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Note ========== -->
+  <div class="proto-note" id="protoNote">
+    <strong>Prototype Home</strong>
+    <span>Scroll pour voir le bandeau Stories devenir sticky. Clique sur un rond (catégorie ou expo) ou une carte du feed.</span>
+    <button onclick="document.getElementById('protoNote').style.display='none'" aria-label="Fermer la note">✕</button>
+  </div>
+
+  <script>
+    const img = (seed, w, h) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
+
+    /* ---------- Modèle ---------- */
+    // Pièces de mobilier (6)
+    const furniture = {
+      'console-lumiere': {
+        kind: 'furniture', id: 'console-lumiere',
+        title: 'Console Lumière', category: 'Consoles', year: 2026,
+        cover: img('lumen-console-lumiere', 800, 1100),
+        href: '/mobilier/console-lumiere',
+        slides: [
+          { type: 'cover', src: img('lumen-console-lumiere', 600, 1067), title: 'Console Lumière', subtitle: 'Consoles · 2026' },
+          { type: 'image', src: img('lumen-console-lumiere-2', 600, 1067), caption: 'Frêne après six mois de séchage — veines rouges en transparence.' },
+          { type: 'spec', specs: [['Dimensions','180 × 45 × 80 cm'],['Matériau','Frêne massif'],['Finition','Huile-cire'],['Édition','8 numérotées']] },
+          { type: 'link', title: 'Console Lumière', desc: 'Voir matériaux, croquis et fiche presse.', href: '/mobilier/console-lumiere' }
+        ]
+      },
+      'table-seve': {
+        kind: 'furniture', id: 'table-seve',
+        title: 'Table Sève', category: 'Tables', year: 2025,
+        cover: img('lumen-table-seve', 800, 900),
+        href: '/mobilier/table-seve',
+        slides: [
+          { type: 'cover', src: img('lumen-table-seve', 600, 1067), title: 'Table Sève', subtitle: 'Tables · 2025' },
+          { type: 'image', src: img('lumen-table-seve-2', 600, 1067), caption: 'Plateau en noyer fumé, presque noir au cœur.' },
+          { type: 'spec', specs: [['Dimensions','220 × 95 × 75 cm'],['Matériau','Noyer fumé'],['Édition','6 numérotées']] },
+          { type: 'link', title: 'Table Sève', desc: 'Croquis d\'intention et fiche atelier.', href: '/mobilier/table-seve' }
+        ]
+      },
+      'chaise-murmure': {
+        kind: 'furniture', id: 'chaise-murmure',
+        title: 'Chaise Murmure', category: 'Sièges', year: 2025,
+        cover: img('lumen-chaise-murmure', 800, 1050),
+        href: '/mobilier/chaise-murmure',
+        slides: [
+          { type: 'cover', src: img('lumen-chaise-murmure', 600, 1067), title: 'Chaise Murmure', subtitle: 'Sièges · 2025' },
+          { type: 'image', src: img('lumen-chaise-murmure-2', 600, 1067), caption: 'Assemblage à tenon, aucune vis.' },
+          { type: 'spec', specs: [['Dimensions','45 × 42 × 85 cm'],['Matériau','Chêne'],['Édition','12 numérotées']] },
+          { type: 'link', title: 'Chaise Murmure', desc: 'Voir la fiche complète.', href: '/mobilier/chaise-murmure' }
+        ]
+      },
+      'banc-veille': {
+        kind: 'furniture', id: 'banc-veille',
+        title: 'Banc Veille', category: 'Sièges', year: 2024,
+        cover: img('lumen-banc-veille', 800, 700),
+        href: '/mobilier/banc-veille',
+        slides: [
+          { type: 'cover', src: img('lumen-banc-veille', 600, 1067), title: 'Banc Veille', subtitle: 'Sièges · 2024' },
+          { type: 'image', src: img('lumen-banc-veille-2', 600, 1067), caption: 'Orme massif, finition cire d\'abeille.' },
+          { type: 'spec', specs: [['Dimensions','180 × 40 × 45 cm'],['Matériau','Orme'],['Édition','4 numérotées']] },
+          { type: 'link', title: 'Banc Veille', desc: 'Voir la fiche complète.', href: '/mobilier/banc-veille' }
+        ]
+      },
+      'table-origine': {
+        kind: 'furniture', id: 'table-origine',
+        title: 'Table Origine', category: 'Tables', year: 2024,
+        cover: img('lumen-table-origine', 800, 1000),
+        href: '/mobilier/table-origine',
+        slides: [
+          { type: 'cover', src: img('lumen-table-origine', 600, 1067), title: 'Table Origine', subtitle: 'Tables · 2024' },
+          { type: 'image', src: img('lumen-table-origine-2', 600, 1067), caption: 'Chêne d\'un arbre tombé en Sologne.' },
+          { type: 'spec', specs: [['Dimensions','240 × 100 × 74 cm'],['Matériau','Chêne'],['Édition','3 numérotées']] },
+          { type: 'link', title: 'Table Origine', desc: 'Voir la fiche complète.', href: '/mobilier/table-origine' }
+        ]
+      },
+      'console-brume': {
+        kind: 'furniture', id: 'console-brume',
+        title: 'Console Brume', category: 'Consoles', year: 2023,
+        cover: img('lumen-console-brume', 800, 1080),
+        href: '/mobilier/console-brume',
+        slides: [
+          { type: 'cover', src: img('lumen-console-brume', 600, 1067), title: 'Console Brume', subtitle: 'Consoles · 2023' },
+          { type: 'image', src: img('lumen-console-brume-2', 600, 1067), caption: 'Érable ondé, surface presque liquide.' },
+          { type: 'spec', specs: [['Dimensions','160 × 38 × 78 cm'],['Matériau','Érable'],['Édition','5 numérotées']] },
+          { type: 'link', title: 'Console Brume', desc: 'Voir la fiche complète.', href: '/mobilier/console-brume' }
+        ]
+      }
+    };
+
+    // Catégories de mobilier (3) — ordre éditorial figé
+    const categories = [
+      { id: 'tables', label: 'Tables', cover: furniture['table-seve'].cover, itemIds: ['table-seve','table-origine'] },
+      { id: 'sieges', label: 'Sièges', cover: furniture['chaise-murmure'].cover, itemIds: ['chaise-murmure','banc-veille'] },
+      { id: 'consoles', label: 'Consoles', cover: furniture['console-lumiere'].cover, itemIds: ['console-lumiere','console-brume'] }
+    ];
+
+    // Expositions (3)
+    const exhibitions = {
+      'lumen': {
+        kind: 'exhibition', id: 'lumen',
+        title: 'Lumen', venue: 'Pavillon des Arts', city: 'Paris',
+        period: 'mai → juin 2026',
+        cover: img('lumen-expo-lumen', 800, 700),
+        href: '/expositions/lumen',
+        slides: [
+          { type: 'cover', src: img('lumen-expo-lumen', 600, 1067), title: 'Lumen', subtitle: 'Pavillon des Arts, Paris · mai 2026' },
+          { type: 'image', src: img('lumen-expo-lumen-2', 600, 1067), caption: 'Scénographie blanche, six pièces sous lumière rasante.' },
+          { type: 'image', src: img('lumen-expo-lumen-3', 600, 1067), caption: 'La Console Lumière trouve sa place.' },
+          { type: 'quote', body: '« Une exposition qui chuchote plus qu\'elle ne déclare. »', cite: '— Le Quotidien des Arts' },
+          { type: 'link', title: 'Lumen', desc: 'Voir l\'exposition complète, dossier de presse et galerie.', href: '/expositions/lumen' }
+        ]
+      },
+      'seve': {
+        kind: 'exhibition', id: 'seve',
+        title: 'Sève', venue: 'Galerie Nord', city: 'Lyon',
+        period: 'oct → déc. 2025',
+        cover: img('lumen-expo-seve', 800, 900),
+        href: '/expositions/seve',
+        slides: [
+          { type: 'cover', src: img('lumen-expo-seve', 600, 1067), title: 'Sève', subtitle: 'Galerie Nord, Lyon · oct. 2025' },
+          { type: 'image', src: img('lumen-expo-seve-2', 600, 1067), caption: 'Six bois, six états de matière.' },
+          { type: 'quote', body: '« Le bois, ici, n\'est pas un matériau — c\'est un interlocuteur. »', cite: '— Revue Art Présent' },
+          { type: 'link', title: 'Sève', desc: 'Voir le dossier complet.', href: '/expositions/seve' }
+        ]
+      },
+      'verticale': {
+        kind: 'exhibition', id: 'verticale',
+        title: 'Verticale', venue: 'Fondation Maeght', city: 'Saint-Paul',
+        period: 'mars → avril 2025',
+        cover: img('lumen-expo-verticale', 800, 1100),
+        href: '/expositions/verticale',
+        slides: [
+          { type: 'cover', src: img('lumen-expo-verticale', 600, 1067), title: 'Verticale', subtitle: 'Fondation Maeght · mars 2025' },
+          { type: 'image', src: img('lumen-expo-verticale-2', 600, 1067), caption: 'Trois consoles, trois hauteurs, une seule ligne.' },
+          { type: 'link', title: 'Verticale', desc: 'Voir le dossier complet.', href: '/expositions/verticale' }
+        ]
+      }
+    };
+
+    // Ordre éditorial figé du masonry (mix mobilier + expos)
+    const masonryOrder = [
+      { kind: 'furniture', id: 'console-lumiere' },
+      { kind: 'exhibition', id: 'lumen' },
+      { kind: 'furniture', id: 'table-seve' },
+      { kind: 'furniture', id: 'chaise-murmure' },
+      { kind: 'exhibition', id: 'seve' },
+      { kind: 'furniture', id: 'banc-veille' },
+      { kind: 'furniture', id: 'table-origine' },
+      { kind: 'exhibition', id: 'verticale' },
+      { kind: 'furniture', id: 'console-brume' }
+    ];
+
+    const getItem = ref => ref.kind === 'furniture' ? furniture[ref.id] : exhibitions[ref.id];
+
+    /* ---------- Render Stories ---------- */
+    const storiesRow = document.getElementById('storiesRow');
+
+    categories.forEach(cat => {
+      const el = document.createElement('div');
+      el.className = 'story';
+      el.innerHTML = `
+        <div class="ring"><img src="${cat.cover}" alt="${cat.label}" /></div>
+        <span class="label">${cat.label}</span>
+        <span class="kind">${cat.itemIds.length} pièces</span>
+      `;
+      el.addEventListener('click', () => openCategoryStory(cat));
+      storiesRow.appendChild(el);
+    });
+
+    const sep = document.createElement('div');
+    sep.className = 'group-sep';
+    sep.textContent = '·';
+    sep.title = 'Expositions';
+    storiesRow.appendChild(sep);
+
+    Object.values(exhibitions).forEach(exh => {
+      const el = document.createElement('div');
+      el.className = 'story';
+      el.innerHTML = `
+        <div class="ring expo"><img src="${exh.cover}" alt="${exh.title}" /></div>
+        <span class="label">${exh.title}</span>
+        <span class="kind">Expo</span>
+      `;
+      el.addEventListener('click', () => openItemStory({ kind: 'exhibition', id: exh.id }));
+      storiesRow.appendChild(el);
+    });
+
+    /* ---------- Render Masonry ---------- */
+    const masonry = document.getElementById('masonry');
+    masonryOrder.forEach(ref => {
+      const item = getItem(ref);
+      const card = document.createElement('div');
+      card.className = 'post-card';
+      const sub = ref.kind === 'exhibition'
+        ? `${item.venue}, ${item.city} · ${item.period}`
+        : `${item.category} · ${item.year}`;
+      const badge = ref.kind === 'exhibition' ? '<span class="badge-expo">Exposition</span>' : '';
+      card.innerHTML = `
+        ${badge}
+        <img src="${item.cover}" alt="${item.title}" loading="lazy" />
+        <div class="post-meta">
+          <span class="post-cat">${sub}</span>
+          <span class="post-title">${item.title}</span>
+        </div>
+      `;
+      card.addEventListener('click', () => openItemStory(ref));
+      masonry.appendChild(card);
+    });
+
+    /* ---------- Sticky shadow ---------- */
+    const storiesBar = document.getElementById('storiesBar');
+    const heroSection = document.querySelector('.hero');
+    window.addEventListener('scroll', () => {
+      const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+      storiesBar.classList.toggle('is-stuck', window.scrollY > heroBottom - 80);
+    });
+
+    /* ---------- Story Viewer (queue-based) ---------- */
+    const SLIDE_DURATION = 5000;
+    let queue = [];      // tableau d'items à enchaîner
+    let qIndex = 0;       // index d'item dans la queue
+    let sIndex = 0;       // index de slide dans l'item courant
+    let timer = null;
+    let paused = false;
+    let pausedAt = 0;
+    let startedAt = 0;
+
+    const backdrop = document.getElementById('storyBackdrop');
+    const progress = document.getElementById('storyProgress');
+    const header = document.getElementById('storyHeader');
+    const labelEl = document.getElementById('storyLabel');
+    const dateEl = document.getElementById('storyDate');
+
+    function openItemStory(ref) {
+      queue = [ref];
+      qIndex = 0; sIndex = 0;
+      backdrop.classList.add('open');
+      render();
+    }
+
+    function openCategoryStory(cat) {
+      queue = cat.itemIds.map(id => ({ kind: 'furniture', id }));
+      qIndex = 0; sIndex = 0;
+      backdrop.classList.add('open');
+      render();
+    }
+
+    function currentItem() { return getItem(queue[qIndex]); }
+
+    function render() {
+      const item = currentItem();
+      const slide = item.slides[sIndex];
+      const isDark = ['cover','image'].includes(slide.type);
+
+      labelEl.textContent = item.title;
+      dateEl.textContent = item.kind === 'exhibition'
+        ? `${item.venue} · ${item.period}`
+        : `${item.category} · ${item.year}`;
+      header.classList.toggle('dark', !isDark);
+
+      // progress bars sur les slides de l'item courant
+      progress.innerHTML = '';
+      item.slides.forEach((_, i) => {
+        const bar = document.createElement('div');
+        bar.className = 'bar' + (i < sIndex ? ' seen' : '');
+        bar.innerHTML = '<div class="fill"></div>';
+        progress.appendChild(bar);
+      });
+
+      // Render slide body — wrapper stable, on bascule classe + contenu
+      const bodyEl = document.getElementById('storyBody');
+      bodyEl.className = '';
+      if (slide.type === 'cover' || slide.type === 'image') {
+        bodyEl.classList.add('story-media');
+        bodyEl.innerHTML = `
+          <img src="${slide.src}" alt="" />
+          ${slide.type === 'image' && slide.caption ? `<div class="story-caption">${slide.caption}</div>` : ''}
+        `;
+      } else if (slide.type === 'spec') {
+        const rows = slide.specs.map(([k,v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+        bodyEl.classList.add('slide-spec');
+        bodyEl.innerHTML = `
+          <span class="spec-eyebrow">${item.kind === 'exhibition' ? 'Repères' : 'Caractéristiques'}</span>
+          <h3 class="spec-title">${item.title}</h3>
+          <dl>${rows}</dl>
+        `;
+      } else if (slide.type === 'quote') {
+        bodyEl.classList.add('slide-quote');
+        bodyEl.innerHTML = `
+          <blockquote>${slide.body}</blockquote>
+          <cite>${slide.cite}</cite>
+        `;
+      } else if (slide.type === 'link') {
+        bodyEl.classList.add('slide-link');
+        bodyEl.innerHTML = `
+          <span class="label-eyebrow">Pour aller plus loin</span>
+          <h3>${slide.title}</h3>
+          <p>${slide.desc}</p>
+          <a class="cta" href="${slide.href}">Voir la fiche complète <span aria-hidden="true">→</span></a>
+        `;
+      }
+
+      startTimer();
+    }
+
+    function startTimer() {
+      clearTimeout(timer);
+      paused = false;
+      pausedAt = 0;
+      const bars = progress.querySelectorAll('.bar');
+      const fill = bars[sIndex]?.querySelector('.fill');
+      if (!fill) return;
+      fill.style.transition = 'none';
+      fill.style.width = '0%';
+      void fill.offsetWidth;
+      fill.style.transition = `width ${SLIDE_DURATION}ms linear`;
+      fill.style.width = '100%';
+      startedAt = Date.now();
+      timer = setTimeout(next, SLIDE_DURATION);
+    }
+
+    function pause() {
+      if (paused) return;
+      paused = true;
+      pausedAt = Date.now() - startedAt;
+      clearTimeout(timer);
+      const fill = progress.querySelectorAll('.bar')[sIndex]?.querySelector('.fill');
+      if (fill) {
+        const computed = getComputedStyle(fill).width;
+        fill.style.transition = 'none';
+        fill.style.width = computed;
+      }
+    }
+
+    function resume() {
+      if (!paused) return;
+      paused = false;
+      const remaining = SLIDE_DURATION - pausedAt;
+      const fill = progress.querySelectorAll('.bar')[sIndex]?.querySelector('.fill');
+      if (fill) {
+        void fill.offsetWidth;
+        fill.style.transition = `width ${remaining}ms linear`;
+        fill.style.width = '100%';
+      }
+      startedAt = Date.now() - pausedAt;
+      timer = setTimeout(next, remaining);
+    }
+
+    function next() {
+      const item = currentItem();
+      if (sIndex < item.slides.length - 1) {
+        sIndex++; render();
+      } else if (qIndex < queue.length - 1) {
+        qIndex++; sIndex = 0; render();
+      } else {
+        close();
+      }
+    }
+
+    function prev() {
+      if (sIndex > 0) {
+        sIndex--; render();
+      } else if (qIndex > 0) {
+        qIndex--; sIndex = getItem(queue[qIndex]).slides.length - 1; render();
+      }
+    }
+
+    function close() {
+      clearTimeout(timer);
+      backdrop.classList.remove('open');
+    }
+
+    document.getElementById('storyClose').addEventListener('click', close);
+    document.getElementById('storyNext').addEventListener('click', next);
+    document.getElementById('storyPrev').addEventListener('click', prev);
+
+    const zones = document.querySelectorAll('.story-tap-zones .zone');
+    zones.forEach(z => {
+      let hold;
+      z.addEventListener('mousedown', () => { hold = setTimeout(pause, 180); });
+      z.addEventListener('mouseup', () => { clearTimeout(hold); if (paused) resume(); });
+      z.addEventListener('mouseleave', () => { clearTimeout(hold); if (paused) resume(); });
+      z.addEventListener('touchstart', () => { hold = setTimeout(pause, 180); }, { passive: true });
+      z.addEventListener('touchend', () => { clearTimeout(hold); if (paused) resume(); });
+    });
+
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+
+    document.addEventListener('keydown', e => {
+      if (!backdrop.classList.contains('open')) return;
+      if (e.key === 'Escape') close();
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+    });
+  </script>
+</body>
+</html>
