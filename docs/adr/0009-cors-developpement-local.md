@@ -1,6 +1,6 @@
 # ADR-0009 : CORS restreint aux origines de développement local
 
-- **Statut** : Accepted (mis à jour 2026-05-11)
+- **Statut** : Accepted (mis à jour 2026-05-12)
 - **Date** : 2026-05-02
 - **Décideurs** : Équipe Atelier Lumen
 - **Tags** : backend, sécurité, cors
@@ -24,6 +24,7 @@ Configurer CORS dans `SecurityConfig.java` (via `SecurityFilterChain`) avec une 
 - `http://localhost` — frontend conteneurisé servi sur le port 80
 - `http://127.0.0.1` — loopback sans port (accès direct)
 - `http://127.0.0.1:4200` — frontend Docker Compose accessible via IP loopback *(ajouté le 2026-05-11 — origine manquante qui causait des 403 depuis le navigateur)*
+- `https://*.up.railway.app` — pattern qui couvre les domaines générés automatiquement par Railway pour les environnements staging et production *(ajouté le 2026-05-12 — origine manquante qui bloquait la console d'admin sur Railway)*
 - Méthodes autorisées : `GET, POST, PUT, DELETE, OPTIONS`
 - En-têtes autorisés : `Content-Type, Authorization, Accept`
 - `maxAge: 3600` — cache du preflight pendant 1h
@@ -49,6 +50,10 @@ La configuration est appliquée uniquement au préfixe `/api/**`.
 ## Correction appliquée (2026-05-11)
 
 L'origine `http://127.0.0.1:4200` était absente de la liste initiale. Les navigateurs accédant au frontend via `127.0.0.1` (plutôt que `localhost`) recevaient un 403 sur `POST /api/auth/login`. Corrigé en ajoutant l'origine manquante dans la valeur par défaut de `@Value("${app.cors.allowed-origins:...}")`.
+
+## Correction appliquée (2026-05-12)
+
+Sur l'environnement staging de Railway, le frontend est servi sur un domaine `*.up.railway.app` et effectue des requêtes cross-origin vers le backend (également hébergé sous `*.up.railway.app`). La liste blanche ne couvrant que les origines locales, le navigateur affichait `Blocked by CORS policy` au login admin. Corrigé en ajoutant le pattern `https://*.up.railway.app` à la valeur par défaut de `@Value("${app.cors.allowed-origins:...}")` — `setAllowedOriginPatterns` (déjà utilisé dans `SecurityConfig`) supporte nativement ce wildcard. Pour la production, l'override via la variable d'environnement `app.cors.allowed-origins` permet de restreindre à des domaines précis si nécessaire.
 
 ## Alternatives envisagées
 
