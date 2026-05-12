@@ -81,7 +81,13 @@
       "Bash(dir frontend *)",
       "Bash(dir deploy\\\\envs)",
       "Bash(dir frontend\\\\src)",
-      "Bash(.\\\\mvnw.cmd -q -DskipTests compile)"
+      "Bash(.\\\\mvnw.cmd -q -DskipTests compile)",
+      "Bash(bash \"C:/Users/Utilisateur/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh\" --project-dir \"c:/Users/Utilisateur/Project/Application Web/Application-Web\")",
+      "PowerShell(Get-Command node -ErrorAction SilentlyContinue | Select-Object Source; \\(Get-Command node -ErrorAction SilentlyContinue\\).Source)",
+      "Bash(mkdir -p \"docs/prototypes/carnet\" && ls docs)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Utilisateur\\Project\\Application Web\\Application-Web\\docs\\prototypes"
     ]
   }
 }

@@ -35,7 +35,7 @@ Nav header simplifiée à `Accueil · Studio`. Les liens `Mobilier` et `Expositi
 
 Trois zones verticales :
 
-1. **Hero épuré** (~50vh) — titre serif court, lead 2 lignes, mention discrète `Commencer`. Pas de bouton CTA.
+1. **Hero épuré** (~50vh) — titre serif court. Pas de bouton CTA.
 2. **Bandeau Stories** — `position: sticky` sous le header une fois le hero passé. Box-shadow douce qui apparaît à l'état "stuck" pour décoller du contenu.
 3. **Grid masonry mixte** — 3 colonnes desktop, 2 tablette, 1 mobile. Tous les items du `home_feed` mélangés dans **un ordre éditorial figé** contrôlé par l'admin.
 
