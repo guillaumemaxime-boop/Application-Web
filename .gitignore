@@ -25,3 +25,6 @@ frontend/.nx/
 # OS
 .DS_Store
 Thumbs.db
+
+# Superpowers workspace (visual companion, transient state)
+.superpowers/
