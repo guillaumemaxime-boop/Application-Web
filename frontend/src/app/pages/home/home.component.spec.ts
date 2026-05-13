@@ -28,6 +28,7 @@ describe('HomeComponent', () => {
       dimensions: ['Hauteur 92 cm'],
       designer: 'Milo GUILLAUME Design',
       featured: true,
+      slides: [],
     },
   ];
 
@@ -48,6 +49,7 @@ describe('HomeComponent', () => {
       description: 'Description détaillée',
       tags: ['Mobilier', 'Sculpture'],
       featured: true,
+      slides: [],
     },
   ];
 

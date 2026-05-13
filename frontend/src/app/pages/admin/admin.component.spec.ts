@@ -28,6 +28,7 @@ describe('AdminComponent', () => {
     dimensions: ['Hauteur 92 cm', 'Largeur 78 cm'],
     designer: 'Milo GUILLAUME Design',
     featured: true,
+    slides: [],
   };
 
   const mockPhoto: Photo = {
@@ -54,6 +55,7 @@ describe('AdminComponent', () => {
     description: 'Description détaillée',
     tags: ['Mobilier', 'Sculpture'],
     featured: true,
+    slides: [],
   };
 
   beforeEach(async () => {

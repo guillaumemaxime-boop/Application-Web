@@ -23,6 +23,7 @@ describe('FurnitureDetailComponent', () => {
     dimensions: ['H 90 cm'],
     designer: 'Lumen',
     featured: true,
+    slides: [],
   };
 
   function setup(slug: string, returnValue: ReturnType<PortfolioService['getFurniture']>) {

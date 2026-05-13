@@ -23,6 +23,7 @@ describe('FurnitureListComponent', () => {
       dimensions: [],
       designer: 'Lumen',
       featured: true,
+      slides: [],
     },
     {
       id: 'f-002',
@@ -38,6 +39,7 @@ describe('FurnitureListComponent', () => {
       dimensions: [],
       designer: 'Lumen',
       featured: false,
+      slides: [],
     },
   ];
 

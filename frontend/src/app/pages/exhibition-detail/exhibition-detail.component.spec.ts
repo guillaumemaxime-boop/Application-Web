@@ -24,6 +24,7 @@ describe('ExhibitionDetailComponent', () => {
     description: 'd',
     tags: ['Mobilier'],
     featured: true,
+    slides: [],
   };
 
   function setup(slug: string | undefined, returnValue: ReturnType<PortfolioService['getExhibition']>) {

@@ -25,6 +25,7 @@ describe('ExhibitionsListComponent', () => {
       description: 'd',
       tags: ['Mobilier'],
       featured: true,
+      slides: [],
     },
   ];
 
