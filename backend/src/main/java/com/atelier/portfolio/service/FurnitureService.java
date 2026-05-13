@@ -21,9 +21,11 @@ public class FurnitureService {
     private static final Pattern WHITESPACE = Pattern.compile("[\\s]+");
 
     private final FurnitureRepository repository;
+    private final StoryService storyService;
 
-    public FurnitureService(FurnitureRepository repository) {
+    public FurnitureService(FurnitureRepository repository, StoryService storyService) {
         this.repository = repository;
+        this.storyService = storyService;
     }
 
     public List<Furniture> findAll() {
@@ -35,7 +37,15 @@ public class FurnitureService {
     }
 
     public Optional<Furniture> findBySlug(String slug) {
-        return repository.findBySlug(slug).map(FurnitureService::toDto);
+        return repository.findBySlug(slug).map(entity -> {
+            Furniture base = toDto(entity);
+            return new Furniture(
+                    base.id(), base.title(), base.slug(), base.category(), base.material(),
+                    base.year(), base.coverImage(), base.gallery(), base.shortDescription(),
+                    base.description(), base.dimensions(), base.designer(), base.featured(),
+                    storyService.findByOwner("furniture", entity.getId())
+            );
+        });
     }
 
     public List<String> categories() {
@@ -65,6 +75,7 @@ public class FurnitureService {
     @Transactional
     public boolean deleteBySlug(String slug) {
         return repository.findBySlug(slug).map(entity -> {
+            storyService.deleteAllForOwner("furniture", entity.getId());
             repository.delete(entity);
             return true;
         }).orElse(false);
@@ -115,7 +126,8 @@ public class FurnitureService {
                 entity.getDescription(),
                 List.copyOf(entity.getDimensions()),
                 entity.getDesigner(),
-                entity.isFeatured()
+                entity.isFeatured(),
+                List.of()
         );
     }
 }

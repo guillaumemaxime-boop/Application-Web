@@ -21,6 +21,7 @@ public record Exhibition(
         @Size(max = 1000) String shortDescription,
         @Size(max = 10000) String description,
         @Size(max = 30) List<String> tags,
-        boolean featured
+        boolean featured,
+        List<Slide> slides
 ) {
 }

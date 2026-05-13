@@ -24,7 +24,8 @@ class FurnitureTest {
                 "Description détaillée",
                 List.of("Hauteur 92 cm", "Largeur 78 cm"),
                 "Milo GUILLAUME Design",
-                true
+                true,
+                List.of()
         );
 
         // Assert
@@ -60,7 +61,8 @@ class FurnitureTest {
                 "Full description",
                 List.of(),
                 "Test Designer",
-                false
+                false,
+                List.of()
         );
 
         // Assert
@@ -92,7 +94,8 @@ class FurnitureTest {
                 "Full description",
                 List.of(),
                 "Test Designer",
-                false
+                false,
+                List.of()
         );
 
         // Assert
@@ -119,7 +122,8 @@ class FurnitureTest {
                 "", // Empty description
                 List.of(),
                 "", // Empty designer
-                false
+                false,
+                List.of()
         );
         assertNotNull(furniture);
         assertEquals("", furniture.title());
@@ -142,7 +146,8 @@ class FurnitureTest {
                 "Full description",
                 List.of("Dimension 1"),
                 "Test Designer",
-                true
+                true,
+                List.of()
         );
 
         Furniture furniture2 = new Furniture(
@@ -158,7 +163,8 @@ class FurnitureTest {
                 "Full description",
                 List.of("Dimension 1"),
                 "Test Designer",
-                true
+                true,
+                List.of()
         );
 
         // Act & Assert
@@ -181,7 +187,8 @@ class FurnitureTest {
                 "Full description",
                 List.of(),
                 "Test Designer",
-                false
+                false,
+                List.of()
         );
 
         // Act
@@ -210,7 +217,8 @@ class FurnitureTest {
                 "Full description",
                 List.of(),
                 "Test Designer",
-                false
+                false,
+                List.of()
         );
 
         Furniture furniture2 = new Furniture(
@@ -226,7 +234,8 @@ class FurnitureTest {
                 "Full description",
                 List.of(),
                 "Test Designer",
-                false
+                false,
+                List.of()
         );
 
         // Act & Assert
