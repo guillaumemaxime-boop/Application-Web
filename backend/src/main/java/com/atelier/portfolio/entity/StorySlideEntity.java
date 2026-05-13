@@ -1,0 +1,100 @@
+package com.atelier.portfolio.entity;
+
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.Table;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "story_slide")
+public class StorySlideEntity {
+
+    @Id
+    @Column(length = 50)
+    private String id;
+
+    @Column(name = "owner_kind", nullable = false, length = 20)
+    private String ownerKind;
+
+    @Column(name = "owner_id", nullable = false, length = 50)
+    private String ownerId;
+
+    @Column(nullable = false)
+    private int position;
+
+    @Column(nullable = false, length = 20)
+    private String type;
+
+    @Column(length = 500)
+    private String src;
+
+    @Column(length = 500)
+    private String caption;
+
+    @Column(name = "quote_body", length = 2000)
+    private String quoteBody;
+
+    @Column(name = "quote_cite", length = 500)
+    private String quoteCite;
+
+    @Column(name = "link_label", length = 200)
+    private String linkLabel;
+
+    @Column(name = "link_desc", length = 500)
+    private String linkDesc;
+
+    @Column(name = "link_href", length = 500)
+    private String linkHref;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "story_slide_spec", joinColumns = @JoinColumn(name = "story_slide_id"))
+    @OrderColumn(name = "position")
+    private List<StorySlideSpecEntry> specs = new ArrayList<>();
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+
+    public String getOwnerKind() { return ownerKind; }
+    public void setOwnerKind(String ownerKind) { this.ownerKind = ownerKind; }
+
+    public String getOwnerId() { return ownerId; }
+    public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
+
+    public int getPosition() { return position; }
+    public void setPosition(int position) { this.position = position; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
+    public String getSrc() { return src; }
+    public void setSrc(String src) { this.src = src; }
+
+    public String getCaption() { return caption; }
+    public void setCaption(String caption) { this.caption = caption; }
+
+    public String getQuoteBody() { return quoteBody; }
+    public void setQuoteBody(String quoteBody) { this.quoteBody = quoteBody; }
+
+    public String getQuoteCite() { return quoteCite; }
+    public void setQuoteCite(String quoteCite) { this.quoteCite = quoteCite; }
+
+    public String getLinkLabel() { return linkLabel; }
+    public void setLinkLabel(String linkLabel) { this.linkLabel = linkLabel; }
+
+    public String getLinkDesc() { return linkDesc; }
+    public void setLinkDesc(String linkDesc) { this.linkDesc = linkDesc; }
+
+    public String getLinkHref() { return linkHref; }
+    public void setLinkHref(String linkHref) { this.linkHref = linkHref; }
+
+    public List<StorySlideSpecEntry> getSpecs() { return specs; }
+    public void setSpecs(List<StorySlideSpecEntry> specs) { this.specs = specs; }
+}
