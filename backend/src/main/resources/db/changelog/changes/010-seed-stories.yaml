@@ -1,0 +1,1314 @@
+databaseChangeLog:
+  - changeSet:
+      id: 010-seed-stories
+      author: atelier-lumen
+      changes:
+
+        # ── f-001 Onde — Fauteuil sculpté ──────────────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-001-cover
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-001
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-onde-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-001-img1
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-001
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-onde-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Le chêne après huit mois de séchage."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-001-spec
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-001
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-001-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Dimensions"
+              - column:
+                  name: entry_value
+                  value: "H 92 × L 78 × P 84 cm"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-001-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Matériau"
+              - column:
+                  name: entry_value
+                  value: "Chêne massif & cuir tanné"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-001-link
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-001
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Croquis, dossier matière, photos d'atelier."
+
+        # ── f-002 Strate — Table basse en marbre ───────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-002-cover
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-002
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-strate-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-002-img1
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-002
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-strate-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Les arêtes polies à la main évoquent une érosion naturelle."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-002-spec
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-002
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-002-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Dimensions"
+              - column:
+                  name: entry_value
+                  value: "H 38 cm — Ø 110 cm"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-002-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Matériau"
+              - column:
+                  name: entry_value
+                  value: "Marbre Calacatta & laiton brossé"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-002-link
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-002
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Détails géologiques, finitions et options de plateau."
+
+        # ── f-003 Voile — Bibliothèque modulaire ───────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-003-cover
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-003
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-voile-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-003-img1
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-003
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-voile-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Assemblage sans visserie apparente sur structure acier patiné."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-003-spec
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-003
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-003-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Dimensions"
+              - column:
+                  name: entry_value
+                  value: "Module H 220 × L 90 × P 32 cm"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-003-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Matériau"
+              - column:
+                  name: entry_value
+                  value: "Frêne thermo-traité & acier patiné"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-003-link
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-003
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Configurations disponibles, plans modulaires et finitions."
+
+        # ── f-004 Halo — Suspension lumineuse ──────────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-004-cover
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-004
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-halo-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-004-img1
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-004
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-halo-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Verre soufflé à la bouche par un maître verrier de Bohême."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-004-spec
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-004
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-004-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Dimensions"
+              - column:
+                  name: entry_value
+                  value: "Ø 45 cm — H réglable jusqu'à 180 cm"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-004-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Matériau"
+              - column:
+                  name: entry_value
+                  value: "Verre soufflé & laiton"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-004-link
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-004
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Fiche technique, options LED et photos d'ambiance."
+
+        # ── f-005 Racine — Banc d'entrée ───────────────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-005-cover
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-005
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-racine-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-005-img1
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-005
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-racine-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Racine centenaire de noyer, séchage de deux ans avant taille."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-005-spec
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-005
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-005-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Dimensions"
+              - column:
+                  name: entry_value
+                  value: "Longueur ≈ 160 cm (pièce unique)"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-005-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Matériau"
+              - column:
+                  name: entry_value
+                  value: "Noyer brut & lin huilé"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-005-link
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-005
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Chaque pièce est unique — croquis et historique de la souche."
+
+        # ── f-006 Brume — Paravent textile ─────────────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-006-cover
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-006
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-brume-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-006-img1
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-006
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-brume-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Tissage sur métier traditionnel, fils mats et soie mêlés."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-006-spec
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-006
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-006-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Dimensions"
+              - column:
+                  name: entry_value
+                  value: "H 180 cm × L déployée 240 cm"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-f-006-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Matériau"
+              - column:
+                  name: entry_value
+                  value: "Lin tissé main & frêne"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-f-006-link
+              - column:
+                  name: owner_kind
+                  value: furniture
+              - column:
+                  name: owner_id
+                  value: f-006
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Détail du tissage, coloris disponibles et configurations."
+
+        # ── e-001 Matières silencieuses ────────────────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-001-cover
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-001
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-matieres-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-001-img1
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-001
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-matieres-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Vue de l'installation principale, nef de la Galerie Joseph."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-001-spec
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-001
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-001-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Lieu"
+              - column:
+                  name: entry_value
+                  value: "Galerie Joseph, Paris"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-001-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Période"
+              - column:
+                  name: entry_value
+                  value: "Mars — Mai 2025"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-001-link
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-001
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Dossier de presse, plan de l'exposition et visuels HD."
+
+        # ── e-002 L'atelier ouvert ─────────────────────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-002-cover
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-002
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-atelier-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-002-img1
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-002
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-atelier-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "L'atelier reconstitué à l'identique au cœur de Design Miami."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-002-spec
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-002
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-002-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Lieu"
+              - column:
+                  name: entry_value
+                  value: "Design Miami, Miami"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-002-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Période"
+              - column:
+                  name: entry_value
+                  value: "3 — 8 Décembre 2024"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-002-link
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-002
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Reportage, vidéo de fabrication et pièces de l'édition spéciale."
+
+        # ── e-003 Bois & lumière ───────────────────────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-003-cover
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-003
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-bois-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-003-img1
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-003
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-bois-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Six pièces françaises en regard d'un maître menuisier de Kyoto."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-003-spec
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-003
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-003-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Lieu"
+              - column:
+                  name: entry_value
+                  value: "Fondation Cartier, Tokyo"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-003-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Période"
+              - column:
+                  name: entry_value
+                  value: "Septembre — Novembre 2024"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-003-link
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-003
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Catalogue bilingue, scénographie et œuvres présentées."
+
+        # ── e-004 Saison brute ─────────────────────────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-004-cover
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-004
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-saison-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-004-img1
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-004
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-saison-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Le mobilier soumis aux éléments dans les jardins de la Villa Noailles."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-004-spec
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-004
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-004-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Lieu"
+              - column:
+                  name: entry_value
+                  value: "Villa Noailles, Hyères"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-004-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Période"
+              - column:
+                  name: entry_value
+                  value: "Juin — Septembre 2025"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-004-link
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-004
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Journal de patine, documentation photographique quotidienne."
+
+        # ── e-005 Esquisses ────────────────────────────────────────────────────
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-005-cover
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-005
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: type
+                  value: cover
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-esquisses-cover/600/1067"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-005-img1
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-005
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: image
+              - column:
+                  name: src
+                  value: "https://picsum.photos/seed/lumen-esquisses-detail/600/1067"
+              - column:
+                  name: caption
+                  value: "Carnets, dessins techniques et prototypes inachevés du studio."
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-005-spec
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-005
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: spec
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-005-spec
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: label
+                  value: "Lieu"
+              - column:
+                  name: entry_value
+                  value: "Atelier Lumen, Lyon"
+        - insert:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  value: sl-e-005-spec
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: label
+                  value: "Période"
+              - column:
+                  name: entry_value
+                  value: "10 — 28 Avril 2024"
+        - insert:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  value: sl-e-005-link
+              - column:
+                  name: owner_kind
+                  value: exhibition
+              - column:
+                  name: owner_id
+                  value: e-005
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: type
+                  value: link
+              - column:
+                  name: link_label
+                  value: "Voir la fiche complète"
+              - column:
+                  name: link_desc
+                  value: "Galerie de croquis, maquettes et archives de conception."

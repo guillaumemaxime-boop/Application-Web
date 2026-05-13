@@ -1,0 +1,137 @@
+databaseChangeLog:
+  - changeSet:
+      id: 011-seed-home-feed
+      author: atelier-lumen
+      changes:
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: kind
+                  value: furniture
+              - column:
+                  name: ref_slug
+                  value: onde-fauteuil-sculpte
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: kind
+                  value: exhibition
+              - column:
+                  name: ref_slug
+                  value: matieres-silencieuses
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: kind
+                  value: furniture
+              - column:
+                  name: ref_slug
+                  value: strate-table-basse-marbre
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: kind
+                  value: exhibition
+              - column:
+                  name: ref_slug
+                  value: l-atelier-ouvert
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 4
+              - column:
+                  name: kind
+                  value: furniture
+              - column:
+                  name: ref_slug
+                  value: voile-bibliotheque-modulaire
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 5
+              - column:
+                  name: kind
+                  value: exhibition
+              - column:
+                  name: ref_slug
+                  value: bois-et-lumiere
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 6
+              - column:
+                  name: kind
+                  value: furniture
+              - column:
+                  name: ref_slug
+                  value: halo-suspension-lumineuse
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 7
+              - column:
+                  name: kind
+                  value: exhibition
+              - column:
+                  name: ref_slug
+                  value: saison-brute
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 8
+              - column:
+                  name: kind
+                  value: furniture
+              - column:
+                  name: ref_slug
+                  value: racine-banc-entree
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 9
+              - column:
+                  name: kind
+                  value: exhibition
+              - column:
+                  name: ref_slug
+                  value: esquisses
+        - insert:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  valueNumeric: 10
+              - column:
+                  name: kind
+                  value: furniture
+              - column:
+                  name: ref_slug
+                  value: brume-paravent-textile
