@@ -20,3 +20,9 @@ databaseChangeLog:
   - include:
       file: changes/007-create-story-slides.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/008-create-home-feed.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/009-create-category-meta.yaml
+      relativeToChangelogFile: true
