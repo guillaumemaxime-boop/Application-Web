@@ -1,0 +1,100 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-create-story-slides
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: owner_kind
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: owner_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: src
+                  type: varchar(500)
+              - column:
+                  name: caption
+                  type: varchar(500)
+              - column:
+                  name: quote_body
+                  type: varchar(2000)
+              - column:
+                  name: quote_cite
+                  type: varchar(500)
+              - column:
+                  name: link_label
+                  type: varchar(200)
+              - column:
+                  name: link_desc
+                  type: varchar(500)
+              - column:
+                  name: link_href
+                  type: varchar(500)
+        - createIndex:
+            indexName: idx_story_slide_owner_pos
+            tableName: story_slide
+            columns:
+              - column:
+                  name: owner_kind
+              - column:
+                  name: owner_id
+              - column:
+                  name: position
+        - createTable:
+            tableName: story_slide_spec
+            columns:
+              - column:
+                  name: story_slide_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: label
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entry_value
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: story_slide_spec
+            columnNames: story_slide_id, position
+            constraintName: pk_story_slide_spec
+        - addForeignKeyConstraint:
+            baseTableName: story_slide_spec
+            baseColumnNames: story_slide_id
+            referencedTableName: story_slide
+            referencedColumnNames: id
+            constraintName: fk_story_slide_spec_slide
+            onDelete: CASCADE
+

@@ -17,3 +17,6 @@ databaseChangeLog:
   - include:
       file: changes/006-create-photos.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/007-create-story-slides.yaml
+      relativeToChangelogFile: true
