@@ -108,7 +108,8 @@ const SLIDE_DURATION_MS = 5000;
     .body img { width: 100%; height: 100%; object-fit: cover; }
     .body .caption { position: absolute; bottom: 24px; left: 24px; right: 24px; font-family: var(--serif); font-size: 1.05rem; line-height: 1.4; text-shadow: 0 1px 8px rgba(0,0,0,0.5); pointer-events: none; }
     .body.cream { background: var(--bg); color: var(--ink); }
-    .slide-spec, .slide-quote, .slide-link { width: 100%; height: 100%; padding: 80px 36px 56px; display: flex; flex-direction: column; justify-content: center; }
+    .slide-spec, .slide-quote, .slide-link { width: 100%; height: 100%; padding: 80px 36px 56px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+    .slide-link { z-index: 4; }
     .slide-quote, .slide-link { text-align: center; align-items: center; }
     .eyebrow { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mute); }
     .slide-spec h3, .slide-link h3 { font-family: var(--serif); font-weight: 400; font-size: 1.8rem; margin: 14px 0 24px; }
