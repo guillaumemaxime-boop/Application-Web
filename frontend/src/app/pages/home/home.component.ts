@@ -44,11 +44,13 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
     <section class="feed">
       <div class="container">
         @if (data(); as d) {
-          <div class="masonry">
+          <div class="grid">
             @for (item of d.feed; track item.slug) {
               <button class="card" (click)="openFeedItem(item)">
                 @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
-                <img [src]="item.cover" [alt]="item.title" loading="lazy" />
+                <div class="thumb">
+                  <img [src]="item.cover" [alt]="item.title" loading="lazy" />
+                </div>
                 <div class="meta">
                   <span class="cat">{{ item.subtitle }}</span>
                   <span class="title">{{ item.title }}</span>
@@ -80,17 +82,19 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
     .sep { align-self: stretch; display: flex; align-items: center; padding: 0 4px; color: var(--color-line); font-size: 1.4rem; }
 
     .feed { padding: 64px 0 140px; }
-    .masonry { column-count: 3; column-gap: 20px; }
-    .card { break-inside: avoid; margin-bottom: 20px; position: relative; overflow: hidden; cursor: pointer; background: var(--color-bg-alt); display: block; width: 100%; border: none; padding: 0; }
-    .card img { width: 100%; height: auto; display: block; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .card { position: relative; overflow: hidden; cursor: pointer; background: var(--color-bg-alt); display: block; width: 100%; border: none; padding: 0; }
+    .thumb { aspect-ratio: 4 / 5; overflow: hidden; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 220ms ease; }
+    .card:hover .thumb img { transform: scale(1.02); }
     .meta { position: absolute; inset: auto 0 0 0; padding: 20px; background: linear-gradient(transparent, rgba(26,24,21,0.7)); color: #fff; opacity: 0; transition: opacity 200ms ease; pointer-events: none; text-align: left; }
     .card:hover .meta { opacity: 1; }
     .cat { display: block; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 6px; }
     .title { font-family: var(--serif); font-size: 1.4rem; line-height: 1.15; }
     .badge { position: absolute; top: 14px; left: 14px; background: var(--color-bg); color: var(--color-ink); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 10px; border: 1px solid var(--color-ink); z-index: 2; }
 
-    @media (max-width: 960px) { .masonry { column-count: 2; } }
-    @media (max-width: 600px) { .masonry { column-count: 1; } .stories-row { gap: 20px; } .ring { width: 72px; height: 72px; } }
+    @media (max-width: 960px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } .stories-row { gap: 20px; } .ring { width: 72px; height: 72px; } }
   `]
 })
 export class HomeComponent implements OnInit {
@@ -110,7 +114,9 @@ export class HomeComponent implements OnInit {
       const queue: StoryItem[] = furnitureList.map(f => ({
         title: f.title,
         subtitle: `${f.category} · ${f.year}`,
-        slides: f.slides
+        slides: f.slides,
+        kind: 'furniture',
+        slug: f.slug,
       }));
       this.viewerQueue.set(queue);
     });
@@ -121,7 +127,9 @@ export class HomeComponent implements OnInit {
       this.viewerQueue.set([{
         title: e.title,
         subtitle: `${e.venue} · ${exh.period}`,
-        slides: e.slides
+        slides: e.slides,
+        kind: 'exhibition',
+        slug: e.slug,
       }]);
     });
   }
@@ -132,7 +140,9 @@ export class HomeComponent implements OnInit {
         this.viewerQueue.set([{
           title: f.title,
           subtitle: item.subtitle,
-          slides: f.slides
+          slides: f.slides,
+          kind: 'furniture',
+          slug: f.slug,
         }]);
       });
     } else {
@@ -140,7 +150,9 @@ export class HomeComponent implements OnInit {
         this.viewerQueue.set([{
           title: e.title,
           subtitle: item.subtitle,
-          slides: e.slides
+          slides: e.slides,
+          kind: 'exhibition',
+          slug: e.slug,
         }]);
       });
     }

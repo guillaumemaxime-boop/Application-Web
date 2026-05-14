@@ -164,6 +164,12 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 <span>Pièce phare (mise en avant sur l'accueil)</span>
               </label>
 
+              @if (editingFurnitureId(); as ownerId) {
+                <app-slides-editor kind="furniture" [ownerId]="ownerId" />
+              } @else {
+                <p class="slides-hint">Enregistre la pièce une première fois pour pouvoir éditer ses slides.</p>
+              }
+
               <div class="actions">
                 <button type="submit" class="btn-primary" [disabled]="furnitureForm.invalid || saving()">
                   {{ saving() ? 'Enregistrement…' : (editingFurnitureSlug() ? 'Mettre à jour' : 'Créer') }}
@@ -173,10 +179,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 }
               </div>
             </form>
-
-            @if (editingFurnitureId(); as ownerId) {
-              <app-slides-editor kind="furniture" [ownerId]="ownerId" />
-            }
           </div>
         }
 
@@ -283,6 +285,12 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 <span>Exposition phare</span>
               </label>
 
+              @if (editingExhibitionId(); as ownerId) {
+                <app-slides-editor kind="exhibition" [ownerId]="ownerId" />
+              } @else {
+                <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir éditer ses slides.</p>
+              }
+
               <div class="actions">
                 <button type="submit" class="btn-primary" [disabled]="exhibitionForm.invalid || saving()">
                   {{ saving() ? 'Enregistrement…' : (editingExhibitionSlug() ? 'Mettre à jour' : 'Créer') }}
@@ -292,10 +300,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 }
               </div>
             </form>
-
-            @if (editingExhibitionId(); as ownerId) {
-              <app-slides-editor kind="exhibition" [ownerId]="ownerId" />
-            }
           </div>
         }
 
@@ -1073,6 +1077,21 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
       .btn-pick { align-self: flex-start; }
       .photos-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
     }
+
+    /* Onglet Accueil (ordre éditorial + catégories) */
+    .home-editor h2 { margin: 32px 0 8px; font-family: var(--serif); font-weight: 400; font-size: 1.5rem; }
+    .home-editor .hint { font-size: 0.85rem; color: var(--color-mute); margin-bottom: 16px; }
+    .ordering-list, .cat-list { list-style: none; padding: 0; margin: 0; }
+    .home-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 6px; border: 1px solid var(--color-line); background: var(--color-bg); cursor: grab; }
+    .home-row .handle { color: var(--color-mute); font-size: 1.1rem; cursor: grab; user-select: none; }
+    .home-row .kind-badge { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-mute); min-width: 64px; }
+    .home-row .thumb { width: 40px; height: 40px; object-fit: cover; flex-shrink: 0; }
+    .home-row .thumb-round { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; flex-shrink: 0; }
+    .home-row .title { flex: 1; font-size: 0.9rem; color: var(--color-ink); }
+    .home-row .incl { font-size: 0.78rem; color: var(--color-ink-soft); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+
+    /* Hint sous le formulaire pièce/expo quand pas encore enregistré */
+    .slides-hint { margin-top: 24px; padding: 12px 16px; background: var(--color-bg-alt); border-left: 3px solid var(--color-mute); font-size: 0.85rem; color: var(--color-ink-soft); font-style: italic; }
   `]
 })
 export class AdminComponent {

@@ -1,11 +1,14 @@
 import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Slide } from '../../models/slide.model';
 
 export interface StoryItem {
   title: string;
   subtitle: string;
   slides: Slide[];
+  kind?: 'furniture' | 'exhibition';
+  slug?: string;
 }
 
 const SLIDE_DURATION_MS = 5000;
@@ -13,7 +16,7 @@ const SLIDE_DURATION_MS = 5000;
 @Component({
   selector: 'app-story-viewer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <div class="backdrop" (click)="onBackdropClick($event)">
       <div class="frame">
@@ -70,9 +73,11 @@ const SLIDE_DURATION_MS = 5000;
                 <span class="eyebrow">Pour aller plus loin</span>
                 <h3>{{ currentItem()?.title }}</h3>
                 <p>{{ $any(currentSlide()).description }}</p>
-                <a class="cta" [href]="$any(currentSlide()).href" (click)="close()">
-                  {{ $any(currentSlide()).label || 'Voir la fiche complète' }} →
-                </a>
+                @if (linkHref(); as href) {
+                  <a class="cta" [routerLink]="href" (click)="close()">
+                    {{ $any(currentSlide()).label || 'Voir la fiche complète' }} →
+                  </a>
+                }
               </div>
             }
           }
@@ -143,6 +148,17 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
   });
 
   protected bodyClass = computed(() => this.isMediaSlide() ? '' : 'cream');
+
+  protected linkHref = computed<string | null>(() => {
+    const slide = this.currentSlide();
+    if (!slide || slide.type !== 'link') return null;
+    if (slide.href) return slide.href;
+    const item = this.currentItem();
+    if (item?.kind && item?.slug) {
+      return item.kind === 'furniture' ? `/mobilier/${item.slug}` : `/expositions/${item.slug}`;
+    }
+    return null;
+  });
 
   ngOnInit() { this.startTimer(); }
   ngOnDestroy() { this.stopTimer(); }
