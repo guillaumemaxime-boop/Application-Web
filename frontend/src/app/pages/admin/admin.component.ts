@@ -1,18 +1,29 @@
 import { Component, HostListener, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
 import { SiteContent } from '../../models/site-content.model';
 import { Photo } from '../../models/photo.model';
+import { AdminFeedEntry, AdminCategoryView } from '../../models/home.model';
 import { PortfolioService } from '../../services/portfolio.service';
+import { ReorderableDirective } from '../../directives/reorderable.directive';
 
-type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos';
+interface HomeAdminItem {
+  kind: 'furniture' | 'exhibition';
+  slug: string;
+  title: string;
+  cover: string;
+  included: boolean;
+}
+
+type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home';
 type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover' | 'exhibition-gallery';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FormsModule, ReorderableDirective],
   template: `
     <section class="section">
       <div class="container">
@@ -47,6 +58,12 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             [attr.aria-selected]="tab() === 'photos'"
             [class.active]="tab() === 'photos'"
             (click)="switchTab('photos')">Médiathèque</button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="tab() === 'home'"
+            [class.active]="tab() === 'home'"
+            (click)="switchTab('home')">Accueil</button>
         </div>
 
         @if (message()) {
@@ -455,6 +472,50 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                   </div>
                 }
               </div>
+            }
+          </div>
+        }
+
+        @if (tab() === 'home') {
+          <div class="home-editor">
+            <h2>Ordre éditorial du masonry</h2>
+            <p class="hint">Glisse pour réordonner. Décoche pour exclure du feed.</p>
+            @if (homeItems(); as items) {
+              <ul class="ordering-list" appReorderable (reordered)="onFeedReorder($event)">
+                @for (entry of items; track entry.kind + ':' + entry.slug) {
+                  <li class="home-row">
+                    <span class="handle">⠿</span>
+                    <span class="kind-badge">{{ entry.kind === 'furniture' ? 'MOBILIER' : 'EXPO' }}</span>
+                    <img [src]="entry.cover" [alt]="entry.title" class="thumb" />
+                    <span class="title">{{ entry.title }}</span>
+                    <label class="incl">
+                      <input type="checkbox" [checked]="entry.included" (change)="toggleIncluded(entry, $event)" /> Inclure
+                    </label>
+                  </li>
+                }
+              </ul>
+              <button type="button" class="primary" (click)="saveFeed()">Enregistrer l'ordre</button>
+            } @else {
+              <p class="status">Chargement…</p>
+            }
+
+            <h2 style="margin-top: 48px">Catégories de mobilier</h2>
+            @if (categoryMeta(); as cats) {
+              <ul class="cat-list" appReorderable (reordered)="onCategoryReorder($event)">
+                @for (c of cats; track c.category) {
+                  <li class="home-row">
+                    <span class="handle">⠿</span>
+                    <img [src]="c.coverImage" [alt]="c.category" class="thumb-round" />
+                    <span class="title">{{ c.category }}</span>
+                    <label class="incl">
+                      <input type="checkbox" [checked]="c.visible" (change)="toggleCategoryVisibility(c, $event)" /> Visible
+                    </label>
+                  </li>
+                }
+              </ul>
+              <button type="button" class="primary" (click)="saveCategories()">Enregistrer les catégories</button>
+            } @else {
+              <p class="status">Chargement…</p>
             }
           </div>
         }
@@ -1096,6 +1157,81 @@ export class AdminComponent {
   switchTab(tab: Tab) {
     this.tab.set(tab);
     this.message.set(null);
+    if (tab === 'home') this.loadHomeTab();
+  }
+
+  protected readonly homeItems = signal<HomeAdminItem[] | null>(null);
+  protected readonly categoryMeta = signal<AdminCategoryView[] | null>(null);
+
+  loadHomeTab() {
+    forkJoin([
+      this.portfolio.getAllFurniture(),
+      this.portfolio.getAllExhibitions(),
+      this.portfolio.getAdminFeed(),
+    ]).subscribe(([furniture, expos, feed]) => {
+      const included = new Set(feed.map(f => `${f.kind}:${f.slug}`));
+      const items: HomeAdminItem[] = [];
+      for (const f of feed) {
+        const fur = furniture.find(x => x.slug === f.slug && f.kind === 'furniture');
+        if (fur) items.push({ kind: 'furniture', slug: fur.slug, title: fur.title, cover: fur.coverImage, included: true });
+        const exh = expos.find(x => x.slug === f.slug && f.kind === 'exhibition');
+        if (exh) items.push({ kind: 'exhibition', slug: exh.slug, title: exh.title, cover: exh.coverImage, included: true });
+      }
+      for (const fur of furniture) {
+        if (!included.has(`furniture:${fur.slug}`)) {
+          items.push({ kind: 'furniture', slug: fur.slug, title: fur.title, cover: fur.coverImage, included: false });
+        }
+      }
+      for (const exh of expos) {
+        if (!included.has(`exhibition:${exh.slug}`)) {
+          items.push({ kind: 'exhibition', slug: exh.slug, title: exh.title, cover: exh.coverImage, included: false });
+        }
+      }
+      this.homeItems.set(items);
+    });
+
+    this.portfolio.getAdminCategories().subscribe(c => this.categoryMeta.set(c));
+  }
+
+  onFeedReorder(order: number[]) {
+    const current = this.homeItems();
+    if (!current) return;
+    this.homeItems.set(order.map(i => current[i]));
+  }
+
+  toggleIncluded(item: HomeAdminItem, event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.homeItems.update(items => items?.map(x => x === item ? { ...x, included: checked } : x) ?? null);
+  }
+
+  saveFeed() {
+    const items = this.homeItems() ?? [];
+    const entries: AdminFeedEntry[] = items.filter(i => i.included).map(i => ({ kind: i.kind, slug: i.slug }));
+    this.portfolio.replaceAdminFeed(entries).subscribe({
+      next: () => this.flash('Ordre du masonry enregistré.', 'success'),
+      error: () => this.flash('Impossible d\'enregistrer l\'ordre.', 'error'),
+    });
+  }
+
+  onCategoryReorder(order: number[]) {
+    const current = this.categoryMeta();
+    if (!current) return;
+    this.categoryMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
+  }
+
+  toggleCategoryVisibility(c: AdminCategoryView, event: Event) {
+    const visible = (event.target as HTMLInputElement).checked;
+    this.categoryMeta.update(cats => cats?.map(x => x.category === c.category ? { ...x, visible } : x) ?? null);
+  }
+
+  saveCategories() {
+    const cats = this.categoryMeta() ?? [];
+    const requests = cats.map(c => this.portfolio.updateAdminCategory(c.category, c));
+    if (requests.length === 0) return;
+    forkJoin(requests).subscribe({
+      next: () => this.flash('Catégories enregistrées.', 'success'),
+      error: () => this.flash('Impossible d\'enregistrer les catégories.', 'error'),
+    });
   }
 
   private refreshFurniture() {
