@@ -165,7 +165,7 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
               </label>
 
               @if (editingFurnitureId(); as ownerId) {
-                <app-slides-editor kind="furniture" [ownerId]="ownerId" />
+                <app-slides-editor kind="furniture" [ownerId]="ownerId" [ownerSlug]="editingFurnitureSlug()" />
               } @else {
                 <p class="slides-hint">Enregistre la pièce une première fois pour pouvoir éditer ses slides.</p>
               }
@@ -286,7 +286,7 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
               </label>
 
               @if (editingExhibitionId(); as ownerId) {
-                <app-slides-editor kind="exhibition" [ownerId]="ownerId" />
+                <app-slides-editor kind="exhibition" [ownerId]="ownerId" [ownerSlug]="editingExhibitionSlug()" />
               } @else {
                 <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir éditer ses slides.</p>
               }

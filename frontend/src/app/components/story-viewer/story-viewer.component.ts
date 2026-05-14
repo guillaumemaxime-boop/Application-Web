@@ -1,6 +1,6 @@
-import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, signal, computed } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Slide } from '../../models/slide.model';
 
 export interface StoryItem {
@@ -16,7 +16,7 @@ const SLIDE_DURATION_MS = 5000;
 @Component({
   selector: 'app-story-viewer',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   template: `
     <div class="backdrop" (click)="onBackdropClick($event)">
       <div class="frame">
@@ -73,10 +73,10 @@ const SLIDE_DURATION_MS = 5000;
                 <span class="eyebrow">Pour aller plus loin</span>
                 <h3>{{ currentItem()?.title }}</h3>
                 <p>{{ $any(currentSlide()).description }}</p>
-                @if (linkHref(); as href) {
-                  <a class="cta" [routerLink]="href" (click)="close()">
+                @if (linkHref()) {
+                  <button type="button" class="cta" (click)="goToLink()">
                     {{ $any(currentSlide()).label || 'Voir la fiche complète' }} →
-                  </a>
+                  </button>
                 }
               </div>
             }
@@ -127,6 +127,8 @@ const SLIDE_DURATION_MS = 5000;
 export class StoryViewerComponent implements OnInit, OnDestroy {
   @Input({ required: true }) queue: StoryItem[] = [];
   @Output() closed = new EventEmitter<void>();
+
+  private router = inject(Router);
 
   protected itemIndex = signal(0);
   protected slideIndex = signal(0);
@@ -194,6 +196,16 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
   close() {
     this.stopTimer();
     this.closed.emit();
+  }
+
+  goToLink() {
+    const href = this.linkHref();
+    this.stopTimer();
+    if (href) {
+      this.router.navigateByUrl(href).then(() => this.closed.emit());
+    } else {
+      this.closed.emit();
+    }
   }
 
   onBackdropClick(event: MouseEvent) {

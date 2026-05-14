@@ -105,6 +105,14 @@ import { ReorderableDirective } from '../../directives/reorderable.directive';
 export class SlidesEditorComponent implements OnChanges {
   @Input({ required: true }) kind!: 'furniture' | 'exhibition';
   @Input({ required: true }) ownerId!: string;
+  @Input() ownerSlug: string | null = null;
+
+  private defaultHref(): string | null {
+    if (!this.ownerSlug) return null;
+    return this.kind === 'furniture'
+      ? `/mobilier/${this.ownerSlug}`
+      : `/expositions/${this.ownerSlug}`;
+  }
 
   private portfolio = inject(PortfolioService);
 
@@ -119,7 +127,13 @@ export class SlidesEditorComponent implements OnChanges {
   reload() {
     if (!this.ownerId) return;
     this.portfolio.getSlides(this.kind, this.ownerId).subscribe(slides => {
-      this.slides.set(slides);
+      const fallback = this.defaultHref();
+      const enriched: Slide[] = slides.map(s =>
+        s.type === 'link' && !s.href && fallback
+          ? { ...s, href: fallback }
+          : s
+      );
+      this.slides.set(enriched);
       this.recomputeWarnings();
     });
   }
@@ -132,7 +146,7 @@ export class SlidesEditorComponent implements OnChanges {
         case 'image': return { type, id, position: 0, src: '', caption: null } as ImageSlide;
         case 'spec':  return { type, id, position: 0, specs: [{ label: '', value: '' }] } as SpecSlide;
         case 'quote': return { type, id, position: 0, body: '', cite: null } as QuoteSlide;
-        case 'link':  return { type, id, position: 0, label: null, description: null, href: null } as LinkSlide;
+        case 'link':  return { type, id, position: 0, label: null, description: null, href: this.defaultHref() } as LinkSlide;
       }
     })();
     this.slides.update(s => [...s, newSlide]);

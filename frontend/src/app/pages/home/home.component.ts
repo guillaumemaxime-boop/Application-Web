@@ -46,7 +46,7 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
         @if (data(); as d) {
           <div class="grid">
             @for (item of d.feed; track item.slug) {
-              <button class="card" (click)="openFeedItem(item)">
+              <a class="card" [routerLink]="cardLink(item)">
                 @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
                 <div class="thumb">
                   <img [src]="item.cover" [alt]="item.title" loading="lazy" />
@@ -55,7 +55,7 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
                   <span class="cat">{{ item.subtitle }}</span>
                   <span class="title">{{ item.title }}</span>
                 </div>
-              </button>
+              </a>
             }
           </div>
         }
@@ -83,7 +83,7 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
 
     .feed { padding: 64px 0 140px; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-    .card { position: relative; overflow: hidden; cursor: pointer; background: var(--color-bg-alt); display: block; width: 100%; border: none; padding: 0; }
+    .card { position: relative; overflow: hidden; cursor: pointer; background: var(--color-bg-alt); display: block; width: 100%; border: none; padding: 0; text-decoration: none; color: inherit; }
     .thumb { aspect-ratio: 4 / 5; overflow: hidden; }
     .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 220ms ease; }
     .card:hover .thumb img { transform: scale(1.02); }
@@ -134,28 +134,10 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  openFeedItem(item: HomeFeedItem) {
-    if (item.kind === 'furniture') {
-      this.portfolio.getFurniture(item.slug).subscribe(f => {
-        this.viewerQueue.set([{
-          title: f.title,
-          subtitle: item.subtitle,
-          slides: f.slides,
-          kind: 'furniture',
-          slug: f.slug,
-        }]);
-      });
-    } else {
-      this.portfolio.getExhibition(item.slug).subscribe(e => {
-        this.viewerQueue.set([{
-          title: e.title,
-          subtitle: item.subtitle,
-          slides: e.slides,
-          kind: 'exhibition',
-          slug: e.slug,
-        }]);
-      });
-    }
+  cardLink(item: HomeFeedItem): string {
+    return item.kind === 'furniture'
+      ? `/mobilier/${item.slug}`
+      : `/expositions/${item.slug}`;
   }
 
   closeViewer() { this.viewerQueue.set([]); }

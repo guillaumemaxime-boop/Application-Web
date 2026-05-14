@@ -98,14 +98,12 @@ describe('HomeComponent', () => {
     expect((component as any).viewerQueue().length).toBe(1);
   });
 
-  it('openFeedItem handles furniture items', () => {
-    (component as any).openFeedItem(mockHome.feed[0]);
-    expect(portfolioServiceSpy.getFurniture).toHaveBeenCalledWith('onde-fauteuil-sculpte');
+  it('cardLink returns furniture detail route', () => {
+    expect((component as any).cardLink(mockHome.feed[0])).toBe('/mobilier/onde-fauteuil-sculpte');
   });
 
-  it('openFeedItem handles exhibition items', () => {
-    (component as any).openFeedItem(mockHome.feed[1]);
-    expect(portfolioServiceSpy.getExhibition).toHaveBeenCalledWith('matieres-silencieuses');
+  it('cardLink returns exhibition detail route', () => {
+    expect((component as any).cardLink(mockHome.feed[1])).toBe('/expositions/matieres-silencieuses');
   });
 
   it('closeViewer empties the queue', () => {
