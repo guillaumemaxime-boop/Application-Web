@@ -8,6 +8,7 @@ import { Photo } from '../../models/photo.model';
 import { AdminFeedEntry, AdminCategoryView } from '../../models/home.model';
 import { PortfolioService } from '../../services/portfolio.service';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
+import { SlidesEditorComponent } from './slides-editor.component';
 
 interface HomeAdminItem {
   kind: 'furniture' | 'exhibition';
@@ -23,7 +24,7 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, ReorderableDirective],
+  imports: [ReactiveFormsModule, FormsModule, ReorderableDirective, SlidesEditorComponent],
   template: `
     <section class="section">
       <div class="container">
@@ -172,6 +173,10 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 }
               </div>
             </form>
+
+            @if (editingFurnitureId(); as ownerId) {
+              <app-slides-editor kind="furniture" [ownerId]="ownerId" />
+            }
           </div>
         }
 
@@ -287,6 +292,10 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 }
               </div>
             </form>
+
+            @if (editingExhibitionId(); as ownerId) {
+              <app-slides-editor kind="exhibition" [ownerId]="ownerId" />
+            }
           </div>
         }
 
@@ -1079,7 +1088,9 @@ export class AdminComponent {
   protected readonly loadingTexts = signal(true);
   protected readonly loadingPhotos = signal(false);
   protected readonly editingFurnitureSlug = signal<string | null>(null);
+  protected readonly editingFurnitureId = signal<string | null>(null);
   protected readonly editingExhibitionSlug = signal<string | null>(null);
+  protected readonly editingExhibitionId = signal<string | null>(null);
   protected readonly saving = signal(false);
   protected readonly uploading = signal(false);
   protected readonly message = signal<string | null>(null);
@@ -1340,6 +1351,7 @@ export class AdminComponent {
 
   newFurniture() {
     this.editingFurnitureSlug.set(null);
+    this.editingFurnitureId.set(null);
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
       material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
@@ -1350,6 +1362,7 @@ export class AdminComponent {
 
   loadFurniture(item: Furniture) {
     this.editingFurnitureSlug.set(item.slug);
+    this.editingFurnitureId.set(item.id ?? null);
     this.furnitureForm.reset({
       title: item.title,
       slug: item.slug,
@@ -1418,6 +1431,7 @@ export class AdminComponent {
 
   newExhibition() {
     this.editingExhibitionSlug.set(null);
+    this.editingExhibitionId.set(null);
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
@@ -1428,6 +1442,7 @@ export class AdminComponent {
 
   loadExhibition(item: Exhibition) {
     this.editingExhibitionSlug.set(item.slug);
+    this.editingExhibitionId.set(item.id ?? null);
     this.exhibitionForm.reset({
       title: item.title,
       slug: item.slug,

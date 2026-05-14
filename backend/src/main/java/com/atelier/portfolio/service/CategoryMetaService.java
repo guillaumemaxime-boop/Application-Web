@@ -47,4 +47,19 @@ public class CategoryMetaService {
         FurnitureCategoryMetaEntity saved = repository.save(e);
         return new CategoryView(saved.getCategory(), saved.getCoverImage(), saved.getPosition(), saved.isVisible());
     }
+
+    @Transactional
+    public void ensureExists(String category, String fallbackCoverImage) {
+        if (category == null || category.isBlank()) return;
+        if (repository.existsById(category)) return;
+        int nextPos = repository.findAll().stream()
+                .mapToInt(FurnitureCategoryMetaEntity::getPosition)
+                .max().orElse(-1) + 1;
+        FurnitureCategoryMetaEntity e = new FurnitureCategoryMetaEntity();
+        e.setCategory(category);
+        e.setCoverImage(fallbackCoverImage != null ? fallbackCoverImage : "");
+        e.setPosition(nextPos);
+        e.setVisible(true);
+        repository.save(e);
+    }
 }

@@ -22,10 +22,17 @@ public class FurnitureService {
 
     private final FurnitureRepository repository;
     private final StoryService storyService;
+    private final HomeFeedService homeFeedService;
+    private final CategoryMetaService categoryMetaService;
 
-    public FurnitureService(FurnitureRepository repository, StoryService storyService) {
+    public FurnitureService(FurnitureRepository repository,
+                            StoryService storyService,
+                            HomeFeedService homeFeedService,
+                            CategoryMetaService categoryMetaService) {
         this.repository = repository;
         this.storyService = storyService;
+        this.homeFeedService = homeFeedService;
+        this.categoryMetaService = categoryMetaService;
     }
 
     public List<Furniture> findAll() {
@@ -61,7 +68,10 @@ public class FurnitureService {
         if (entity.getSlug() == null || entity.getSlug().isBlank()) {
             entity.setSlug(slugify(entity.getTitle()));
         }
-        return toDto(repository.save(entity));
+        FurnitureEntity saved = repository.save(entity);
+        categoryMetaService.ensureExists(saved.getCategory(), saved.getCoverImage());
+        homeFeedService.appendIfNotPresent("furniture", saved.getSlug());
+        return toDto(saved);
     }
 
     @Transactional
@@ -76,6 +86,7 @@ public class FurnitureService {
     public boolean deleteBySlug(String slug) {
         return repository.findBySlug(slug).map(entity -> {
             storyService.deleteAllForOwner("furniture", entity.getId());
+            homeFeedService.removeBySlug("furniture", entity.getSlug());
             repository.delete(entity);
             return true;
         }).orElse(false);
