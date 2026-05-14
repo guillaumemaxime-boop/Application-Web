@@ -1272,18 +1272,20 @@ export class AdminComponent {
     const current = this.homeItems();
     if (!current) return;
     this.homeItems.set(order.map(i => current[i]));
+    this.persistFeed();
   }
 
   toggleIncluded(item: HomeAdminItem, event: Event) {
     const checked = (event.target as HTMLInputElement).checked;
     this.homeItems.update(items => items?.map(x => x === item ? { ...x, included: checked } : x) ?? null);
+    this.persistFeed();
   }
 
-  saveFeed() {
+  private persistFeed() {
     const items = this.homeItems() ?? [];
     const entries: AdminFeedEntry[] = items.filter(i => i.included).map(i => ({ kind: i.kind, slug: i.slug }));
     this.portfolio.replaceAdminFeed(entries).subscribe({
-      next: () => this.flash('Ordre du masonry enregistré.', 'success'),
+      next: () => this.flash('Ordre enregistré.', 'success'),
       error: () => this.flash('Impossible d\'enregistrer l\'ordre.', 'error'),
     });
   }
@@ -1292,14 +1294,16 @@ export class AdminComponent {
     const current = this.categoryMeta();
     if (!current) return;
     this.categoryMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
+    this.persistCategories();
   }
 
   toggleCategoryVisibility(c: AdminCategoryView, event: Event) {
     const visible = (event.target as HTMLInputElement).checked;
     this.categoryMeta.update(cats => cats?.map(x => x.category === c.category ? { ...x, visible } : x) ?? null);
+    this.persistCategories();
   }
 
-  saveCategories() {
+  private persistCategories() {
     const cats = this.categoryMeta() ?? [];
     const requests = cats.map(c => this.portfolio.updateAdminCategory(c.category, c));
     if (requests.length === 0) return;
@@ -1313,14 +1317,16 @@ export class AdminComponent {
     const current = this.exhibitionsMeta();
     if (!current) return;
     this.exhibitionsMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
+    this.persistExhibitionsMeta();
   }
 
   toggleExhibitionVisibility(row: ExhibitionMetaRow, event: Event) {
     const visible = (event.target as HTMLInputElement).checked;
     this.exhibitionsMeta.update(rows => rows?.map(x => x.slug === row.slug ? { ...x, visible } : x) ?? null);
+    this.persistExhibitionsMeta();
   }
 
-  saveExhibitionsMeta() {
+  private persistExhibitionsMeta() {
     const rows = this.exhibitionsMeta() ?? [];
     const requests = rows.map(r => this.portfolio.updateAdminExhibitionMeta(r.slug, {
       slug: r.slug, position: r.position, visible: r.visible,
