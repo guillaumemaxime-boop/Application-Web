@@ -6,7 +6,7 @@ import { Exhibition } from '../models/exhibition.model';
 import { Profile } from '../models/profile.model';
 import { SiteContent } from '../models/site-content.model';
 import { Photo } from '../models/photo.model';
-import { HomePageData, AdminFeedEntry, AdminCategoryView } from '../models/home.model';
+import { HomePageData, AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../models/home.model';
 import { Slide } from '../models/slide.model';
 
 const API = '/api';
@@ -119,5 +119,13 @@ export class PortfolioService {
 
   updateAdminCategory(category: string, input: AdminCategoryView): Observable<AdminCategoryView> {
     return this.http.put<AdminCategoryView>(`${API}/admin/categories/${encodeURIComponent(category)}`, input);
+  }
+
+  getAdminExhibitionsMeta(): Observable<AdminExhibitionMetaView[]> {
+    return this.http.get<AdminExhibitionMetaView[]>(`${API}/admin/exhibitions-meta`);
+  }
+
+  updateAdminExhibitionMeta(slug: string, input: AdminExhibitionMetaView): Observable<AdminExhibitionMetaView> {
+    return this.http.put<AdminExhibitionMetaView>(`${API}/admin/exhibitions-meta/${encodeURIComponent(slug)}`, input);
   }
 }

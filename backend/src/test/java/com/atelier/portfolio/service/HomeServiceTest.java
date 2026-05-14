@@ -22,6 +22,7 @@ class HomeServiceTest {
     @Mock private ExhibitionRepository exhibitionRepo;
     @Mock private HomeFeedRepository feedRepo;
     @Mock private FurnitureCategoryMetaRepository categoryRepo;
+    @Mock private ExhibitionMetaRepository exhibitionMetaRepo;
 
     @InjectMocks private HomeService service;
 
@@ -39,10 +40,14 @@ class HomeServiceTest {
         HomeFeedEntryEntity feed1 = feedEntry(0, "furniture", "console-lumiere");
         HomeFeedEntryEntity feed2 = feedEntry(1, "exhibition", "lumen");
 
+        ExhibitionMetaEntity lumenMeta = new ExhibitionMetaEntity();
+        lumenMeta.setSlug("lumen"); lumenMeta.setPosition(0); lumenMeta.setVisible(true);
+
         when(categoryRepo.findByVisibleTrueOrderByPositionAsc()).thenReturn(List.of(tablesCat, consolesCat));
         when(furnitureRepo.findAll()).thenReturn(List.of(table, console));
         when(exhibitionRepo.findAll()).thenReturn(List.of(lumen));
         when(feedRepo.findAllByOrderByPositionAsc()).thenReturn(List.of(feed1, feed2));
+        when(exhibitionMetaRepo.findByVisibleTrueOrderByPositionAsc()).thenReturn(List.of(lumenMeta));
 
         HomePageData result = service.getHomeData();
 

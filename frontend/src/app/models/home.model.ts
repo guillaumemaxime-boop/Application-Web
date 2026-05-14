@@ -38,3 +38,9 @@ export interface AdminCategoryView {
   position: number;
   visible: boolean;
 }
+
+export interface AdminExhibitionMetaView {
+  slug: string;
+  position: number;
+  visible: boolean;
+}

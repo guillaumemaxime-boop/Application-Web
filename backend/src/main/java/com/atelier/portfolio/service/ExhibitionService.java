@@ -23,13 +23,16 @@ public class ExhibitionService {
     private final ExhibitionRepository repository;
     private final StoryService storyService;
     private final HomeFeedService homeFeedService;
+    private final ExhibitionMetaService exhibitionMetaService;
 
     public ExhibitionService(ExhibitionRepository repository,
                              StoryService storyService,
-                             HomeFeedService homeFeedService) {
+                             HomeFeedService homeFeedService,
+                             ExhibitionMetaService exhibitionMetaService) {
         this.repository = repository;
         this.storyService = storyService;
         this.homeFeedService = homeFeedService;
+        this.exhibitionMetaService = exhibitionMetaService;
     }
 
     public List<Exhibition> findAll() {
@@ -63,6 +66,7 @@ public class ExhibitionService {
             entity.setSlug(slugify(entity.getTitle()));
         }
         ExhibitionEntity saved = repository.save(entity);
+        exhibitionMetaService.ensureExists(saved.getSlug());
         homeFeedService.appendIfNotPresent("exhibition", saved.getSlug());
         return toDto(saved);
     }
@@ -80,6 +84,7 @@ public class ExhibitionService {
         return repository.findBySlug(slug).map(entity -> {
             storyService.deleteAllForOwner("exhibition", entity.getId());
             homeFeedService.removeBySlug("exhibition", entity.getSlug());
+            exhibitionMetaService.removeBySlug(entity.getSlug());
             repository.delete(entity);
             return true;
         }).orElse(false);

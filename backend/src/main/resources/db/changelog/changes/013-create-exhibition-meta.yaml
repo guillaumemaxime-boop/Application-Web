@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: 013-create-exhibition-meta
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: exhibition_meta
+            columns:
+              - column:
+                  name: slug
+                  type: varchar(200)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: visible
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false

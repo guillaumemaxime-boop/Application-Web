@@ -24,15 +24,18 @@ public class HomeService {
     private final ExhibitionRepository exhibitionRepo;
     private final HomeFeedRepository feedRepo;
     private final FurnitureCategoryMetaRepository categoryRepo;
+    private final ExhibitionMetaRepository exhibitionMetaRepo;
 
     public HomeService(FurnitureRepository furnitureRepo,
                        ExhibitionRepository exhibitionRepo,
                        HomeFeedRepository feedRepo,
-                       FurnitureCategoryMetaRepository categoryRepo) {
+                       FurnitureCategoryMetaRepository categoryRepo,
+                       ExhibitionMetaRepository exhibitionMetaRepo) {
         this.furnitureRepo = furnitureRepo;
         this.exhibitionRepo = exhibitionRepo;
         this.feedRepo = feedRepo;
         this.categoryRepo = categoryRepo;
+        this.exhibitionMetaRepo = exhibitionMetaRepo;
     }
 
     public HomePageData getHomeData() {
@@ -58,7 +61,9 @@ public class HomeService {
                 ))
                 .toList();
 
-        List<HomeExhibitionView> exhibitions = allExhibitions.stream()
+        List<HomeExhibitionView> exhibitions = exhibitionMetaRepo.findByVisibleTrueOrderByPositionAsc().stream()
+                .map(meta -> exhibitionBySlug.get(meta.getSlug()))
+                .filter(e -> e != null)
                 .map(e -> new HomeExhibitionView(
                         e.getTitle(), e.getSlug(), e.getCoverImage(), e.getVenue(),
                         formatPeriod(e)

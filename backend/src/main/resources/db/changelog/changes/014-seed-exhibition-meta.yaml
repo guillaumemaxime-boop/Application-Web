@@ -1,0 +1,65 @@
+databaseChangeLog:
+  - changeSet:
+      id: 014-seed-exhibition-meta
+      author: atelier-lumen
+      changes:
+        - insert:
+            tableName: exhibition_meta
+            columns:
+              - column:
+                  name: slug
+                  value: matieres-silencieuses
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: visible
+                  valueBoolean: true
+        - insert:
+            tableName: exhibition_meta
+            columns:
+              - column:
+                  name: slug
+                  value: l-atelier-ouvert
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: visible
+                  valueBoolean: true
+        - insert:
+            tableName: exhibition_meta
+            columns:
+              - column:
+                  name: slug
+                  value: bois-et-lumiere
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: visible
+                  valueBoolean: true
+        - insert:
+            tableName: exhibition_meta
+            columns:
+              - column:
+                  name: slug
+                  value: saison-brute
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: visible
+                  valueBoolean: true
+        - insert:
+            tableName: exhibition_meta
+            columns:
+              - column:
+                  name: slug
+                  value: esquisses
+              - column:
+                  name: position
+                  valueNumeric: 4
+              - column:
+                  name: visible
+                  valueBoolean: true

@@ -5,7 +5,7 @@ import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
 import { SiteContent } from '../../models/site-content.model';
 import { Photo } from '../../models/photo.model';
-import { AdminFeedEntry, AdminCategoryView } from '../../models/home.model';
+import { AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../../models/home.model';
 import { PortfolioService } from '../../services/portfolio.service';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
 import { SlidesEditorComponent } from './slides-editor.component';
@@ -16,6 +16,14 @@ interface HomeAdminItem {
   title: string;
   cover: string;
   included: boolean;
+}
+
+interface ExhibitionMetaRow {
+  slug: string;
+  title: string;
+  cover: string;
+  position: number;
+  visible: boolean;
 }
 
 type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home';
@@ -527,6 +535,26 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 }
               </ul>
               <button type="button" class="primary" (click)="saveCategories()">Enregistrer les catégories</button>
+            } @else {
+              <p class="status">Chargement…</p>
+            }
+
+            <h2 style="margin-top: 48px">Bandeau des expositions</h2>
+            <p class="hint">Glisse pour réordonner. Décoche pour masquer une exposition du bandeau (la fiche reste accessible via son URL).</p>
+            @if (exhibitionsMeta(); as rows) {
+              <ul class="exh-list" appReorderable (reordered)="onExhibitionMetaReorder($event)">
+                @for (r of rows; track r.slug) {
+                  <li class="home-row">
+                    <span class="handle">⠿</span>
+                    <img [src]="r.cover" [alt]="r.title" class="thumb-round" />
+                    <span class="title">{{ r.title }}</span>
+                    <label class="incl">
+                      <input type="checkbox" [checked]="r.visible" (change)="toggleExhibitionVisibility(r, $event)" /> Visible
+                    </label>
+                  </li>
+                }
+              </ul>
+              <button type="button" class="primary" (click)="saveExhibitionsMeta()">Enregistrer les expositions</button>
             } @else {
               <p class="status">Chargement…</p>
             }
@@ -1192,6 +1220,7 @@ export class AdminComponent {
 
   protected readonly homeItems = signal<HomeAdminItem[] | null>(null);
   protected readonly categoryMeta = signal<AdminCategoryView[] | null>(null);
+  protected readonly exhibitionsMeta = signal<ExhibitionMetaRow[] | null>(null);
 
   loadHomeTab() {
     forkJoin([
@@ -1221,6 +1250,22 @@ export class AdminComponent {
     });
 
     this.portfolio.getAdminCategories().subscribe(c => this.categoryMeta.set(c));
+
+    forkJoin([
+      this.portfolio.getAllExhibitions(),
+      this.portfolio.getAdminExhibitionsMeta(),
+    ]).subscribe(([expos, metas]) => {
+      const byMeta = new Map(metas.map(m => [m.slug, m]));
+      const rows: ExhibitionMetaRow[] = expos
+        .map(e => {
+          const m = byMeta.get(e.slug);
+          if (!m) return null;
+          return { slug: e.slug, title: e.title, cover: e.coverImage, position: m.position, visible: m.visible };
+        })
+        .filter((r): r is ExhibitionMetaRow => r !== null)
+        .sort((a, b) => a.position - b.position);
+      this.exhibitionsMeta.set(rows);
+    });
   }
 
   onFeedReorder(order: number[]) {
@@ -1261,6 +1306,29 @@ export class AdminComponent {
     forkJoin(requests).subscribe({
       next: () => this.flash('Catégories enregistrées.', 'success'),
       error: () => this.flash('Impossible d\'enregistrer les catégories.', 'error'),
+    });
+  }
+
+  onExhibitionMetaReorder(order: number[]) {
+    const current = this.exhibitionsMeta();
+    if (!current) return;
+    this.exhibitionsMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
+  }
+
+  toggleExhibitionVisibility(row: ExhibitionMetaRow, event: Event) {
+    const visible = (event.target as HTMLInputElement).checked;
+    this.exhibitionsMeta.update(rows => rows?.map(x => x.slug === row.slug ? { ...x, visible } : x) ?? null);
+  }
+
+  saveExhibitionsMeta() {
+    const rows = this.exhibitionsMeta() ?? [];
+    const requests = rows.map(r => this.portfolio.updateAdminExhibitionMeta(r.slug, {
+      slug: r.slug, position: r.position, visible: r.visible,
+    }));
+    if (requests.length === 0) return;
+    forkJoin(requests).subscribe({
+      next: () => this.flash('Expositions enregistrées.', 'success'),
+      error: () => this.flash('Impossible d\'enregistrer les expositions.', 'error'),
     });
   }
 

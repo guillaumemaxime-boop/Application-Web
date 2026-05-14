@@ -35,3 +35,9 @@ databaseChangeLog:
   - include:
       file: changes/012-seed-category-meta.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/013-create-exhibition-meta.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/014-seed-exhibition-meta.yaml
+      relativeToChangelogFile: true

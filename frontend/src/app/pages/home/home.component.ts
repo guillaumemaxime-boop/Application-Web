@@ -1,9 +1,10 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { HomePageData, HomeFeedItem, HomeCategoryView, HomeExhibitionView } from '../../models/home.model';
+import { SiteContent } from '../../models/site-content.model';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 
 @Component({
@@ -13,9 +14,9 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
   template: `
     <section class="hero">
       <div class="container">
-        <span class="eyebrow">Atelier Lumen — Portfolio</span>
-        <h1>Mobilier sculpté,<br/>scénographies vivantes.</h1>
-        <p class="lead">À feuilleter en stories, à explorer en profondeur.</p>
+        <span class="eyebrow">{{ heroEyebrow() }}</span>
+        <h1 [innerHTML]="heroTitle()"></h1>
+        <p class="lead">{{ heroLead() }}</p>
       </div>
     </section>
 
@@ -102,9 +103,18 @@ export class HomeComponent implements OnInit {
 
   protected data = signal<HomePageData | null>(null);
   protected viewerQueue = signal<StoryItem[]>([]);
+  protected content = signal<SiteContent>({});
+
+  protected heroEyebrow = computed(() => this.content()['home.hero.eyebrow'] || 'Atelier Lumen — Portfolio');
+  protected heroTitle = computed(() => {
+    const t = this.content()['home.hero.title'];
+    return (t && t.trim()) ? t.replace(/\n/g, '<br/>') : 'Mobilier sculpté,<br/>scénographies vivantes.';
+  });
+  protected heroLead = computed(() => this.content()['home.hero.lead'] || 'À feuilleter en stories, à explorer en profondeur.');
 
   ngOnInit() {
     this.portfolio.getHome().subscribe(d => this.data.set(d));
+    this.portfolio.getContent().subscribe(c => this.content.set(c));
   }
 
   openCategory(cat: HomeCategoryView) {
