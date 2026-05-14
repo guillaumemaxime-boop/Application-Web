@@ -1,248 +1,150 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
-import { Furniture } from '../../models/furniture.model';
-import { Exhibition } from '../../models/exhibition.model';
-import { SiteContent } from '../../models/site-content.model';
+import { HomePageData, HomeFeedItem, HomeCategoryView, HomeExhibitionView } from '../../models/home.model';
+import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink],
+  imports: [CommonModule, RouterLink, StoryViewerComponent],
   template: `
     <section class="hero">
-      <div class="container hero-inner">
-        <span class="eyebrow fade-in">{{ txt('home.hero.eyebrow') }}</span>
-        <h1 class="fade-in" [innerHTML]="heroTitle()"></h1>
-        <p class="lead fade-in">{{ txt('home.hero.lead') }}</p>
-        <div class="hero-actions fade-in">
-          <a routerLink="/mobilier" class="btn-link">Découvrir le mobilier</a>
-          <a routerLink="/expositions" class="btn-link">Voir les expositions</a>
-        </div>
+      <div class="container">
+        <span class="eyebrow">Atelier Lumen — Portfolio</span>
+        <h1>Mobilier sculpté,<br/>scénographies vivantes.</h1>
+        <p class="lead">À feuilleter en stories, à explorer en profondeur.</p>
       </div>
     </section>
 
-    <section class="section featured">
+    <section class="stories">
       <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">{{ txt('home.featured.eyebrow') }}</span>
-          <h2>{{ txt('home.featured.title') }}</h2>
-        </div>
+        @if (data(); as d) {
+          <div class="stories-row">
+            @for (cat of d.categories; track cat.slug) {
+              <button class="story" (click)="openCategory(cat)">
+                <div class="ring"><img [src]="cat.cover" [alt]="cat.category" /></div>
+                <span class="label">{{ cat.category }}</span>
+              </button>
+            }
+            <div class="sep" aria-hidden="true">·</div>
+            @for (exh of d.exhibitions; track exh.slug) {
+              <button class="story expo" (click)="openExhibition(exh)">
+                <div class="ring expo-ring"><img [src]="exh.cover" [alt]="exh.title" /></div>
+                <span class="label">{{ exh.title }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </section>
 
-        @if (loadingFurniture()) {
-          <p class="status">Chargement…</p>
-        } @else if (errorFurniture()) {
-          <p class="status error">Impossible de charger les pièces. Vérifiez que le backend est lancé sur le port 8080.</p>
-        } @else {
-          <div class="grid">
-            @for (item of featuredFurniture(); track item.id) {
-              <a class="card" [routerLink]="['/mobilier', item.slug]">
-                <div class="thumb">
-                  <img [src]="item.coverImage" [alt]="item.title" loading="lazy" />
-                </div>
+    <section class="feed">
+      <div class="container">
+        @if (data(); as d) {
+          <div class="masonry">
+            @for (item of d.feed; track item.slug) {
+              <button class="card" (click)="openFeedItem(item)">
+                @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
+                <img [src]="item.cover" [alt]="item.title" loading="lazy" />
                 <div class="meta">
-                  <span class="cat">{{ item.category }} · {{ item.year }}</span>
-                  <h3>{{ item.title }}</h3>
-                  <p>{{ item.shortDescription }}</p>
+                  <span class="cat">{{ item.subtitle }}</span>
+                  <span class="title">{{ item.title }}</span>
                 </div>
-              </a>
+              </button>
             }
           </div>
         }
       </div>
     </section>
 
-    <section class="section exhibitions">
-      <div class="container">
-        <div class="section-head">
-          <span class="eyebrow">{{ txt('home.exhibitions.eyebrow') }}</span>
-          <h2>{{ txt('home.exhibitions.title') }}</h2>
-        </div>
-
-        @if (loadingExhibitions()) {
-          <p class="status">Chargement…</p>
-        } @else {
-          <div class="exh-list">
-            @for (exh of featuredExhibitions(); track exh.id) {
-              <a class="exh-row" [routerLink]="['/expositions', exh.slug]">
-                <div class="exh-img">
-                  <img [src]="exh.coverImage" [alt]="exh.title" loading="lazy" />
-                </div>
-                <div class="exh-meta">
-                  <span class="cat">{{ exh.venue }} · {{ exh.city }}, {{ exh.country }}</span>
-                  <h3>{{ exh.title }}</h3>
-                  <p>{{ exh.shortDescription }}</p>
-                  <span class="dates">{{ formatRange(exh.startDate, exh.endDate) }}</span>
-                </div>
-              </a>
-            }
-          </div>
-        }
-      </div>
-    </section>
-
-    <section class="section quote">
-      <div class="container">
-        <blockquote [innerHTML]="quoteText()"></blockquote>
-        <cite>{{ txt('home.quote.cite') }}</cite>
-      </div>
-    </section>
+    @if (viewerQueue().length > 0) {
+      <app-story-viewer [queue]="viewerQueue()" (closed)="closeViewer()"></app-story-viewer>
+    }
   `,
   styles: [`
-    .hero {
-      padding: 120px 0 128px;
-    }
-    .hero-inner { max-width: 880px; }
-    .hero h1 { margin-top: 24px; }
-    .lead {
-      margin-top: 32px;
-      max-width: 620px;
-      font-size: 1.125rem;
-      line-height: 1.7;
-    }
-    .hero-actions {
-      display: flex;
-      gap: 32px;
-      margin-top: 48px;
-      flex-wrap: wrap;
-    }
+    .hero { min-height: 50vh; padding: 96px 0 64px; display: flex; flex-direction: column; justify-content: center; }
+    .hero .eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-mute); }
+    .hero h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.05; margin-top: 20px; max-width: 820px; }
+    .hero .lead { max-width: 540px; margin-top: 28px; font-size: 1.05rem; color: var(--color-ink-soft); }
 
-    .section-head {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      margin-bottom: 56px;
-      max-width: 720px;
-    }
+    .stories { position: sticky; top: 72px; z-index: 30; background: var(--color-bg); border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); padding: 24px 0; }
+    .stories-row { display: flex; gap: 32px; overflow-x: auto; align-items: flex-start; }
+    .story { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 88px; background: none; border: none; cursor: pointer; padding: 0; }
+    .ring { width: 84px; height: 84px; border-radius: 50%; padding: 3px; background: var(--color-bg); border: 1px solid var(--color-ink); }
+    .ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+    .expo-ring { padding: 4px; border: none; box-shadow: inset 0 0 0 1px var(--color-bg), inset 0 0 0 2px var(--color-ink); }
+    .label { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-soft); }
+    .sep { align-self: stretch; display: flex; align-items: center; padding: 0 4px; color: var(--color-line); font-size: 1.4rem; }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 48px;
-    }
-    .card { display: block; }
-    .thumb {
-      overflow: hidden;
-      background: var(--color-bg-alt);
-      aspect-ratio: 4 / 5;
-    }
-    .thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: opacity var(--transition);
-    }
-    .card:hover .thumb img { opacity: 0.8; }
-    .meta { padding: 20px 0 0; }
-    .cat {
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-    }
-    .meta h3 {
-      margin: 12px 0 8px;
-      font-size: 1.5rem;
-    }
-    .meta p { font-size: 0.95rem; color: var(--color-ink-soft); }
+    .feed { padding: 64px 0 140px; }
+    .masonry { column-count: 3; column-gap: 20px; }
+    .card { break-inside: avoid; margin-bottom: 20px; position: relative; overflow: hidden; cursor: pointer; background: var(--color-bg-alt); display: block; width: 100%; border: none; padding: 0; }
+    .card img { width: 100%; height: auto; display: block; }
+    .meta { position: absolute; inset: auto 0 0 0; padding: 20px; background: linear-gradient(transparent, rgba(26,24,21,0.7)); color: #fff; opacity: 0; transition: opacity 200ms ease; pointer-events: none; text-align: left; }
+    .card:hover .meta { opacity: 1; }
+    .cat { display: block; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 6px; }
+    .title { font-family: var(--serif); font-size: 1.4rem; line-height: 1.15; }
+    .badge { position: absolute; top: 14px; left: 14px; background: var(--color-bg); color: var(--color-ink); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 10px; border: 1px solid var(--color-ink); z-index: 2; }
 
-    .exh-list { display: flex; flex-direction: column; }
-    .exh-row {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 48px;
-      padding: 32px 0;
-      border-top: 1px solid var(--color-line);
-      transition: opacity var(--transition);
-    }
-    .exh-row:hover { opacity: 0.65; }
-    .exh-img { aspect-ratio: 3 / 2; overflow: hidden; }
-    .exh-img img { width: 100%; height: 100%; object-fit: cover; }
-    .exh-meta { display: flex; flex-direction: column; justify-content: center; gap: 12px; }
-    .exh-meta h3 { font-size: 1.75rem; }
-    .dates {
-      font-size: 0.8rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-    }
-
-    .quote {
-      text-align: center;
-      padding: 128px 0;
-      border-top: 1px solid var(--color-line);
-    }
-    blockquote {
-      font-family: var(--serif);
-      font-size: clamp(1.5rem, 3vw, 2.5rem);
-      line-height: 1.3;
-      max-width: 880px;
-      margin: 0 auto;
-      color: var(--color-ink);
-    }
-    cite {
-      display: block;
-      margin-top: 32px;
-      font-style: normal;
-      font-size: 0.875rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-    }
-
-    .status { color: var(--color-mute); }
-    .status.error { color: #c0392b; }
-
-    @media (max-width: 960px) {
-      .grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
-      .exh-row { grid-template-columns: 1fr; gap: 24px; }
-    }
-    @media (max-width: 600px) {
-      .grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 960px) { .masonry { column-count: 2; } }
+    @media (max-width: 600px) { .masonry { column-count: 1; } .stories-row { gap: 20px; } .ring { width: 72px; height: 72px; } }
   `]
 })
-export class HomeComponent {
-  private readonly portfolio = inject(PortfolioService);
+export class HomeComponent implements OnInit {
+  private portfolio = inject(PortfolioService);
 
-  protected readonly featuredFurniture = signal<Furniture[]>([]);
-  protected readonly featuredExhibitions = signal<Exhibition[]>([]);
-  protected readonly loadingFurniture = signal(true);
-  protected readonly loadingExhibitions = signal(true);
-  protected readonly errorFurniture = signal(false);
-  protected readonly content = signal<SiteContent>({});
+  protected data = signal<HomePageData | null>(null);
+  protected viewerQueue = signal<StoryItem[]>([]);
 
-  protected readonly heroTitle = computed(() =>
-    this.txt('home.hero.title').replace('\n', '<br/>')
-  );
+  ngOnInit() {
+    this.portfolio.getHome().subscribe(d => this.data.set(d));
+  }
 
-  protected readonly quoteText = computed(() =>
-    this.txt('home.quote.text').replace('\n', '<br/>')
-  );
-
-  constructor() {
-    this.portfolio.getFeaturedFurniture().subscribe({
-      next: data => { this.featuredFurniture.set(data); this.loadingFurniture.set(false); },
-      error: () => { this.errorFurniture.set(true); this.loadingFurniture.set(false); }
-    });
-    this.portfolio.getFeaturedExhibitions().subscribe({
-      next: data => { this.featuredExhibitions.set(data); this.loadingExhibitions.set(false); },
-      error: () => this.loadingExhibitions.set(false)
-    });
-    this.portfolio.getContent().subscribe({
-      next: data => this.content.set(data),
-      error: () => {}
+  openCategory(cat: HomeCategoryView) {
+    if (cat.itemSlugs.length === 0) return;
+    const requests = cat.itemSlugs.map(slug => this.portfolio.getFurniture(slug));
+    forkJoin(requests).subscribe(furnitureList => {
+      const queue: StoryItem[] = furnitureList.map(f => ({
+        title: f.title,
+        subtitle: `${f.category} · ${f.year}`,
+        slides: f.slides
+      }));
+      this.viewerQueue.set(queue);
     });
   }
 
-  protected txt(key: string): string {
-    return this.content()[key] ?? '';
+  openExhibition(exh: HomeExhibitionView) {
+    this.portfolio.getExhibition(exh.slug).subscribe(e => {
+      this.viewerQueue.set([{
+        title: e.title,
+        subtitle: `${e.venue} · ${exh.period}`,
+        slides: e.slides
+      }]);
+    });
   }
 
-  protected formatRange(start: string, end: string): string {
-    const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-    const s = new Date(start).toLocaleDateString('fr-FR', opts);
-    const e = new Date(end).toLocaleDateString('fr-FR', opts);
-    return `${s} → ${e}`;
+  openFeedItem(item: HomeFeedItem) {
+    if (item.kind === 'furniture') {
+      this.portfolio.getFurniture(item.slug).subscribe(f => {
+        this.viewerQueue.set([{
+          title: f.title,
+          subtitle: item.subtitle,
+          slides: f.slides
+        }]);
+      });
+    } else {
+      this.portfolio.getExhibition(item.slug).subscribe(e => {
+        this.viewerQueue.set([{
+          title: e.title,
+          subtitle: item.subtitle,
+          slides: e.slides
+        }]);
+      });
+    }
   }
+
+  closeViewer() { this.viewerQueue.set([]); }
 }
