@@ -3,6 +3,7 @@ import { FurnitureDetailComponent } from './furniture-detail.component';
 import { PortfolioService } from '../../services/portfolio.service';
 import { of, Subject, throwError } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
+import { Slide } from '../../models/slide.model';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { convertToParamMap } from '@angular/router';
 
@@ -25,6 +26,11 @@ describe('FurnitureDetailComponent', () => {
     featured: true,
     slides: [],
   };
+
+  const slides: Slide[] = [
+    { id: 's1', position: 1, type: 'image', src: 'https://example.com/s1.jpg', caption: 'Détail' },
+    { id: 's2', position: 2, type: 'quote', body: 'Belle pièce.', cite: null },
+  ];
 
   function setup(slug: string, returnValue: ReturnType<PortfolioService['getFurniture']>) {
     const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getFurniture']);
@@ -107,5 +113,57 @@ describe('FurnitureDetailComponent', () => {
     const fixture = TestBed.createComponent(FurnitureDetailComponent);
     fixture.detectChanges();
     expect(spy.getFurniture).toHaveBeenCalledWith('');
+  });
+
+  it('should not render the story-inline section when slides are empty', () => {
+    setup('onde', of(mockFurniture));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Voir en plein écran');
+  });
+
+  it('should render the story-inline section and the viewer link when slides are present', () => {
+    setup('onde', of({ ...mockFurniture, slides }));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-story-inline')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Voir en plein écran');
+  });
+
+  it('should open the viewer with a single furniture story when the link is clicked', () => {
+    setup('onde', of({ ...mockFurniture, slides }));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+
+    const c = fixture.componentInstance as any;
+    expect(c.viewerQueue().length).toBe(0);
+
+    const button = fixture.nativeElement.querySelector('.viewer-link') as HTMLButtonElement;
+    expect(button).not.toBeNull();
+    button.click();
+    fixture.detectChanges();
+
+    const queue = c.viewerQueue();
+    expect(queue.length).toBe(1);
+    expect(queue[0].title).toBe('Onde');
+    expect(queue[0].slides.length).toBe(2);
+    expect(queue[0].kind).toBe('furniture');
+    expect(queue[0].slug).toBe('onde');
+    expect(fixture.nativeElement.querySelector('app-story-viewer')).not.toBeNull();
+  });
+
+  it('should close the viewer by emptying the queue', () => {
+    setup('onde', of({ ...mockFurniture, slides }));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    c.openViewer();
+    fixture.detectChanges();
+    expect(c.viewerQueue().length).toBe(1);
+    c.closeViewer();
+    fixture.detectChanges();
+    expect(c.viewerQueue().length).toBe(0);
+    expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeNull();
   });
 });
