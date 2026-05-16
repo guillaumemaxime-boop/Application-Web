@@ -41,3 +41,6 @@ databaseChangeLog:
   - include:
       file: changes/014-seed-exhibition-meta.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/015-create-contact-requests.yaml
+      relativeToChangelogFile: true

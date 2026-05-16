@@ -8,6 +8,7 @@ import { SiteContent } from '../models/site-content.model';
 import { Photo } from '../models/photo.model';
 import { HomePageData, AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../models/home.model';
 import { Slide } from '../models/slide.model';
+import { ContactRequestInput, ContactRequestAck } from '../models/contact.model';
 
 const API = '/api';
 
@@ -127,5 +128,9 @@ export class PortfolioService {
 
   updateAdminExhibitionMeta(slug: string, input: AdminExhibitionMetaView): Observable<AdminExhibitionMetaView> {
     return this.http.put<AdminExhibitionMetaView>(`${API}/admin/exhibitions-meta/${encodeURIComponent(slug)}`, input);
+  }
+
+  submitContact(input: ContactRequestInput): Observable<ContactRequestAck> {
+    return this.http.post<ContactRequestAck>(`${API}/contact`, input);
   }
 }

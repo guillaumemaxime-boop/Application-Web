@@ -4,11 +4,12 @@ import { PortfolioService } from '../../services/portfolio.service';
 import { Furniture } from '../../models/furniture.model';
 import { StoryInlineComponent } from '../../components/story-inline/story-inline.component';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
+import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
 
 @Component({
   selector: 'app-furniture-detail',
   standalone: true,
-  imports: [RouterLink, StoryInlineComponent, StoryViewerComponent],
+  imports: [RouterLink, StoryInlineComponent, StoryViewerComponent, ContactFormComponent],
   template: `
     @if (loading()) {
       <div class="container section"><p class="status">Chargement…</p></div>
@@ -78,13 +79,21 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
           <div class="container">
             <h2>Une pièce vous intéresse ?</h2>
             <p>Contactez le studio pour les disponibilités et les conditions d'édition.</p>
-            <a class="btn-link" href="mailto:studio&#64;atelier-lumen.fr">Écrire au studio</a>
+            <button type="button" class="btn-link cta-btn" (click)="openContact()">Contacter le studio →</button>
           </div>
         </section>
       </article>
 
       @if (viewerQueue().length > 0) {
         <app-story-viewer [queue]="viewerQueue()" (closed)="closeViewer()"></app-story-viewer>
+      }
+
+      @if (contactOpen()) {
+        <app-contact-form
+          [furnitureId]="f.id"
+          [furnitureSlug]="f.slug"
+          [furnitureTitle]="f.title"
+          (closed)="closeContact()"></app-contact-form>
       }
     }
   `,
@@ -213,6 +222,13 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
     .cta { text-align: center; border-top: 1px solid var(--color-line); }
     .cta p { margin: 16px 0 32px; }
     .cta .btn-link { margin: 0 auto; }
+    .cta-btn {
+      background: none;
+      border: none;
+      border-bottom: 1px solid var(--color-ink);
+      font: inherit;
+      cursor: pointer;
+    }
 
     .status { color: var(--color-mute); }
 
@@ -234,6 +250,7 @@ export class FurnitureDetailComponent {
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
   protected readonly viewerQueue = signal<StoryItem[]>([]);
+  protected readonly contactOpen = signal(false);
 
   protected readonly hasSlides = computed(() => (this.item()?.slides?.length ?? 0) > 0);
 
@@ -263,5 +280,13 @@ export class FurnitureDetailComponent {
 
   protected closeViewer() {
     this.viewerQueue.set([]);
+  }
+
+  protected openContact() {
+    this.contactOpen.set(true);
+  }
+
+  protected closeContact() {
+    this.contactOpen.set(false);
   }
 }

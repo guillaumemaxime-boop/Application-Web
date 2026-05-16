@@ -166,4 +166,35 @@ describe('FurnitureDetailComponent', () => {
     expect(c.viewerQueue().length).toBe(0);
     expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeNull();
   });
+
+  it('should open the contact form when the CTA button is clicked', () => {
+    setup('onde', of(mockFurniture));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    expect(c.contactOpen()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('app-contact-form')).toBeNull();
+
+    const button = fixture.nativeElement.querySelector('.cta-btn') as HTMLButtonElement;
+    expect(button).not.toBeNull();
+    button.click();
+    fixture.detectChanges();
+
+    expect(c.contactOpen()).toBeTrue();
+    expect(fixture.nativeElement.querySelector('app-contact-form')).not.toBeNull();
+  });
+
+  it('should close the contact form on close event', () => {
+    setup('onde', of(mockFurniture));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    c.openContact();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-contact-form')).not.toBeNull();
+    c.closeContact();
+    fixture.detectChanges();
+    expect(c.contactOpen()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('app-contact-form')).toBeNull();
+  });
 });
