@@ -110,7 +110,14 @@
       "Bash(curl -s http://localhost:8080/api/furniture/onde-fauteuil-sculpte)",
       "Bash(python -c \"import sys, json; d = json.loads\\(sys.stdin.read\\(\\)\\); [print\\(s\\) for s in d.get\\('slides', []\\) if s.get\\('type'\\) == 'link']\")",
       "Bash(grep -n \"^  \\\\`\\\\]\\\\|^  styles\" frontend/src/app/pages/admin/admin.component.ts)",
-      "Bash(curl -s http://localhost:8080/api/admin/exhibitions-meta)"
+      "Bash(curl -s http://localhost:8080/api/admin/exhibitions-meta)",
+      "PowerShell(Write-Output \\(Get-Location\\).Path; Get-ChildItem | Select-Object -ExpandProperty Name)",
+      "PowerShell(docker compose up *)",
+      "PowerShell(docker compose ps *)",
+      "Bash(docker buildx *)",
+      "PowerShell(docker exec atelier-postgres *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/api/furniture)",
+      "Bash(curl -s -o /tmp/resp.json -w 'HTTP %{http_code}\\\\n' -X POST http://localhost:8080/api/contact -H 'Content-Type: application/json' -d '{\"name\":\"Smoke Test\",\"email\":\"smoke@test.fr\",\"phone\":\"\",\"interest\":\"acquisition\",\"message\":\"Hello from end-to-end smoke test\",\"furnitureId\":\"f-001\",\"furnitureSlug\":\"onde\",\"furnitureTitle\":\"Onde\"}')"
     ],
     "additionalDirectories": [
       "c:\\Users\\Utilisateur\\Project\\Application Web\\Application-Web\\docs\\prototypes"

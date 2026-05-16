@@ -500,7 +500,7 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
         @if (tab() === 'home') {
           <div class="home-editor">
             <h2>Ordre éditorial du masonry</h2>
-            <p class="hint">Glisse pour réordonner. Décoche pour exclure du feed.</p>
+            <p class="hint">Glisse pour réordonner. Décoche pour exclure du feed. Les modifications sont enregistrées automatiquement.</p>
             @if (homeItems(); as items) {
               <ul class="ordering-list" appReorderable (reordered)="onFeedReorder($event)">
                 @for (entry of items; track entry.kind + ':' + entry.slug) {
@@ -515,7 +515,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                   </li>
                 }
               </ul>
-              <button type="button" class="primary" (click)="saveFeed()">Enregistrer l'ordre</button>
             } @else {
               <p class="status">Chargement…</p>
             }
@@ -534,7 +533,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                   </li>
                 }
               </ul>
-              <button type="button" class="primary" (click)="saveCategories()">Enregistrer les catégories</button>
             } @else {
               <p class="status">Chargement…</p>
             }
@@ -554,7 +552,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                   </li>
                 }
               </ul>
-              <button type="button" class="primary" (click)="saveExhibitionsMeta()">Enregistrer les expositions</button>
             } @else {
               <p class="status">Chargement…</p>
             }

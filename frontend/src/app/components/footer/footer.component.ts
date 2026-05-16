@@ -18,8 +18,7 @@ import { PortfolioService } from '../../services/portfolio.service';
           <div>
             <span class="eyebrow">Navigation</span>
             <ul>
-              <li><a routerLink="/mobilier">Mobilier</a></li>
-              <li><a routerLink="/expositions">Expositions</a></li>
+              <li><a routerLink="/">Accueil</a></li>
               <li><a routerLink="/studio">Studio</a></li>
             </ul>
           </div>
