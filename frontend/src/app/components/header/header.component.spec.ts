@@ -57,7 +57,9 @@ describe('HeaderComponent', () => {
 
   it('should have navigation links', () => {
     const navLinks = fixture.nativeElement.querySelectorAll('nav a');
-    expect(navLinks.length).toBe(2);
+    expect(navLinks.length).toBe(4);
+    const labels = Array.from(navLinks).map((a: any) => a.textContent.trim());
+    expect(labels).toEqual(['Accueil', 'Mobilier', 'Expositions', 'Studio']);
   });
 
   it('should not have an admin link', () => {

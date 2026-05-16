@@ -7,12 +7,20 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent),
     title: 'Milo GUILLAUME Design — Mobilier sculpté & expositions',
   },
-  { path: 'mobilier', redirectTo: '/', pathMatch: 'full' },
+  {
+    path: 'mobilier',
+    loadComponent: () => import('./pages/catalog/catalog.component').then(m => m.CatalogComponent),
+    title: 'Mobilier — Milo GUILLAUME Design',
+  },
   {
     path: 'mobilier/:slug',
     loadComponent: () => import('./pages/furniture-detail/furniture-detail.component').then(m => m.FurnitureDetailComponent),
   },
-  { path: 'expositions', redirectTo: '/', pathMatch: 'full' },
+  {
+    path: 'expositions',
+    loadComponent: () => import('./pages/expositions-list/expositions-list.component').then(m => m.ExpositionsListComponent),
+    title: 'Expositions — Milo GUILLAUME Design',
+  },
   {
     path: 'expositions/:slug',
     loadComponent: () => import('./pages/exhibition-detail/exhibition-detail.component').then(m => m.ExhibitionDetailComponent),

@@ -19,6 +19,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
         <nav [class.open]="open()">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Accueil</a>
+          <a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()">Mobilier</a>
+          <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
           <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
         </nav>
       </div>
