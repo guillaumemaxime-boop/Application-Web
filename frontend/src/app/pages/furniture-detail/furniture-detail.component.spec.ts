@@ -33,8 +33,9 @@ describe('FurnitureDetailComponent', () => {
   ];
 
   function setup(slug: string, returnValue: ReturnType<PortfolioService['getFurniture']>) {
-    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getFurniture']);
+    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getFurniture', 'getContent']);
     spy.getFurniture.and.returnValue(returnValue);
+    spy.getContent.and.returnValue(of({}));
 
     TestBed.configureTestingModule({
       imports: [FurnitureDetailComponent],
@@ -96,8 +97,9 @@ describe('FurnitureDetailComponent', () => {
   });
 
   it('should fallback to empty slug when route param is missing', () => {
-    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getFurniture']);
+    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getFurniture', 'getContent']);
     spy.getFurniture.and.returnValue(of(mockFurniture));
+    spy.getContent.and.returnValue(of({}));
 
     TestBed.configureTestingModule({
       imports: [FurnitureDetailComponent],

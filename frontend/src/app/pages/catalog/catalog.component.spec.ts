@@ -25,8 +25,9 @@ describe('CatalogComponent', () => {
   ];
 
   function setup(returnValue: ReturnType<PortfolioService['getAllFurniture']>) {
-    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getAllFurniture']);
+    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getAllFurniture', 'getContent']);
     spy.getAllFurniture.and.returnValue(returnValue);
+    spy.getContent.and.returnValue(of({}));
     TestBed.configureTestingModule({
       imports: [CatalogComponent],
       providers: [

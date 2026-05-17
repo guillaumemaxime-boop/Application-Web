@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Furniture } from '../../models/furniture.model';
+import { SiteContent } from '../../models/site-content.model';
+import { roleStyle } from '../../utils/title-style';
 
 type GroupKey = 'category' | 'year';
 
@@ -18,8 +20,8 @@ interface Group {
   template: `
     <section class="head">
       <div class="container">
-        <span class="eyebrow">Catalogue</span>
-        <h1>Mobilier</h1>
+        <span class="eyebrow" [ngStyle]="eyebrowStyle()">Catalogue</span>
+        <h1 [ngStyle]="titleStyle()">Mobilier</h1>
         <p class="lead">L'ensemble des pièces de l'atelier, classées par {{ groupBy() === 'category' ? 'catégorie' : 'année' }}.</p>
 
         <div class="toggle" role="tablist" aria-label="Mode d'organisation">
@@ -45,7 +47,7 @@ interface Group {
       @for (g of groups(); track g.label) {
         <section class="group">
           <div class="container">
-            <h2 class="group-label">{{ g.label }}</h2>
+            <h2 class="group-label" [ngStyle]="sectionTitleStyle()">{{ g.label }}</h2>
             <div class="grid">
               @for (f of g.items; track f.slug) {
                 <a class="card" [routerLink]="['/mobilier', f.slug]">
@@ -53,8 +55,8 @@ interface Group {
                     <img [src]="f.coverImage" [alt]="f.title" loading="lazy" />
                   </div>
                   <div class="meta">
-                    <span class="eyebrow">{{ f.category }} · {{ f.year }}</span>
-                    <span class="title">{{ f.title }}</span>
+                    <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ f.category }} · {{ f.year }}</span>
+                    <span class="title" [ngStyle]="cardTitleStyle()">{{ f.title }}</span>
                     <span class="material">{{ f.material }}</span>
                   </div>
                 </a>
@@ -173,6 +175,12 @@ export class CatalogComponent {
   protected readonly items = signal<Furniture[]>([]);
   protected readonly loading = signal(true);
   protected readonly groupBy = signal<GroupKey>('category');
+  protected readonly content = signal<SiteContent>({});
+
+  protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));
+  protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
+  protected readonly cardTitleStyle    = computed(() => roleStyle(this.content(), 'card-title'));
+  protected readonly eyebrowStyle      = computed(() => roleStyle(this.content(), 'eyebrow'));
 
   protected readonly groups = computed<Group[]>(() => {
     const all = this.items();
@@ -191,6 +199,7 @@ export class CatalogComponent {
       },
       error: () => { this.loading.set(false); }
     });
+    this.portfolio.getContent().subscribe(c => this.content.set(c));
   }
 
   protected setGroupBy(key: GroupKey) {

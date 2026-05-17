@@ -6,6 +6,7 @@ import { PortfolioService } from '../../services/portfolio.service';
 import { HomePageData, HomeFeedItem, HomeCategoryView, HomeExhibitionView } from '../../models/home.model';
 import { SiteContent } from '../../models/site-content.model';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
+import { roleStyle } from '../../utils/title-style';
 
 @Component({
   selector: 'app-home',
@@ -14,8 +15,8 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
   template: `
     <section class="hero">
       <div class="container">
-        <span class="eyebrow">{{ heroEyebrow() }}</span>
-        <h1 [innerHTML]="heroTitle()"></h1>
+        <span class="eyebrow" [ngStyle]="eyebrowStyleVar()">{{ heroEyebrow() }}</span>
+        <h1 [innerHTML]="heroTitle()" [ngStyle]="titleStyleVar()"></h1>
         <p class="lead">{{ heroLead() }}</p>
       </div>
     </section>
@@ -57,8 +58,8 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
                   <img [src]="item.cover" [alt]="item.title" loading="lazy" />
                 </div>
                 <div class="meta">
-                  <span class="cat">{{ item.subtitle }}</span>
-                  <h3 class="title">{{ item.title }}</h3>
+                  <span class="cat" [ngStyle]="eyebrowStyleVar()">{{ item.subtitle }}</span>
+                  <h3 class="title" [ngStyle]="cardTitleStyleVar()">{{ item.title }}</h3>
                   @if (item.description) {
                     <p class="excerpt">{{ item.description }}</p>
                   }
@@ -130,6 +131,9 @@ export class HomeComponent implements OnInit {
     return (t && t.trim()) ? t.replace(/\n/g, '<br/>') : 'Mobilier sculpté,<br/>scénographies vivantes.';
   });
   protected heroLead = computed(() => this.content()['home.hero.lead'] || 'À feuilleter en stories, à explorer en profondeur.');
+  protected titleStyleVar = computed(() => roleStyle(this.content(), 'title'));
+  protected eyebrowStyleVar = computed(() => roleStyle(this.content(), 'eyebrow'));
+  protected cardTitleStyleVar = computed(() => roleStyle(this.content(), 'card-title'));
 
   ngOnInit() {
     this.portfolio.getHome().subscribe(d => this.data.set(d));

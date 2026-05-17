@@ -115,12 +115,11 @@ describe('AdminComponent', () => {
 
   it('should display the furniture tab by default', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-    expect(tabs.length).toBe(5);
+    expect(tabs.length).toBe(6);
     expect(tabs[0].classList.contains('active')).toBe(true);
-    expect(tabs[1].classList.contains('active')).toBe(false);
-    expect(tabs[2].classList.contains('active')).toBe(false);
-    expect(tabs[3].classList.contains('active')).toBe(false);
-    expect(tabs[4].classList.contains('active')).toBe(false);
+    for (let i = 1; i < tabs.length; i++) {
+      expect(tabs[i].classList.contains('active')).toBe(false);
+    }
   });
 
   it('should switch to the exhibitions tab', () => {

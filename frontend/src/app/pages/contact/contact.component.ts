@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { PortfolioService } from '../../services/portfolio.service';
 import { SiteContent } from '../../models/site-content.model';
 import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
+import { roleStyle } from '../../utils/title-style';
 
 @Component({
   selector: 'app-contact',
@@ -11,8 +12,8 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
   template: `
     <section class="page-head">
       <div class="container">
-        <span class="eyebrow">Contact</span>
-        <h1>Échanger avec le studio.</h1>
+        <span class="eyebrow" [ngStyle]="eyebrowStyleVar()">Contact</span>
+        <h1 [ngStyle]="titleStyleVar()">Échanger avec le studio.</h1>
         <p class="lead">Acquisitions, commandes sur mesure, demandes presse ou simples bonjours — toute correspondance reçoit une réponse soignée sous quelques jours.</p>
       </div>
     </section>
@@ -20,7 +21,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
     <section class="contact-body">
       <div class="container grid">
         <aside class="info">
-          <h2 class="info-title">Informations</h2>
+          <h2 class="info-title" [ngStyle]="sectionTitleStyleVar()">Informations</h2>
 
           <ul class="channels">
             @if (email()) {
@@ -75,7 +76,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
         </aside>
 
         <div class="form-wrap">
-          <h2 class="info-title">Écrire au studio</h2>
+          <h2 class="info-title" [ngStyle]="sectionTitleStyleVar()">Écrire au studio</h2>
           <p class="form-lead">Précisez votre demande — acquisition d'une pièce, commande sur mesure, sollicitation presse ou autre. Le studio reviendra vers vous dans les meilleurs délais.</p>
           <app-contact-form [inline]="true"></app-contact-form>
         </div>
@@ -222,6 +223,10 @@ export class ContactComponent {
   protected readonly location = computed(() => this.content()['profile.location'] ?? '');
   protected readonly instagram = computed(() => this.content()['profile.instagram'] ?? '');
   protected readonly linkedin = computed(() => this.content()['profile.linkedin'] ?? '');
+
+  protected readonly titleStyleVar        = computed(() => roleStyle(this.content(), 'title'));
+  protected readonly sectionTitleStyleVar = computed(() => roleStyle(this.content(), 'section-title'));
+  protected readonly eyebrowStyleVar      = computed(() => roleStyle(this.content(), 'eyebrow'));
 
   protected readonly phoneHref = computed(() => (this.phone() || '').replace(/[^+\d]/g, ''));
   protected readonly instagramHandle = computed(() => {

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Exhibition } from '../../models/exhibition.model';
+import { SiteContent } from '../../models/site-content.model';
+import { roleStyle } from '../../utils/title-style';
 
 interface YearGroup {
   year: number;
@@ -16,8 +18,8 @@ interface YearGroup {
   template: `
     <section class="head">
       <div class="container">
-        <span class="eyebrow">Archives</span>
-        <h1>Expositions</h1>
+        <span class="eyebrow" [ngStyle]="eyebrowStyle()">Archives</span>
+        <h1 [ngStyle]="titleStyle()">Expositions</h1>
         <p class="lead">Les présentations et installations de l'atelier, des plus récentes aux premières.</p>
       </div>
     </section>
@@ -30,7 +32,7 @@ interface YearGroup {
       @for (g of groups(); track g.year) {
         <section class="group">
           <div class="container">
-            <h2 class="group-label">{{ g.year }}</h2>
+            <h2 class="group-label" [ngStyle]="sectionTitleStyle()">{{ g.year }}</h2>
             <div class="grid">
               @for (e of g.items; track e.slug) {
                 <a class="card" [routerLink]="['/expositions', e.slug]">
@@ -38,8 +40,8 @@ interface YearGroup {
                     <img [src]="e.coverImage" [alt]="e.title" loading="lazy" />
                   </div>
                   <div class="meta">
-                    <span class="eyebrow">{{ e.venue }} · {{ e.city }}</span>
-                    <span class="title">{{ e.title }}</span>
+                    <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ e.venue }} · {{ e.city }}</span>
+                    <span class="title" [ngStyle]="cardTitleStyle()">{{ e.title }}</span>
                     <span class="dates">{{ formatRange(e.startDate, e.endDate) }}</span>
                   </div>
                 </a>
@@ -126,6 +128,12 @@ export class ExpositionsListComponent {
 
   protected readonly items = signal<Exhibition[]>([]);
   protected readonly loading = signal(true);
+  protected readonly content = signal<SiteContent>({});
+
+  protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));
+  protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
+  protected readonly cardTitleStyle    = computed(() => roleStyle(this.content(), 'card-title'));
+  protected readonly eyebrowStyle      = computed(() => roleStyle(this.content(), 'eyebrow'));
 
   protected readonly groups = computed<YearGroup[]>(() => {
     const all = this.items();
@@ -154,6 +162,7 @@ export class ExpositionsListComponent {
       },
       error: () => { this.loading.set(false); }
     });
+    this.portfolio.getContent().subscribe(c => this.content.set(c));
   }
 
   private yearOf(date: string): number {

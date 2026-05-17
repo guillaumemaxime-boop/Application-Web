@@ -1,7 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { NgStyle } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Furniture } from '../../models/furniture.model';
+import { SiteContent } from '../../models/site-content.model';
+import { roleStyle } from '../../utils/title-style';
 import { StoryInlineComponent } from '../../components/story-inline/story-inline.component';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
@@ -9,7 +12,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
 @Component({
   selector: 'app-furniture-detail',
   standalone: true,
-  imports: [RouterLink, StoryInlineComponent, StoryViewerComponent, ContactFormComponent],
+  imports: [NgStyle, RouterLink, StoryInlineComponent, StoryViewerComponent, ContactFormComponent],
   template: `
     @if (loading()) {
       <div class="container section"><p class="status">Chargement…</p></div>
@@ -26,8 +29,8 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
           </div>
           <div class="container hero-content">
             <a class="back" routerLink="/mobilier">← Retour au mobilier</a>
-            <span class="eyebrow">{{ f.category }} · {{ f.year }}</span>
-            <h1>{{ f.title }}</h1>
+            <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ f.category }} · {{ f.year }}</span>
+            <h1 [ngStyle]="titleStyle()">{{ f.title }}</h1>
             <p class="material">{{ f.material }}</p>
           </div>
         </header>
@@ -77,7 +80,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
 
         <section class="section cta">
           <div class="container">
-            <h2>Une pièce vous intéresse ?</h2>
+            <h2 [ngStyle]="sectionTitleStyle()">Une pièce vous intéresse ?</h2>
             <p>Contactez le studio pour les disponibilités et les conditions d'édition.</p>
             <button type="button" class="btn-link cta-btn" (click)="openContact()">Contacter le studio →</button>
           </div>
@@ -251,8 +254,13 @@ export class FurnitureDetailComponent {
   protected readonly notFound = signal(false);
   protected readonly viewerQueue = signal<StoryItem[]>([]);
   protected readonly contactOpen = signal(false);
+  protected readonly content = signal<SiteContent>({});
 
   protected readonly hasSlides = computed(() => (this.item()?.slides?.length ?? 0) > 0);
+
+  protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));
+  protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
+  protected readonly eyebrowStyle      = computed(() => roleStyle(this.content(), 'eyebrow'));
 
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
@@ -264,6 +272,7 @@ export class FurnitureDetailComponent {
       },
       error: () => { this.notFound.set(true); this.loading.set(false); }
     });
+    this.portfolio.getContent().subscribe(c => this.content.set(c));
   }
 
   protected openViewer() {

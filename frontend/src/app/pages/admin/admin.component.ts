@@ -1,4 +1,5 @@
 import { Component, HostListener, inject, signal } from '@angular/core';
+import { NgStyle } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
@@ -9,6 +10,7 @@ import { AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../.
 import { PortfolioService } from '../../services/portfolio.service';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
 import { SlidesEditorComponent } from './slides-editor.component';
+import { TITLE_FONTS, TITLE_STYLES, titleStyle, TypoRole, TYPO_ROLES } from '../../utils/title-style';
 
 interface HomeAdminItem {
   kind: 'furniture' | 'exhibition';
@@ -26,13 +28,13 @@ interface ExhibitionMetaRow {
   visible: boolean;
 }
 
-type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home';
+type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home' | 'typography';
 type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover' | 'exhibition-gallery';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, ReorderableDirective, SlidesEditorComponent],
+  imports: [ReactiveFormsModule, FormsModule, NgStyle, ReorderableDirective, SlidesEditorComponent],
   template: `
     <section class="section">
       <div class="container">
@@ -73,6 +75,12 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             [attr.aria-selected]="tab() === 'home'"
             [class.active]="tab() === 'home'"
             (click)="switchTab('home')">Accueil</button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="tab() === 'typography'"
+            [class.active]="tab() === 'typography'"
+            (click)="switchTab('typography')">Typographie</button>
         </div>
 
         @if (message()) {
@@ -591,6 +599,55 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             } @else {
               <p class="status">Chargement…</p>
             }
+          </div>
+        }
+
+        @if (tab() === 'typography') {
+          <div class="typo-editor">
+            <p class="hint">Choisis une police et un style pour chaque rôle typographique. Les changements s'appliquent automatiquement à toutes les zones du site qui partagent ce rôle.</p>
+            <form [formGroup]="typoForm" (ngSubmit)="saveTypo()">
+              <div class="typo-grid">
+                @for (role of typoRoles; track role.value) {
+                  <article class="typo-card">
+                    <header>
+                      <h3>{{ role.label }}</h3>
+                      <span class="role-key">typo.{{ role.value }}</span>
+                    </header>
+
+                    <div class="typo-controls">
+                      <label>
+                        <span>Police</span>
+                        <select [formControlName]="role.value + '_font'">
+                          <option value="">— par défaut —</option>
+                          @for (f of titleFonts; track f.value) {
+                            <option [value]="f.value">{{ f.label }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label>
+                        <span>Style</span>
+                        <select [formControlName]="role.value + '_style'">
+                          <option value="">— par défaut —</option>
+                          @for (s of titleStyles; track s.value) {
+                            <option [value]="s.value">{{ s.label }}</option>
+                          }
+                        </select>
+                      </label>
+                    </div>
+
+                    <div class="typo-preview" [class.eyebrow-preview]="role.value === 'eyebrow'" [ngStyle]="previewStyleFor(role.value)">
+                      {{ role.preview }}
+                    </div>
+                  </article>
+                }
+              </div>
+
+              <div class="texts-actions">
+                <button type="submit" class="btn-primary" [disabled]="savingTypo()">
+                  {{ savingTypo() ? 'Enregistrement…' : 'Enregistrer la typographie' }}
+                </button>
+              </div>
+            </form>
           </div>
         }
       </div>
@@ -1143,6 +1200,69 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
     .home-editor h2 { margin: 32px 0 8px; font-family: var(--serif); font-weight: 400; font-size: 1.5rem; }
     .home-editor .hint { font-size: 0.85rem; color: var(--color-mute); margin-bottom: 16px; }
     .ordering-list, .cat-list, .nav-vis-list { list-style: none; padding: 0; margin: 0; }
+
+    .typo-editor { max-width: 920px; }
+    .typo-editor .hint { margin: 0 0 32px; color: var(--color-ink-soft); font-size: 0.92rem; }
+    .typo-grid { display: flex; flex-direction: column; gap: 20px; margin-bottom: 32px; }
+    .typo-card {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      align-items: center;
+      padding: 24px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
+    }
+    .typo-card header { display: flex; flex-direction: column; gap: 6px; }
+    .typo-card header h3 { font-family: var(--serif); font-weight: 400; font-size: 1.3rem; line-height: 1.2; margin: 0; color: var(--color-ink); }
+    .typo-card .role-key {
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    .typo-controls {
+      grid-column: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .typo-controls label { display: flex; flex-direction: column; gap: 6px; }
+    .typo-controls label > span {
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    .typo-controls select {
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
+      color: var(--color-ink);
+    }
+    .typo-preview {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      padding: 24px;
+      background: var(--color-bg-alt);
+      border-left: 2px solid var(--color-ink);
+      font-size: 1.6rem;
+      line-height: 1.25;
+      color: var(--color-ink);
+    }
+    .typo-preview.eyebrow-preview {
+      font-size: 0.78rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    @media (max-width: 720px) {
+      .typo-card { grid-template-columns: 1fr; }
+      .typo-controls { grid-column: 1; }
+      .typo-preview { grid-column: 1; grid-row: auto; }
+    }
     .home-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 6px; border: 1px solid var(--color-line); background: var(--color-bg); cursor: grab; }
     .home-row .handle { color: var(--color-mute); font-size: 1.1rem; cursor: grab; user-select: none; }
     .home-row .kind-badge { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-mute); min-width: 64px; }
@@ -1172,6 +1292,7 @@ export class AdminComponent {
   protected readonly editingExhibitionSlug = signal<string | null>(null);
   protected readonly editingExhibitionId = signal<string | null>(null);
   protected readonly saving = signal(false);
+  protected readonly savingTypo = signal(false);
   protected readonly uploading = signal(false);
   protected readonly message = signal<string | null>(null);
   protected readonly messageType = signal<'success' | 'error'>('success');
@@ -1238,6 +1359,23 @@ export class AdminComponent {
     profile_press: [''],
     profile_instagram: [''],
     profile_linkedin: [''],
+  });
+
+  protected readonly titleFonts = TITLE_FONTS;
+  protected readonly titleStyles = TITLE_STYLES;
+  protected readonly typoRoles = TYPO_ROLES;
+
+  protected readonly typoForm = this.fb.group({
+    'title_font': [''],
+    'title_style': [''],
+    'section-title_font': [''],
+    'section-title_style': [''],
+    'subtitle_font': [''],
+    'subtitle_style': [''],
+    'card-title_font': [''],
+    'card-title_style': [''],
+    'eyebrow_font': [''],
+    'eyebrow_style': [''],
   });
 
   constructor() {
@@ -1438,6 +1576,7 @@ export class AdminComponent {
           profile_instagram: content['profile.instagram'] ?? '',
           profile_linkedin: content['profile.linkedin'] ?? '',
         });
+        this.hydrateTypoRoles(content);
         this.navMobilierVisible.set(content['nav.mobilier.visible'] !== 'false');
         this.navExpositionsVisible.set(content['nav.expositions.visible'] !== 'false');
         this.navStudioVisible.set(content['nav.studio.visible'] !== 'false');
@@ -1495,6 +1634,57 @@ export class AdminComponent {
       error: () => {
         this.saving.set(false);
         this.flash('Erreur lors de l\'enregistrement des textes.', 'error');
+      }
+    });
+  }
+
+  private hydrateTypoRoles(content: SiteContent) {
+    this.typoForm.reset({
+      'title_font': content['typo.title.font'] ?? '',
+      'title_style': content['typo.title.style'] ?? '',
+      'section-title_font': content['typo.section-title.font'] ?? '',
+      'section-title_style': content['typo.section-title.style'] ?? '',
+      'subtitle_font': content['typo.subtitle.font'] ?? '',
+      'subtitle_style': content['typo.subtitle.style'] ?? '',
+      'card-title_font': content['typo.card-title.font'] ?? '',
+      'card-title_style': content['typo.card-title.style'] ?? '',
+      'eyebrow_font': content['typo.eyebrow.font'] ?? '',
+      'eyebrow_style': content['typo.eyebrow.style'] ?? '',
+    });
+  }
+
+  protected previewStyleFor(role: TypoRole): { [prop: string]: string } {
+    const v = this.typoForm.getRawValue();
+    const synthetic: SiteContent = {
+      [`typo.${role}.font`]: (v[`${role}_font` as keyof typeof v] as string) ?? '',
+      [`typo.${role}.style`]: (v[`${role}_style` as keyof typeof v] as string) ?? '',
+    };
+    return titleStyle(synthetic, `typo.${role}`);
+  }
+
+  saveTypo() {
+    const v = this.typoForm.getRawValue();
+    const payload: SiteContent = {
+      'typo.title.font': v['title_font'] ?? '',
+      'typo.title.style': v['title_style'] ?? '',
+      'typo.section-title.font': v['section-title_font'] ?? '',
+      'typo.section-title.style': v['section-title_style'] ?? '',
+      'typo.subtitle.font': v['subtitle_font'] ?? '',
+      'typo.subtitle.style': v['subtitle_style'] ?? '',
+      'typo.card-title.font': v['card-title_font'] ?? '',
+      'typo.card-title.style': v['card-title_style'] ?? '',
+      'typo.eyebrow.font': v['eyebrow_font'] ?? '',
+      'typo.eyebrow.style': v['eyebrow_style'] ?? '',
+    };
+    this.savingTypo.set(true);
+    this.portfolio.updateContent(payload).subscribe({
+      next: () => {
+        this.savingTypo.set(false);
+        this.flash('Typographie enregistrée.', 'success');
+      },
+      error: () => {
+        this.savingTypo.set(false);
+        this.flash('Erreur lors de l\'enregistrement de la typographie.', 'error');
       }
     });
   }

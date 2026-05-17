@@ -28,8 +28,9 @@ describe('ExhibitionDetailComponent', () => {
   };
 
   function setup(slug: string | undefined, returnValue: ReturnType<PortfolioService['getExhibition']>) {
-    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getExhibition']);
+    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getExhibition', 'getContent']);
     spy.getExhibition.and.returnValue(returnValue);
+    spy.getContent.and.returnValue(of({}));
 
     TestBed.configureTestingModule({
       imports: [ExhibitionDetailComponent],

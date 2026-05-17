@@ -125,7 +125,10 @@
       "PowerShell(Set-Location \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; if \\(-not \\(Test-Path \"node_modules\"\\)\\) { Write-Output \"node_modules missing — installing\"; npm install 2>&1 | Select-Object -Last 20 } else { Write-Output \"node_modules present\" })",
       "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\", \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"\\); foreach \\($p in $paths\\) { if \\(Test-Path $p\\) { Write-Output \"Edge: $p\" } }; $paths2 = @\\(\"C:\\\\Program Files\\\\Mozilla Firefox\\\\firefox.exe\", \"C:\\\\Users\\\\Utilisateur\\\\AppData\\\\Local\\\\Mozilla Firefox\\\\firefox.exe\"\\); foreach \\($p in $paths2\\) { if \\(Test-Path $p\\) { Write-Output \"Firefox: $p\" } })",
       "PowerShell(docker version --format '{{.Server.Version}}' 2>&1)",
-      "PowerShell(docker compose version 2>&1)"
+      "PowerShell(docker compose version 2>&1)",
+      "PowerShell($env:CHROME_BIN = \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"; Set-Location \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; & node \".\\\\node_modules\\\\@angular\\\\cli\\\\bin\\\\ng.js\" test --watch=false --browsers=ChromeHeadless 2>&1 | Select-Object -Last 20)",
+      "PowerShell($env:CHROME_BIN = \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"; Set-Location \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; & node \".\\\\node_modules\\\\@angular\\\\cli\\\\bin\\\\ng.js\" test --watch=false --browsers=ChromeHeadless 2>&1 | Select-String -Pattern \"FAILED|TypeError|Expected\" | Select-Object -First 40 | Out-String)",
+      "PowerShell($env:CHROME_BIN = \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"; Set-Location \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; & node \".\\\\node_modules\\\\@angular\\\\cli\\\\bin\\\\ng.js\" test --watch=false --browsers=ChromeHeadless 2>&1 | Select-Object -Last 8)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Utilisateur\\Project\\Application Web\\Application-Web\\docs\\prototypes"

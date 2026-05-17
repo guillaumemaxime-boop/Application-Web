@@ -1,18 +1,21 @@
 import { Component, inject, signal, computed } from '@angular/core';
+import { NgStyle } from '@angular/common';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Profile } from '../../models/profile.model';
 import { SiteContent } from '../../models/site-content.model';
+import { roleStyle } from '../../utils/title-style';
 
 @Component({
   selector: 'app-studio',
   standalone: true,
+  imports: [NgStyle],
   template: `
     <section class="section page-head">
       <div class="container">
-        <span class="eyebrow">Studio</span>
+        <span class="eyebrow" [ngStyle]="eyebrowStyleVar()">Studio</span>
 
         @if (profile(); as p) {
-          <h1 class="fade-in">{{ p.tagline }}</h1>
+          <h1 class="fade-in" [ngStyle]="titleStyleVar()">{{ p.tagline }}</h1>
           <div class="grid">
             <div>
               <p class="bio">{{ p.bio }}</p>
@@ -52,13 +55,13 @@ import { SiteContent } from '../../models/site-content.model';
 
     <section class="section process">
       <div class="container">
-        <span class="eyebrow proc-label">Processus</span>
+        <span class="eyebrow proc-label" [ngStyle]="eyebrowStyleVar()">Processus</span>
         <div class="proc-list">
           @for (step of steps(); track step.num) {
             <div class="step">
               <span class="num">{{ step.num }}</span>
               <div>
-                <h3>{{ step.title }}</h3>
+                <h3 [ngStyle]="subtitleStyleVar()">{{ step.title }}</h3>
                 <p>{{ step.desc }}</p>
               </div>
             </div>
@@ -166,11 +169,15 @@ export class StudioComponent {
   protected readonly loading = signal(true);
   protected readonly content = signal<SiteContent>({});
 
+  protected readonly titleStyleVar = computed(() => roleStyle(this.content(), 'title'));
+  protected readonly subtitleStyleVar = computed(() => roleStyle(this.content(), 'subtitle'));
+  protected readonly eyebrowStyleVar = computed(() => roleStyle(this.content(), 'eyebrow'));
+
   protected readonly steps = computed(() => {
     const c = this.content();
     return [
-      { num: '01', title: c['studio.step1.title'] ?? 'Dessin', desc: c['studio.step1.desc'] ?? '' },
-      { num: '02', title: c['studio.step2.title'] ?? 'Matière', desc: c['studio.step2.desc'] ?? '' },
+      { num: '01', title: c['studio.step1.title'] ?? 'Dessin',    desc: c['studio.step1.desc'] ?? '' },
+      { num: '02', title: c['studio.step2.title'] ?? 'Matière',   desc: c['studio.step2.desc'] ?? '' },
       { num: '03', title: c['studio.step3.title'] ?? 'Façonnage', desc: c['studio.step3.desc'] ?? '' },
       { num: '04', title: c['studio.step4.title'] ?? 'Signature', desc: c['studio.step4.desc'] ?? '' },
     ];
