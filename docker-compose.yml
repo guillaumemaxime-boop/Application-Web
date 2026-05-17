@@ -59,7 +59,7 @@ services:
     environment:
       DATABASE_URL: postgresql://portfolio:portfolio@postgres:5432/portfolio?schema=umami
       DATABASE_TYPE: postgresql
-      APP_SECRET: "umami-dev-secret-change-in-production-min-32-chars"
+      APP_SECRET: "${UMAMI_APP_SECRET:-umami-dev-secret-change-in-production-min-32-chars}"
       TRACKER_SCRIPT_NAME: umami
     expose:
       - "3000"
@@ -92,7 +92,7 @@ services:
       backend:
         condition: service_healthy
       umami:
-        condition: service_healthy
+        condition: service_started
     networks:
       - atelier-net
 
