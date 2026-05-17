@@ -2,6 +2,7 @@ package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.HomeFeedEntryEntity;
 import com.atelier.portfolio.repository.HomeFeedRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -18,6 +19,7 @@ import static org.mockito.Mockito.*;
 class HomeFeedServiceTest {
 
     @Mock private HomeFeedRepository repository;
+    @Mock private EntityManager entityManager;
     @InjectMocks private HomeFeedService service;
 
     @Test

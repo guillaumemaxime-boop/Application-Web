@@ -2,6 +2,7 @@ package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.HomeFeedEntryEntity;
 import com.atelier.portfolio.repository.HomeFeedRepository;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +16,11 @@ public class HomeFeedService {
     public record FeedEntry(String kind, String slug) {}
 
     private final HomeFeedRepository repository;
+    private final EntityManager entityManager;
 
-    public HomeFeedService(HomeFeedRepository repository) {
+    public HomeFeedService(HomeFeedRepository repository, EntityManager entityManager) {
         this.repository = repository;
+        this.entityManager = entityManager;
     }
 
     public List<FeedEntry> getAll() {
@@ -29,6 +32,10 @@ public class HomeFeedService {
     @Transactional
     public List<FeedEntry> replace(List<FeedEntry> entries) {
         repository.deleteAllInBatch();
+        // deleteAllInBatch passe outre le persistence context : on le vide pour
+        // eviter une collision sur la PK quand on re-insere des entites a position=0..n.
+        entityManager.flush();
+        entityManager.clear();
         List<HomeFeedEntryEntity> toSave = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) {
             HomeFeedEntryEntity e = new HomeFeedEntryEntity();
@@ -63,13 +70,20 @@ public class HomeFeedService {
                 .filter(e -> !(kind.equals(e.getKind()) && slug.equals(e.getRefSlug())))
                 .toList();
         if (kept.size() == all.size()) return;
+        // Snapshot des donnees avant de purger : on libere ensuite le persistence context
+        // pour permettre la re-insertion sur les memes valeurs de PK (position).
+        List<FeedEntry> snapshot = kept.stream()
+                .map(e -> new FeedEntry(e.getKind(), e.getRefSlug()))
+                .toList();
         repository.deleteAllInBatch();
+        entityManager.flush();
+        entityManager.clear();
         List<HomeFeedEntryEntity> toSave = new ArrayList<>();
-        for (int i = 0; i < kept.size(); i++) {
+        for (int i = 0; i < snapshot.size(); i++) {
             HomeFeedEntryEntity e = new HomeFeedEntryEntity();
             e.setPosition(i);
-            e.setKind(kept.get(i).getKind());
-            e.setRefSlug(kept.get(i).getRefSlug());
+            e.setKind(snapshot.get(i).kind());
+            e.setRefSlug(snapshot.get(i).slug());
             toSave.add(e);
         }
         repository.saveAll(toSave);
