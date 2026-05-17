@@ -113,11 +113,12 @@ describe('AdminComponent', () => {
 
   it('should display the furniture tab by default', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-    expect(tabs.length).toBe(4);
+    expect(tabs.length).toBe(5);
     expect(tabs[0].classList.contains('active')).toBe(true);
     expect(tabs[1].classList.contains('active')).toBe(false);
     expect(tabs[2].classList.contains('active')).toBe(false);
     expect(tabs[3].classList.contains('active')).toBe(false);
+    expect(tabs[4].classList.contains('active')).toBe(false);
   });
 
   it('should switch to the exhibitions tab', () => {
@@ -712,6 +713,45 @@ describe('AdminComponent', () => {
       fix.detectChanges();
 
       expect(fix.componentInstance['loadingTexts']()).toBeFalse();
+    });
+  });
+
+  describe('analytics tab', () => {
+    afterEach(() => {
+      delete (window as any).__UMAMI__;
+    });
+
+    it('rend une iframe Umami quand websiteId et shareToken sont definis', () => {
+      (window as any).__UMAMI__ = { websiteId: 'wid-123', shareToken: 'tok-abc' };
+      component['tab'].set('analytics');
+      fixture.detectChanges();
+
+      const iframe = fixture.nativeElement.querySelector('iframe.umami-frame') as HTMLIFrameElement | null;
+      expect(iframe).withContext('iframe rendue').not.toBeNull();
+      expect(iframe!.src).toContain('/umami/share/tok-abc/wid-123');
+    });
+
+    it('affiche un message de fallback si la config Umami est absente', () => {
+      (window as any).__UMAMI__ = undefined;
+      component['tab'].set('analytics');
+      fixture.detectChanges();
+
+      const iframe = fixture.nativeElement.querySelector('iframe.umami-frame');
+      const fallback = fixture.nativeElement.querySelector('.umami-fallback');
+      expect(iframe).toBeNull();
+      expect(fallback).withContext('message de fallback rendu').not.toBeNull();
+      expect(fallback!.textContent).toContain('Configuration analytics manquante');
+    });
+
+    it('affiche un message de fallback si shareToken est manquant', () => {
+      (window as any).__UMAMI__ = { websiteId: 'wid-123', shareToken: '' };
+      component['tab'].set('analytics');
+      fixture.detectChanges();
+
+      const iframe = fixture.nativeElement.querySelector('iframe.umami-frame');
+      const fallback = fixture.nativeElement.querySelector('.umami-fallback');
+      expect(iframe).toBeNull();
+      expect(fallback).not.toBeNull();
     });
   });
 });

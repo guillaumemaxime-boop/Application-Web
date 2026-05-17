@@ -66,6 +66,19 @@ jobs:
           docker compose -f deploy/base/docker-compose.yml --env-file deploy/envs/local/.env logs --tail=200
           exit 1
 
+      - name: Health check (umami)
+        shell: bash
+        run: |
+          for i in {1..12}; do
+            if docker exec atelier-umami wget -q --spider http://127.0.0.1:3000/api/heartbeat 2>/dev/null; then
+              echo "Umami healthy"; exit 0
+            fi
+            echo "Waiting for umami... ($i/12)"; sleep 10
+          done
+          echo "Umami health check failed — dumping logs:"
+          docker compose -f deploy/base/docker-compose.yml --env-file deploy/envs/local/.env logs --tail=200 umami
+          exit 1
+
       - name: Prune dangling images
         if: success()
         run: docker image prune -f
