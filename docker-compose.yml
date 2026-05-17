@@ -86,6 +86,8 @@ services:
       PORT: "80"
       BACKEND_HOST: backend
       BACKEND_PORT: "8080"
+      UMAMI_WEBSITE_ID: "${UMAMI_WEBSITE_ID:-}"
+      UMAMI_SHARE_TOKEN: "${UMAMI_SHARE_TOKEN:-}"
     ports:
       - "4200:80"
     depends_on:
