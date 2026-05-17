@@ -72,7 +72,7 @@ Insérer dans `docker-compose.yml`, juste avant le service `frontend` (après la
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/api/heartbeat | grep -q ok"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/api/heartbeat"]
       interval: 20s
       timeout: 3s
       retries: 5
@@ -178,7 +178,7 @@ Insérer dans `deploy/base/docker-compose.yml`, juste avant le service `frontend
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/api/heartbeat | grep -q ok"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/api/heartbeat"]
       interval: 20s
       timeout: 3s
       retries: 5
@@ -725,7 +725,7 @@ Dans `.github/workflows/sync-rancher.yml`, juste après l'étape `- name: Health
         shell: bash
         run: |
           for i in {1..12}; do
-            if docker exec atelier-umami wget -q -O- http://localhost:3000/api/heartbeat 2>/dev/null | grep -q ok; then
+            if docker exec atelier-umami wget -q --spider http://127.0.0.1:3000/api/heartbeat 2>/dev/null; then
               echo "Umami healthy"; exit 0
             fi
             echo "Waiting for umami... ($i/12)"; sleep 10
