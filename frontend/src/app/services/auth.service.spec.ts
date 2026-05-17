@@ -67,6 +67,31 @@ describe('AuthService', () => {
       service = TestBed.inject(AuthService);
       expect(service.isLoggedIn()).toBeTrue();
     });
+
+    it('should be false when the token has fewer than 3 segments', () => {
+      localStorage.setItem(TOKEN_KEY, 'not.a-valid-jwt');
+      configureModule();
+      service = TestBed.inject(AuthService);
+      expect(service.isLoggedIn()).toBeFalse();
+    });
+
+    it('should be false when the token payload has no exp claim', () => {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+      const payload = btoa(JSON.stringify({ sub: 'admin' }))
+        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+      localStorage.setItem(TOKEN_KEY, `${header}.${payload}.sig`);
+      configureModule();
+      service = TestBed.inject(AuthService);
+      expect(service.isLoggedIn()).toBeFalse();
+    });
+
+    it('should be false when the token payload is not decodable JSON', () => {
+      localStorage.setItem(TOKEN_KEY, 'aaa.@@@invalid@@@.bbb');
+      configureModule();
+      service = TestBed.inject(AuthService);
+      expect(service.isLoggedIn()).toBeFalse();
+    });
   });
 
   describe('login()', () => {
