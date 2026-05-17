@@ -117,7 +117,15 @@
       "Bash(docker buildx *)",
       "PowerShell(docker exec atelier-postgres *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/api/furniture)",
-      "Bash(curl -s -o /tmp/resp.json -w 'HTTP %{http_code}\\\\n' -X POST http://localhost:8080/api/contact -H 'Content-Type: application/json' -d '{\"name\":\"Smoke Test\",\"email\":\"smoke@test.fr\",\"phone\":\"\",\"interest\":\"acquisition\",\"message\":\"Hello from end-to-end smoke test\",\"furnitureId\":\"f-001\",\"furnitureSlug\":\"onde\",\"furnitureTitle\":\"Onde\"}')"
+      "Bash(curl -s -o /tmp/resp.json -w 'HTTP %{http_code}\\\\n' -X POST http://localhost:8080/api/contact -H 'Content-Type: application/json' -d '{\"name\":\"Smoke Test\",\"email\":\"smoke@test.fr\",\"phone\":\"\",\"interest\":\"acquisition\",\"message\":\"Hello from end-to-end smoke test\",\"furnitureId\":\"f-001\",\"furnitureSlug\":\"onde\",\"furnitureTitle\":\"Onde\"}')",
+      "Bash(mvn -q -Dtest=HomeServiceTest,HomeControllerTest test)",
+      "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\Apache\\\\maven\\\\bin\\\\mvn.cmd\", \"C:\\\\Program Files\\\\apache-maven\\\\bin\\\\mvn.cmd\", \"C:\\\\apache-maven\\\\bin\\\\mvn.cmd\", \"C:\\\\tools\\\\apache-maven\\\\bin\\\\mvn.cmd\"\\); foreach \\($p in $paths\\) { if \\(Test-Path $p\\) { Write-Output \"Found: $p\" } }; Write-Output \"---\"; Get-ChildItem -Path \"C:\\\\\" -Filter \"mvn.cmd\" -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 5 -ExpandProperty FullName)",
+      "PowerShell($env:Path -split ';' | Where-Object { $_ -match 'maven|java|jdk' }; Write-Output \"---JAVA_HOME---\"; $env:JAVA_HOME; Write-Output \"---MAVEN_HOME---\"; $env:MAVEN_HOME; Write-Output \"---which java---\"; \\(Get-Command java -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(\\(Get-Command docker -ErrorAction SilentlyContinue\\).Source; \\(Get-Command npm -ErrorAction SilentlyContinue\\).Source; \\(Get-Command node -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; if \\(-not \\(Test-Path \"node_modules\"\\)\\) { Write-Output \"node_modules missing — installing\"; npm install 2>&1 | Select-Object -Last 20 } else { Write-Output \"node_modules present\" })",
+      "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\", \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"\\); foreach \\($p in $paths\\) { if \\(Test-Path $p\\) { Write-Output \"Edge: $p\" } }; $paths2 = @\\(\"C:\\\\Program Files\\\\Mozilla Firefox\\\\firefox.exe\", \"C:\\\\Users\\\\Utilisateur\\\\AppData\\\\Local\\\\Mozilla Firefox\\\\firefox.exe\"\\); foreach \\($p in $paths2\\) { if \\(Test-Path $p\\) { Write-Output \"Firefox: $p\" } })",
+      "PowerShell(docker version --format '{{.Server.Version}}' 2>&1)",
+      "PowerShell(docker compose version 2>&1)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Utilisateur\\Project\\Application Web\\Application-Web\\docs\\prototypes"
