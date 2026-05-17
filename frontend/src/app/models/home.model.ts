@@ -25,6 +25,7 @@ export interface HomeFeedItem {
   title: string;
   cover: string;
   subtitle: string;
+  description?: string;
 }
 
 export interface AdminFeedEntry {

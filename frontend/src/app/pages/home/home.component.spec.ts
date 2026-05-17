@@ -22,8 +22,8 @@ describe('HomeComponent', () => {
       { title: 'Matières silencieuses', slug: 'matieres-silencieuses', cover: 'exh.jpg', venue: 'Galerie Joseph', period: 'mars 2025 → mai 2025' },
     ],
     feed: [
-      { kind: 'furniture', slug: 'onde-fauteuil-sculpte', title: 'Onde', cover: 'f.jpg', subtitle: 'Sièges · 2024' },
-      { kind: 'exhibition', slug: 'matieres-silencieuses', title: 'Matières', cover: 'e.jpg', subtitle: 'Galerie Joseph · mars 2025' },
+      { kind: 'furniture', slug: 'onde-fauteuil-sculpte', title: 'Onde', cover: 'f.jpg', subtitle: 'Sièges · 2024', description: 'Fauteuil en chêne massif sculpté.' },
+      { kind: 'exhibition', slug: 'matieres-silencieuses', title: 'Matières', cover: 'e.jpg', subtitle: 'Galerie Joseph · mars 2025', description: 'Sept pièces taillées dans le calcaire.' },
     ],
   };
 
@@ -105,6 +105,24 @@ describe('HomeComponent', () => {
 
   it('cardLink returns exhibition detail route', () => {
     expect((component as any).cardLink(mockHome.feed[1])).toBe('/expositions/matieres-silencieuses');
+  });
+
+  it('hides the stories section when no categories and no exhibitions are visible', () => {
+    portfolioServiceSpy.getHome.and.returnValue(of({ categories: [], exhibitions: [], feed: mockHome.feed }));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    expect(f.nativeElement.querySelector('.stories')).toBeNull();
+  });
+
+  it('shows the stories section when at least one slider is visible', () => {
+    expect(fixture.nativeElement.querySelector('.stories')).not.toBeNull();
+  });
+
+  it('renders feed card excerpt when description is provided', () => {
+    const excerpts = fixture.nativeElement.querySelectorAll('.feed .card .excerpt') as NodeListOf<HTMLElement>;
+    expect(excerpts.length).toBe(2);
+    expect(excerpts[0].textContent).toContain('Fauteuil en chêne');
+    expect(excerpts[1].textContent).toContain('calcaire');
   });
 
   it('closeViewer empties the queue', () => {

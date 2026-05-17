@@ -4,5 +4,6 @@ public record HomeFeedItem(
         String slug,
         String title,
         String cover,
-        String subtitle
+        String subtitle,
+        String description
 ) {}

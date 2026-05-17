@@ -77,13 +77,15 @@ public class HomeService {
                         if (f == null) return null;
                         return new HomeFeedItem("furniture", f.getSlug(), f.getTitle(),
                                 f.getCoverImage(),
-                                f.getCategory() + " · " + f.getYear());
+                                f.getCategory() + " · " + f.getYear(),
+                                f.getShortDescription());
                     } else if ("exhibition".equals(entry.getKind())) {
                         ExhibitionEntity e = exhibitionBySlug.get(entry.getRefSlug());
                         if (e == null) return null;
                         return new HomeFeedItem("exhibition", e.getSlug(), e.getTitle(),
                                 e.getCoverImage(),
-                                e.getVenue() + " · " + formatPeriod(e));
+                                e.getVenue() + " · " + formatPeriod(e),
+                                e.getShortDescription());
                     }
                     return null;
                 })
