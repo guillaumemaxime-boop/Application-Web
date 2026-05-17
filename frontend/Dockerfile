@@ -16,7 +16,9 @@ FROM nginx:1.27-alpine
 ENV PORT=80 \
     BACKEND_HOST=overflowing-stillness.railway.internal \
     BACKEND_PORT=8080 \
-    NGINX_ENVSUBST_FILTER='^(PORT|BACKEND_HOST|BACKEND_PORT)$'
+    UMAMI_WEBSITE_ID='' \
+    UMAMI_SHARE_TOKEN='' \
+    NGINX_ENVSUBST_FILTER='^(PORT|BACKEND_HOST|BACKEND_PORT|UMAMI_WEBSITE_ID|UMAMI_SHARE_TOKEN)$'
 
 COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /workspace/dist/portfolio-frontend/browser /usr/share/nginx/html

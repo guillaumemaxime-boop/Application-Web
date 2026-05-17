@@ -86,39 +86,57 @@ Le schéma `umami` est créé et migré automatiquement par Umami (Prisma) au pr
 
 ### 3.2 Frontend — instrumentation
 
-Le snippet est injecté **au démarrage de l'application** depuis `main.ts` (ou un `APP_INITIALIZER`) à partir des valeurs de `environment.ts` / `environment.production.ts` :
+Les IDs Umami sont injectés **au démarrage du conteneur Nginx** (pas à la build de l'image Angular) via le mécanisme `envsubst` natif de l'image Nginx, déjà utilisé pour `BACKEND_HOST` / `BACKEND_PORT`. Nginx expose un endpoint `/env.js` qui retourne un fragment JS littéral :
+
+```nginx
+location = /env.js {
+    default_type application/javascript;
+    return 200 'window.__UMAMI__={"websiteId":"${UMAMI_WEBSITE_ID}","shareToken":"${UMAMI_SHARE_TOKEN}"};';
+}
+```
+
+`index.html` charge ce fichier en tête de page :
+
+```html
+<script src="/env.js"></script>
+```
+
+Puis `main.ts` injecte le snippet Umami au bootstrap si `websiteId` est présent :
 
 ```ts
-// pseudo-code
-if (environment.umamiWebsiteId) {
+const env = (window as any).__UMAMI__ ?? {};
+if (env.websiteId) {
   const s = document.createElement('script');
   s.defer = true;
   s.src = '/umami.js';
-  s.dataset['websiteId'] = environment.umamiWebsiteId;
+  s.dataset['websiteId'] = env.websiteId;
   document.head.appendChild(s);
 }
 ```
 
-Le fichier `environment.production.ts` est templaté à la build Docker du frontend depuis les variables d'env (cohérent avec la façon dont le `backendUrl` est déjà géré). Si `umamiWebsiteId` est absent, le script n'est pas injecté (build de tests, dev sans Umami).
+Avantages : pas de rebuild d'image quand on change les IDs (seul restart du conteneur frontend suffit), même pattern que `BACKEND_HOST`. En dev (`ng serve`), `/env.js` n'existe pas → `window.__UMAMI__` est `undefined` → pas de tracking en dev (comportement souhaité).
 
 ### 3.3 Nginx — règles de proxy
 
-[frontend/nginx.conf](frontend/nginx.conf) — trois `location` ajoutés :
+[frontend/nginx.conf](frontend/nginx.conf) — quatre `location` ajoutés :
+- `location = /env.js` → réponse `return 200` envsubst'd avec `UMAMI_WEBSITE_ID` et `UMAMI_SHARE_TOKEN`
 - `location = /umami.js` → `proxy_pass http://umami:3000/script.js;`
 - `location /umami/api/send` → `proxy_pass http://umami:3000/api/send;`
 - `location /umami/share/` → `proxy_pass http://umami:3000/share/;`
 
 Headers `X-Forwarded-For` et `X-Real-IP` passés pour que la géolocalisation côté Umami soit exacte. Aucune autre route Umami n'est exposée.
 
-### 3.4 Frontend — composant `AdminAnalyticsComponent`
+### 3.4 Frontend — onglet **Analytics** dans `AdminComponent`
 
-- Composant standalone Angular (signaux, nouvelle control flow), cohérent ADR-0004.
-- Route lazy `loadComponent` ajoutée à `app.routes.ts` : `/admin/analytics` derrière `authGuard`.
-- Ajouté à la sidebar du composant `AdminComponent` existant.
-- Comportement :
-  - Si `UMAMI_WEBSITE_ID` et `UMAMI_SHARE_TOKEN` présents → `<iframe src="/umami/share/<token>/<website-id>">` plein cadre.
-  - Sinon → message « Configuration analytics manquante ».
-- Pas d'appel HTTP, pas de service injecté : composant purement déclaratif.
+L'admin existant utilise un système de tabs internes (`furniture | exhibitions | texts | photos`). On ajoute un cinquième tab `analytics`, dans le même composant :
+
+- Nouveau type `Tab` enrichi : `'furniture' | 'exhibitions' | 'texts' | 'photos' | 'analytics'`.
+- Nouveau bouton dans la barre de tabs : `Analytics`.
+- Nouveau bloc `@if (tab() === 'analytics')` qui rend :
+  - une `<iframe src="/umami/share/<token>/<website-id>">` plein cadre si `window.__UMAMI__.shareToken` et `websiteId` sont présents ;
+  - sinon, un message « Configuration analytics manquante ».
+- Pas d'appel HTTP. Lecture directe de `window.__UMAMI__` injecté par `/env.js`.
+- Cohérent ADR-0004 (signaux, nouvelle control flow).
 
 ### 3.5 Variables d'environnement
 
