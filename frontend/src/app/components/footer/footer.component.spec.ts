@@ -54,18 +54,56 @@ describe('FooterComponent', () => {
 
   it('should not render contact items when content is empty', () => {
     setup({});
-    const items = fixture.nativeElement.querySelectorAll('ul li');
     const navLinks = fixture.nativeElement.querySelectorAll('ul')[0].querySelectorAll('li');
     const contactItems = fixture.nativeElement.querySelectorAll('ul')[1].querySelectorAll('li');
     expect(contactItems.length).toBe(0);
-    expect(navLinks.length).toBe(3);
+    expect(navLinks.length).toBe(5);
+    const labels = Array.from(navLinks).map((li: any) => li.textContent.trim());
+    expect(labels).toEqual(['Accueil', 'Mobilier', 'Expositions', 'Studio', 'Contact']);
   });
 
-  it('should render a mailto link when email is set', () => {
-    setup({ 'profile.contactEmail': 'test@example.com' });
-    const link = fixture.nativeElement.querySelector('a[href^="mailto:"]');
-    expect(link).toBeTruthy();
-    expect(link.getAttribute('href')).toBe('mailto:test@example.com');
+  it('renders Instagram and LinkedIn icons when their URLs are set', () => {
+    setup({
+      'profile.instagram': 'https://instagram.com/milo.guillaume',
+      'profile.linkedin': 'https://www.linkedin.com/in/milo-guillaume',
+    });
+    const social = fixture.nativeElement.querySelector('.social');
+    expect(social).not.toBeNull();
+    const links = social.querySelectorAll('a');
+    expect(links.length).toBe(2);
+    expect((links[0] as HTMLAnchorElement).href).toBe('https://instagram.com/milo.guillaume');
+    expect((links[1] as HTMLAnchorElement).href).toBe('https://www.linkedin.com/in/milo-guillaume');
+  });
+
+  it('does not render the social block when no social URL is set', () => {
+    setup({});
+    expect(fixture.nativeElement.querySelector('.social')).toBeNull();
+  });
+
+  it('hides nav entries whose visibility flag is false', () => {
+    setup({
+      'nav.mobilier.visible': 'false',
+      'nav.expositions.visible': 'false',
+      'nav.studio.visible': 'false',
+    });
+    const navLinks = fixture.nativeElement.querySelectorAll('ul')[0].querySelectorAll('li');
+    const labels = Array.from(navLinks).map((li: any) => li.textContent.trim());
+    expect(labels).toEqual(['Accueil', 'Contact']);
+  });
+
+  it('renders contact info items as links to the /contact page', () => {
+    setup({
+      'profile.contactEmail': 'test@example.com',
+      'profile.phone': '+33 1 00 00 00 00',
+      'profile.location': 'Paris',
+    });
+    const contactUl = fixture.nativeElement.querySelectorAll('ul')[1] as HTMLElement;
+    const links = contactUl.querySelectorAll('a');
+    expect(links.length).toBe(3);
+    links.forEach((a: HTMLAnchorElement) => {
+      expect(a.getAttribute('href')).toBe('/contact');
+    });
+    expect(fixture.nativeElement.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 
   it('should not render phone when only email is provided', () => {

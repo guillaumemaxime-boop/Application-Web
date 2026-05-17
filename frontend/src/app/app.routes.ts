@@ -31,6 +31,11 @@ export const routes: Routes = [
     title: 'Studio — Milo GUILLAUME Design',
   },
   {
+    path: 'contact',
+    loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent),
+    title: 'Contact — Milo GUILLAUME Design',
+  },
+  {
     path: 'login',
     loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent),
     title: 'Connexion — Milo GUILLAUME Design',

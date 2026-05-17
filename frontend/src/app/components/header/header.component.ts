@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { PortfolioService } from '../../services/portfolio.service';
 
 @Component({
   selector: 'app-header',
@@ -19,9 +20,16 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
         <nav [class.open]="open()">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Accueil</a>
-          <a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()">Mobilier</a>
-          <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
-          <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
+          @if (mobilierVisible()) {
+            <a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()">Mobilier</a>
+          }
+          @if (expositionsVisible()) {
+            <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
+          }
+          @if (studioVisible()) {
+            <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
+          }
+          <a routerLink="/contact" routerLinkActive="active" (click)="closeMenu()">Contact</a>
         </nav>
       </div>
     </header>
@@ -101,7 +109,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         overflow: hidden;
         transition: max-height 280ms ease;
       }
-      nav.open { max-height: 280px; }
+      nav.open { max-height: 360px; }
       nav a {
         padding: 16px 24px;
         border-top: 1px solid var(--color-line);
@@ -110,8 +118,13 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   `]
 })
 export class HeaderComponent {
+  private readonly portfolio = inject(PortfolioService);
+
   protected readonly open = signal(false);
   protected readonly scrolled = signal(false);
+  protected readonly mobilierVisible = signal(true);
+  protected readonly expositionsVisible = signal(true);
+  protected readonly studioVisible = signal(true);
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -119,6 +132,11 @@ export class HeaderComponent {
         this.scrolled.set(window.scrollY > 8);
       }, { passive: true });
     }
+    this.portfolio.getContent().subscribe(content => {
+      this.mobilierVisible.set(content['nav.mobilier.visible'] !== 'false');
+      this.expositionsVisible.set(content['nav.expositions.visible'] !== 'false');
+      this.studioVisible.set(content['nav.studio.visible'] !== 'false');
+    });
   }
 
   toggleMenu() { this.open.update(v => !v); }

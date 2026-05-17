@@ -11,21 +11,37 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="backdrop" (click)="onBackdropClick($event)">
-      <div class="panel" role="dialog" aria-modal="true" [attr.aria-labelledby]="'contact-title'">
-        <button type="button" class="close" (click)="close()" aria-label="Fermer">✕</button>
+    @if (inline) {
+      <div class="inline-wrap">
+        <ng-container *ngTemplateOutlet="body"></ng-container>
+      </div>
+    } @else {
+      <div class="backdrop" (click)="onBackdropClick($event)">
+        <div class="panel" role="dialog" aria-modal="true" [attr.aria-labelledby]="'contact-title'">
+          <button type="button" class="close" (click)="close()" aria-label="Fermer">✕</button>
+          <ng-container *ngTemplateOutlet="body"></ng-container>
+        </div>
+      </div>
+    }
 
+    <ng-template #body>
+      @if (!inline) {
         <header class="head">
           <span class="eyebrow">Contact</span>
           <h2 id="contact-title">{{ furnitureTitle ? 'Demande — ' + furnitureTitle : 'Contacter le studio' }}</h2>
           <p class="lead">Une question, une demande d'acquisition ou un projet sur mesure ? Le studio vous répond sous quelques jours.</p>
         </header>
+      }
 
         @if (status() === 'success') {
           <div class="success">
             <p class="eyebrow">Demande envoyée</p>
             <p class="thanks">Merci. Votre message est bien arrivé au studio — vous recevrez une réponse à <strong>{{ form.email }}</strong>.</p>
-            <button type="button" class="btn-link" (click)="close()">Fermer</button>
+            @if (!inline) {
+              <button type="button" class="btn-link" (click)="close()">Fermer</button>
+            } @else {
+              <button type="button" class="btn-link" (click)="resetForm()">Envoyer une autre demande</button>
+            }
           </div>
         } @else {
           <form (ngSubmit)="submit()" #f="ngForm" novalidate>
@@ -75,15 +91,16 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
             }
 
             <div class="actions">
-              <button type="button" class="cancel" (click)="close()" [disabled]="status() === 'submitting'">Annuler</button>
+              @if (!inline) {
+                <button type="button" class="cancel" (click)="close()" [disabled]="status() === 'submitting'">Annuler</button>
+              }
               <button type="submit" class="primary" [disabled]="status() === 'submitting' || f.invalid">
                 {{ status() === 'submitting' ? 'Envoi…' : 'Envoyer la demande' }}
               </button>
             </div>
           </form>
         }
-      </div>
-    </div>
+    </ng-template>
   `,
   styles: [`
     :host { display: block; }
@@ -223,6 +240,9 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
     .success .eyebrow { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-mute); display: block; margin-bottom: 14px; }
     .success .thanks { font-family: var(--serif); font-size: 1.3rem; line-height: 1.4; margin-bottom: 32px; }
 
+    .inline-wrap { display: block; }
+    :host-context(.inline-wrap) .head, .inline-wrap .head { margin-bottom: 0; }
+
     @media (max-width: 600px) {
       .panel { width: 100%; padding: 72px 24px 32px; }
       .row { grid-template-columns: 1fr; }
@@ -235,6 +255,7 @@ export class ContactFormComponent {
   @Input() furnitureId: string | null = null;
   @Input() furnitureSlug: string | null = null;
   @Input() furnitureTitle: string | null = null;
+  @Input() inline = false;
   @Output() closed = new EventEmitter<void>();
 
   protected readonly status = signal<Status>('idle');
@@ -265,15 +286,32 @@ export class ContactFormComponent {
   }
 
   close() {
+    if (this.inline) return;
     this.closed.emit();
   }
 
+  resetForm() {
+    this.form = {
+      name: '',
+      email: '',
+      phone: '',
+      interest: 'acquisition',
+      message: '',
+      furnitureId: '',
+      furnitureSlug: '',
+      furnitureTitle: '',
+    };
+    this.status.set('idle');
+  }
+
   onBackdropClick(event: MouseEvent) {
+    if (this.inline) return;
     if ((event.target as HTMLElement).classList.contains('backdrop')) this.close();
   }
 
   @HostListener('document:keydown.escape')
   onEscape() {
+    if (this.inline) return;
     if (this.status() !== 'submitting') this.close();
   }
 }

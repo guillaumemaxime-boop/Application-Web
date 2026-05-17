@@ -425,6 +425,16 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                       <input type="tel" formControlName="profile_phone" />
                     </label>
                   </div>
+                  <div class="row-2">
+                    <label>
+                      <span>Instagram (URL)</span>
+                      <input type="url" formControlName="profile_instagram" placeholder="https://instagram.com/votre-handle" />
+                    </label>
+                    <label>
+                      <span>LinkedIn (URL)</span>
+                      <input type="url" formControlName="profile_linkedin" placeholder="https://www.linkedin.com/in/votre-profil" />
+                    </label>
+                  </div>
                   <label>
                     <span>Distinctions (une par ligne)</span>
                     <textarea rows="4" formControlName="profile_awards"></textarea>
@@ -499,7 +509,33 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
 
         @if (tab() === 'home') {
           <div class="home-editor">
-            <h2>Ordre éditorial du masonry</h2>
+            <h2>Sections visibles dans le menu</h2>
+            <p class="hint">Active ou désactive l'apparition de chaque section dans l'en-tête et le pied de page. Les pages restent accessibles via leur URL si elles existent.</p>
+            <ul class="nav-vis-list">
+              <li class="home-row">
+                <span class="kind-badge">MENU</span>
+                <span class="title">Mobilier</span>
+                <label class="incl">
+                  <input type="checkbox" [checked]="navMobilierVisible()" (change)="toggleNavSection('mobilier', $event)" /> Visible
+                </label>
+              </li>
+              <li class="home-row">
+                <span class="kind-badge">MENU</span>
+                <span class="title">Expositions</span>
+                <label class="incl">
+                  <input type="checkbox" [checked]="navExpositionsVisible()" (change)="toggleNavSection('expositions', $event)" /> Visible
+                </label>
+              </li>
+              <li class="home-row">
+                <span class="kind-badge">MENU</span>
+                <span class="title">Studio</span>
+                <label class="incl">
+                  <input type="checkbox" [checked]="navStudioVisible()" (change)="toggleNavSection('studio', $event)" /> Visible
+                </label>
+              </li>
+            </ul>
+
+            <h2 style="margin-top: 48px">Ordre éditorial du masonry</h2>
             <p class="hint">Glisse pour réordonner. Décoche pour exclure du feed. Les modifications sont enregistrées automatiquement.</p>
             @if (homeItems(); as items) {
               <ul class="ordering-list" appReorderable (reordered)="onFeedReorder($event)">
@@ -1106,7 +1142,7 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
     /* Onglet Accueil (ordre éditorial + catégories) */
     .home-editor h2 { margin: 32px 0 8px; font-family: var(--serif); font-weight: 400; font-size: 1.5rem; }
     .home-editor .hint { font-size: 0.85rem; color: var(--color-mute); margin-bottom: 16px; }
-    .ordering-list, .cat-list { list-style: none; padding: 0; margin: 0; }
+    .ordering-list, .cat-list, .nav-vis-list { list-style: none; padding: 0; margin: 0; }
     .home-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 6px; border: 1px solid var(--color-line); background: var(--color-bg); cursor: grab; }
     .home-row .handle { color: var(--color-mute); font-size: 1.1rem; cursor: grab; user-select: none; }
     .home-row .kind-badge { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-mute); min-width: 64px; }
@@ -1200,6 +1236,8 @@ export class AdminComponent {
     profile_location: [''],
     profile_awards: [''],
     profile_press: [''],
+    profile_instagram: [''],
+    profile_linkedin: [''],
   });
 
   constructor() {
@@ -1218,6 +1256,10 @@ export class AdminComponent {
   protected readonly homeItems = signal<HomeAdminItem[] | null>(null);
   protected readonly categoryMeta = signal<AdminCategoryView[] | null>(null);
   protected readonly exhibitionsMeta = signal<ExhibitionMetaRow[] | null>(null);
+
+  protected readonly navMobilierVisible = signal(true);
+  protected readonly navExpositionsVisible = signal(true);
+  protected readonly navStudioVisible = signal(true);
 
   loadHomeTab() {
     forkJoin([
@@ -1292,6 +1334,17 @@ export class AdminComponent {
     if (!current) return;
     this.categoryMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
     this.persistCategories();
+  }
+
+  toggleNavSection(section: 'mobilier' | 'expositions' | 'studio', event: Event) {
+    const visible = (event.target as HTMLInputElement).checked;
+    if (section === 'mobilier') this.navMobilierVisible.set(visible);
+    else if (section === 'expositions') this.navExpositionsVisible.set(visible);
+    else this.navStudioVisible.set(visible);
+    this.portfolio.updateContent({ [`nav.${section}.visible`]: visible ? 'true' : 'false' }).subscribe({
+      next: () => this.flash('Visibilité de la section enregistrée.', 'success'),
+      error: () => this.flash('Impossible d\'enregistrer la visibilité.', 'error'),
+    });
   }
 
   toggleCategoryVisibility(c: AdminCategoryView, event: Event) {
@@ -1382,7 +1435,12 @@ export class AdminComponent {
           profile_location: content['profile.location'] ?? '',
           profile_awards: content['profile.awards'] ?? '',
           profile_press: content['profile.press'] ?? '',
+          profile_instagram: content['profile.instagram'] ?? '',
+          profile_linkedin: content['profile.linkedin'] ?? '',
         });
+        this.navMobilierVisible.set(content['nav.mobilier.visible'] !== 'false');
+        this.navExpositionsVisible.set(content['nav.expositions.visible'] !== 'false');
+        this.navStudioVisible.set(content['nav.studio.visible'] !== 'false');
       },
       error: () => { this.loadingTexts.set(false); this.flash('Impossible de charger les textes.', 'error'); }
     });
@@ -1424,6 +1482,8 @@ export class AdminComponent {
       'profile.location': v.profile_location ?? '',
       'profile.awards': v.profile_awards ?? '',
       'profile.press': v.profile_press ?? '',
+      'profile.instagram': v.profile_instagram ?? '',
+      'profile.linkedin': v.profile_linkedin ?? '',
     };
 
     this.saving.set(true);
