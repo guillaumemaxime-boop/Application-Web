@@ -128,7 +128,21 @@
       "PowerShell(docker compose version 2>&1)",
       "PowerShell($env:CHROME_BIN = \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"; Set-Location \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; & node \".\\\\node_modules\\\\@angular\\\\cli\\\\bin\\\\ng.js\" test --watch=false --browsers=ChromeHeadless 2>&1 | Select-Object -Last 20)",
       "PowerShell($env:CHROME_BIN = \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"; Set-Location \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; & node \".\\\\node_modules\\\\@angular\\\\cli\\\\bin\\\\ng.js\" test --watch=false --browsers=ChromeHeadless 2>&1 | Select-String -Pattern \"FAILED|TypeError|Expected\" | Select-Object -First 40 | Out-String)",
-      "PowerShell($env:CHROME_BIN = \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"; Set-Location \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; & node \".\\\\node_modules\\\\@angular\\\\cli\\\\bin\\\\ng.js\" test --watch=false --browsers=ChromeHeadless 2>&1 | Select-Object -Last 8)"
+      "PowerShell($env:CHROME_BIN = \"C:\\\\Program Files \\(x86\\)\\\\Microsoft\\\\Edge\\\\Application\\\\msedge.exe\"; Set-Location \"c:\\\\Users\\\\Utilisateur\\\\Project\\\\Application Web\\\\Application-Web\\\\frontend\"; & node \".\\\\node_modules\\\\@angular\\\\cli\\\\bin\\\\ng.js\" test --watch=false --browsers=ChromeHeadless 2>&1 | Select-Object -Last 8)",
+      "Bash(gh pr *)",
+      "PowerShell(gh --version)",
+      "Bash(git remote *)",
+      "Bash(git --version)",
+      "Bash(git merge-tree *)",
+      "Bash(git merge *)",
+      "Bash(npm test *)",
+      "Bash(node ./node_modules/@angular/cli/bin/ng.js test --watch=false --browsers=ChromeHeadless --code-coverage=false)",
+      "Bash(node ./node_modules/@angular/cli/bin/ng.js test --watch=false --browsers=FirefoxHeadless --code-coverage=false)",
+      "Bash(node ./node_modules/@angular/cli/bin/ng.js build --configuration=production)",
+      "Bash(docker network *)",
+      "Bash(openssl rand *)",
+      "Bash(curl -s http://localhost:4200/*)",
+      "Bash(curl -s -o /dev/null -w * http://localhost:4200/*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Utilisateur\\Project\\Application Web\\Application-Web\\docs\\prototypes"
