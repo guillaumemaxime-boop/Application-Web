@@ -50,6 +50,26 @@ services:
       start_period: 30s
     networks: [atelier-net]
 
+  umami:
+    image: ghcr.io/umami-software/umami:${UMAMI_VERSION:-postgresql-v2.13.0}
+    container_name: atelier-umami
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=umami
+      DATABASE_TYPE: postgresql
+      APP_SECRET: ${UMAMI_APP_SECRET}
+      TRACKER_SCRIPT_NAME: umami
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/api/heartbeat"]
+      interval: 20s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    networks: [atelier-net]
+
   frontend:
     image: ${FRONTEND_IMAGE}
     container_name: atelier-frontend
@@ -62,6 +82,8 @@ services:
       - "${FRONTEND_PORT:-4200}:80"
     depends_on:
       backend:
+        condition: service_healthy
+      umami:
         condition: service_healthy
     networks: [atelier-net]
 
