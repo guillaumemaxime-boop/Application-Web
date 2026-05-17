@@ -11,11 +11,6 @@ import { PortfolioService } from '../../services/portfolio.service';
       <div class="container">
         <div class="grid">
           <div>
-            <h3 class="title">Milo GUILLAUME Design</h3>
-            <p>Mobilier sculpté & scénographies sensibles, depuis Paris.</p>
-          </div>
-
-          <div>
             <span class="eyebrow">Navigation</span>
             <ul>
               <li><a routerLink="/">Accueil</a></li>
@@ -77,15 +72,10 @@ import { PortfolioService } from '../../services/portfolio.service';
     }
     .grid {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 64px;
       padding-bottom: 64px;
       border-bottom: 1px solid var(--color-line);
-    }
-    .title {
-      font-family: var(--serif);
-      font-size: 1.75rem;
-      margin-bottom: 16px;
     }
     .eyebrow { display: block; margin-bottom: 20px; }
     ul { list-style: none; }
