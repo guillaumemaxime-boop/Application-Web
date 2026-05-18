@@ -51,51 +51,58 @@ interface Toast {
           <p class="lead">Ajoutez, modifiez ou supprimez les pièces de mobilier et les expositions présentées sur le site.</p>
         </div>
 
-        <div class="tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'furniture'"
-            [class.active]="tab() === 'furniture'"
-            (click)="switchTab('furniture')">Mobilier</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'exhibitions'"
-            [class.active]="tab() === 'exhibitions'"
-            (click)="switchTab('exhibitions')">Expositions</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'texts'"
-            [class.active]="tab() === 'texts'"
-            (click)="switchTab('texts')">Textes du site</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'photos'"
-            [class.active]="tab() === 'photos'"
-            (click)="switchTab('photos')">Médiathèque</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'home'"
-            [class.active]="tab() === 'home'"
-            (click)="switchTab('home')">Accueil</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'typography'"
-            [class.active]="tab() === 'typography'"
-            (click)="switchTab('typography')">Typographie</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'analytics'"
-            [class.active]="tab() === 'analytics'"
-            (click)="switchTab('analytics')">Analytics</button>
-        </div>
+        <div class="admin-layout">
+          <button type="button" class="sidebar-toggle" (click)="toggleSidebar()" [attr.aria-expanded]="sidebarOpen()" aria-controls="admin-tabs">
+            <span class="burger-icon" aria-hidden="true">☰</span>
+            <span>{{ currentTabLabel() }}</span>
+          </button>
 
+          <nav id="admin-tabs" class="tabs" [class.open]="sidebarOpen()" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'furniture'"
+              [class.active]="tab() === 'furniture'"
+              (click)="switchTab('furniture')">Mobilier</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'exhibitions'"
+              [class.active]="tab() === 'exhibitions'"
+              (click)="switchTab('exhibitions')">Expositions</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'texts'"
+              [class.active]="tab() === 'texts'"
+              (click)="switchTab('texts')">Textes du site</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'photos'"
+              [class.active]="tab() === 'photos'"
+              (click)="switchTab('photos')">Médiathèque</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'home'"
+              [class.active]="tab() === 'home'"
+              (click)="switchTab('home')">Accueil</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'typography'"
+              [class.active]="tab() === 'typography'"
+              (click)="switchTab('typography')">Typographie</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'analytics'"
+              [class.active]="tab() === 'analytics'"
+              (click)="switchTab('analytics')">Analytics</button>
+          </nav>
+
+          <div class="admin-content">
 
         @if (tab() === 'furniture') {
           <div class="grid-admin">
@@ -714,6 +721,8 @@ interface Toast {
             </div>
           }
         }
+          </div>
+        </div>
       </div>
     </section>
 
@@ -779,27 +788,75 @@ interface Toast {
     .head h1 { margin-top: 16px; }
     .lead { margin-top: 16px; color: var(--color-ink-soft); }
 
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+    .admin-content { min-width: 0; }
+    .sidebar-toggle {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      width: 100%;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-line);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-ink);
+      cursor: pointer;
+      grid-column: 1 / -1;
+    }
+    .burger-icon { font-size: 1.1rem; }
+
     .tabs {
       display: flex;
-      gap: 8px;
-      margin-bottom: 32px;
-      border-bottom: 1px solid var(--color-line);
+      flex-direction: column;
+      gap: 2px;
+      position: sticky;
+      top: 96px;
+      border-right: 1px solid var(--color-line);
+      padding-right: 12px;
     }
     .tabs button {
       background: transparent;
       border: 0;
-      padding: 14px 20px;
-      font-size: 0.875rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
       color: var(--color-ink-soft);
       cursor: pointer;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
+      text-align: left;
+      border-left: 2px solid transparent;
+      transition: color var(--transition), border-color var(--transition), background var(--transition);
     }
+    .tabs button:hover { color: var(--color-ink); background: var(--color-bg-alt); }
     .tabs button.active {
       color: var(--color-ink);
-      border-bottom-color: var(--color-accent);
+      border-left-color: var(--color-accent);
+      background: var(--color-bg-alt);
+      font-weight: 500;
+    }
+
+    @media (max-width: 720px) {
+      .admin-layout {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      .sidebar-toggle { display: flex; margin-bottom: 16px; }
+      .tabs {
+        position: static;
+        border-right: none;
+        padding-right: 0;
+        margin-bottom: 24px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 240ms ease;
+      }
+      .tabs.open { max-height: 600px; }
     }
 
     .toast-stack {
@@ -1592,6 +1649,18 @@ export class AdminComponent {
   protected readonly saving = signal(false);
   protected readonly savingTypo = signal(false);
   protected readonly uploading = signal(false);
+  protected readonly sidebarOpen = signal(false);
+  private readonly tabLabels: Record<Tab, string> = {
+    furniture: 'Mobilier',
+    exhibitions: 'Expositions',
+    texts: 'Textes du site',
+    photos: 'Médiathèque',
+    home: 'Accueil',
+    typography: 'Typographie',
+    analytics: 'Analytics',
+  };
+  protected readonly currentTabLabel = computed(() => this.tabLabels[this.tab()]);
+
   protected readonly toasts = signal<Toast[]>([]);
   private toastCounter = 0;
   // Computed pour rétro-compatibilité des tests existants qui lisent message()/messageType()
@@ -1692,7 +1761,12 @@ export class AdminComponent {
 
   switchTab(tab: Tab) {
     this.tab.set(tab);
+    this.sidebarOpen.set(false);
     if (tab === 'home') this.loadHomeTab();
+  }
+
+  toggleSidebar() {
+    this.sidebarOpen.update(v => !v);
   }
 
   protected readonly homeItems = signal<HomeAdminItem[] | null>(null);

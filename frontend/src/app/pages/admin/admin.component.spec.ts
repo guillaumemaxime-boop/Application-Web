@@ -716,6 +716,29 @@ describe('AdminComponent', () => {
     });
   });
 
+  describe('Sidebar', () => {
+    it('toggleSidebar flips the open state', () => {
+      expect(component['sidebarOpen']()).toBeFalse();
+      component['toggleSidebar']();
+      expect(component['sidebarOpen']()).toBeTrue();
+      component['toggleSidebar']();
+      expect(component['sidebarOpen']()).toBeFalse();
+    });
+
+    it('switchTab auto-closes the sidebar (used on mobile drawer)', () => {
+      component['sidebarOpen'].set(true);
+      component.switchTab('exhibitions');
+      expect(component['sidebarOpen']()).toBeFalse();
+    });
+
+    it('currentTabLabel reflects the active tab', () => {
+      component['tab'].set('photos');
+      expect(component['currentTabLabel']()).toBe('Médiathèque');
+      component['tab'].set('typography');
+      expect(component['currentTabLabel']()).toBe('Typographie');
+    });
+  });
+
   describe('Toast stack', () => {
     it('stacks multiple toasts and dismisses the targeted one', () => {
       portfolioServiceSpy.createFurniture.and.returnValue(throwError(() => new Error('boom1')));
