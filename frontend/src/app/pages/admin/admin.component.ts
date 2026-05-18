@@ -302,8 +302,22 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
               </div>
 
               <label>
-                <span>Tags (un par ligne)</span>
-                <textarea rows="2" formControlName="tags"></textarea>
+                <span>Tags</span>
+                <div class="chips-input">
+                  @for (t of exhibitionTags(); track t) {
+                    <span class="chip">{{ t }}<button type="button" class="chip-remove" (click)="removeExhibitionTag(t)" aria-label="Retirer">×</button></span>
+                  }
+                  <input
+                    type="text"
+                    [ngModel]="newExhibitionTag()"
+                    (ngModelChange)="newExhibitionTag.set($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    (keydown.enter)="addExhibitionTag($event)"
+                    (keydown.backspace)="onTagBackspace($event)"
+                    placeholder="Ajouter un tag puis Entrée"
+                    class="chip-input-field"
+                  />
+                </div>
               </label>
               <label>
                 <span>Description courte</span>
@@ -832,6 +846,47 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
       background: var(--color-bg-alt);
       color: var(--color-ink-soft);
       cursor: default;
+    }
+
+    .chips-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
+      min-height: 40px;
+      align-items: center;
+    }
+    .chips-input:focus-within { border-color: var(--color-accent); }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 4px 4px 10px;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-line);
+      font-size: 0.82rem;
+      color: var(--color-ink);
+    }
+    .chip-remove {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 2px 6px;
+      color: var(--color-mute);
+      cursor: pointer;
+    }
+    .chip-remove:hover { color: #b1532a; }
+    .chip-input-field {
+      flex: 1;
+      min-width: 140px;
+      padding: 6px 8px;
+      border: none;
+      background: transparent;
+      font-size: 0.9rem;
+      outline: none;
     }
 
     .field-with-picker {
@@ -1373,10 +1428,12 @@ export class AdminComponent {
     curator: [''],
     coverImage: [''],
     gallery: [''],
-    tags: [''],
     shortDescription: [''],
     description: [''],
   });
+
+  protected readonly exhibitionTags = signal<string[]>([]);
+  protected readonly newExhibitionTag = signal('');
 
   protected readonly textsForm = this.fb.group({
     home_hero_eyebrow: [''],
@@ -1807,8 +1864,10 @@ export class AdminComponent {
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
-      gallery: '', tags: '', shortDescription: '', description: '',
+      gallery: '', shortDescription: '', description: '',
     });
+    this.exhibitionTags.set([]);
+    this.newExhibitionTag.set('');
     this.message.set(null);
   }
 
@@ -1826,11 +1885,35 @@ export class AdminComponent {
       curator: item.curator ?? '',
       coverImage: item.coverImage ?? '',
       gallery: (item.gallery ?? []).join('\n'),
-      tags: (item.tags ?? []).join('\n'),
       shortDescription: item.shortDescription ?? '',
       description: item.description ?? '',
     });
+    this.exhibitionTags.set([...(item.tags ?? [])]);
+    this.newExhibitionTag.set('');
     this.message.set(null);
+  }
+
+  addExhibitionTag(event: Event) {
+    event.preventDefault();
+    const value = this.newExhibitionTag().trim();
+    if (!value) return;
+    const current = this.exhibitionTags();
+    if (current.includes(value)) {
+      this.newExhibitionTag.set('');
+      return;
+    }
+    this.exhibitionTags.set([...current, value]);
+    this.newExhibitionTag.set('');
+  }
+
+  removeExhibitionTag(tag: string) {
+    this.exhibitionTags.update(tags => tags.filter(t => t !== tag));
+  }
+
+  onTagBackspace(event: Event) {
+    if (this.newExhibitionTag() !== '') return;
+    event.preventDefault();
+    this.exhibitionTags.update(tags => tags.slice(0, -1));
   }
 
   saveExhibition() {
@@ -1849,7 +1932,7 @@ export class AdminComponent {
       curator: v.curator ?? '',
       coverImage: v.coverImage ?? '',
       gallery: this.splitLines(v.gallery),
-      tags: this.splitLines(v.tags),
+      tags: [...this.exhibitionTags()],
       shortDescription: v.shortDescription ?? '',
       description: v.description ?? '',
       featured: existing?.featured ?? false,

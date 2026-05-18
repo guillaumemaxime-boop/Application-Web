@@ -228,7 +228,7 @@ describe('AdminComponent', () => {
       expect(v.title).toBe(mockExhibition.title);
       expect(v.startDate).toBe(mockExhibition.startDate);
       expect(v.endDate).toBe(mockExhibition.endDate);
-      expect(v.tags).toBe(mockExhibition.tags.join('\n'));
+      expect(component['exhibitionTags']()).toEqual(mockExhibition.tags);
     });
 
     it('should call createExhibition when saving without an editing slug', () => {
@@ -237,8 +237,8 @@ describe('AdminComponent', () => {
         title: 'Nouvelle expo',
         startDate: '2026-06-01',
         endDate: '2026-08-30',
-        tags: 'Sculpture\nLumière',
       });
+      component['exhibitionTags'].set(['Sculpture', 'Lumière']);
 
       component.saveExhibition();
 
@@ -273,6 +273,56 @@ describe('AdminComponent', () => {
       component.removeExhibition(mockExhibition);
 
       expect(portfolioServiceSpy.deleteExhibition).toHaveBeenCalledWith(mockExhibition.slug);
+    });
+  });
+
+  describe('Exhibition tags (chips input)', () => {
+    function evt(value = ''): Event {
+      return { preventDefault: () => {}, target: { value } } as unknown as Event;
+    }
+
+    it('addExhibitionTag pushes the trimmed value and clears the input', () => {
+      component.newExhibition();
+      component['newExhibitionTag'].set('  Sculpture  ');
+      component.addExhibitionTag(evt());
+      expect(component['exhibitionTags']()).toEqual(['Sculpture']);
+      expect(component['newExhibitionTag']()).toBe('');
+    });
+
+    it('addExhibitionTag ignores empty values', () => {
+      component.newExhibition();
+      component['newExhibitionTag'].set('   ');
+      component.addExhibitionTag(evt());
+      expect(component['exhibitionTags']()).toEqual([]);
+    });
+
+    it('addExhibitionTag dedupes existing tags', () => {
+      component.newExhibition();
+      component['exhibitionTags'].set(['Bois']);
+      component['newExhibitionTag'].set('Bois');
+      component.addExhibitionTag(evt());
+      expect(component['exhibitionTags']()).toEqual(['Bois']);
+      expect(component['newExhibitionTag']()).toBe('');
+    });
+
+    it('removeExhibitionTag removes the matching tag', () => {
+      component['exhibitionTags'].set(['Bois', 'Lumière']);
+      component.removeExhibitionTag('Bois');
+      expect(component['exhibitionTags']()).toEqual(['Lumière']);
+    });
+
+    it('onTagBackspace pops the last tag when input is empty', () => {
+      component['exhibitionTags'].set(['A', 'B']);
+      component['newExhibitionTag'].set('');
+      component.onTagBackspace(evt());
+      expect(component['exhibitionTags']()).toEqual(['A']);
+    });
+
+    it('onTagBackspace does nothing when input has text', () => {
+      component['exhibitionTags'].set(['A']);
+      component['newExhibitionTag'].set('foo');
+      component.onTagBackspace(evt());
+      expect(component['exhibitionTags']()).toEqual(['A']);
     });
   });
 
@@ -388,7 +438,7 @@ describe('AdminComponent', () => {
       expect(v.venue).toBe('');
       expect(v.city).toBe('');
       expect(v.gallery).toBe('');
-      expect(v.tags).toBe('');
+      expect(component['exhibitionTags']()).toEqual([]);
     });
 
     it('should treat empty slug input as undefined when creating', () => {
