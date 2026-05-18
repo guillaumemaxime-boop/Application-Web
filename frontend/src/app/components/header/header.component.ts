@@ -10,8 +10,7 @@ import { PortfolioService } from '../../services/portfolio.service';
     <header>
       <div class="container nav">
         <a routerLink="/" class="brand" (click)="closeMenu()">
-          <span class="brand-mark">M·G</span>
-          <span class="brand-name">Milo GUILLAUME Design</span>
+          <img src="logo.jpg" alt="Milo Guillaume — Design & Artisanat" class="brand-logo">
         </a>
 
         <button class="burger" type="button" (click)="toggleMenu()" [attr.aria-expanded]="open()">
@@ -52,20 +51,12 @@ import { PortfolioService } from '../../services/portfolio.service';
     }
     .brand {
       display: flex;
-      align-items: baseline;
-      gap: 12px;
+      align-items: center;
     }
-    .brand-mark {
-      font-family: var(--serif);
-      font-size: 1.375rem;
-      font-weight: 500;
-      color: var(--color-ink);
-    }
-    .brand-name {
-      font-size: 0.75rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--color-ink);
+    .brand-logo {
+      display: block;
+      height: 48px;
+      width: auto;
     }
     nav {
       display: flex;
@@ -94,7 +85,7 @@ import { PortfolioService } from '../../services/portfolio.service';
     }
 
     @media (max-width: 720px) {
-      .brand-name { display: none; }
+      .brand-logo { height: 36px; }
       .burger { display: flex; }
       nav {
         position: absolute;
