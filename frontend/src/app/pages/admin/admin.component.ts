@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -31,6 +31,12 @@ interface ExhibitionMetaRow {
 
 type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home' | 'typography' | 'analytics';
 type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover' | 'exhibition-gallery';
+
+interface Toast {
+  id: number;
+  text: string;
+  type: 'success' | 'error';
+}
 
 @Component({
   selector: 'app-admin',
@@ -90,9 +96,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             (click)="switchTab('analytics')">Analytics</button>
         </div>
 
-        @if (message()) {
-          <p class="flash" [class.error]="messageType() === 'error'">{{ message() }}</p>
-        }
 
         @if (tab() === 'furniture') {
           <div class="grid-admin">
@@ -758,6 +761,17 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
         </div>
       </div>
     }
+
+    @if (toasts().length > 0) {
+      <div class="toast-stack" aria-live="polite">
+        @for (t of toasts(); track t.id) {
+          <div class="toast" [class.error]="t.type === 'error'" role="status">
+            <span class="toast-text">{{ t.text }}</span>
+            <button type="button" class="toast-close" (click)="dismissToast(t.id)" aria-label="Fermer">×</button>
+          </div>
+        }
+      </div>
+    }
   `,
   styles: [`
     .section { padding: 128px 0 96px; }
@@ -788,17 +802,58 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
       border-bottom-color: var(--color-accent);
     }
 
-    .flash {
-      padding: 12px 16px;
-      margin-bottom: 24px;
-      background: rgba(139, 111, 71, 0.08);
-      border-left: 3px solid var(--color-accent);
-      font-size: 0.95rem;
+    .toast-stack {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 380px;
+      pointer-events: none;
     }
-    .flash.error {
-      background: rgba(177, 83, 42, 0.08);
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-line);
+      border-left: 3px solid var(--color-accent);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      font-size: 0.9rem;
+      pointer-events: auto;
+      animation: toast-slide-in 220ms ease-out;
+    }
+    .toast.error {
       border-left-color: #b1532a;
       color: #8a3d1f;
+      background: rgba(177, 83, 42, 0.04);
+    }
+    .toast-text { flex: 1; line-height: 1.4; }
+    .toast-close {
+      background: none;
+      border: none;
+      color: var(--color-mute);
+      font-size: 1.2rem;
+      line-height: 1;
+      padding: 0 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .toast-close:hover { color: var(--color-ink); }
+    @keyframes toast-slide-in {
+      from { transform: translateX(40px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @media (max-width: 600px) {
+      .toast-stack {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        max-width: none;
+      }
     }
 
     .grid-admin {
@@ -1537,8 +1592,17 @@ export class AdminComponent {
   protected readonly saving = signal(false);
   protected readonly savingTypo = signal(false);
   protected readonly uploading = signal(false);
-  protected readonly message = signal<string | null>(null);
-  protected readonly messageType = signal<'success' | 'error'>('success');
+  protected readonly toasts = signal<Toast[]>([]);
+  private toastCounter = 0;
+  // Computed pour rétro-compatibilité des tests existants qui lisent message()/messageType()
+  protected readonly message = computed<string | null>(() => {
+    const list = this.toasts();
+    return list.length === 0 ? null : list[list.length - 1].text;
+  });
+  protected readonly messageType = computed<'success' | 'error'>(() => {
+    const list = this.toasts();
+    return list.length === 0 ? 'success' : list[list.length - 1].type;
+  });
   protected readonly photoPicker = signal<PickerTarget | null>(null);
   protected readonly viewingPhoto = signal<Photo | null>(null);
 
@@ -1628,7 +1692,6 @@ export class AdminComponent {
 
   switchTab(tab: Tab) {
     this.tab.set(tab);
-    this.message.set(null);
     if (tab === 'home') this.loadHomeTab();
   }
 
@@ -1930,7 +1993,6 @@ export class AdminComponent {
       shortDescription: '', description: '',
     });
     this.furnitureGallery.set([]);
-    this.message.set(null);
   }
 
   loadFurniture(item: Furniture) {
@@ -1953,7 +2015,6 @@ export class AdminComponent {
       description: item.description ?? '',
     });
     this.furnitureGallery.set([...(item.gallery ?? [])]);
-    this.message.set(null);
   }
 
   private parseDimensions(list: string[]): { w: number | null; d: number | null; h: number | null; notes: string } {
@@ -2055,7 +2116,6 @@ export class AdminComponent {
     this.exhibitionGallery.set([]);
     this.exhibitionTags.set([]);
     this.newExhibitionTag.set('');
-    this.message.set(null);
   }
 
   loadExhibition(item: Exhibition) {
@@ -2077,7 +2137,6 @@ export class AdminComponent {
     this.exhibitionGallery.set([...(item.gallery ?? [])]);
     this.exhibitionTags.set([...(item.tags ?? [])]);
     this.newExhibitionTag.set('');
-    this.message.set(null);
   }
 
   removeExhibitionGalleryImage(url: string) {
@@ -2283,10 +2342,14 @@ export class AdminComponent {
   }
 
   private flash(text: string, type: 'success' | 'error') {
-    this.message.set(text);
-    this.messageType.set(type);
+    const id = ++this.toastCounter;
+    this.toasts.update(list => [...list, { id, text, type }]);
     setTimeout(() => {
-      if (this.message() === text) this.message.set(null);
+      this.toasts.update(list => list.filter(t => t.id !== id));
     }, 4000);
+  }
+
+  protected dismissToast(id: number) {
+    this.toasts.update(list => list.filter(t => t.id !== id));
   }
 }

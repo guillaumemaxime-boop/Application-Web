@@ -716,6 +716,41 @@ describe('AdminComponent', () => {
     });
   });
 
+  describe('Toast stack', () => {
+    it('stacks multiple toasts and dismisses the targeted one', () => {
+      portfolioServiceSpy.createFurniture.and.returnValue(throwError(() => new Error('boom1')));
+      portfolioServiceSpy.createExhibition.and.returnValue(throwError(() => new Error('boom2')));
+
+      component.newFurniture();
+      component['furnitureForm'].patchValue({ title: 'A', category: 'X', year: 2026 });
+      component.saveFurniture();
+
+      component.newExhibition();
+      component['exhibitionForm'].patchValue({ title: 'B', startDate: '2026-01-01', endDate: '2026-02-01' });
+      component.saveExhibition();
+
+      expect(component['toasts']().length).toBe(2);
+
+      const firstId = component['toasts']()[0].id;
+      component['dismissToast'](firstId);
+      expect(component['toasts']().length).toBe(1);
+      expect(component['toasts']()[0].id).not.toBe(firstId);
+    });
+
+    it('message() and messageType() reflect the most recent toast', () => {
+      portfolioServiceSpy.createFurniture.and.returnValue(throwError(() => new Error('boom')));
+      component.newFurniture();
+      component['furnitureForm'].patchValue({ title: 'A', category: 'X', year: 2026 });
+      component.saveFurniture();
+      expect(component['messageType']()).toBe('error');
+
+      // Success flash after error → latest toast wins
+      component['toasts'].update(list => [...list, { id: 999, text: 'OK', type: 'success' }]);
+      expect(component['messageType']()).toBe('success');
+      expect(component['message']()).toBe('OK');
+    });
+  });
+
   describe('Dimensions parsing & serialization', () => {
     it('parses Largeur / Profondeur / Hauteur formats', () => {
       component.loadFurniture({
