@@ -1,4 +1,3 @@
-console.log('[SPEC LOADED] pages/expositions-list/expositions-list.component.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { ExpositionsListComponent } from './expositions-list.component';
 import { PortfolioService } from '../../services/portfolio.service';

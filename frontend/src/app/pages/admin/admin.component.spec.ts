@@ -1,4 +1,3 @@
-console.log('[SPEC LOADED] pages/admin/admin.component.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AdminComponent } from './admin.component';
 import { PortfolioService } from '../../services/portfolio.service';

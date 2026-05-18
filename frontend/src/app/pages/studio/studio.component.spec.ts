@@ -1,4 +1,3 @@
-console.log('[SPEC LOADED] pages/studio/studio.component.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { StudioComponent } from './studio.component';
 import { PortfolioService } from '../../services/portfolio.service';

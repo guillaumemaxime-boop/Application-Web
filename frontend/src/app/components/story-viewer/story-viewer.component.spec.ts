@@ -1,4 +1,3 @@
-console.log('[SPEC LOADED] components/story-viewer/story-viewer.component.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { StoryViewerComponent, StoryItem } from './story-viewer.component';

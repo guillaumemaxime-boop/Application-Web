@@ -1,4 +1,3 @@
-console.log('[SPEC LOADED] components/contact-form/contact-form.component.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { ContactFormComponent } from './contact-form.component';
 import { PortfolioService } from '../../services/portfolio.service';

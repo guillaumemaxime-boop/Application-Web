@@ -1,4 +1,3 @@
-console.log('[SPEC LOADED] pages/furniture-detail/furniture-detail.component.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { FurnitureDetailComponent } from './furniture-detail.component';
 import { PortfolioService } from '../../services/portfolio.service';

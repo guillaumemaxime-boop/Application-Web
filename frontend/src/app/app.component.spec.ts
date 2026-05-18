@@ -1,4 +1,3 @@
-console.log('[SPEC LOADED] app.component.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { HeaderComponent } from './components/header/header.component';

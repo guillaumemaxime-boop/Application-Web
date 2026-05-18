@@ -1,4 +1,3 @@
-console.log('[SPEC LOADED] guards/auth.guard.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { provideRouter } from '@angular/router';

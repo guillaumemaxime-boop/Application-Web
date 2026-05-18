@@ -1,4 +1,3 @@
-console.log('[SPEC LOADED] components/story-inline/story-inline.component.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { StoryInlineComponent } from './story-inline.component';
 import { Slide } from '../../models/slide.model';
