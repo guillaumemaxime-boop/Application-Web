@@ -189,10 +189,27 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 }
               </div>
 
-              <label>
-                <span>Dimensions (une par ligne)</span>
-                <textarea rows="3" formControlName="dimensions"></textarea>
-              </label>
+              <fieldset class="dim-fieldset">
+                <legend>Dimensions</legend>
+                <div class="dim-grid">
+                  <label class="dim-cell">
+                    <span>Largeur (cm)</span>
+                    <input type="number" step="0.1" min="0" formControlName="dimW" placeholder="—" />
+                  </label>
+                  <label class="dim-cell">
+                    <span>Profondeur (cm)</span>
+                    <input type="number" step="0.1" min="0" formControlName="dimD" placeholder="—" />
+                  </label>
+                  <label class="dim-cell">
+                    <span>Hauteur (cm)</span>
+                    <input type="number" step="0.1" min="0" formControlName="dimH" placeholder="—" />
+                  </label>
+                </div>
+                <label class="dim-notes">
+                  <span>Autres dimensions (une par ligne)</span>
+                  <textarea rows="2" formControlName="dimNotes" placeholder="Ex. : Diamètre assise 45 cm"></textarea>
+                </label>
+              </fieldset>
               <label>
                 <span>Description courte</span>
                 <textarea rows="2" formControlName="shortDescription"></textarea>
@@ -983,6 +1000,34 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
       font-style: italic;
     }
 
+    .dim-fieldset {
+      border: 1px solid var(--color-line);
+      padding: 16px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .dim-fieldset legend {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+      padding: 0 8px;
+    }
+    .dim-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .dim-cell { gap: 4px; }
+    .dim-cell span { font-size: 0.78rem; color: var(--color-ink-soft); }
+    .dim-notes { gap: 4px; }
+    .dim-notes span { font-size: 0.78rem; color: var(--color-ink-soft); }
+    @media (max-width: 600px) {
+      .dim-grid { grid-template-columns: 1fr; }
+    }
+
     .field-with-picker {
       display: flex;
       gap: 12px;
@@ -1505,7 +1550,10 @@ export class AdminComponent {
     material: [''],
     designer: ['Milo GUILLAUME Design'],
     coverImage: [''],
-    dimensions: [''],
+    dimW: [null as number | null],
+    dimD: [null as number | null],
+    dimH: [null as number | null],
+    dimNotes: [''],
     shortDescription: [''],
     description: [''],
   });
@@ -1878,7 +1926,8 @@ export class AdminComponent {
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
       material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
-      dimensions: '', shortDescription: '', description: '',
+      dimW: null, dimD: null, dimH: null, dimNotes: '',
+      shortDescription: '', description: '',
     });
     this.furnitureGallery.set([]);
     this.message.set(null);
@@ -1887,6 +1936,7 @@ export class AdminComponent {
   loadFurniture(item: Furniture) {
     this.editingFurnitureSlug.set(item.slug);
     this.editingFurnitureId.set(item.id ?? null);
+    const dims = this.parseDimensions(item.dimensions ?? []);
     this.furnitureForm.reset({
       title: item.title,
       slug: item.slug,
@@ -1895,12 +1945,44 @@ export class AdminComponent {
       material: item.material ?? '',
       designer: item.designer ?? '',
       coverImage: item.coverImage ?? '',
-      dimensions: (item.dimensions ?? []).join('\n'),
+      dimW: dims.w,
+      dimD: dims.d,
+      dimH: dims.h,
+      dimNotes: dims.notes,
       shortDescription: item.shortDescription ?? '',
       description: item.description ?? '',
     });
     this.furnitureGallery.set([...(item.gallery ?? [])]);
     this.message.set(null);
+  }
+
+  private parseDimensions(list: string[]): { w: number | null; d: number | null; h: number | null; notes: string } {
+    const widthRe = /^(L|Larg(?:eur)?\.?)\s*[:.]?\s*([0-9]+(?:[.,][0-9]+)?)/i;
+    const depthRe = /^(P|Prof(?:ondeur)?\.?)\s*[:.]?\s*([0-9]+(?:[.,][0-9]+)?)/i;
+    const heightRe = /^(H|Haut(?:eur)?\.?)\s*[:.]?\s*([0-9]+(?:[.,][0-9]+)?)/i;
+    let w: number | null = null, d: number | null = null, h: number | null = null;
+    const notes: string[] = [];
+    for (const raw of list) {
+      const line = (raw ?? '').trim();
+      if (!line) continue;
+      let m = w === null ? line.match(widthRe) : null;
+      if (m) { w = parseFloat(m[2].replace(',', '.')); continue; }
+      m = d === null ? line.match(depthRe) : null;
+      if (m) { d = parseFloat(m[2].replace(',', '.')); continue; }
+      m = h === null ? line.match(heightRe) : null;
+      if (m) { h = parseFloat(m[2].replace(',', '.')); continue; }
+      notes.push(line);
+    }
+    return { w, d, h, notes: notes.join('\n') };
+  }
+
+  private serializeDimensions(w: number | null, d: number | null, h: number | null, notesText: string): string[] {
+    const result: string[] = [];
+    if (w !== null && w !== undefined && !isNaN(w)) result.push(`L ${w} cm`);
+    if (d !== null && d !== undefined && !isNaN(d)) result.push(`P ${d} cm`);
+    if (h !== null && h !== undefined && !isNaN(h)) result.push(`H ${h} cm`);
+    result.push(...this.splitLines(notesText));
+    return result;
   }
 
   removeFurnitureGalleryImage(url: string) {
@@ -1926,7 +2008,7 @@ export class AdminComponent {
       designer: v.designer ?? '',
       coverImage: v.coverImage ?? '',
       gallery: [...this.furnitureGallery()],
-      dimensions: this.splitLines(v.dimensions),
+      dimensions: this.serializeDimensions(v.dimW ?? null, v.dimD ?? null, v.dimH ?? null, v.dimNotes ?? ''),
       shortDescription: v.shortDescription ?? '',
       description: v.description ?? '',
       featured: existing?.featured ?? false,

@@ -150,7 +150,11 @@ describe('AdminComponent', () => {
       expect(v.category).toBe(mockFurniture.category);
       expect(v.year).toBe(mockFurniture.year);
       expect(component['furnitureGallery']()).toEqual(mockFurniture.gallery);
-      expect(v.dimensions).toBe(mockFurniture.dimensions.join('\n'));
+      // mockFurniture.dimensions = ['Hauteur 92 cm', 'Largeur 78 cm']
+      expect(v.dimH).toBe(92);
+      expect(v.dimW).toBe(78);
+      expect(v.dimD).toBeNull();
+      expect(v.dimNotes).toBe('');
     });
 
     it('should call createFurniture when saving without an editing slug', () => {
@@ -159,7 +163,8 @@ describe('AdminComponent', () => {
         title: 'Nouvelle pièce',
         category: 'Tables',
         year: 2026,
-        dimensions: 'H 80\nL 60',
+        dimW: 60,
+        dimH: 80,
       });
       component['furnitureGallery'].set(['https://img/1.jpg', 'https://img/2.jpg']);
 
@@ -170,7 +175,7 @@ describe('AdminComponent', () => {
       expect(payload.title).toBe('Nouvelle pièce');
       expect(payload.category).toBe('Tables');
       expect(payload.gallery).toEqual(['https://img/1.jpg', 'https://img/2.jpg']);
-      expect(payload.dimensions).toEqual(['H 80', 'L 60']);
+      expect(payload.dimensions).toEqual(['L 60 cm', 'H 80 cm']);
     });
 
     it('should call updateFurniture when saving an editing slug', () => {
@@ -417,7 +422,10 @@ describe('AdminComponent', () => {
       expect(v.designer).toBe('');
       expect(v.coverImage).toBe('');
       expect(component['furnitureGallery']()).toEqual([]);
-      expect(v.dimensions).toBe('');
+      expect(v.dimW).toBeNull();
+      expect(v.dimD).toBeNull();
+      expect(v.dimH).toBeNull();
+      expect(v.dimNotes).toBe('');
     });
 
     it('should handle exhibition with nullable optional fields', () => {
@@ -705,6 +713,72 @@ describe('AdminComponent', () => {
       component.selectPhoto(mockPhoto);
 
       expect(component['exhibitionGallery']()).toEqual(['https://existing.com/img.jpg', mockPhoto.url]);
+    });
+  });
+
+  describe('Dimensions parsing & serialization', () => {
+    it('parses Largeur / Profondeur / Hauteur formats', () => {
+      component.loadFurniture({
+        ...mockFurniture,
+        dimensions: ['Largeur 78 cm', 'Profondeur 60 cm', 'Hauteur 92 cm'],
+      });
+      const v = component['furnitureForm'].value;
+      expect(v.dimW).toBe(78);
+      expect(v.dimD).toBe(60);
+      expect(v.dimH).toBe(92);
+      expect(v.dimNotes).toBe('');
+    });
+
+    it('parses L / P / H short formats', () => {
+      component.loadFurniture({
+        ...mockFurniture,
+        dimensions: ['L 50', 'P 40', 'H 60'],
+      });
+      const v = component['furnitureForm'].value;
+      expect(v.dimW).toBe(50);
+      expect(v.dimD).toBe(40);
+      expect(v.dimH).toBe(60);
+    });
+
+    it('puts unrecognized lines into dimNotes', () => {
+      component.loadFurniture({
+        ...mockFurniture,
+        dimensions: ['L 50', 'Diamètre assise 45 cm', 'Empilable jusqu\'à 5'],
+      });
+      const v = component['furnitureForm'].value;
+      expect(v.dimW).toBe(50);
+      expect(v.dimNotes).toBe('Diamètre assise 45 cm\nEmpilable jusqu\'à 5');
+    });
+
+    it('serializes L / P / H values into "L X cm" format and appends notes', () => {
+      component.newFurniture();
+      component['furnitureForm'].patchValue({
+        title: 'X', category: 'Tables', year: 2026,
+        dimW: 80, dimD: 60, dimH: 75,
+        dimNotes: 'Diamètre 45 cm\nEmpilable',
+      });
+      component.saveFurniture();
+      const payload = portfolioServiceSpy.createFurniture.calls.mostRecent().args[0];
+      expect(payload.dimensions).toEqual(['L 80 cm', 'P 60 cm', 'H 75 cm', 'Diamètre 45 cm', 'Empilable']);
+    });
+
+    it('omits absent dimensions from serialization', () => {
+      component.newFurniture();
+      component['furnitureForm'].patchValue({
+        title: 'X', category: 'Tables', year: 2026,
+        dimW: 80, dimH: 75,
+      });
+      component.saveFurniture();
+      const payload = portfolioServiceSpy.createFurniture.calls.mostRecent().args[0];
+      expect(payload.dimensions).toEqual(['L 80 cm', 'H 75 cm']);
+    });
+
+    it('handles decimal values with comma in source', () => {
+      component.loadFurniture({
+        ...mockFurniture,
+        dimensions: ['L 80,5 cm'],
+      });
+      expect(component['furnitureForm'].value.dimW).toBe(80.5);
     });
   });
 
