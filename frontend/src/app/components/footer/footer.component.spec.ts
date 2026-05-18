@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] components/footer/footer.component.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FooterComponent } from './footer.component';
 import { PortfolioService } from '../../services/portfolio.service';

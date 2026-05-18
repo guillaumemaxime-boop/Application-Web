@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] pages/exhibition-detail/exhibition-detail.component.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { ExhibitionDetailComponent } from './exhibition-detail.component';
 import { PortfolioService } from '../../services/portfolio.service';

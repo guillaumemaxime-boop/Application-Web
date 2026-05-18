@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] pages/expositions-list/expositions-list.component.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { ExpositionsListComponent } from './expositions-list.component';
 import { PortfolioService } from '../../services/portfolio.service';
@@ -84,5 +85,48 @@ describe('ExpositionsListComponent', () => {
     const c = fixture.componentInstance as any;
     expect(c.loading()).toBeFalse();
     expect(c.items().length).toBe(0);
+  });
+
+  it('formatRange returns an empty string when start is empty', () => {
+    setup(of([]));
+    const fixture = TestBed.createComponent(ExpositionsListComponent);
+    fixture.detectChanges();
+    expect((fixture.componentInstance as any).formatRange('', '2025-01-01')).toBe('');
+  });
+
+  it('formatRange returns only the start date when end is empty', () => {
+    setup(of([]));
+    const fixture = TestBed.createComponent(ExpositionsListComponent);
+    fixture.detectChanges();
+    const out = (fixture.componentInstance as any).formatRange('2025-03-10', '');
+    expect(out).toContain('mars');
+    expect(out).not.toContain('—');
+  });
+
+  it('formatRange formats both start and end with an em dash', () => {
+    setup(of([]));
+    const fixture = TestBed.createComponent(ExpositionsListComponent);
+    fixture.detectChanges();
+    const out = (fixture.componentInstance as any).formatRange('2025-03-10', '2025-04-12');
+    expect(out).toContain('mars');
+    expect(out).toContain('avril');
+    expect(out).toContain('—');
+  });
+
+  it('groups items with an unparseable start date under year 0', () => {
+    const broken: Exhibition[] = [
+      {
+        id: 'x', title: 'No date', slug: 'no-date', venue: 'V',
+        city: 'C', country: 'F', startDate: '', endDate: '',
+        coverImage: 'x.jpg', gallery: [], curator: 'C', shortDescription: '',
+        description: '', tags: [], featured: false, slides: [],
+      },
+    ];
+    setup(of(broken));
+    const fixture = TestBed.createComponent(ExpositionsListComponent);
+    fixture.detectChanges();
+    const groups = (fixture.componentInstance as any).groups();
+    expect(groups.length).toBe(1);
+    expect(groups[0].year).toBe(0);
   });
 });

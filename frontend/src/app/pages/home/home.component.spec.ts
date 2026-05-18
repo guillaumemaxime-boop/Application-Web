@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] pages/home/home.component.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HomeComponent } from './home.component';
 import { PortfolioService } from '../../services/portfolio.service';

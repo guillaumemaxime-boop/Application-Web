@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] pages/login/login.component.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { provideRouter } from '@angular/router';

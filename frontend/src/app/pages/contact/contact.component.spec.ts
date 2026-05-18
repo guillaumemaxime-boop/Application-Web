@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] pages/contact/contact.component.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ContactComponent } from './contact.component';
 import { PortfolioService } from '../../services/portfolio.service';
@@ -66,5 +67,39 @@ describe('ContactComponent', () => {
     const f = TestBed.createComponent(ContactComponent);
     f.detectChanges();
     expect(f.nativeElement.querySelector('.social')).toBeNull();
+  });
+
+  it('hides the channel rows when their values are empty', () => {
+    portfolioSpy.getContent.and.returnValue(of({}));
+    const f = TestBed.createComponent(ContactComponent);
+    f.detectChanges();
+    expect(f.nativeElement.querySelector('a[href^="mailto:"]')).toBeNull();
+    expect(f.nativeElement.querySelector('a[href^="tel:"]')).toBeNull();
+    expect(f.nativeElement.querySelectorAll('.channels li').length).toBe(0);
+  });
+
+  it('renders only Instagram when LinkedIn is missing', () => {
+    portfolioSpy.getContent.and.returnValue(of({ 'profile.instagram': 'https://instagram.com/foo' }));
+    const f = TestBed.createComponent(ContactComponent);
+    f.detectChanges();
+    const cards = f.nativeElement.querySelectorAll('.social-card');
+    expect(cards.length).toBe(1);
+    expect((cards[0] as HTMLAnchorElement).getAttribute('aria-label')).toBe('Instagram');
+  });
+
+  it('renders only LinkedIn when Instagram is missing', () => {
+    portfolioSpy.getContent.and.returnValue(of({ 'profile.linkedin': 'https://linkedin.com/in/foo' }));
+    const f = TestBed.createComponent(ContactComponent);
+    f.detectChanges();
+    const cards = f.nativeElement.querySelectorAll('.social-card');
+    expect(cards.length).toBe(1);
+    expect((cards[0] as HTMLAnchorElement).getAttribute('aria-label')).toBe('LinkedIn');
+  });
+
+  it('falls back to "Voir le compte" when the Instagram URL is not parseable', () => {
+    portfolioSpy.getContent.and.returnValue(of({ 'profile.instagram': 'https://example.com/x' }));
+    const f = TestBed.createComponent(ContactComponent);
+    f.detectChanges();
+    expect(f.nativeElement.textContent).toContain('Voir le compte');
   });
 });

@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] directives/reorderable.directive.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { ReorderableDirective } from './reorderable.directive';

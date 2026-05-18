@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] components/contact-form/contact-form.component.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { ContactFormComponent } from './contact-form.component';
 import { PortfolioService } from '../../services/portfolio.service';
@@ -136,5 +137,122 @@ describe('ContactFormComponent', () => {
     fixture.detectChanges();
     expect(c.status()).toBe('error');
     expect(fixture.nativeElement.textContent).toContain('échoué');
+  });
+
+  it('renders inline mode without backdrop or close button', () => {
+    portfolioSpy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['submitContact']);
+    TestBed.configureTestingModule({
+      imports: [ContactFormComponent],
+      providers: [{ provide: PortfolioService, useValue: portfolioSpy }],
+    });
+    const fixture = TestBed.createComponent(ContactFormComponent);
+    fixture.componentRef.setInput('inline', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.backdrop')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.close')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.inline-wrap')).not.toBeNull();
+  });
+
+  it('close() is a no-op when inline', () => {
+    portfolioSpy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['submitContact']);
+    TestBed.configureTestingModule({
+      imports: [ContactFormComponent],
+      providers: [{ provide: PortfolioService, useValue: portfolioSpy }],
+    });
+    const fixture = TestBed.createComponent(ContactFormComponent);
+    fixture.componentRef.setInput('inline', true);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    spyOn(c.closed, 'emit');
+    c.close();
+    expect(c.closed.emit).not.toHaveBeenCalled();
+  });
+
+  it('onBackdropClick is a no-op when inline', () => {
+    portfolioSpy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['submitContact']);
+    TestBed.configureTestingModule({
+      imports: [ContactFormComponent],
+      providers: [{ provide: PortfolioService, useValue: portfolioSpy }],
+    });
+    const fixture = TestBed.createComponent(ContactFormComponent);
+    fixture.componentRef.setInput('inline', true);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    spyOn(c.closed, 'emit');
+    c.onBackdropClick({ target: document.createElement('div') } as unknown as MouseEvent);
+    expect(c.closed.emit).not.toHaveBeenCalled();
+  });
+
+  it('onBackdropClick does not close when target is not the backdrop', () => {
+    const fixture = setup();
+    const c = fixture.componentInstance as any;
+    spyOn(c.closed, 'emit');
+    c.onBackdropClick({ target: document.createElement('span') } as unknown as MouseEvent);
+    expect(c.closed.emit).not.toHaveBeenCalled();
+  });
+
+  it('onEscape closes when not submitting', () => {
+    const fixture = setup();
+    const c = fixture.componentInstance as any;
+    spyOn(c.closed, 'emit');
+    c.onEscape();
+    expect(c.closed.emit).toHaveBeenCalled();
+  });
+
+  it('onEscape is a no-op while submitting', () => {
+    const fixture = setup();
+    const c = fixture.componentInstance as any;
+    c.status.set('submitting');
+    spyOn(c.closed, 'emit');
+    c.onEscape();
+    expect(c.closed.emit).not.toHaveBeenCalled();
+  });
+
+  it('onEscape is a no-op when inline', () => {
+    portfolioSpy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['submitContact']);
+    TestBed.configureTestingModule({
+      imports: [ContactFormComponent],
+      providers: [{ provide: PortfolioService, useValue: portfolioSpy }],
+    });
+    const fixture = TestBed.createComponent(ContactFormComponent);
+    fixture.componentRef.setInput('inline', true);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    spyOn(c.closed, 'emit');
+    c.onEscape();
+    expect(c.closed.emit).not.toHaveBeenCalled();
+  });
+
+  it('resetForm() resets the form fields and the status', () => {
+    const fixture = setup();
+    const c = fixture.componentInstance as any;
+    c.form.name = 'X';
+    c.form.email = 'x@y.fr';
+    c.form.message = 'hello';
+    c.status.set('success');
+    c.resetForm();
+    expect(c.form.name).toBe('');
+    expect(c.form.email).toBe('');
+    expect(c.form.message).toBe('');
+    expect(c.status()).toBe('idle');
+  });
+
+  it('submit() omits furniture context when no inputs are set', () => {
+    portfolioSpy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['submitContact']);
+    portfolioSpy.submitContact.and.returnValue(of({ id: 'c', createdAt: 't', status: 'NEW' } as ContactRequestAck));
+    TestBed.configureTestingModule({
+      imports: [ContactFormComponent],
+      providers: [{ provide: PortfolioService, useValue: portfolioSpy }],
+    });
+    const fixture = TestBed.createComponent(ContactFormComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    c.form.email = 'a@b.fr';
+    c.form.name = 'X';
+    c.form.message = 'hello';
+    c.submit();
+    expect(portfolioSpy.submitContact).toHaveBeenCalledWith(jasmine.objectContaining({
+      furnitureId: '', furnitureSlug: '', furnitureTitle: '',
+    }));
   });
 });

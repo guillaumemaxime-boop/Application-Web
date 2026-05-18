@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] pages/catalog/catalog.component.spec.ts');
 import { TestBed } from '@angular/core/testing';
 import { CatalogComponent } from './catalog.component';
 import { PortfolioService } from '../../services/portfolio.service';
@@ -103,5 +104,25 @@ describe('CatalogComponent', () => {
     fixture.detectChanges();
     expect(buttons[0].classList.contains('active')).toBeFalse();
     expect(buttons[1].classList.contains('active')).toBeTrue();
+  });
+
+  it('groups undated items under year 0 when sorting by year', () => {
+    const undated: Furniture[] = [
+      {
+        id: 'x', title: 'Sans date', slug: 'sans-date', category: 'Divers',
+        material: 'Acier', year: null as unknown as number, coverImage: 'x.jpg',
+        gallery: [], shortDescription: '', description: '', dimensions: [],
+        designer: 'Lumen', featured: false, slides: [],
+      },
+    ];
+    setup(of(undated));
+    const fixture = TestBed.createComponent(CatalogComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    c.setGroupBy('year');
+    fixture.detectChanges();
+    const groups = c.groups();
+    expect(groups.length).toBe(1);
+    expect(groups[0].label).toBe('Sans date');
   });
 });

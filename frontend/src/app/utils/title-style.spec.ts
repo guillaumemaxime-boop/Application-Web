@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] utils/title-style.spec.ts');
 import { titleStyle, roleStyle } from './title-style';
 
 describe('titleStyle', () => {

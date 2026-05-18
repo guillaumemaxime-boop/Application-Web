@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] pages/admin/admin.component.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AdminComponent } from './admin.component';
 import { PortfolioService } from '../../services/portfolio.service';
@@ -753,6 +754,166 @@ describe('AdminComponent', () => {
       const fallback = fixture.nativeElement.querySelector('.umami-fallback');
       expect(iframe).toBeNull();
       expect(fallback).not.toBeNull();
+    });
+  });
+
+  describe('Home tab', () => {
+    beforeEach(() => {
+      portfolioServiceSpy.getAdminFeed = jasmine.createSpy('getAdminFeed').and.returnValue(of([
+        { kind: 'furniture', slug: 'onde-fauteuil-sculpte', position: 0 },
+      ])) as any;
+      portfolioServiceSpy.getAdminCategories = jasmine.createSpy('getAdminCategories').and.returnValue(of([
+        { category: 'Sièges', coverImage: 'cat.jpg', position: 0, visible: true },
+        { category: 'Tables', coverImage: 'tbl.jpg', position: 1, visible: true },
+      ])) as any;
+      portfolioServiceSpy.getAdminExhibitionsMeta = jasmine.createSpy('getAdminExhibitionsMeta').and.returnValue(of([
+        { slug: 'matieres-silencieuses', position: 0, visible: true },
+      ])) as any;
+      portfolioServiceSpy.replaceAdminFeed = jasmine.createSpy('replaceAdminFeed').and.returnValue(of([])) as any;
+      portfolioServiceSpy.updateAdminCategory = jasmine.createSpy('updateAdminCategory').and.returnValue(of({} as any)) as any;
+      portfolioServiceSpy.updateAdminExhibitionMeta = jasmine.createSpy('updateAdminExhibitionMeta').and.returnValue(of({} as any)) as any;
+
+      component['switchTab']('home');
+      fixture.detectChanges();
+    });
+
+    it('loadHomeTab() builds the feed items mixing included furniture and exhibitions', () => {
+      const items = component['homeItems']();
+      expect(items).not.toBeNull();
+      expect(items!.length).toBe(2);
+      expect(items!.some(i => i.included)).toBeTrue();
+    });
+
+    it('onFeedReorder reorders the items and persists the new feed', () => {
+      const initial = component['homeItems']()!;
+      component['onFeedReorder']([1, 0]);
+      const reordered = component['homeItems']()!;
+      expect(reordered[0]).toBe(initial[1]);
+      expect(portfolioServiceSpy.replaceAdminFeed).toHaveBeenCalled();
+    });
+
+    it('onFeedReorder is a no-op when homeItems is null', () => {
+      component['homeItems'].set(null as any);
+      component['onFeedReorder']([0, 1]);
+      expect(portfolioServiceSpy.replaceAdminFeed).not.toHaveBeenCalled();
+    });
+
+    it('toggleIncluded flips the included flag and persists', () => {
+      const item = component['homeItems']()![0];
+      const event = { target: { checked: !item.included } } as unknown as Event;
+      component['toggleIncluded'](item, event);
+      const after = component['homeItems']()!.find(x => x.slug === item.slug)!;
+      expect(after.included).toBe(!item.included);
+      expect(portfolioServiceSpy.replaceAdminFeed).toHaveBeenCalled();
+    });
+
+    it('toggleNavSection updates the corresponding signal and persists content', () => {
+      const event = { target: { checked: false } } as unknown as Event;
+      component['toggleNavSection']('mobilier', event);
+      expect(component['navMobilierVisible']()).toBeFalse();
+      expect(portfolioServiceSpy.updateContent).toHaveBeenCalledWith(jasmine.objectContaining({ 'nav.mobilier.visible': 'false' }));
+
+      component['toggleNavSection']('expositions', { target: { checked: false } } as unknown as Event);
+      expect(component['navExpositionsVisible']()).toBeFalse();
+
+      component['toggleNavSection']('studio', { target: { checked: false } } as unknown as Event);
+      expect(component['navStudioVisible']()).toBeFalse();
+    });
+
+    it('toggleNavSection flashes an error when updateContent fails', () => {
+      portfolioServiceSpy.updateContent.and.returnValue(throwError(() => new Error('fail')));
+      const event = { target: { checked: false } } as unknown as Event;
+      component['toggleNavSection']('mobilier', event);
+      expect(component['message']()).toContain('Impossible');
+    });
+
+    it('onCategoryReorder reorders categories with new positions and persists', () => {
+      const before = component['categoryMeta']()!;
+      component['onCategoryReorder']([1, 0]);
+      const after = component['categoryMeta']()!;
+      expect(after[0].category).toBe(before[1].category);
+      expect(after[0].position).toBe(0);
+      expect(after[1].position).toBe(1);
+      expect(portfolioServiceSpy.updateAdminCategory).toHaveBeenCalled();
+    });
+
+    it('onCategoryReorder is a no-op when categoryMeta is null', () => {
+      component['categoryMeta'].set(null as any);
+      component['onCategoryReorder']([0, 1]);
+      expect(portfolioServiceSpy.updateAdminCategory).not.toHaveBeenCalled();
+    });
+
+    it('toggleCategoryVisibility flips the visibility flag and persists', () => {
+      const cat = component['categoryMeta']()![0];
+      const event = { target: { checked: false } } as unknown as Event;
+      component['toggleCategoryVisibility'](cat, event);
+      const after = component['categoryMeta']()!.find(c => c.category === cat.category)!;
+      expect(after.visible).toBeFalse();
+      expect(portfolioServiceSpy.updateAdminCategory).toHaveBeenCalled();
+    });
+
+    it('onExhibitionMetaReorder reorders exhibitions with new positions and persists', () => {
+      portfolioServiceSpy.getAdminExhibitionsMeta = jasmine.createSpy().and.returnValue(of([
+        { slug: 'a', position: 0, visible: true },
+        { slug: 'b', position: 1, visible: true },
+      ])) as any;
+      (portfolioServiceSpy.getAllExhibitions as jasmine.Spy).and.returnValue(of([
+        { ...mockExhibition, slug: 'a' },
+        { ...mockExhibition, slug: 'b' },
+      ]));
+      component['loadHomeTab']();
+      const before = component['exhibitionsMeta']()!;
+      expect(before.length).toBe(2);
+      component['onExhibitionMetaReorder']([1, 0]);
+      const after = component['exhibitionsMeta']()!;
+      expect(after[0].slug).toBe(before[1].slug);
+      expect(portfolioServiceSpy.updateAdminExhibitionMeta).toHaveBeenCalled();
+    });
+
+    it('onExhibitionMetaReorder is a no-op when exhibitionsMeta is null', () => {
+      component['exhibitionsMeta'].set(null as any);
+      component['onExhibitionMetaReorder']([0]);
+      expect(portfolioServiceSpy.updateAdminExhibitionMeta).not.toHaveBeenCalled();
+    });
+
+    it('toggleExhibitionVisibility flips the visibility and persists', () => {
+      const row = component['exhibitionsMeta']()![0];
+      const event = { target: { checked: false } } as unknown as Event;
+      component['toggleExhibitionVisibility'](row, event);
+      const after = component['exhibitionsMeta']()!.find(r => r.slug === row.slug)!;
+      expect(after.visible).toBeFalse();
+      expect(portfolioServiceSpy.updateAdminExhibitionMeta).toHaveBeenCalled();
+    });
+  });
+
+  describe('Typography tab', () => {
+    beforeEach(() => {
+      component['switchTab']('typography');
+      fixture.detectChanges();
+    });
+
+    it('saveTypo sends a flat typo.* payload and flashes success', () => {
+      component['typoForm'].patchValue({ title_font: 'serif', title_style: 'italic' });
+      component['saveTypo']();
+      expect(portfolioServiceSpy.updateContent).toHaveBeenCalledWith(jasmine.objectContaining({
+        'typo.title.font': 'serif',
+        'typo.title.style': 'italic',
+      }));
+      expect(component['message']()).toContain('Typographie');
+    });
+
+    it('saveTypo flashes an error and clears the savingTypo flag on failure', () => {
+      portfolioServiceSpy.updateContent.and.returnValue(throwError(() => new Error('boom')));
+      component['saveTypo']();
+      expect(component['savingTypo']()).toBeFalse();
+      expect(component['message']()).toContain('Erreur');
+    });
+
+    it('previewStyleFor returns a style map for the given role', () => {
+      component['typoForm'].patchValue({ eyebrow_font: 'sans', eyebrow_style: 'caps' });
+      const style = component['previewStyleFor']('eyebrow');
+      expect(style).toBeDefined();
+      expect(typeof style).toBe('object');
     });
   });
 });

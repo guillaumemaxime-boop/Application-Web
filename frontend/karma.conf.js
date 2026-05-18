@@ -18,7 +18,12 @@ module.exports = function (config) {
         // You can specify jasmine configuration here
         // Example: random: false
       },
-      clearContext: false // Leave Jasmine Spec Runner output visible in browser
+      clearContext: false, // Leave Jasmine Spec Runner output visible in browser
+      captureConsole: true // Forward browser console.log to the Karma server (debug only)
+    },
+    browserConsoleLogOptions: {
+      level: 'log',
+      terminal: true
     },
     jasmineHtmlReporter: {
       suppressAll: true // Removes duplicated traces

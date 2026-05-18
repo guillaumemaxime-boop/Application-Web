@@ -1,3 +1,4 @@
+console.log('[SPEC LOADED] components/header/header.component.spec.ts');
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeaderComponent } from './header.component';
 import { provideRouter } from '@angular/router';
