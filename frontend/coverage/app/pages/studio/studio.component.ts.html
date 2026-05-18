@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>20/20</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>13/13</span>
+                <span class='fraction'>16/16</span>
             </div>
         
             
@@ -252,7 +252,17 @@
 <a name='L187'></a><a href='#L187'>187</a>
 <a name='L188'></a><a href='#L188'>188</a>
 <a name='L189'></a><a href='#L189'>189</a>
-<a name='L190'></a><a href='#L190'>190</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -414,6 +424,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">9x</span>
@@ -442,20 +456,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Component, inject, signal, computed } from '@angular/core';
+import { NgStyle } from '@angular/common';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Profile } from '../../models/profile.model';
 import { SiteContent } from '../../models/site-content.model';
+import { roleStyle } from '../../utils/title-style';
 &nbsp;
 @Component({
   selector: 'app-studio',
   standalone: true,
+  imports: [NgStyle],
   template: `
     &lt;section class="section page-head"&gt;
       &lt;div class="container"&gt;
-        &lt;span class="eyebrow"&gt;Studio&lt;/span&gt;
+        &lt;span class="eyebrow" [ngStyle]="eyebrowStyleVar()"&gt;Studio&lt;/span&gt;
 &nbsp;
         @if (profile(); as p) {
-          &lt;h1 class="fade-in"&gt;{{ p.tagline }}&lt;/h1&gt;
+          &lt;h1 class="fade-in" [ngStyle]="titleStyleVar()"&gt;{{ p.tagline }}&lt;/h1&gt;
           &lt;div class="grid"&gt;
             &lt;div&gt;
               &lt;p class="bio"&gt;{{ p.bio }}&lt;/p&gt;
@@ -495,13 +512,13 @@ import { SiteContent } from '../../models/site-content.model';
 &nbsp;
     &lt;section class="section process"&gt;
       &lt;div class="container"&gt;
-        &lt;span class="eyebrow proc-label"&gt;Processus&lt;/span&gt;
+        &lt;span class="eyebrow proc-label" [ngStyle]="eyebrowStyleVar()"&gt;Processus&lt;/span&gt;
         &lt;div class="proc-list"&gt;
           @for (step of steps(); track step.num) {
             &lt;div class="step"&gt;
               &lt;span class="num"&gt;{{ step.num }}&lt;/span&gt;
               &lt;div&gt;
-                &lt;h3&gt;{{ step.title }}&lt;/h3&gt;
+                &lt;h3 [ngStyle]="subtitleStyleVar()"&gt;{{ step.title }}&lt;/h3&gt;
                 &lt;p&gt;{{ step.desc }}&lt;/p&gt;
               &lt;/div&gt;
             &lt;/div&gt;
@@ -609,11 +626,15 @@ export class StudioComponent {
   protected readonly loading = signal(true);
   protected readonly content = signal&lt;SiteContent&gt;({});
 &nbsp;
+  protected readonly titleStyleVar = computed(() =&gt; roleStyle(this.content(), 'title'));
+  protected readonly subtitleStyleVar = computed(() =&gt; roleStyle(this.content(), 'subtitle'));
+  protected readonly eyebrowStyleVar = computed(() =&gt; roleStyle(this.content(), 'eyebrow'));
+&nbsp;
   protected readonly steps = computed(() =&gt; {
     const c = this.content();
     return [
-      { num: '01', title: c['studio.step1.title'] ?? 'Dessin', desc: c['studio.step1.desc'] ?? '' },
-      { num: '02', title: c['studio.step2.title'] ?? 'Matière', desc: c['studio.step2.desc'] ?? '' },
+      { num: '01', title: c['studio.step1.title'] ?? 'Dessin',    desc: c['studio.step1.desc'] ?? '' },
+      { num: '02', title: c['studio.step2.title'] ?? 'Matière',   desc: c['studio.step2.desc'] ?? '' },
       { num: '03', title: c['studio.step3.title'] ?? 'Façonnage', desc: c['studio.step3.desc'] ?? '' },
       { num: '04', title: c['studio.step4.title'] ?? 'Signature', desc: c['studio.step4.desc'] ?? '' },
     ];
@@ -637,7 +658,7 @@ export class StudioComponent {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-10T19:46:35.172Z
+                at 2026-05-17T20:46:40.805Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

@@ -20,6 +20,7 @@ public record Furniture(
         @Size(max = 10000) String description,
         @Size(max = 20) List<String> dimensions,
         @Size(max = 200) String designer,
-        boolean featured
+        boolean featured,
+        List<Slide> slides
 ) {
 }

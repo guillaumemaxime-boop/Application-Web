@@ -1,3 +1,5 @@
+import { Slide } from './slide.model';
+
 export interface Exhibition {
   id: string;
   title: string;
@@ -14,4 +16,5 @@ export interface Exhibition {
   description: string;
   tags: string[];
   featured: boolean;
+  slides: Slide[];
 }

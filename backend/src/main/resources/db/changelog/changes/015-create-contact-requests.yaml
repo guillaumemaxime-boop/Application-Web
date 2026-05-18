@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: 015-create-contact-requests
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: contact_request
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(300)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone
+                  type: varchar(50)
+              - column:
+                  name: interest
+                  type: varchar(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: message
+                  type: varchar(5000)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: furniture_id
+                  type: varchar(50)
+              - column:
+                  name: furniture_slug
+                  type: varchar(200)
+              - column:
+                  name: furniture_title
+                  type: varchar(500)
+              - column:
+                  name: status
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+                  defaultValue: NEW
+              - column:
+                  name: mail_sent
+                  type: boolean
+                  constraints:
+                    nullable: false
+                  defaultValueBoolean: false
+        - createIndex:
+            indexName: idx_contact_request_created_at
+            tableName: contact_request
+            columns:
+              - column:
+                  name: created_at

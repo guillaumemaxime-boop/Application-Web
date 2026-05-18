@@ -1,19 +1,41 @@
 import { Component, HostListener, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgStyle } from '@angular/common';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { forkJoin } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
 import { SiteContent } from '../../models/site-content.model';
 import { Photo } from '../../models/photo.model';
+import { AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../../models/home.model';
 import { PortfolioService } from '../../services/portfolio.service';
+import { ReorderableDirective } from '../../directives/reorderable.directive';
+import { SlidesEditorComponent } from './slides-editor.component';
+import { TITLE_FONTS, TITLE_STYLES, titleStyle, TypoRole, TYPO_ROLES } from '../../utils/title-style';
 
-type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'analytics';
+interface HomeAdminItem {
+  kind: 'furniture' | 'exhibition';
+  slug: string;
+  title: string;
+  cover: string;
+  included: boolean;
+}
+
+interface ExhibitionMetaRow {
+  slug: string;
+  title: string;
+  cover: string;
+  position: number;
+  visible: boolean;
+}
+
+type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home' | 'typography' | 'analytics';
 type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover' | 'exhibition-gallery';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FormsModule, NgStyle, ReorderableDirective, SlidesEditorComponent],
   template: `
     <section class="section">
       <div class="container">
@@ -48,6 +70,18 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             [attr.aria-selected]="tab() === 'photos'"
             [class.active]="tab() === 'photos'"
             (click)="switchTab('photos')">Médiathèque</button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="tab() === 'home'"
+            [class.active]="tab() === 'home'"
+            (click)="switchTab('home')">Accueil</button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="tab() === 'typography'"
+            [class.active]="tab() === 'typography'"
+            (click)="switchTab('typography')">Typographie</button>
           <button
             type="button"
             role="tab"
@@ -152,6 +186,12 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 <input type="checkbox" formControlName="featured" />
                 <span>Pièce phare (mise en avant sur l'accueil)</span>
               </label>
+
+              @if (editingFurnitureId(); as ownerId) {
+                <app-slides-editor kind="furniture" [ownerId]="ownerId" [ownerSlug]="editingFurnitureSlug()" />
+              } @else {
+                <p class="slides-hint">Enregistre la pièce une première fois pour pouvoir éditer ses slides.</p>
+              }
 
               <div class="actions">
                 <button type="submit" class="btn-primary" [disabled]="furnitureForm.invalid || saving()">
@@ -267,6 +307,12 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 <input type="checkbox" formControlName="featured" />
                 <span>Exposition phare</span>
               </label>
+
+              @if (editingExhibitionId(); as ownerId) {
+                <app-slides-editor kind="exhibition" [ownerId]="ownerId" [ownerSlug]="editingExhibitionSlug()" />
+              } @else {
+                <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir éditer ses slides.</p>
+              }
 
               <div class="actions">
                 <button type="submit" class="btn-primary" [disabled]="exhibitionForm.invalid || saving()">
@@ -394,6 +440,16 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                       <input type="tel" formControlName="profile_phone" />
                     </label>
                   </div>
+                  <div class="row-2">
+                    <label>
+                      <span>Instagram (URL)</span>
+                      <input type="url" formControlName="profile_instagram" placeholder="https://instagram.com/votre-handle" />
+                    </label>
+                    <label>
+                      <span>LinkedIn (URL)</span>
+                      <input type="url" formControlName="profile_linkedin" placeholder="https://www.linkedin.com/in/votre-profil" />
+                    </label>
+                  </div>
                   <label>
                     <span>Distinctions (une par ligne)</span>
                     <textarea rows="4" formControlName="profile_awards"></textarea>
@@ -463,6 +519,142 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 }
               </div>
             }
+          </div>
+        }
+
+        @if (tab() === 'home') {
+          <div class="home-editor">
+            <h2>Sections visibles dans le menu</h2>
+            <p class="hint">Active ou désactive l'apparition de chaque section dans l'en-tête et le pied de page. Les pages restent accessibles via leur URL si elles existent.</p>
+            <ul class="nav-vis-list">
+              <li class="home-row">
+                <span class="kind-badge">MENU</span>
+                <span class="title">Mobilier</span>
+                <label class="incl">
+                  <input type="checkbox" [checked]="navMobilierVisible()" (change)="toggleNavSection('mobilier', $event)" /> Visible
+                </label>
+              </li>
+              <li class="home-row">
+                <span class="kind-badge">MENU</span>
+                <span class="title">Expositions</span>
+                <label class="incl">
+                  <input type="checkbox" [checked]="navExpositionsVisible()" (change)="toggleNavSection('expositions', $event)" /> Visible
+                </label>
+              </li>
+              <li class="home-row">
+                <span class="kind-badge">MENU</span>
+                <span class="title">Studio</span>
+                <label class="incl">
+                  <input type="checkbox" [checked]="navStudioVisible()" (change)="toggleNavSection('studio', $event)" /> Visible
+                </label>
+              </li>
+            </ul>
+
+            <h2 style="margin-top: 48px">Ordre éditorial du masonry</h2>
+            <p class="hint">Glisse pour réordonner. Décoche pour exclure du feed. Les modifications sont enregistrées automatiquement.</p>
+            @if (homeItems(); as items) {
+              <ul class="ordering-list" appReorderable (reordered)="onFeedReorder($event)">
+                @for (entry of items; track entry.kind + ':' + entry.slug) {
+                  <li class="home-row">
+                    <span class="handle">⠿</span>
+                    <span class="kind-badge">{{ entry.kind === 'furniture' ? 'MOBILIER' : 'EXPO' }}</span>
+                    <img [src]="entry.cover" [alt]="entry.title" class="thumb" />
+                    <span class="title">{{ entry.title }}</span>
+                    <label class="incl">
+                      <input type="checkbox" [checked]="entry.included" (change)="toggleIncluded(entry, $event)" /> Inclure
+                    </label>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="status">Chargement…</p>
+            }
+
+            <h2 style="margin-top: 48px">Catégories de mobilier</h2>
+            @if (categoryMeta(); as cats) {
+              <ul class="cat-list" appReorderable (reordered)="onCategoryReorder($event)">
+                @for (c of cats; track c.category) {
+                  <li class="home-row">
+                    <span class="handle">⠿</span>
+                    <img [src]="c.coverImage" [alt]="c.category" class="thumb-round" />
+                    <span class="title">{{ c.category }}</span>
+                    <label class="incl">
+                      <input type="checkbox" [checked]="c.visible" (change)="toggleCategoryVisibility(c, $event)" /> Visible
+                    </label>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="status">Chargement…</p>
+            }
+
+            <h2 style="margin-top: 48px">Bandeau des expositions</h2>
+            <p class="hint">Glisse pour réordonner. Décoche pour masquer une exposition du bandeau (la fiche reste accessible via son URL).</p>
+            @if (exhibitionsMeta(); as rows) {
+              <ul class="exh-list" appReorderable (reordered)="onExhibitionMetaReorder($event)">
+                @for (r of rows; track r.slug) {
+                  <li class="home-row">
+                    <span class="handle">⠿</span>
+                    <img [src]="r.cover" [alt]="r.title" class="thumb-round" />
+                    <span class="title">{{ r.title }}</span>
+                    <label class="incl">
+                      <input type="checkbox" [checked]="r.visible" (change)="toggleExhibitionVisibility(r, $event)" /> Visible
+                    </label>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="status">Chargement…</p>
+            }
+          </div>
+        }
+
+        @if (tab() === 'typography') {
+          <div class="typo-editor">
+            <p class="hint">Choisis une police et un style pour chaque rôle typographique. Les changements s'appliquent automatiquement à toutes les zones du site qui partagent ce rôle.</p>
+            <form [formGroup]="typoForm" (ngSubmit)="saveTypo()">
+              <div class="typo-grid">
+                @for (role of typoRoles; track role.value) {
+                  <article class="typo-card">
+                    <header>
+                      <h3>{{ role.label }}</h3>
+                      <span class="role-key">typo.{{ role.value }}</span>
+                    </header>
+
+                    <div class="typo-controls">
+                      <label>
+                        <span>Police</span>
+                        <select [formControlName]="role.value + '_font'">
+                          <option value="">— par défaut —</option>
+                          @for (f of titleFonts; track f.value) {
+                            <option [value]="f.value">{{ f.label }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label>
+                        <span>Style</span>
+                        <select [formControlName]="role.value + '_style'">
+                          <option value="">— par défaut —</option>
+                          @for (s of titleStyles; track s.value) {
+                            <option [value]="s.value">{{ s.label }}</option>
+                          }
+                        </select>
+                      </label>
+                    </div>
+
+                    <div class="typo-preview" [class.eyebrow-preview]="role.value === 'eyebrow'" [ngStyle]="previewStyleFor(role.value)">
+                      {{ role.preview }}
+                    </div>
+                  </article>
+                }
+              </div>
+
+              <div class="texts-actions">
+                <button type="submit" class="btn-primary" [disabled]="savingTypo()">
+                  {{ savingTypo() ? 'Enregistrement…' : 'Enregistrer la typographie' }}
+                </button>
+              </div>
+            </form>
           </div>
         }
 
@@ -1046,6 +1238,84 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
       .btn-pick { align-self: flex-start; }
       .photos-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
     }
+
+    /* Onglet Accueil (ordre éditorial + catégories) */
+    .home-editor h2 { margin: 32px 0 8px; font-family: var(--serif); font-weight: 400; font-size: 1.5rem; }
+    .home-editor .hint { font-size: 0.85rem; color: var(--color-mute); margin-bottom: 16px; }
+    .ordering-list, .cat-list, .nav-vis-list { list-style: none; padding: 0; margin: 0; }
+
+    .typo-editor { max-width: 920px; }
+    .typo-editor .hint { margin: 0 0 32px; color: var(--color-ink-soft); font-size: 0.92rem; }
+    .typo-grid { display: flex; flex-direction: column; gap: 20px; margin-bottom: 32px; }
+    .typo-card {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      align-items: center;
+      padding: 24px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
+    }
+    .typo-card header { display: flex; flex-direction: column; gap: 6px; }
+    .typo-card header h3 { font-family: var(--serif); font-weight: 400; font-size: 1.3rem; line-height: 1.2; margin: 0; color: var(--color-ink); }
+    .typo-card .role-key {
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    .typo-controls {
+      grid-column: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .typo-controls label { display: flex; flex-direction: column; gap: 6px; }
+    .typo-controls label > span {
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    .typo-controls select {
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
+      color: var(--color-ink);
+    }
+    .typo-preview {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      padding: 24px;
+      background: var(--color-bg-alt);
+      border-left: 2px solid var(--color-ink);
+      font-size: 1.6rem;
+      line-height: 1.25;
+      color: var(--color-ink);
+    }
+    .typo-preview.eyebrow-preview {
+      font-size: 0.78rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+    }
+    @media (max-width: 720px) {
+      .typo-card { grid-template-columns: 1fr; }
+      .typo-controls { grid-column: 1; }
+      .typo-preview { grid-column: 1; grid-row: auto; }
+    }
+    .home-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 6px; border: 1px solid var(--color-line); background: var(--color-bg); cursor: grab; }
+    .home-row .handle { color: var(--color-mute); font-size: 1.1rem; cursor: grab; user-select: none; }
+    .home-row .kind-badge { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-mute); min-width: 64px; }
+    .home-row .thumb { width: 40px; height: 40px; object-fit: cover; flex-shrink: 0; }
+    .home-row .thumb-round { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; flex-shrink: 0; }
+    .home-row .title { flex: 1; font-size: 0.9rem; color: var(--color-ink); }
+    .home-row .incl { font-size: 0.78rem; color: var(--color-ink-soft); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+
+    /* Hint sous le formulaire pièce/expo quand pas encore enregistré */
+    .slides-hint { margin-top: 24px; padding: 12px 16px; background: var(--color-bg-alt); border-left: 3px solid var(--color-mute); font-size: 0.85rem; color: var(--color-ink-soft); font-style: italic; }
   `]
 })
 export class AdminComponent {
@@ -1062,8 +1332,11 @@ export class AdminComponent {
   protected readonly loadingTexts = signal(true);
   protected readonly loadingPhotos = signal(false);
   protected readonly editingFurnitureSlug = signal<string | null>(null);
+  protected readonly editingFurnitureId = signal<string | null>(null);
   protected readonly editingExhibitionSlug = signal<string | null>(null);
+  protected readonly editingExhibitionId = signal<string | null>(null);
   protected readonly saving = signal(false);
+  protected readonly savingTypo = signal(false);
   protected readonly uploading = signal(false);
   protected readonly message = signal<string | null>(null);
   protected readonly messageType = signal<'success' | 'error'>('success');
@@ -1128,6 +1401,25 @@ export class AdminComponent {
     profile_location: [''],
     profile_awards: [''],
     profile_press: [''],
+    profile_instagram: [''],
+    profile_linkedin: [''],
+  });
+
+  protected readonly titleFonts = TITLE_FONTS;
+  protected readonly titleStyles = TITLE_STYLES;
+  protected readonly typoRoles = TYPO_ROLES;
+
+  protected readonly typoForm = this.fb.group({
+    'title_font': [''],
+    'title_style': [''],
+    'section-title_font': [''],
+    'section-title_style': [''],
+    'subtitle_font': [''],
+    'subtitle_style': [''],
+    'card-title_font': [''],
+    'card-title_style': [''],
+    'eyebrow_font': [''],
+    'eyebrow_style': [''],
   });
 
   constructor() {
@@ -1140,6 +1432,142 @@ export class AdminComponent {
   switchTab(tab: Tab) {
     this.tab.set(tab);
     this.message.set(null);
+    if (tab === 'home') this.loadHomeTab();
+  }
+
+  protected readonly homeItems = signal<HomeAdminItem[] | null>(null);
+  protected readonly categoryMeta = signal<AdminCategoryView[] | null>(null);
+  protected readonly exhibitionsMeta = signal<ExhibitionMetaRow[] | null>(null);
+
+  protected readonly navMobilierVisible = signal(true);
+  protected readonly navExpositionsVisible = signal(true);
+  protected readonly navStudioVisible = signal(true);
+
+  loadHomeTab() {
+    forkJoin([
+      this.portfolio.getAllFurniture(),
+      this.portfolio.getAllExhibitions(),
+      this.portfolio.getAdminFeed(),
+    ]).subscribe(([furniture, expos, feed]) => {
+      const included = new Set(feed.map(f => `${f.kind}:${f.slug}`));
+      const items: HomeAdminItem[] = [];
+      for (const f of feed) {
+        const fur = furniture.find(x => x.slug === f.slug && f.kind === 'furniture');
+        if (fur) items.push({ kind: 'furniture', slug: fur.slug, title: fur.title, cover: fur.coverImage, included: true });
+        const exh = expos.find(x => x.slug === f.slug && f.kind === 'exhibition');
+        if (exh) items.push({ kind: 'exhibition', slug: exh.slug, title: exh.title, cover: exh.coverImage, included: true });
+      }
+      for (const fur of furniture) {
+        if (!included.has(`furniture:${fur.slug}`)) {
+          items.push({ kind: 'furniture', slug: fur.slug, title: fur.title, cover: fur.coverImage, included: false });
+        }
+      }
+      for (const exh of expos) {
+        if (!included.has(`exhibition:${exh.slug}`)) {
+          items.push({ kind: 'exhibition', slug: exh.slug, title: exh.title, cover: exh.coverImage, included: false });
+        }
+      }
+      this.homeItems.set(items);
+    });
+
+    this.portfolio.getAdminCategories().subscribe(c => this.categoryMeta.set(c));
+
+    forkJoin([
+      this.portfolio.getAllExhibitions(),
+      this.portfolio.getAdminExhibitionsMeta(),
+    ]).subscribe(([expos, metas]) => {
+      const byMeta = new Map(metas.map(m => [m.slug, m]));
+      const rows: ExhibitionMetaRow[] = expos
+        .map(e => {
+          const m = byMeta.get(e.slug);
+          if (!m) return null;
+          return { slug: e.slug, title: e.title, cover: e.coverImage, position: m.position, visible: m.visible };
+        })
+        .filter((r): r is ExhibitionMetaRow => r !== null)
+        .sort((a, b) => a.position - b.position);
+      this.exhibitionsMeta.set(rows);
+    });
+  }
+
+  onFeedReorder(order: number[]) {
+    const current = this.homeItems();
+    if (!current) return;
+    this.homeItems.set(order.map(i => current[i]));
+    this.persistFeed();
+  }
+
+  toggleIncluded(item: HomeAdminItem, event: Event) {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.homeItems.update(items => items?.map(x => x === item ? { ...x, included: checked } : x) ?? null);
+    this.persistFeed();
+  }
+
+  private persistFeed() {
+    const items = this.homeItems() ?? [];
+    const entries: AdminFeedEntry[] = items.filter(i => i.included).map(i => ({ kind: i.kind, slug: i.slug }));
+    this.portfolio.replaceAdminFeed(entries).subscribe({
+      next: () => this.flash('Ordre enregistré.', 'success'),
+      error: () => this.flash('Impossible d\'enregistrer l\'ordre.', 'error'),
+    });
+  }
+
+  onCategoryReorder(order: number[]) {
+    const current = this.categoryMeta();
+    if (!current) return;
+    this.categoryMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
+    this.persistCategories();
+  }
+
+  toggleNavSection(section: 'mobilier' | 'expositions' | 'studio', event: Event) {
+    const visible = (event.target as HTMLInputElement).checked;
+    if (section === 'mobilier') this.navMobilierVisible.set(visible);
+    else if (section === 'expositions') this.navExpositionsVisible.set(visible);
+    else this.navStudioVisible.set(visible);
+    this.portfolio.updateContent({ [`nav.${section}.visible`]: visible ? 'true' : 'false' }).subscribe({
+      next: () => this.flash('Visibilité de la section enregistrée.', 'success'),
+      error: () => this.flash('Impossible d\'enregistrer la visibilité.', 'error'),
+    });
+  }
+
+  toggleCategoryVisibility(c: AdminCategoryView, event: Event) {
+    const visible = (event.target as HTMLInputElement).checked;
+    this.categoryMeta.update(cats => cats?.map(x => x.category === c.category ? { ...x, visible } : x) ?? null);
+    this.persistCategories();
+  }
+
+  private persistCategories() {
+    const cats = this.categoryMeta() ?? [];
+    const requests = cats.map(c => this.portfolio.updateAdminCategory(c.category, c));
+    if (requests.length === 0) return;
+    forkJoin(requests).subscribe({
+      next: () => this.flash('Catégories enregistrées.', 'success'),
+      error: () => this.flash('Impossible d\'enregistrer les catégories.', 'error'),
+    });
+  }
+
+  onExhibitionMetaReorder(order: number[]) {
+    const current = this.exhibitionsMeta();
+    if (!current) return;
+    this.exhibitionsMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
+    this.persistExhibitionsMeta();
+  }
+
+  toggleExhibitionVisibility(row: ExhibitionMetaRow, event: Event) {
+    const visible = (event.target as HTMLInputElement).checked;
+    this.exhibitionsMeta.update(rows => rows?.map(x => x.slug === row.slug ? { ...x, visible } : x) ?? null);
+    this.persistExhibitionsMeta();
+  }
+
+  private persistExhibitionsMeta() {
+    const rows = this.exhibitionsMeta() ?? [];
+    const requests = rows.map(r => this.portfolio.updateAdminExhibitionMeta(r.slug, {
+      slug: r.slug, position: r.position, visible: r.visible,
+    }));
+    if (requests.length === 0) return;
+    forkJoin(requests).subscribe({
+      next: () => this.flash('Expositions enregistrées.', 'success'),
+      error: () => this.flash('Impossible d\'enregistrer les expositions.', 'error'),
+    });
   }
 
   private refreshFurniture() {
@@ -1189,7 +1617,13 @@ export class AdminComponent {
           profile_location: content['profile.location'] ?? '',
           profile_awards: content['profile.awards'] ?? '',
           profile_press: content['profile.press'] ?? '',
+          profile_instagram: content['profile.instagram'] ?? '',
+          profile_linkedin: content['profile.linkedin'] ?? '',
         });
+        this.hydrateTypoRoles(content);
+        this.navMobilierVisible.set(content['nav.mobilier.visible'] !== 'false');
+        this.navExpositionsVisible.set(content['nav.expositions.visible'] !== 'false');
+        this.navStudioVisible.set(content['nav.studio.visible'] !== 'false');
       },
       error: () => { this.loadingTexts.set(false); this.flash('Impossible de charger les textes.', 'error'); }
     });
@@ -1231,6 +1665,8 @@ export class AdminComponent {
       'profile.location': v.profile_location ?? '',
       'profile.awards': v.profile_awards ?? '',
       'profile.press': v.profile_press ?? '',
+      'profile.instagram': v.profile_instagram ?? '',
+      'profile.linkedin': v.profile_linkedin ?? '',
     };
 
     this.saving.set(true);
@@ -1246,8 +1682,60 @@ export class AdminComponent {
     });
   }
 
+  private hydrateTypoRoles(content: SiteContent) {
+    this.typoForm.reset({
+      'title_font': content['typo.title.font'] ?? '',
+      'title_style': content['typo.title.style'] ?? '',
+      'section-title_font': content['typo.section-title.font'] ?? '',
+      'section-title_style': content['typo.section-title.style'] ?? '',
+      'subtitle_font': content['typo.subtitle.font'] ?? '',
+      'subtitle_style': content['typo.subtitle.style'] ?? '',
+      'card-title_font': content['typo.card-title.font'] ?? '',
+      'card-title_style': content['typo.card-title.style'] ?? '',
+      'eyebrow_font': content['typo.eyebrow.font'] ?? '',
+      'eyebrow_style': content['typo.eyebrow.style'] ?? '',
+    });
+  }
+
+  protected previewStyleFor(role: TypoRole): { [prop: string]: string } {
+    const v = this.typoForm.getRawValue();
+    const synthetic: SiteContent = {
+      [`typo.${role}.font`]: (v[`${role}_font` as keyof typeof v] as string) ?? '',
+      [`typo.${role}.style`]: (v[`${role}_style` as keyof typeof v] as string) ?? '',
+    };
+    return titleStyle(synthetic, `typo.${role}`);
+  }
+
+  saveTypo() {
+    const v = this.typoForm.getRawValue();
+    const payload: SiteContent = {
+      'typo.title.font': v['title_font'] ?? '',
+      'typo.title.style': v['title_style'] ?? '',
+      'typo.section-title.font': v['section-title_font'] ?? '',
+      'typo.section-title.style': v['section-title_style'] ?? '',
+      'typo.subtitle.font': v['subtitle_font'] ?? '',
+      'typo.subtitle.style': v['subtitle_style'] ?? '',
+      'typo.card-title.font': v['card-title_font'] ?? '',
+      'typo.card-title.style': v['card-title_style'] ?? '',
+      'typo.eyebrow.font': v['eyebrow_font'] ?? '',
+      'typo.eyebrow.style': v['eyebrow_style'] ?? '',
+    };
+    this.savingTypo.set(true);
+    this.portfolio.updateContent(payload).subscribe({
+      next: () => {
+        this.savingTypo.set(false);
+        this.flash('Typographie enregistrée.', 'success');
+      },
+      error: () => {
+        this.savingTypo.set(false);
+        this.flash('Erreur lors de l\'enregistrement de la typographie.', 'error');
+      }
+    });
+  }
+
   newFurniture() {
     this.editingFurnitureSlug.set(null);
+    this.editingFurnitureId.set(null);
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
       material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
@@ -1258,6 +1746,7 @@ export class AdminComponent {
 
   loadFurniture(item: Furniture) {
     this.editingFurnitureSlug.set(item.slug);
+    this.editingFurnitureId.set(item.id ?? null);
     this.furnitureForm.reset({
       title: item.title,
       slug: item.slug,
@@ -1326,6 +1815,7 @@ export class AdminComponent {
 
   newExhibition() {
     this.editingExhibitionSlug.set(null);
+    this.editingExhibitionId.set(null);
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
@@ -1336,6 +1826,7 @@ export class AdminComponent {
 
   loadExhibition(item: Exhibition) {
     this.editingExhibitionSlug.set(item.slug);
+    this.editingExhibitionId.set(item.id ?? null);
     this.exhibitionForm.reset({
       title: item.title,
       slug: item.slug,

@@ -34,9 +34,12 @@ jobs:
         working-directory: frontend
         run: npm ci || npm install
 
-      - name: Run unit tests (Karma + ChromeHeadless)
+      - name: Run unit tests (Karma + ChromeHeadlessNoSandbox)
         working-directory: frontend
-        run: npx ng test --watch=false --browsers=ChromeHeadless --code-coverage
+        # ChromeHeadlessNoSandbox = ChromeHeadless + --no-sandbox --disable-gpu --disable-dev-shm-usage
+        # Le flag --disable-dev-shm-usage est requis : /dev/shm du runner GitHub Actions est limite
+        # (~64 Mio), et le bundle de tests sature alors silencieusement (specs non charges).
+        run: npx ng test --watch=false --browsers=ChromeHeadlessNoSandbox --code-coverage
 
       - name: Upload coverage report
         if: always()

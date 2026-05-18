@@ -1,3 +1,5 @@
+import { Slide } from './slide.model';
+
 export interface Furniture {
   id: string;
   title: string;
@@ -12,4 +14,5 @@ export interface Furniture {
   dimensions: string[];
   designer: string;
   featured: boolean;
+  slides: Slide[];
 }

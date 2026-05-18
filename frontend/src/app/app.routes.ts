@@ -9,7 +9,7 @@ export const routes: Routes = [
   },
   {
     path: 'mobilier',
-    loadComponent: () => import('./pages/furniture-list/furniture-list.component').then(m => m.FurnitureListComponent),
+    loadComponent: () => import('./pages/catalog/catalog.component').then(m => m.CatalogComponent),
     title: 'Mobilier — Milo GUILLAUME Design',
   },
   {
@@ -18,7 +18,7 @@ export const routes: Routes = [
   },
   {
     path: 'expositions',
-    loadComponent: () => import('./pages/exhibitions-list/exhibitions-list.component').then(m => m.ExhibitionsListComponent),
+    loadComponent: () => import('./pages/expositions-list/expositions-list.component').then(m => m.ExpositionsListComponent),
     title: 'Expositions — Milo GUILLAUME Design',
   },
   {
@@ -29,6 +29,11 @@ export const routes: Routes = [
     path: 'studio',
     loadComponent: () => import('./pages/studio/studio.component').then(m => m.StudioComponent),
     title: 'Studio — Milo GUILLAUME Design',
+  },
+  {
+    path: 'contact',
+    loadComponent: () => import('./pages/contact/contact.component').then(m => m.ContactComponent),
+    title: 'Contact — Milo GUILLAUME Design',
   },
   {
     path: 'login',

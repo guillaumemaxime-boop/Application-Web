@@ -6,6 +6,7 @@ import { Furniture } from '../models/furniture.model';
 import { Exhibition } from '../models/exhibition.model';
 import { Profile } from '../models/profile.model';
 import { Photo } from '../models/photo.model';
+import { HomePageData } from '../models/home.model';
 
 describe('PortfolioService', () => {
   let service: PortfolioService;
@@ -48,6 +49,7 @@ describe('PortfolioService', () => {
         dimensions: ['Hauteur 92 cm'],
         designer: 'Milo GUILLAUME Design',
         featured: true,
+        slides: [],
       },
     ];
 
@@ -162,6 +164,7 @@ describe('PortfolioService', () => {
         description: 'Description détaillée',
         tags: ['Mobilier', 'Sculpture'],
         featured: true,
+        slides: [],
       },
     ];
 
@@ -398,6 +401,26 @@ describe('PortfolioService', () => {
 
       const req = httpMock.expectOne('/api/exhibitions');
       req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+    });
+  });
+
+  describe('Home API', () => {
+    it('should fetch home data', () => {
+      const mock: HomePageData = { categories: [], exhibitions: [], feed: [] };
+
+      service.getHome().subscribe(data => expect(data).toEqual(mock as any));
+
+      const req = httpMock.expectOne('/api/home');
+      expect(req.request.method).toBe('GET');
+      req.flush(mock);
+    });
+
+    it('should replace slides via PUT', () => {
+      service.replaceSlides('furniture', 'f-001', []).subscribe();
+
+      const req = httpMock.expectOne('/api/admin/slides/furniture/f-001');
+      expect(req.request.method).toBe('PUT');
+      req.flush([]);
     });
   });
 });

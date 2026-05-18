@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-create-category-meta
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: furniture_category_meta
+            columns:
+              - column:
+                  name: category
+                  type: varchar(100)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: cover_image
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: visible
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false

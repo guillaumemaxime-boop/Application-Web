@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>17/17</span>
+                <span class='fraction'>24/24</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>16/16</span>
+                <span class='fraction'>20/20</span>
             </div>
         
             
@@ -250,7 +250,18 @@
 <a name='L185'></a><a href='#L185'>185</a>
 <a name='L186'></a><a href='#L186'>186</a>
 <a name='L187'></a><a href='#L187'>187</a>
-<a name='L188'></a><a href='#L188'>188</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -417,6 +428,10 @@
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
@@ -428,6 +443,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -437,15 +453,18 @@
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Component, inject, signal } from '@angular/core';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Component, computed, inject, signal } from '@angular/core';
+import { NgStyle } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Exhibition } from '../../models/exhibition.model';
+import { SiteContent } from '../../models/site-content.model';
+import { roleStyle } from '../../utils/title-style';
 &nbsp;
 @Component({
   selector: 'app-exhibition-detail',
   standalone: true,
-  imports: [RouterLink],
+  imports: [NgStyle, RouterLink],
   template: `
     @if (loading()) {
       &lt;div class="container section"&gt;&lt;p class="status"&gt;Chargement…&lt;/p&gt;&lt;/div&gt;
@@ -462,15 +481,15 @@ import { Exhibition } from '../../models/exhibition.model';
           &lt;/div&gt;
           &lt;div class="container hero-content"&gt;
             &lt;a class="back" routerLink="/expositions"&gt;← Retour aux expositions&lt;/a&gt;
-            &lt;span class="eyebrow"&gt;{{ e.venue }} · {{ e.city }}, {{ e.country }}&lt;/span&gt;
-            &lt;h1&gt;{{ e.title }}&lt;/h1&gt;
+            &lt;span class="eyebrow" [ngStyle]="eyebrowStyle()"&gt;{{ e.venue }} · {{ e.city }}, {{ e.country }}&lt;/span&gt;
+            &lt;h1 [ngStyle]="titleStyle()"&gt;{{ e.title }}&lt;/h1&gt;
             &lt;p class="dates"&gt;{{ formatRange(e.startDate, e.endDate) }}&lt;/p&gt;
           &lt;/div&gt;
         &lt;/header&gt;
 &nbsp;
         &lt;section class="section intro"&gt;
           &lt;div class="container narrow"&gt;
-            &lt;span class="eyebrow"&gt;Commissariat — {{ e.curator }}&lt;/span&gt;
+            &lt;span class="eyebrow" [ngStyle]="eyebrowStyle()"&gt;Commissariat — {{ e.curator }}&lt;/span&gt;
             &lt;p class="lead"&gt;{{ e.shortDescription }}&lt;/p&gt;
             &lt;p class="body"&gt;{{ e.description }}&lt;/p&gt;
 &nbsp;
@@ -604,6 +623,10 @@ export class ExhibitionDetailComponent {
   protected readonly item = signal&lt;Exhibition | null&gt;(null);
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
+  protected readonly content = signal&lt;SiteContent&gt;({});
+&nbsp;
+  protected readonly titleStyle   = computed(() =&gt; roleStyle(this.content(), 'title'));
+  protected readonly eyebrowStyle = computed(() =&gt; roleStyle(this.content(), 'eyebrow'));
 &nbsp;
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
@@ -615,6 +638,7 @@ export class ExhibitionDetailComponent {
       },
       error: () =&gt; { this.notFound.set(true); this.loading.set(false); }
     });
+    this.portfolio.getContent().subscribe(c =&gt; this.content.set(c));
   }
 &nbsp;
   protected formatRange(start: string, end: string): string {
@@ -631,7 +655,7 @@ export class ExhibitionDetailComponent {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-10T19:46:35.172Z
+                at 2026-05-17T20:46:40.805Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

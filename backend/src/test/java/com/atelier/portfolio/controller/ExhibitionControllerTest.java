@@ -46,7 +46,8 @@ class ExhibitionControllerTest {
                 "Une exploration du silence comme matière première",
                 "Description détaillée",
                 List.of("Mobilier", "Sculpture"),
-                true
+                true,
+                List.of()
         );
 
         sampleExhibitionList = List.of(sampleExhibition);
@@ -217,7 +218,8 @@ class ExhibitionControllerTest {
                 "L'atelier reconstitué au cœur de la foire",
                 "Description",
                 List.of(),
-                true
+                true,
+                List.of()
         );
         when(exhibitionService.findBySlug(slug)).thenReturn(Optional.of(specialExhibition));
 

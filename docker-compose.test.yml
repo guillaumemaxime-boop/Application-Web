@@ -1,0 +1,36 @@
+services:
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.test
+    image: atelier-lumen/backend-test:1.0.0
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: portfolio
+      PGUSER: portfolio
+      PGPASSWORD: portfolio
+      JWT_SECRET: "test-secret-key-only-for-tests"
+      ADMIN_USERNAME: "admin"
+      ADMIN_PASSWORD_HASH: "$$2b$$10$$ylcY5PaYQeX8u3/tuDdSi.awSBx1KQ8ztLAyRTO6lOnqxPFzZUHZm"
+    volumes:
+      - ./backend/src:/workspace/src
+      - ./backend/pom.xml:/workspace/pom.xml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - atelier-net
+
+  frontend-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    image: atelier-lumen/frontend-test:1.0.0
+    volumes:
+      - ./frontend/src:/workspace/src
+      - ./frontend/karma.conf.js:/workspace/karma.conf.js
+      - ./frontend/angular.json:/workspace/angular.json
+      - ./frontend/tsconfig.json:/workspace/tsconfig.json
+      - ./frontend/tsconfig.app.json:/workspace/tsconfig.app.json
+      - ./frontend/tsconfig.spec.json:/workspace/tsconfig.spec.json

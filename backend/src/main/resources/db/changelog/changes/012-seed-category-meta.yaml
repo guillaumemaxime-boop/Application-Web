@@ -1,0 +1,80 @@
+databaseChangeLog:
+  - changeSet:
+      id: 012-seed-category-meta
+      author: atelier-lumen
+      changes:
+        - insert:
+            tableName: furniture_category_meta
+            columns:
+              - column:
+                  name: category
+                  value: "Sièges"
+              - column:
+                  name: cover_image
+                  value: "https://picsum.photos/seed/cat-sieges/200/200"
+              - column:
+                  name: position
+                  valueNumeric: 0
+              - column:
+                  name: visible
+                  valueBoolean: true
+        - insert:
+            tableName: furniture_category_meta
+            columns:
+              - column:
+                  name: category
+                  value: "Tables"
+              - column:
+                  name: cover_image
+                  value: "https://picsum.photos/seed/cat-tables/200/200"
+              - column:
+                  name: position
+                  valueNumeric: 1
+              - column:
+                  name: visible
+                  valueBoolean: true
+        - insert:
+            tableName: furniture_category_meta
+            columns:
+              - column:
+                  name: category
+                  value: "Rangements"
+              - column:
+                  name: cover_image
+                  value: "https://picsum.photos/seed/cat-rangements/200/200"
+              - column:
+                  name: position
+                  valueNumeric: 2
+              - column:
+                  name: visible
+                  valueBoolean: true
+        - insert:
+            tableName: furniture_category_meta
+            columns:
+              - column:
+                  name: category
+                  value: "Luminaires"
+              - column:
+                  name: cover_image
+                  value: "https://picsum.photos/seed/cat-luminaires/200/200"
+              - column:
+                  name: position
+                  valueNumeric: 3
+              - column:
+                  name: visible
+                  valueBoolean: true
+        - insert:
+            tableName: furniture_category_meta
+            columns:
+              - column:
+                  name: category
+                  value: "Cloisons"
+              - column:
+                  name: cover_image
+                  value: "https://picsum.photos/seed/cat-cloisons/200/200"
+              - column:
+                  name: position
+                  valueNumeric: 4
+              - column:
+                  name: visible
+                  valueBoolean: true

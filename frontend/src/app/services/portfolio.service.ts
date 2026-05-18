@@ -6,6 +6,9 @@ import { Exhibition } from '../models/exhibition.model';
 import { Profile } from '../models/profile.model';
 import { SiteContent } from '../models/site-content.model';
 import { Photo } from '../models/photo.model';
+import { HomePageData, AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../models/home.model';
+import { Slide } from '../models/slide.model';
+import { ContactRequestInput, ContactRequestAck } from '../models/contact.model';
 
 const API = '/api';
 
@@ -89,5 +92,45 @@ export class PortfolioService {
 
   deletePhoto(id: string): Observable<void> {
     return this.http.delete<void>(`${API}/photos/${id}`);
+  }
+
+  getHome(): Observable<HomePageData> {
+    return this.http.get<HomePageData>(`${API}/home`);
+  }
+
+  getSlides(kind: 'furniture' | 'exhibition', ownerId: string): Observable<Slide[]> {
+    return this.http.get<Slide[]>(`${API}/admin/slides/${kind}/${ownerId}`);
+  }
+
+  replaceSlides(kind: 'furniture' | 'exhibition', ownerId: string, slides: Slide[]): Observable<Slide[]> {
+    return this.http.put<Slide[]>(`${API}/admin/slides/${kind}/${ownerId}`, slides);
+  }
+
+  getAdminFeed(): Observable<AdminFeedEntry[]> {
+    return this.http.get<AdminFeedEntry[]>(`${API}/admin/home/feed`);
+  }
+
+  replaceAdminFeed(entries: AdminFeedEntry[]): Observable<AdminFeedEntry[]> {
+    return this.http.put<AdminFeedEntry[]>(`${API}/admin/home/feed`, entries);
+  }
+
+  getAdminCategories(): Observable<AdminCategoryView[]> {
+    return this.http.get<AdminCategoryView[]>(`${API}/admin/categories`);
+  }
+
+  updateAdminCategory(category: string, input: AdminCategoryView): Observable<AdminCategoryView> {
+    return this.http.put<AdminCategoryView>(`${API}/admin/categories/${encodeURIComponent(category)}`, input);
+  }
+
+  getAdminExhibitionsMeta(): Observable<AdminExhibitionMetaView[]> {
+    return this.http.get<AdminExhibitionMetaView[]>(`${API}/admin/exhibitions-meta`);
+  }
+
+  updateAdminExhibitionMeta(slug: string, input: AdminExhibitionMetaView): Observable<AdminExhibitionMetaView> {
+    return this.http.put<AdminExhibitionMetaView>(`${API}/admin/exhibitions-meta/${encodeURIComponent(slug)}`, input);
+  }
+
+  submitContact(input: ContactRequestInput): Observable<ContactRequestAck> {
+    return this.http.post<ContactRequestAck>(`${API}/contact`, input);
   }
 }

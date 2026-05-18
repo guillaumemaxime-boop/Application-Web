@@ -21,9 +21,18 @@ public class ExhibitionService {
     private static final Pattern WHITESPACE = Pattern.compile("[\\s]+");
 
     private final ExhibitionRepository repository;
+    private final StoryService storyService;
+    private final HomeFeedService homeFeedService;
+    private final ExhibitionMetaService exhibitionMetaService;
 
-    public ExhibitionService(ExhibitionRepository repository) {
+    public ExhibitionService(ExhibitionRepository repository,
+                             StoryService storyService,
+                             HomeFeedService homeFeedService,
+                             ExhibitionMetaService exhibitionMetaService) {
         this.repository = repository;
+        this.storyService = storyService;
+        this.homeFeedService = homeFeedService;
+        this.exhibitionMetaService = exhibitionMetaService;
     }
 
     public List<Exhibition> findAll() {
@@ -35,7 +44,16 @@ public class ExhibitionService {
     }
 
     public Optional<Exhibition> findBySlug(String slug) {
-        return repository.findBySlug(slug).map(ExhibitionService::toDto);
+        return repository.findBySlug(slug).map(entity -> {
+            Exhibition base = toDto(entity);
+            return new Exhibition(
+                    base.id(), base.title(), base.slug(), base.venue(), base.city(),
+                    base.country(), base.startDate(), base.endDate(), base.coverImage(),
+                    base.gallery(), base.curator(), base.shortDescription(), base.description(),
+                    base.tags(), base.featured(),
+                    storyService.findByOwner("exhibition", entity.getId())
+            );
+        });
     }
 
     @Transactional
@@ -47,7 +65,10 @@ public class ExhibitionService {
         if (entity.getSlug() == null || entity.getSlug().isBlank()) {
             entity.setSlug(slugify(entity.getTitle()));
         }
-        return toDto(repository.save(entity));
+        ExhibitionEntity saved = repository.save(entity);
+        exhibitionMetaService.ensureExists(saved.getSlug());
+        homeFeedService.appendIfNotPresent("exhibition", saved.getSlug());
+        return toDto(saved);
     }
 
     @Transactional
@@ -61,6 +82,9 @@ public class ExhibitionService {
     @Transactional
     public boolean deleteBySlug(String slug) {
         return repository.findBySlug(slug).map(entity -> {
+            storyService.deleteAllForOwner("exhibition", entity.getId());
+            homeFeedService.removeBySlug("exhibition", entity.getSlug());
+            exhibitionMetaService.removeBySlug(entity.getSlug());
             repository.delete(entity);
             return true;
         }).orElse(false);
@@ -115,7 +139,8 @@ public class ExhibitionService {
                 entity.getShortDescription(),
                 entity.getDescription(),
                 List.copyOf(entity.getTags()),
-                entity.isFeatured()
+                entity.isFeatured(),
+                List.of()
         );
     }
 }

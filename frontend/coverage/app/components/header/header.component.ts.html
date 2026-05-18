@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>9/9</span>
+                <span class='fraction'>17/17</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/5</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>16/16</span>
             </div>
         
             
@@ -193,7 +193,25 @@
 <a name='L128'></a><a href='#L128'>128</a>
 <a name='L129'></a><a href='#L129'>129</a>
 <a name='L130'></a><a href='#L130'>130</a>
-<a name='L131'></a><a href='#L131'>131</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -309,22 +327,33 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Component, signal } from '@angular/core';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { PortfolioService } from '../../services/portfolio.service';
 &nbsp;
 @Component({
   selector: 'app-header',
@@ -344,10 +373,16 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 &nbsp;
         &lt;nav [class.open]="open()"&gt;
           &lt;a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()"&gt;Accueil&lt;/a&gt;
-          &lt;a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()"&gt;Mobilier&lt;/a&gt;
-          &lt;a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()"&gt;Expositions&lt;/a&gt;
-          &lt;a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()"&gt;Studio&lt;/a&gt;
-          &lt;a routerLink="/admin" routerLinkActive="active" class="admin-link" (click)="closeMenu()"&gt;Admin&lt;/a&gt;
+          @if (mobilierVisible()) {
+            &lt;a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()"&gt;Mobilier&lt;/a&gt;
+          }
+          @if (expositionsVisible()) {
+            &lt;a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()"&gt;Expositions&lt;/a&gt;
+          }
+          @if (studioVisible()) {
+            &lt;a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()"&gt;Studio&lt;/a&gt;
+          }
+          &lt;a routerLink="/contact" routerLinkActive="active" (click)="closeMenu()"&gt;Contact&lt;/a&gt;
         &lt;/nav&gt;
       &lt;/div&gt;
     &lt;/header&gt;
@@ -398,9 +433,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     }
     nav a:hover,
     nav a.active { color: var(--color-ink); }
-    nav a.admin-link { color: var(--color-mute); }
-    nav a.admin-link:hover,
-    nav a.admin-link.active { color: var(--color-ink); }
     .burger {
       display: none;
       width: 24px;
@@ -430,7 +462,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         overflow: hidden;
         transition: max-height 280ms ease;
       }
-      nav.open { max-height: 280px; }
+      nav.open { max-height: 360px; }
       nav a {
         padding: 16px 24px;
         border-top: 1px solid var(--color-line);
@@ -439,8 +471,13 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   `]
 })
 export class HeaderComponent {
+  private readonly portfolio = inject(PortfolioService);
+&nbsp;
   protected readonly open = signal(false);
   protected readonly scrolled = signal(false);
+  protected readonly mobilierVisible = signal(true);
+  protected readonly expositionsVisible = signal(true);
+  protected readonly studioVisible = signal(true);
 &nbsp;
   constructor() {
     if (typeof window !== 'undefined') {
@@ -448,6 +485,11 @@ export class HeaderComponent {
         this.scrolled.set(window.scrollY &gt; 8);
       }, { passive: true });
     }
+    this.portfolio.getContent().subscribe(content =&gt; {
+      this.mobilierVisible.set(content['nav.mobilier.visible'] !== 'false');
+      this.expositionsVisible.set(content['nav.expositions.visible'] !== 'false');
+      this.studioVisible.set(content['nav.studio.visible'] !== 'false');
+    });
   }
 &nbsp;
   toggleMenu() { this.open.update(v =&gt; !v); }
@@ -460,7 +502,7 @@ export class HeaderComponent {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-10T19:46:35.172Z
+                at 2026-05-17T20:46:40.805Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

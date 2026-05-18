@@ -17,3 +17,30 @@ databaseChangeLog:
   - include:
       file: changes/006-create-photos.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/007-create-story-slides.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/008-create-home-feed.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/009-create-category-meta.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/010-seed-stories.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/011-seed-home-feed.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/012-seed-category-meta.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/013-create-exhibition-meta.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/014-seed-exhibition-meta.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/015-create-contact-requests.yaml
+      relativeToChangelogFile: true

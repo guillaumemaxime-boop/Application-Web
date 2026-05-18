@@ -1,27 +1,33 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeaderComponent } from './header.component';
 import { provideRouter } from '@angular/router';
+import { PortfolioService } from '../../services/portfolio.service';
+import { of } from 'rxjs';
 
 describe('HeaderComponent', () => {
-  let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
+  function setup(content: Record<string, string> = {}) {
+    const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['getContent']);
+    spy.getContent.and.returnValue(of(content));
+    TestBed.configureTestingModule({
       imports: [HeaderComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        { provide: PortfolioService, useValue: spy },
+      ],
     }).compileComponents();
-
     fixture = TestBed.createComponent(HeaderComponent);
-    component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+    return fixture.componentInstance;
+  }
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(setup()).toBeTruthy();
   });
 
   it('should have toggleMenu method', () => {
+    const component = setup();
     expect(component.toggleMenu).toBeTruthy();
     expect(typeof component.toggleMenu).toBe('function');
     expect(() => component.toggleMenu()).not.toThrow();
@@ -29,39 +35,54 @@ describe('HeaderComponent', () => {
   });
 
   it('should have closeMenu method', () => {
+    const component = setup();
     expect(component.closeMenu).toBeTruthy();
     expect(typeof component.closeMenu).toBe('function');
     expect(() => component.closeMenu()).not.toThrow();
   });
 
   it('should react to window scroll events', () => {
+    setup();
     expect(() => window.dispatchEvent(new Event('scroll'))).not.toThrow();
     fixture.detectChanges();
-    expect(component).toBeTruthy();
   });
 
   it('should have a header element', () => {
-    const header = fixture.nativeElement.querySelector('header');
-    expect(header).toBeTruthy();
+    setup();
+    expect(fixture.nativeElement.querySelector('header')).toBeTruthy();
   });
 
   it('should have a brand link', () => {
-    const brandLink = fixture.nativeElement.querySelector('.brand');
-    expect(brandLink).toBeTruthy();
+    setup();
+    expect(fixture.nativeElement.querySelector('.brand')).toBeTruthy();
   });
 
   it('should have a burger menu button', () => {
-    const burger = fixture.nativeElement.querySelector('.burger');
-    expect(burger).toBeTruthy();
+    setup();
+    expect(fixture.nativeElement.querySelector('.burger')).toBeTruthy();
   });
 
-  it('should have navigation links', () => {
+  it('shows all nav links by default (empty content map)', () => {
+    setup();
     const navLinks = fixture.nativeElement.querySelectorAll('nav a');
-    expect(navLinks.length).toBe(4);
+    expect(navLinks.length).toBe(5);
+    const labels = Array.from(navLinks).map((a: any) => a.textContent.trim());
+    expect(labels).toEqual(['Accueil', 'Mobilier', 'Expositions', 'Studio', 'Contact']);
+  });
+
+  it('hides nav entries whose visibility flag is false', () => {
+    setup({
+      'nav.mobilier.visible': 'false',
+      'nav.expositions.visible': 'false',
+      'nav.studio.visible': 'false',
+    });
+    const navLinks = fixture.nativeElement.querySelectorAll('nav a');
+    const labels = Array.from(navLinks).map((a: any) => a.textContent.trim());
+    expect(labels).toEqual(['Accueil', 'Contact']);
   });
 
   it('should not have an admin link', () => {
-    const adminLink = fixture.nativeElement.querySelector('nav a.admin-link');
-    expect(adminLink).toBeNull();
+    setup();
+    expect(fixture.nativeElement.querySelector('nav a.admin-link')).toBeNull();
   });
 });

@@ -27,7 +27,8 @@ class ExhibitionTest {
                 "Une exploration du silence comme matière première",
                 "Description détaillée",
                 List.of("Mobilier", "Sculpture"),
-                true
+                true,
+                List.of()
         );
 
         // Assert
@@ -67,7 +68,8 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of(),
-                false
+                false,
+                List.of()
         );
 
         // Assert
@@ -101,7 +103,8 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of(),
-                false
+                false,
+                List.of()
         );
 
         // Assert
@@ -130,7 +133,8 @@ class ExhibitionTest {
                 "", // Empty shortDescription
                 "", // Empty description
                 List.of(),
-                false
+                false,
+                List.of()
         );
         assertNotNull(exhibition);
         assertEquals("", exhibition.title());
@@ -155,7 +159,8 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of("Tag1"),
-                true
+                true,
+                List.of()
         );
 
         Exhibition exhibition2 = new Exhibition(
@@ -173,7 +178,8 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of("Tag1"),
-                true
+                true,
+                List.of()
         );
 
         // Act & Assert
@@ -198,7 +204,8 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of(),
-                false
+                false,
+                List.of()
         );
 
         // Act
@@ -229,7 +236,8 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of(),
-                false
+                false,
+                List.of()
         );
 
         Exhibition exhibition2 = new Exhibition(
@@ -247,7 +255,8 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of(),
-                false
+                false,
+                List.of()
         );
 
         // Act & Assert
@@ -272,7 +281,8 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of(),
-                false
+                false,
+                List.of()
         );
 
         // Assert
@@ -300,7 +310,8 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of(),
-                false
+                false,
+                List.of()
         );
 
         // Assert

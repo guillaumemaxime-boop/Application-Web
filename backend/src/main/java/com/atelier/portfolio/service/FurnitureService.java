@@ -21,9 +21,18 @@ public class FurnitureService {
     private static final Pattern WHITESPACE = Pattern.compile("[\\s]+");
 
     private final FurnitureRepository repository;
+    private final StoryService storyService;
+    private final HomeFeedService homeFeedService;
+    private final CategoryMetaService categoryMetaService;
 
-    public FurnitureService(FurnitureRepository repository) {
+    public FurnitureService(FurnitureRepository repository,
+                            StoryService storyService,
+                            HomeFeedService homeFeedService,
+                            CategoryMetaService categoryMetaService) {
         this.repository = repository;
+        this.storyService = storyService;
+        this.homeFeedService = homeFeedService;
+        this.categoryMetaService = categoryMetaService;
     }
 
     public List<Furniture> findAll() {
@@ -35,7 +44,15 @@ public class FurnitureService {
     }
 
     public Optional<Furniture> findBySlug(String slug) {
-        return repository.findBySlug(slug).map(FurnitureService::toDto);
+        return repository.findBySlug(slug).map(entity -> {
+            Furniture base = toDto(entity);
+            return new Furniture(
+                    base.id(), base.title(), base.slug(), base.category(), base.material(),
+                    base.year(), base.coverImage(), base.gallery(), base.shortDescription(),
+                    base.description(), base.dimensions(), base.designer(), base.featured(),
+                    storyService.findByOwner("furniture", entity.getId())
+            );
+        });
     }
 
     public List<String> categories() {
@@ -51,7 +68,10 @@ public class FurnitureService {
         if (entity.getSlug() == null || entity.getSlug().isBlank()) {
             entity.setSlug(slugify(entity.getTitle()));
         }
-        return toDto(repository.save(entity));
+        FurnitureEntity saved = repository.save(entity);
+        categoryMetaService.ensureExists(saved.getCategory(), saved.getCoverImage());
+        homeFeedService.appendIfNotPresent("furniture", saved.getSlug());
+        return toDto(saved);
     }
 
     @Transactional
@@ -65,6 +85,8 @@ public class FurnitureService {
     @Transactional
     public boolean deleteBySlug(String slug) {
         return repository.findBySlug(slug).map(entity -> {
+            storyService.deleteAllForOwner("furniture", entity.getId());
+            homeFeedService.removeBySlug("furniture", entity.getSlug());
             repository.delete(entity);
             return true;
         }).orElse(false);
@@ -115,7 +137,8 @@ public class FurnitureService {
                 entity.getDescription(),
                 List.copyOf(entity.getDimensions()),
                 entity.getDesigner(),
-                entity.isFeatured()
+                entity.isFeatured(),
+                List.of()
         );
     }
 }

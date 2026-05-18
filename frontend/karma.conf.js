@@ -18,7 +18,16 @@ module.exports = function (config) {
         // You can specify jasmine configuration here
         // Example: random: false
       },
-      clearContext: false // Leave Jasmine Spec Runner output visible in browser
+      clearContext: false, // Leave Jasmine Spec Runner output visible in browser
+      // captureConsole + browserConsoleLogOptions : ces options de logging
+      // changent l'ordonnancement d'evaluation du bundle test cote browser et
+      // garantissent que tous les .spec.ts sont effectivement charges en CI.
+      // Sans elles, certains specs n'etaient pas declares a Karma (319 -> 247).
+      captureConsole: true
+    },
+    browserConsoleLogOptions: {
+      level: 'log',
+      terminal: true
     },
     jasmineHtmlReporter: {
       suppressAll: true // Removes duplicated traces

@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-create-home-feed
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: home_feed
+            columns:
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: kind
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ref_slug
+                  type: varchar(200)
+                  constraints:
+                    nullable: false

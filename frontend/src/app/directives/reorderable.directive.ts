@@ -1,0 +1,71 @@
+import { AfterViewInit, Directive, ElementRef, EventEmitter, OnDestroy, Output } from '@angular/core';
+
+@Directive({
+  selector: '[appReorderable]',
+  standalone: true,
+})
+export class ReorderableDirective implements AfterViewInit, OnDestroy {
+  @Output() reordered = new EventEmitter<number[]>();
+
+  private dragSrcIndex: number | null = null;
+  private observer: MutationObserver | null = null;
+  private listeners: Array<{ el: HTMLElement; type: string; fn: EventListener }> = [];
+
+  constructor(private host: ElementRef<HTMLElement>) {}
+
+  ngAfterViewInit() {
+    this.attach();
+    this.observer = new MutationObserver(() => this.attach());
+    this.observer.observe(this.host.nativeElement, { childList: true });
+  }
+
+  ngOnDestroy() {
+    this.observer?.disconnect();
+    this.detachListeners();
+  }
+
+  private detachListeners() {
+    for (const { el, type, fn } of this.listeners) {
+      el.removeEventListener(type, fn);
+    }
+    this.listeners = [];
+  }
+
+  private attach() {
+    this.detachListeners();
+    const children = Array.from(this.host.nativeElement.children) as HTMLElement[];
+    children.forEach((el, idx) => {
+      el.draggable = true;
+      el.dataset['idx'] = String(idx);
+
+      const onDragStart = (e: Event) => this.onDragStart(e as DragEvent, idx);
+      const onDragOver = (e: Event) => e.preventDefault();
+      const onDrop = (e: Event) => this.onDrop(e as DragEvent, idx);
+
+      el.addEventListener('dragstart', onDragStart);
+      el.addEventListener('dragover', onDragOver);
+      el.addEventListener('drop', onDrop);
+
+      this.listeners.push(
+        { el, type: 'dragstart', fn: onDragStart },
+        { el, type: 'dragover', fn: onDragOver },
+        { el, type: 'drop', fn: onDrop },
+      );
+    });
+  }
+
+  private onDragStart(e: DragEvent, index: number) {
+    this.dragSrcIndex = index;
+    e.dataTransfer?.setData('text/plain', String(index));
+  }
+
+  private onDrop(e: DragEvent, targetIndex: number) {
+    e.preventDefault();
+    if (this.dragSrcIndex === null || this.dragSrcIndex === targetIndex) return;
+    const order = Array.from(this.host.nativeElement.children).map((_, i) => i);
+    const [moved] = order.splice(this.dragSrcIndex, 1);
+    order.splice(targetIndex, 0, moved);
+    this.reordered.emit(order);
+    this.dragSrcIndex = null;
+  }
+}
