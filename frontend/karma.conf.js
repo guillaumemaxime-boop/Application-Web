@@ -19,7 +19,11 @@ module.exports = function (config) {
         // Example: random: false
       },
       clearContext: false, // Leave Jasmine Spec Runner output visible in browser
-      captureConsole: true // Forward browser console.log to the Karma server (debug only)
+      // captureConsole + browserConsoleLogOptions : ces options de logging
+      // changent l'ordonnancement d'evaluation du bundle test cote browser et
+      // garantissent que tous les .spec.ts sont effectivement charges en CI.
+      // Sans elles, certains specs n'etaient pas declares a Karma (319 -> 247).
+      captureConsole: true
     },
     browserConsoleLogOptions: {
       level: 'log',
