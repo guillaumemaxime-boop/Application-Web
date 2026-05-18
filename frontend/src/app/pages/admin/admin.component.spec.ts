@@ -149,9 +149,12 @@ describe('AdminComponent', () => {
       expect(v.title).toBe(mockFurniture.title);
       expect(v.category).toBe(mockFurniture.category);
       expect(v.year).toBe(mockFurniture.year);
-      expect(v.gallery).toBe(mockFurniture.gallery.join('\n'));
-      expect(v.dimensions).toBe(mockFurniture.dimensions.join('\n'));
-      expect(v.featured).toBe(true);
+      expect(component['furnitureGallery']()).toEqual(mockFurniture.gallery);
+      // mockFurniture.dimensions = ['Hauteur 92 cm', 'Largeur 78 cm']
+      expect(v.dimH).toBe(92);
+      expect(v.dimW).toBe(78);
+      expect(v.dimD).toBeNull();
+      expect(v.dimNotes).toBe('');
     });
 
     it('should call createFurniture when saving without an editing slug', () => {
@@ -160,9 +163,10 @@ describe('AdminComponent', () => {
         title: 'Nouvelle pièce',
         category: 'Tables',
         year: 2026,
-        gallery: 'https://img/1.jpg\nhttps://img/2.jpg',
-        dimensions: 'H 80\nL 60',
+        dimW: 60,
+        dimH: 80,
       });
+      component['furnitureGallery'].set(['https://img/1.jpg', 'https://img/2.jpg']);
 
       component.saveFurniture();
 
@@ -171,7 +175,7 @@ describe('AdminComponent', () => {
       expect(payload.title).toBe('Nouvelle pièce');
       expect(payload.category).toBe('Tables');
       expect(payload.gallery).toEqual(['https://img/1.jpg', 'https://img/2.jpg']);
-      expect(payload.dimensions).toEqual(['H 80', 'L 60']);
+      expect(payload.dimensions).toEqual(['L 60 cm', 'H 80 cm']);
     });
 
     it('should call updateFurniture when saving an editing slug', () => {
@@ -229,7 +233,7 @@ describe('AdminComponent', () => {
       expect(v.title).toBe(mockExhibition.title);
       expect(v.startDate).toBe(mockExhibition.startDate);
       expect(v.endDate).toBe(mockExhibition.endDate);
-      expect(v.tags).toBe(mockExhibition.tags.join('\n'));
+      expect(component['exhibitionTags']()).toEqual(mockExhibition.tags);
     });
 
     it('should call createExhibition when saving without an editing slug', () => {
@@ -238,8 +242,8 @@ describe('AdminComponent', () => {
         title: 'Nouvelle expo',
         startDate: '2026-06-01',
         endDate: '2026-08-30',
-        tags: 'Sculpture\nLumière',
       });
+      component['exhibitionTags'].set(['Sculpture', 'Lumière']);
 
       component.saveExhibition();
 
@@ -274,6 +278,56 @@ describe('AdminComponent', () => {
       component.removeExhibition(mockExhibition);
 
       expect(portfolioServiceSpy.deleteExhibition).toHaveBeenCalledWith(mockExhibition.slug);
+    });
+  });
+
+  describe('Exhibition tags (chips input)', () => {
+    function evt(value = ''): Event {
+      return { preventDefault: () => {}, target: { value } } as unknown as Event;
+    }
+
+    it('addExhibitionTag pushes the trimmed value and clears the input', () => {
+      component.newExhibition();
+      component['newExhibitionTag'].set('  Sculpture  ');
+      component.addExhibitionTag(evt());
+      expect(component['exhibitionTags']()).toEqual(['Sculpture']);
+      expect(component['newExhibitionTag']()).toBe('');
+    });
+
+    it('addExhibitionTag ignores empty values', () => {
+      component.newExhibition();
+      component['newExhibitionTag'].set('   ');
+      component.addExhibitionTag(evt());
+      expect(component['exhibitionTags']()).toEqual([]);
+    });
+
+    it('addExhibitionTag dedupes existing tags', () => {
+      component.newExhibition();
+      component['exhibitionTags'].set(['Bois']);
+      component['newExhibitionTag'].set('Bois');
+      component.addExhibitionTag(evt());
+      expect(component['exhibitionTags']()).toEqual(['Bois']);
+      expect(component['newExhibitionTag']()).toBe('');
+    });
+
+    it('removeExhibitionTag removes the matching tag', () => {
+      component['exhibitionTags'].set(['Bois', 'Lumière']);
+      component.removeExhibitionTag('Bois');
+      expect(component['exhibitionTags']()).toEqual(['Lumière']);
+    });
+
+    it('onTagBackspace pops the last tag when input is empty', () => {
+      component['exhibitionTags'].set(['A', 'B']);
+      component['newExhibitionTag'].set('');
+      component.onTagBackspace(evt());
+      expect(component['exhibitionTags']()).toEqual(['A']);
+    });
+
+    it('onTagBackspace does nothing when input has text', () => {
+      component['exhibitionTags'].set(['A']);
+      component['newExhibitionTag'].set('foo');
+      component.onTagBackspace(evt());
+      expect(component['exhibitionTags']()).toEqual(['A']);
     });
   });
 
@@ -367,8 +421,11 @@ describe('AdminComponent', () => {
       expect(v.material).toBe('');
       expect(v.designer).toBe('');
       expect(v.coverImage).toBe('');
-      expect(v.gallery).toBe('');
-      expect(v.dimensions).toBe('');
+      expect(component['furnitureGallery']()).toEqual([]);
+      expect(v.dimW).toBeNull();
+      expect(v.dimD).toBeNull();
+      expect(v.dimH).toBeNull();
+      expect(v.dimNotes).toBe('');
     });
 
     it('should handle exhibition with nullable optional fields', () => {
@@ -388,8 +445,8 @@ describe('AdminComponent', () => {
       const v = component['exhibitionForm'].value;
       expect(v.venue).toBe('');
       expect(v.city).toBe('');
-      expect(v.gallery).toBe('');
-      expect(v.tags).toBe('');
+      expect(component['exhibitionGallery']()).toEqual([]);
+      expect(component['exhibitionTags']()).toEqual([]);
     });
 
     it('should treat empty slug input as undefined when creating', () => {
@@ -583,23 +640,29 @@ describe('AdminComponent', () => {
       expect(component['photoPicker']()).toBeNull();
     });
 
-    it('should append url to gallery when selecting photo for furniture-gallery', () => {
-      component['furnitureForm'].patchValue({ gallery: 'https://existing.com/img.jpg' });
+    it('should append url to furniture gallery signal when selecting photo for furniture-gallery', () => {
+      component['furnitureGallery'].set(['https://existing.com/img.jpg']);
       component.openPicker('furniture-gallery');
       component.selectPhoto(mockPhoto);
 
-      const gallery = component['furnitureForm'].get('gallery')!.value as string;
-      expect(gallery).toContain('https://existing.com/img.jpg');
-      expect(gallery).toContain(mockPhoto.url);
+      expect(component['furnitureGallery']()).toEqual(['https://existing.com/img.jpg', mockPhoto.url]);
       expect(component['photoPicker']()).toBe('furniture-gallery');
     });
 
-    it('should set gallery url directly when gallery field is empty', () => {
-      component['furnitureForm'].patchValue({ gallery: '' });
+    it('should push url to furniture gallery when empty', () => {
+      component['furnitureGallery'].set([]);
       component.openPicker('furniture-gallery');
       component.selectPhoto(mockPhoto);
 
-      expect(component['furnitureForm'].get('gallery')!.value).toBe(mockPhoto.url);
+      expect(component['furnitureGallery']()).toEqual([mockPhoto.url]);
+    });
+
+    it('should not duplicate when same url is selected twice for furniture-gallery', () => {
+      component['furnitureGallery'].set([mockPhoto.url]);
+      component.openPicker('furniture-gallery');
+      component.selectPhoto(mockPhoto);
+
+      expect(component['furnitureGallery']()).toEqual([mockPhoto.url]);
     });
 
     it('should set coverImage when selecting photo for exhibition-cover', () => {
@@ -610,11 +673,12 @@ describe('AdminComponent', () => {
       expect(component['photoPicker']()).toBeNull();
     });
 
-    it('should append url to gallery when selecting photo for exhibition-gallery', () => {
+    it('should append url to exhibition gallery signal when selecting photo for exhibition-gallery', () => {
+      component['exhibitionGallery'].set([]);
       component.openPicker('exhibition-gallery');
       component.selectPhoto(mockPhoto);
 
-      expect(component['exhibitionForm'].get('gallery')!.value).toBe(mockPhoto.url);
+      expect(component['exhibitionGallery']()).toEqual([mockPhoto.url]);
       expect(component['photoPicker']()).toBe('exhibition-gallery');
     });
 
@@ -643,14 +707,162 @@ describe('AdminComponent', () => {
       expect(portfolioServiceSpy.getPhotos).not.toHaveBeenCalled();
     });
 
-    it('should append url to exhibition-gallery when gallery field already has content', () => {
-      component['exhibitionForm'].patchValue({ gallery: 'https://existing.com/img.jpg' });
+    it('should append url to exhibition gallery when it already has content', () => {
+      component['exhibitionGallery'].set(['https://existing.com/img.jpg']);
       component.openPicker('exhibition-gallery');
       component.selectPhoto(mockPhoto);
 
-      const gallery = component['exhibitionForm'].get('gallery')!.value as string;
-      expect(gallery).toContain('https://existing.com/img.jpg');
-      expect(gallery).toContain(mockPhoto.url);
+      expect(component['exhibitionGallery']()).toEqual(['https://existing.com/img.jpg', mockPhoto.url]);
+    });
+  });
+
+  describe('Sidebar', () => {
+    it('toggleSidebar flips the open state', () => {
+      expect(component['sidebarOpen']()).toBeFalse();
+      component['toggleSidebar']();
+      expect(component['sidebarOpen']()).toBeTrue();
+      component['toggleSidebar']();
+      expect(component['sidebarOpen']()).toBeFalse();
+    });
+
+    it('switchTab auto-closes the sidebar (used on mobile drawer)', () => {
+      component['sidebarOpen'].set(true);
+      component.switchTab('exhibitions');
+      expect(component['sidebarOpen']()).toBeFalse();
+    });
+
+    it('currentTabLabel reflects the active tab', () => {
+      component['tab'].set('photos');
+      expect(component['currentTabLabel']()).toBe('Médiathèque');
+      component['tab'].set('typography');
+      expect(component['currentTabLabel']()).toBe('Typographie');
+    });
+  });
+
+  describe('Toast stack', () => {
+    it('stacks multiple toasts and dismisses the targeted one', () => {
+      portfolioServiceSpy.createFurniture.and.returnValue(throwError(() => new Error('boom1')));
+      portfolioServiceSpy.createExhibition.and.returnValue(throwError(() => new Error('boom2')));
+
+      component.newFurniture();
+      component['furnitureForm'].patchValue({ title: 'A', category: 'X', year: 2026 });
+      component.saveFurniture();
+
+      component.newExhibition();
+      component['exhibitionForm'].patchValue({ title: 'B', startDate: '2026-01-01', endDate: '2026-02-01' });
+      component.saveExhibition();
+
+      expect(component['toasts']().length).toBe(2);
+
+      const firstId = component['toasts']()[0].id;
+      component['dismissToast'](firstId);
+      expect(component['toasts']().length).toBe(1);
+      expect(component['toasts']()[0].id).not.toBe(firstId);
+    });
+
+    it('message() and messageType() reflect the most recent toast', () => {
+      portfolioServiceSpy.createFurniture.and.returnValue(throwError(() => new Error('boom')));
+      component.newFurniture();
+      component['furnitureForm'].patchValue({ title: 'A', category: 'X', year: 2026 });
+      component.saveFurniture();
+      expect(component['messageType']()).toBe('error');
+
+      // Success flash after error → latest toast wins
+      component['toasts'].update(list => [...list, { id: 999, text: 'OK', type: 'success' }]);
+      expect(component['messageType']()).toBe('success');
+      expect(component['message']()).toBe('OK');
+    });
+  });
+
+  describe('Dimensions parsing & serialization', () => {
+    it('parses Largeur / Profondeur / Hauteur formats', () => {
+      component.loadFurniture({
+        ...mockFurniture,
+        dimensions: ['Largeur 78 cm', 'Profondeur 60 cm', 'Hauteur 92 cm'],
+      });
+      const v = component['furnitureForm'].value;
+      expect(v.dimW).toBe(78);
+      expect(v.dimD).toBe(60);
+      expect(v.dimH).toBe(92);
+      expect(v.dimNotes).toBe('');
+    });
+
+    it('parses L / P / H short formats', () => {
+      component.loadFurniture({
+        ...mockFurniture,
+        dimensions: ['L 50', 'P 40', 'H 60'],
+      });
+      const v = component['furnitureForm'].value;
+      expect(v.dimW).toBe(50);
+      expect(v.dimD).toBe(40);
+      expect(v.dimH).toBe(60);
+    });
+
+    it('puts unrecognized lines into dimNotes', () => {
+      component.loadFurniture({
+        ...mockFurniture,
+        dimensions: ['L 50', 'Diamètre assise 45 cm', 'Empilable jusqu\'à 5'],
+      });
+      const v = component['furnitureForm'].value;
+      expect(v.dimW).toBe(50);
+      expect(v.dimNotes).toBe('Diamètre assise 45 cm\nEmpilable jusqu\'à 5');
+    });
+
+    it('serializes L / P / H values into "L X cm" format and appends notes', () => {
+      component.newFurniture();
+      component['furnitureForm'].patchValue({
+        title: 'X', category: 'Tables', year: 2026,
+        dimW: 80, dimD: 60, dimH: 75,
+        dimNotes: 'Diamètre 45 cm\nEmpilable',
+      });
+      component.saveFurniture();
+      const payload = portfolioServiceSpy.createFurniture.calls.mostRecent().args[0];
+      expect(payload.dimensions).toEqual(['L 80 cm', 'P 60 cm', 'H 75 cm', 'Diamètre 45 cm', 'Empilable']);
+    });
+
+    it('omits absent dimensions from serialization', () => {
+      component.newFurniture();
+      component['furnitureForm'].patchValue({
+        title: 'X', category: 'Tables', year: 2026,
+        dimW: 80, dimH: 75,
+      });
+      component.saveFurniture();
+      const payload = portfolioServiceSpy.createFurniture.calls.mostRecent().args[0];
+      expect(payload.dimensions).toEqual(['L 80 cm', 'H 75 cm']);
+    });
+
+    it('handles decimal values with comma in source', () => {
+      component.loadFurniture({
+        ...mockFurniture,
+        dimensions: ['L 80,5 cm'],
+      });
+      expect(component['furnitureForm'].value.dimW).toBe(80.5);
+    });
+  });
+
+  describe('Gallery thumbnails (reorder & remove)', () => {
+    it('removeFurnitureGalleryImage removes the matching url', () => {
+      component['furnitureGallery'].set(['a.jpg', 'b.jpg', 'c.jpg']);
+      component.removeFurnitureGalleryImage('b.jpg');
+      expect(component['furnitureGallery']()).toEqual(['a.jpg', 'c.jpg']);
+    });
+
+    it('onFurnitureGalleryReorder reorders by the given index list', () => {
+      component['furnitureGallery'].set(['a.jpg', 'b.jpg', 'c.jpg']);
+      component.onFurnitureGalleryReorder([2, 0, 1]);
+      expect(component['furnitureGallery']()).toEqual(['c.jpg', 'a.jpg', 'b.jpg']);
+    });
+
+    it('removeExhibitionGalleryImage removes the matching url', () => {
+      component['exhibitionGallery'].set(['x.jpg', 'y.jpg']);
+      component.removeExhibitionGalleryImage('x.jpg');
+      expect(component['exhibitionGallery']()).toEqual(['y.jpg']);
+    });
+
+    it('onExhibitionGalleryReorder reorders by the given index list', () => {
+      component['exhibitionGallery'].set(['x.jpg', 'y.jpg']);
+      component.onExhibitionGalleryReorder([1, 0]);
+      expect(component['exhibitionGallery']()).toEqual(['y.jpg', 'x.jpg']);
     });
   });
 
@@ -673,7 +885,7 @@ describe('AdminComponent', () => {
       portfolioServiceSpy.getContent.and.returnValue(of({
         'home.hero.eyebrow': 'Mon Studio',
         'home.hero.title': 'Titre héro',
-        'profile.studio': 'Studio Test',
+        'profile.contactEmail': 'studio@test.fr',
       }));
 
       const fix = TestBed.createComponent(AdminComponent);
@@ -681,7 +893,7 @@ describe('AdminComponent', () => {
       await fix.whenStable();
 
       expect(fix.componentInstance['textsForm'].value.home_hero_eyebrow).toBe('Mon Studio');
-      expect(fix.componentInstance['textsForm'].value.profile_studio).toBe('Studio Test');
+      expect(fix.componentInstance['textsForm'].value.profile_contactEmail).toBe('studio@test.fr');
     });
 
     it('should call updateContent when saveTexts is invoked', () => {

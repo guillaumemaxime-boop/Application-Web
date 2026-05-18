@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -32,6 +32,12 @@ interface ExhibitionMetaRow {
 type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home' | 'typography' | 'analytics';
 type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover' | 'exhibition-gallery';
 
+interface Toast {
+  id: number;
+  text: string;
+  type: 'success' | 'error';
+}
+
 @Component({
   selector: 'app-admin',
   standalone: true,
@@ -45,54 +51,58 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
           <p class="lead">Ajoutez, modifiez ou supprimez les pièces de mobilier et les expositions présentées sur le site.</p>
         </div>
 
-        <div class="tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'furniture'"
-            [class.active]="tab() === 'furniture'"
-            (click)="switchTab('furniture')">Mobilier</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'exhibitions'"
-            [class.active]="tab() === 'exhibitions'"
-            (click)="switchTab('exhibitions')">Expositions</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'texts'"
-            [class.active]="tab() === 'texts'"
-            (click)="switchTab('texts')">Textes du site</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'photos'"
-            [class.active]="tab() === 'photos'"
-            (click)="switchTab('photos')">Médiathèque</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'home'"
-            [class.active]="tab() === 'home'"
-            (click)="switchTab('home')">Accueil</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'typography'"
-            [class.active]="tab() === 'typography'"
-            (click)="switchTab('typography')">Typographie</button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tab() === 'analytics'"
-            [class.active]="tab() === 'analytics'"
-            (click)="switchTab('analytics')">Analytics</button>
-        </div>
+        <div class="admin-layout">
+          <button type="button" class="sidebar-toggle" (click)="toggleSidebar()" [attr.aria-expanded]="sidebarOpen()" aria-controls="admin-tabs">
+            <span class="burger-icon" aria-hidden="true">☰</span>
+            <span>{{ currentTabLabel() }}</span>
+          </button>
 
-        @if (message()) {
-          <p class="flash" [class.error]="messageType() === 'error'">{{ message() }}</p>
-        }
+          <nav id="admin-tabs" class="tabs" [class.open]="sidebarOpen()" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'furniture'"
+              [class.active]="tab() === 'furniture'"
+              (click)="switchTab('furniture')">Mobilier</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'exhibitions'"
+              [class.active]="tab() === 'exhibitions'"
+              (click)="switchTab('exhibitions')">Expositions</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'texts'"
+              [class.active]="tab() === 'texts'"
+              (click)="switchTab('texts')">Textes du site</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'photos'"
+              [class.active]="tab() === 'photos'"
+              (click)="switchTab('photos')">Médiathèque</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'home'"
+              [class.active]="tab() === 'home'"
+              (click)="switchTab('home')">Accueil</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'typography'"
+              [class.active]="tab() === 'typography'"
+              (click)="switchTab('typography')">Typographie</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'analytics'"
+              [class.active]="tab() === 'analytics'"
+              (click)="switchTab('analytics')">Analytics</button>
+          </nav>
+
+          <div class="admin-content">
 
         @if (tab() === 'furniture') {
           <div class="grid-admin">
@@ -121,16 +131,23 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             </aside>
 
             <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
-              <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
+              <div class="form-head">
+                <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
+                @if (editingFurnitureSlug(); as s) {
+                  <a class="view-link" [href]="'/mobilier/' + s" target="_blank" rel="noopener" title="Voir sur le site">Voir sur le site ↗</a>
+                }
+              </div>
 
               <label>
                 <span>Titre *</span>
                 <input type="text" formControlName="title" />
               </label>
-              <label>
-                <span>Slug</span>
-                <input type="text" formControlName="slug" placeholder="auto-généré si vide" />
-              </label>
+              @if (editingFurnitureSlug()) {
+                <label class="readonly-row">
+                  <span>Slug</span>
+                  <input type="text" formControlName="slug" readonly />
+                </label>
+              }
               <div class="row-2">
                 <label>
                   <span>Catégorie *</span>
@@ -160,20 +177,49 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 </button>
               </div>
 
-              <div class="field-with-picker">
-                <label>
-                  <span>Galerie (une URL par ligne)</span>
-                  <textarea rows="3" formControlName="gallery"></textarea>
-                </label>
-                <button type="button" class="btn-pick" (click)="openPicker('furniture-gallery')" title="Ajouter depuis la médiathèque">
-                  Médiathèque
-                </button>
+              <div class="gallery-block">
+                <div class="gallery-block-head">
+                  <span class="gallery-label">Galerie</span>
+                  <button type="button" class="btn-pick" (click)="openPicker('furniture-gallery')" title="Ajouter depuis la médiathèque">
+                    + Ajouter
+                  </button>
+                </div>
+                @if (furnitureGallery().length === 0) {
+                  <p class="gallery-empty">Aucune image. Cliquez sur « Ajouter » pour insérer une photo depuis la médiathèque.</p>
+                } @else {
+                  <ul class="gallery-thumbs" appReorderable (reordered)="onFurnitureGalleryReorder($event)">
+                    @for (url of furnitureGallery(); track url) {
+                      <li class="gallery-thumb">
+                        <img [src]="url" alt="" />
+                        <button type="button" class="thumb-remove" (click)="removeFurnitureGalleryImage(url)" aria-label="Retirer">×</button>
+                      </li>
+                    }
+                  </ul>
+                  <p class="gallery-hint">Glisse une vignette pour réordonner.</p>
+                }
               </div>
 
-              <label>
-                <span>Dimensions (une par ligne)</span>
-                <textarea rows="3" formControlName="dimensions"></textarea>
-              </label>
+              <fieldset class="dim-fieldset">
+                <legend>Dimensions</legend>
+                <div class="dim-grid">
+                  <label class="dim-cell">
+                    <span>Largeur (cm)</span>
+                    <input type="number" step="0.1" min="0" formControlName="dimW" placeholder="—" />
+                  </label>
+                  <label class="dim-cell">
+                    <span>Profondeur (cm)</span>
+                    <input type="number" step="0.1" min="0" formControlName="dimD" placeholder="—" />
+                  </label>
+                  <label class="dim-cell">
+                    <span>Hauteur (cm)</span>
+                    <input type="number" step="0.1" min="0" formControlName="dimH" placeholder="—" />
+                  </label>
+                </div>
+                <label class="dim-notes">
+                  <span>Autres dimensions (une par ligne)</span>
+                  <textarea rows="2" formControlName="dimNotes" placeholder="Ex. : Diamètre assise 45 cm"></textarea>
+                </label>
+              </fieldset>
               <label>
                 <span>Description courte</span>
                 <textarea rows="2" formControlName="shortDescription"></textarea>
@@ -181,10 +227,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
               <label>
                 <span>Description longue</span>
                 <textarea rows="5" formControlName="description"></textarea>
-              </label>
-              <label class="check">
-                <input type="checkbox" formControlName="featured" />
-                <span>Pièce phare (mise en avant sur l'accueil)</span>
               </label>
 
               @if (editingFurnitureId(); as ownerId) {
@@ -232,16 +274,23 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             </aside>
 
             <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
-              <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
+              <div class="form-head">
+                <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
+                @if (editingExhibitionSlug(); as s) {
+                  <a class="view-link" [href]="'/expositions/' + s" target="_blank" rel="noopener" title="Voir sur le site">Voir sur le site ↗</a>
+                }
+              </div>
 
               <label>
                 <span>Titre *</span>
                 <input type="text" formControlName="title" />
               </label>
-              <label>
-                <span>Slug</span>
-                <input type="text" formControlName="slug" placeholder="auto-généré si vide" />
-              </label>
+              @if (editingExhibitionSlug()) {
+                <label class="readonly-row">
+                  <span>Slug</span>
+                  <input type="text" formControlName="slug" readonly />
+                </label>
+              }
               <label>
                 <span>Lieu</span>
                 <input type="text" formControlName="venue" />
@@ -281,19 +330,45 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 </button>
               </div>
 
-              <div class="field-with-picker">
-                <label>
-                  <span>Galerie (une URL par ligne)</span>
-                  <textarea rows="3" formControlName="gallery"></textarea>
-                </label>
-                <button type="button" class="btn-pick" (click)="openPicker('exhibition-gallery')" title="Ajouter depuis la médiathèque">
-                  Médiathèque
-                </button>
+              <div class="gallery-block">
+                <div class="gallery-block-head">
+                  <span class="gallery-label">Galerie</span>
+                  <button type="button" class="btn-pick" (click)="openPicker('exhibition-gallery')" title="Ajouter depuis la médiathèque">
+                    + Ajouter
+                  </button>
+                </div>
+                @if (exhibitionGallery().length === 0) {
+                  <p class="gallery-empty">Aucune image. Cliquez sur « Ajouter » pour insérer une photo depuis la médiathèque.</p>
+                } @else {
+                  <ul class="gallery-thumbs" appReorderable (reordered)="onExhibitionGalleryReorder($event)">
+                    @for (url of exhibitionGallery(); track url) {
+                      <li class="gallery-thumb">
+                        <img [src]="url" alt="" />
+                        <button type="button" class="thumb-remove" (click)="removeExhibitionGalleryImage(url)" aria-label="Retirer">×</button>
+                      </li>
+                    }
+                  </ul>
+                  <p class="gallery-hint">Glisse une vignette pour réordonner.</p>
+                }
               </div>
 
               <label>
-                <span>Tags (un par ligne)</span>
-                <textarea rows="2" formControlName="tags"></textarea>
+                <span>Tags</span>
+                <div class="chips-input">
+                  @for (t of exhibitionTags(); track t) {
+                    <span class="chip">{{ t }}<button type="button" class="chip-remove" (click)="removeExhibitionTag(t)" aria-label="Retirer">×</button></span>
+                  }
+                  <input
+                    type="text"
+                    [ngModel]="newExhibitionTag()"
+                    (ngModelChange)="newExhibitionTag.set($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    (keydown.enter)="addExhibitionTag($event)"
+                    (keydown.backspace)="onTagBackspace($event)"
+                    placeholder="Ajouter un tag puis Entrée"
+                    class="chip-input-field"
+                  />
+                </div>
               </label>
               <label>
                 <span>Description courte</span>
@@ -302,10 +377,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
               <label>
                 <span>Description longue</span>
                 <textarea rows="5" formControlName="description"></textarea>
-              </label>
-              <label class="check">
-                <input type="checkbox" formControlName="featured" />
-                <span>Exposition phare</span>
               </label>
 
               @if (editingExhibitionId(); as ownerId) {
@@ -409,26 +480,12 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
               </div>
 
               <div class="texts-section">
-                <h2 class="texts-section-title">Profil du studio</h2>
+                <h2 class="texts-section-title">Contact &amp; réseaux sociaux</h2>
 
                 <div class="texts-group">
-                  <div class="row-2">
-                    <label>
-                      <span>Nom du studio</span>
-                      <input type="text" formControlName="profile_studio" />
-                    </label>
-                    <label>
-                      <span>Localisation</span>
-                      <input type="text" formControlName="profile_location" />
-                    </label>
-                  </div>
                   <label>
-                    <span>Tagline</span>
-                    <input type="text" formControlName="profile_tagline" />
-                  </label>
-                  <label>
-                    <span>Biographie</span>
-                    <textarea rows="5" formControlName="profile_bio"></textarea>
+                    <span>Localisation</span>
+                    <input type="text" formControlName="profile_location" />
                   </label>
                   <div class="row-2">
                     <label>
@@ -450,14 +507,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                       <input type="url" formControlName="profile_linkedin" placeholder="https://www.linkedin.com/in/votre-profil" />
                     </label>
                   </div>
-                  <label>
-                    <span>Distinctions (une par ligne)</span>
-                    <textarea rows="4" formControlName="profile_awards"></textarea>
-                  </label>
-                  <label>
-                    <span>Presse (format : Titre|Année, une par ligne)</span>
-                    <textarea rows="4" formControlName="profile_press" placeholder="AD Magazine — Portrait|2024"></textarea>
-                  </label>
                 </div>
               </div>
 
@@ -672,6 +721,8 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             </div>
           }
         }
+          </div>
+        </div>
       </div>
     </section>
 
@@ -719,6 +770,17 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
         </div>
       </div>
     }
+
+    @if (toasts().length > 0) {
+      <div class="toast-stack" aria-live="polite">
+        @for (t of toasts(); track t.id) {
+          <div class="toast" [class.error]="t.type === 'error'" role="status">
+            <span class="toast-text">{{ t.text }}</span>
+            <button type="button" class="toast-close" (click)="dismissToast(t.id)" aria-label="Fermer">×</button>
+          </div>
+        }
+      </div>
+    }
   `,
   styles: [`
     .section { padding: 128px 0 96px; }
@@ -726,40 +788,129 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
     .head h1 { margin-top: 16px; }
     .lead { margin-top: 16px; color: var(--color-ink-soft); }
 
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+    .admin-content { min-width: 0; }
+    .sidebar-toggle {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      width: 100%;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-line);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-ink);
+      cursor: pointer;
+      grid-column: 1 / -1;
+    }
+    .burger-icon { font-size: 1.1rem; }
+
     .tabs {
       display: flex;
-      gap: 8px;
-      margin-bottom: 32px;
-      border-bottom: 1px solid var(--color-line);
+      flex-direction: column;
+      gap: 2px;
+      position: sticky;
+      top: 96px;
+      border-right: 1px solid var(--color-line);
+      padding-right: 12px;
     }
     .tabs button {
       background: transparent;
       border: 0;
-      padding: 14px 20px;
-      font-size: 0.875rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
       color: var(--color-ink-soft);
       cursor: pointer;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
+      text-align: left;
+      border-left: 2px solid transparent;
+      transition: color var(--transition), border-color var(--transition), background var(--transition);
     }
+    .tabs button:hover { color: var(--color-ink); background: var(--color-bg-alt); }
     .tabs button.active {
       color: var(--color-ink);
-      border-bottom-color: var(--color-accent);
+      border-left-color: var(--color-accent);
+      background: var(--color-bg-alt);
+      font-weight: 500;
     }
 
-    .flash {
-      padding: 12px 16px;
-      margin-bottom: 24px;
-      background: rgba(139, 111, 71, 0.08);
-      border-left: 3px solid var(--color-accent);
-      font-size: 0.95rem;
+    @media (max-width: 720px) {
+      .admin-layout {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      .sidebar-toggle { display: flex; margin-bottom: 16px; }
+      .tabs {
+        position: static;
+        border-right: none;
+        padding-right: 0;
+        margin-bottom: 24px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 240ms ease;
+      }
+      .tabs.open { max-height: 600px; }
     }
-    .flash.error {
-      background: rgba(177, 83, 42, 0.08);
+
+    .toast-stack {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 380px;
+      pointer-events: none;
+    }
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-line);
+      border-left: 3px solid var(--color-accent);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      font-size: 0.9rem;
+      pointer-events: auto;
+      animation: toast-slide-in 220ms ease-out;
+    }
+    .toast.error {
       border-left-color: #b1532a;
       color: #8a3d1f;
+      background: rgba(177, 83, 42, 0.04);
+    }
+    .toast-text { flex: 1; line-height: 1.4; }
+    .toast-close {
+      background: none;
+      border: none;
+      color: var(--color-mute);
+      font-size: 1.2rem;
+      line-height: 1;
+      padding: 0 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .toast-close:hover { color: var(--color-ink); }
+    @keyframes toast-slide-in {
+      from { transform: translateX(40px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @media (max-width: 600px) {
+      .toast-stack {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        max-width: none;
+      }
     }
 
     .grid-admin {
@@ -827,7 +978,167 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
       border: 1px solid var(--color-line);
       background: var(--color-bg);
     }
-    .form h2 { margin: 0 0 8px; font-size: 1.5rem; }
+    .form h2 { margin: 0; font-size: 1.5rem; }
+    .form-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .view-link {
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .view-link:hover { color: var(--color-accent); }
+    .readonly-row input[readonly] {
+      background: var(--color-bg-alt);
+      color: var(--color-ink-soft);
+      cursor: default;
+    }
+
+    .chips-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg);
+      min-height: 40px;
+      align-items: center;
+    }
+    .chips-input:focus-within { border-color: var(--color-accent); }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 4px 4px 10px;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-line);
+      font-size: 0.82rem;
+      color: var(--color-ink);
+    }
+    .chip-remove {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 2px 6px;
+      color: var(--color-mute);
+      cursor: pointer;
+    }
+    .chip-remove:hover { color: #b1532a; }
+    .chip-input-field {
+      flex: 1;
+      min-width: 140px;
+      padding: 6px 8px;
+      border: none;
+      background: transparent;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .gallery-block {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .gallery-block-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .gallery-label {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+    }
+    .gallery-block .btn-pick { height: auto; padding: 8px 14px; }
+    .gallery-empty {
+      margin: 0;
+      padding: 16px;
+      font-size: 0.85rem;
+      color: var(--color-ink-soft);
+      font-style: italic;
+      background: var(--color-bg-alt);
+      border: 1px dashed var(--color-line);
+      text-align: center;
+    }
+    .gallery-thumbs {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .gallery-thumb {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg-alt);
+      cursor: grab;
+    }
+    .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      color: #fff;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .thumb-remove:hover { background: rgba(0, 0, 0, 0.9); }
+    .gallery-hint {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--color-mute);
+      font-style: italic;
+    }
+
+    .dim-fieldset {
+      border: 1px solid var(--color-line);
+      padding: 16px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .dim-fieldset legend {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+      padding: 0 8px;
+    }
+    .dim-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .dim-cell { gap: 4px; }
+    .dim-cell span { font-size: 0.78rem; color: var(--color-ink-soft); }
+    .dim-notes { gap: 4px; }
+    .dim-notes span { font-size: 0.78rem; color: var(--color-ink-soft); }
+    @media (max-width: 600px) {
+      .dim-grid { grid-template-columns: 1fr; }
+    }
 
     .field-with-picker {
       display: flex;
@@ -1338,8 +1649,29 @@ export class AdminComponent {
   protected readonly saving = signal(false);
   protected readonly savingTypo = signal(false);
   protected readonly uploading = signal(false);
-  protected readonly message = signal<string | null>(null);
-  protected readonly messageType = signal<'success' | 'error'>('success');
+  protected readonly sidebarOpen = signal(false);
+  private readonly tabLabels: Record<Tab, string> = {
+    furniture: 'Mobilier',
+    exhibitions: 'Expositions',
+    texts: 'Textes du site',
+    photos: 'Médiathèque',
+    home: 'Accueil',
+    typography: 'Typographie',
+    analytics: 'Analytics',
+  };
+  protected readonly currentTabLabel = computed(() => this.tabLabels[this.tab()]);
+
+  protected readonly toasts = signal<Toast[]>([]);
+  private toastCounter = 0;
+  // Computed pour rétro-compatibilité des tests existants qui lisent message()/messageType()
+  protected readonly message = computed<string | null>(() => {
+    const list = this.toasts();
+    return list.length === 0 ? null : list[list.length - 1].text;
+  });
+  protected readonly messageType = computed<'success' | 'error'>(() => {
+    const list = this.toasts();
+    return list.length === 0 ? 'success' : list[list.length - 1].type;
+  });
   protected readonly photoPicker = signal<PickerTarget | null>(null);
   protected readonly viewingPhoto = signal<Photo | null>(null);
 
@@ -1351,11 +1683,12 @@ export class AdminComponent {
     material: [''],
     designer: ['Milo GUILLAUME Design'],
     coverImage: [''],
-    gallery: [''],
-    dimensions: [''],
+    dimW: [null as number | null],
+    dimD: [null as number | null],
+    dimH: [null as number | null],
+    dimNotes: [''],
     shortDescription: [''],
     description: [''],
-    featured: [false],
   });
 
   protected readonly exhibitionForm = this.fb.group({
@@ -1368,12 +1701,14 @@ export class AdminComponent {
     endDate: ['', Validators.required],
     curator: [''],
     coverImage: [''],
-    gallery: [''],
-    tags: [''],
     shortDescription: [''],
     description: [''],
-    featured: [false],
   });
+
+  protected readonly furnitureGallery = signal<string[]>([]);
+  protected readonly exhibitionGallery = signal<string[]>([]);
+  protected readonly exhibitionTags = signal<string[]>([]);
+  protected readonly newExhibitionTag = signal('');
 
   protected readonly textsForm = this.fb.group({
     home_hero_eyebrow: [''],
@@ -1393,14 +1728,9 @@ export class AdminComponent {
     studio_step3_desc: [''],
     studio_step4_title: [''],
     studio_step4_desc: [''],
-    profile_studio: [''],
-    profile_tagline: [''],
-    profile_bio: [''],
     profile_contactEmail: [''],
     profile_phone: [''],
     profile_location: [''],
-    profile_awards: [''],
-    profile_press: [''],
     profile_instagram: [''],
     profile_linkedin: [''],
   });
@@ -1431,8 +1761,12 @@ export class AdminComponent {
 
   switchTab(tab: Tab) {
     this.tab.set(tab);
-    this.message.set(null);
+    this.sidebarOpen.set(false);
     if (tab === 'home') this.loadHomeTab();
+  }
+
+  toggleSidebar() {
+    this.sidebarOpen.update(v => !v);
   }
 
   protected readonly homeItems = signal<HomeAdminItem[] | null>(null);
@@ -1609,14 +1943,9 @@ export class AdminComponent {
           studio_step3_desc: content['studio.step3.desc'] ?? '',
           studio_step4_title: content['studio.step4.title'] ?? '',
           studio_step4_desc: content['studio.step4.desc'] ?? '',
-          profile_studio: content['profile.studio'] ?? '',
-          profile_tagline: content['profile.tagline'] ?? '',
-          profile_bio: content['profile.bio'] ?? '',
           profile_contactEmail: content['profile.contactEmail'] ?? '',
           profile_phone: content['profile.phone'] ?? '',
           profile_location: content['profile.location'] ?? '',
-          profile_awards: content['profile.awards'] ?? '',
-          profile_press: content['profile.press'] ?? '',
           profile_instagram: content['profile.instagram'] ?? '',
           profile_linkedin: content['profile.linkedin'] ?? '',
         });
@@ -1657,14 +1986,9 @@ export class AdminComponent {
       'studio.step3.desc': v.studio_step3_desc ?? '',
       'studio.step4.title': v.studio_step4_title ?? '',
       'studio.step4.desc': v.studio_step4_desc ?? '',
-      'profile.studio': v.profile_studio ?? '',
-      'profile.tagline': v.profile_tagline ?? '',
-      'profile.bio': v.profile_bio ?? '',
       'profile.contactEmail': v.profile_contactEmail ?? '',
       'profile.phone': v.profile_phone ?? '',
       'profile.location': v.profile_location ?? '',
-      'profile.awards': v.profile_awards ?? '',
-      'profile.press': v.profile_press ?? '',
       'profile.instagram': v.profile_instagram ?? '',
       'profile.linkedin': v.profile_linkedin ?? '',
     };
@@ -1739,14 +2063,16 @@ export class AdminComponent {
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
       material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
-      gallery: '', dimensions: '', shortDescription: '', description: '', featured: false,
+      dimW: null, dimD: null, dimH: null, dimNotes: '',
+      shortDescription: '', description: '',
     });
-    this.message.set(null);
+    this.furnitureGallery.set([]);
   }
 
   loadFurniture(item: Furniture) {
     this.editingFurnitureSlug.set(item.slug);
     this.editingFurnitureId.set(item.id ?? null);
+    const dims = this.parseDimensions(item.dimensions ?? []);
     this.furnitureForm.reset({
       title: item.title,
       slug: item.slug,
@@ -1755,18 +2081,59 @@ export class AdminComponent {
       material: item.material ?? '',
       designer: item.designer ?? '',
       coverImage: item.coverImage ?? '',
-      gallery: (item.gallery ?? []).join('\n'),
-      dimensions: (item.dimensions ?? []).join('\n'),
+      dimW: dims.w,
+      dimD: dims.d,
+      dimH: dims.h,
+      dimNotes: dims.notes,
       shortDescription: item.shortDescription ?? '',
       description: item.description ?? '',
-      featured: item.featured,
     });
-    this.message.set(null);
+    this.furnitureGallery.set([...(item.gallery ?? [])]);
+  }
+
+  private parseDimensions(list: string[]): { w: number | null; d: number | null; h: number | null; notes: string } {
+    const widthRe = /^(L|Larg(?:eur)?\.?)\s*[:.]?\s*([0-9]+(?:[.,][0-9]+)?)/i;
+    const depthRe = /^(P|Prof(?:ondeur)?\.?)\s*[:.]?\s*([0-9]+(?:[.,][0-9]+)?)/i;
+    const heightRe = /^(H|Haut(?:eur)?\.?)\s*[:.]?\s*([0-9]+(?:[.,][0-9]+)?)/i;
+    let w: number | null = null, d: number | null = null, h: number | null = null;
+    const notes: string[] = [];
+    for (const raw of list) {
+      const line = (raw ?? '').trim();
+      if (!line) continue;
+      let m = w === null ? line.match(widthRe) : null;
+      if (m) { w = parseFloat(m[2].replace(',', '.')); continue; }
+      m = d === null ? line.match(depthRe) : null;
+      if (m) { d = parseFloat(m[2].replace(',', '.')); continue; }
+      m = h === null ? line.match(heightRe) : null;
+      if (m) { h = parseFloat(m[2].replace(',', '.')); continue; }
+      notes.push(line);
+    }
+    return { w, d, h, notes: notes.join('\n') };
+  }
+
+  private serializeDimensions(w: number | null, d: number | null, h: number | null, notesText: string): string[] {
+    const result: string[] = [];
+    if (w !== null && w !== undefined && !isNaN(w)) result.push(`L ${w} cm`);
+    if (d !== null && d !== undefined && !isNaN(d)) result.push(`P ${d} cm`);
+    if (h !== null && h !== undefined && !isNaN(h)) result.push(`H ${h} cm`);
+    result.push(...this.splitLines(notesText));
+    return result;
+  }
+
+  removeFurnitureGalleryImage(url: string) {
+    this.furnitureGallery.update(g => g.filter(u => u !== url));
+  }
+
+  onFurnitureGalleryReorder(order: number[]) {
+    const current = this.furnitureGallery();
+    this.furnitureGallery.set(order.map(i => current[i]));
   }
 
   saveFurniture() {
     if (this.furnitureForm.invalid) return;
     const v = this.furnitureForm.getRawValue();
+    const slug = this.editingFurnitureSlug();
+    const existing = slug ? this.furniture().find(f => f.slug === slug) : null;
     const payload: Partial<Furniture> = {
       title: v.title!,
       slug: v.slug || undefined,
@@ -1775,15 +2142,14 @@ export class AdminComponent {
       material: v.material ?? '',
       designer: v.designer ?? '',
       coverImage: v.coverImage ?? '',
-      gallery: this.splitLines(v.gallery),
-      dimensions: this.splitLines(v.dimensions),
+      gallery: [...this.furnitureGallery()],
+      dimensions: this.serializeDimensions(v.dimW ?? null, v.dimD ?? null, v.dimH ?? null, v.dimNotes ?? ''),
       shortDescription: v.shortDescription ?? '',
       description: v.description ?? '',
-      featured: !!v.featured,
+      featured: existing?.featured ?? false,
     };
 
     this.saving.set(true);
-    const slug = this.editingFurnitureSlug();
     const op$ = slug
       ? this.portfolio.updateFurniture(slug, payload)
       : this.portfolio.createFurniture(payload);
@@ -1819,9 +2185,11 @@ export class AdminComponent {
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
-      gallery: '', tags: '', shortDescription: '', description: '', featured: false,
+      shortDescription: '', description: '',
     });
-    this.message.set(null);
+    this.exhibitionGallery.set([]);
+    this.exhibitionTags.set([]);
+    this.newExhibitionTag.set('');
   }
 
   loadExhibition(item: Exhibition) {
@@ -1837,18 +2205,51 @@ export class AdminComponent {
       endDate: item.endDate ?? '',
       curator: item.curator ?? '',
       coverImage: item.coverImage ?? '',
-      gallery: (item.gallery ?? []).join('\n'),
-      tags: (item.tags ?? []).join('\n'),
       shortDescription: item.shortDescription ?? '',
       description: item.description ?? '',
-      featured: item.featured,
     });
-    this.message.set(null);
+    this.exhibitionGallery.set([...(item.gallery ?? [])]);
+    this.exhibitionTags.set([...(item.tags ?? [])]);
+    this.newExhibitionTag.set('');
+  }
+
+  removeExhibitionGalleryImage(url: string) {
+    this.exhibitionGallery.update(g => g.filter(u => u !== url));
+  }
+
+  onExhibitionGalleryReorder(order: number[]) {
+    const current = this.exhibitionGallery();
+    this.exhibitionGallery.set(order.map(i => current[i]));
+  }
+
+  addExhibitionTag(event: Event) {
+    event.preventDefault();
+    const value = this.newExhibitionTag().trim();
+    if (!value) return;
+    const current = this.exhibitionTags();
+    if (current.includes(value)) {
+      this.newExhibitionTag.set('');
+      return;
+    }
+    this.exhibitionTags.set([...current, value]);
+    this.newExhibitionTag.set('');
+  }
+
+  removeExhibitionTag(tag: string) {
+    this.exhibitionTags.update(tags => tags.filter(t => t !== tag));
+  }
+
+  onTagBackspace(event: Event) {
+    if (this.newExhibitionTag() !== '') return;
+    event.preventDefault();
+    this.exhibitionTags.update(tags => tags.slice(0, -1));
   }
 
   saveExhibition() {
     if (this.exhibitionForm.invalid) return;
     const v = this.exhibitionForm.getRawValue();
+    const slug = this.editingExhibitionSlug();
+    const existing = slug ? this.exhibitions().find(e => e.slug === slug) : null;
     const payload: Partial<Exhibition> = {
       title: v.title!,
       slug: v.slug || undefined,
@@ -1859,15 +2260,14 @@ export class AdminComponent {
       endDate: v.endDate!,
       curator: v.curator ?? '',
       coverImage: v.coverImage ?? '',
-      gallery: this.splitLines(v.gallery),
-      tags: this.splitLines(v.tags),
+      gallery: [...this.exhibitionGallery()],
+      tags: [...this.exhibitionTags()],
       shortDescription: v.shortDescription ?? '',
       description: v.description ?? '',
-      featured: !!v.featured,
+      featured: existing?.featured ?? false,
     };
 
     this.saving.set(true);
-    const slug = this.editingExhibitionSlug();
     const op$ = slug
       ? this.portfolio.updateExhibition(slug, payload)
       : this.portfolio.createExhibition(payload);
@@ -1971,15 +2371,11 @@ export class AdminComponent {
     if (target === 'furniture-cover') {
       this.furnitureForm.patchValue({ coverImage: photo.url });
     } else if (target === 'furniture-gallery') {
-      const current = this.furnitureForm.get('gallery')!.value ?? '';
-      const updated = current.trim() ? current.trim() + '\n' + photo.url : photo.url;
-      this.furnitureForm.patchValue({ gallery: updated });
+      this.furnitureGallery.update(g => g.includes(photo.url) ? g : [...g, photo.url]);
     } else if (target === 'exhibition-cover') {
       this.exhibitionForm.patchValue({ coverImage: photo.url });
     } else if (target === 'exhibition-gallery') {
-      const current = this.exhibitionForm.get('gallery')!.value ?? '';
-      const updated = current.trim() ? current.trim() + '\n' + photo.url : photo.url;
-      this.exhibitionForm.patchValue({ gallery: updated });
+      this.exhibitionGallery.update(g => g.includes(photo.url) ? g : [...g, photo.url]);
     }
     if (!this.pickerIsGallery()) {
       this.photoPicker.set(null);
@@ -2020,10 +2416,14 @@ export class AdminComponent {
   }
 
   private flash(text: string, type: 'success' | 'error') {
-    this.message.set(text);
-    this.messageType.set(type);
+    const id = ++this.toastCounter;
+    this.toasts.update(list => [...list, { id, text, type }]);
     setTimeout(() => {
-      if (this.message() === text) this.message.set(null);
+      this.toasts.update(list => list.filter(t => t.id !== id));
     }, 4000);
+  }
+
+  protected dismissToast(id: number) {
+    this.toasts.update(list => list.filter(t => t.id !== id));
   }
 }
