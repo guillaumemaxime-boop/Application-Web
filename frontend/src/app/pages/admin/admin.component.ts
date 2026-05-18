@@ -121,16 +121,23 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             </aside>
 
             <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
-              <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
+              <div class="form-head">
+                <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
+                @if (editingFurnitureSlug(); as s) {
+                  <a class="view-link" [href]="'/mobilier/' + s" target="_blank" rel="noopener" title="Voir sur le site">Voir sur le site ↗</a>
+                }
+              </div>
 
               <label>
                 <span>Titre *</span>
                 <input type="text" formControlName="title" />
               </label>
-              <label>
-                <span>Slug</span>
-                <input type="text" formControlName="slug" placeholder="auto-généré si vide" />
-              </label>
+              @if (editingFurnitureSlug()) {
+                <label class="readonly-row">
+                  <span>Slug</span>
+                  <input type="text" formControlName="slug" readonly />
+                </label>
+              }
               <div class="row-2">
                 <label>
                   <span>Catégorie *</span>
@@ -182,10 +189,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 <span>Description longue</span>
                 <textarea rows="5" formControlName="description"></textarea>
               </label>
-              <label class="check">
-                <input type="checkbox" formControlName="featured" />
-                <span>Pièce phare (mise en avant sur l'accueil)</span>
-              </label>
 
               @if (editingFurnitureId(); as ownerId) {
                 <app-slides-editor kind="furniture" [ownerId]="ownerId" [ownerSlug]="editingFurnitureSlug()" />
@@ -232,16 +235,23 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
             </aside>
 
             <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
-              <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
+              <div class="form-head">
+                <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
+                @if (editingExhibitionSlug(); as s) {
+                  <a class="view-link" [href]="'/expositions/' + s" target="_blank" rel="noopener" title="Voir sur le site">Voir sur le site ↗</a>
+                }
+              </div>
 
               <label>
                 <span>Titre *</span>
                 <input type="text" formControlName="title" />
               </label>
-              <label>
-                <span>Slug</span>
-                <input type="text" formControlName="slug" placeholder="auto-généré si vide" />
-              </label>
+              @if (editingExhibitionSlug()) {
+                <label class="readonly-row">
+                  <span>Slug</span>
+                  <input type="text" formControlName="slug" readonly />
+                </label>
+              }
               <label>
                 <span>Lieu</span>
                 <input type="text" formControlName="venue" />
@@ -302,10 +312,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
               <label>
                 <span>Description longue</span>
                 <textarea rows="5" formControlName="description"></textarea>
-              </label>
-              <label class="check">
-                <input type="checkbox" formControlName="featured" />
-                <span>Exposition phare</span>
               </label>
 
               @if (editingExhibitionId(); as ownerId) {
@@ -409,26 +415,12 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
               </div>
 
               <div class="texts-section">
-                <h2 class="texts-section-title">Profil du studio</h2>
+                <h2 class="texts-section-title">Contact &amp; réseaux sociaux</h2>
 
                 <div class="texts-group">
-                  <div class="row-2">
-                    <label>
-                      <span>Nom du studio</span>
-                      <input type="text" formControlName="profile_studio" />
-                    </label>
-                    <label>
-                      <span>Localisation</span>
-                      <input type="text" formControlName="profile_location" />
-                    </label>
-                  </div>
                   <label>
-                    <span>Tagline</span>
-                    <input type="text" formControlName="profile_tagline" />
-                  </label>
-                  <label>
-                    <span>Biographie</span>
-                    <textarea rows="5" formControlName="profile_bio"></textarea>
+                    <span>Localisation</span>
+                    <input type="text" formControlName="profile_location" />
                   </label>
                   <div class="row-2">
                     <label>
@@ -450,14 +442,6 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                       <input type="url" formControlName="profile_linkedin" placeholder="https://www.linkedin.com/in/votre-profil" />
                     </label>
                   </div>
-                  <label>
-                    <span>Distinctions (une par ligne)</span>
-                    <textarea rows="4" formControlName="profile_awards"></textarea>
-                  </label>
-                  <label>
-                    <span>Presse (format : Titre|Année, une par ligne)</span>
-                    <textarea rows="4" formControlName="profile_press" placeholder="AD Magazine — Portrait|2024"></textarea>
-                  </label>
                 </div>
               </div>
 
@@ -827,7 +811,28 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
       border: 1px solid var(--color-line);
       background: var(--color-bg);
     }
-    .form h2 { margin: 0 0 8px; font-size: 1.5rem; }
+    .form h2 { margin: 0; font-size: 1.5rem; }
+    .form-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .view-link {
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-mute);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .view-link:hover { color: var(--color-accent); }
+    .readonly-row input[readonly] {
+      background: var(--color-bg-alt);
+      color: var(--color-ink-soft);
+      cursor: default;
+    }
 
     .field-with-picker {
       display: flex;
@@ -1355,7 +1360,6 @@ export class AdminComponent {
     dimensions: [''],
     shortDescription: [''],
     description: [''],
-    featured: [false],
   });
 
   protected readonly exhibitionForm = this.fb.group({
@@ -1372,7 +1376,6 @@ export class AdminComponent {
     tags: [''],
     shortDescription: [''],
     description: [''],
-    featured: [false],
   });
 
   protected readonly textsForm = this.fb.group({
@@ -1393,14 +1396,9 @@ export class AdminComponent {
     studio_step3_desc: [''],
     studio_step4_title: [''],
     studio_step4_desc: [''],
-    profile_studio: [''],
-    profile_tagline: [''],
-    profile_bio: [''],
     profile_contactEmail: [''],
     profile_phone: [''],
     profile_location: [''],
-    profile_awards: [''],
-    profile_press: [''],
     profile_instagram: [''],
     profile_linkedin: [''],
   });
@@ -1609,14 +1607,9 @@ export class AdminComponent {
           studio_step3_desc: content['studio.step3.desc'] ?? '',
           studio_step4_title: content['studio.step4.title'] ?? '',
           studio_step4_desc: content['studio.step4.desc'] ?? '',
-          profile_studio: content['profile.studio'] ?? '',
-          profile_tagline: content['profile.tagline'] ?? '',
-          profile_bio: content['profile.bio'] ?? '',
           profile_contactEmail: content['profile.contactEmail'] ?? '',
           profile_phone: content['profile.phone'] ?? '',
           profile_location: content['profile.location'] ?? '',
-          profile_awards: content['profile.awards'] ?? '',
-          profile_press: content['profile.press'] ?? '',
           profile_instagram: content['profile.instagram'] ?? '',
           profile_linkedin: content['profile.linkedin'] ?? '',
         });
@@ -1657,14 +1650,9 @@ export class AdminComponent {
       'studio.step3.desc': v.studio_step3_desc ?? '',
       'studio.step4.title': v.studio_step4_title ?? '',
       'studio.step4.desc': v.studio_step4_desc ?? '',
-      'profile.studio': v.profile_studio ?? '',
-      'profile.tagline': v.profile_tagline ?? '',
-      'profile.bio': v.profile_bio ?? '',
       'profile.contactEmail': v.profile_contactEmail ?? '',
       'profile.phone': v.profile_phone ?? '',
       'profile.location': v.profile_location ?? '',
-      'profile.awards': v.profile_awards ?? '',
-      'profile.press': v.profile_press ?? '',
       'profile.instagram': v.profile_instagram ?? '',
       'profile.linkedin': v.profile_linkedin ?? '',
     };
@@ -1739,7 +1727,7 @@ export class AdminComponent {
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
       material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
-      gallery: '', dimensions: '', shortDescription: '', description: '', featured: false,
+      gallery: '', dimensions: '', shortDescription: '', description: '',
     });
     this.message.set(null);
   }
@@ -1759,7 +1747,6 @@ export class AdminComponent {
       dimensions: (item.dimensions ?? []).join('\n'),
       shortDescription: item.shortDescription ?? '',
       description: item.description ?? '',
-      featured: item.featured,
     });
     this.message.set(null);
   }
@@ -1767,6 +1754,8 @@ export class AdminComponent {
   saveFurniture() {
     if (this.furnitureForm.invalid) return;
     const v = this.furnitureForm.getRawValue();
+    const slug = this.editingFurnitureSlug();
+    const existing = slug ? this.furniture().find(f => f.slug === slug) : null;
     const payload: Partial<Furniture> = {
       title: v.title!,
       slug: v.slug || undefined,
@@ -1779,11 +1768,10 @@ export class AdminComponent {
       dimensions: this.splitLines(v.dimensions),
       shortDescription: v.shortDescription ?? '',
       description: v.description ?? '',
-      featured: !!v.featured,
+      featured: existing?.featured ?? false,
     };
 
     this.saving.set(true);
-    const slug = this.editingFurnitureSlug();
     const op$ = slug
       ? this.portfolio.updateFurniture(slug, payload)
       : this.portfolio.createFurniture(payload);
@@ -1819,7 +1807,7 @@ export class AdminComponent {
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
-      gallery: '', tags: '', shortDescription: '', description: '', featured: false,
+      gallery: '', tags: '', shortDescription: '', description: '',
     });
     this.message.set(null);
   }
@@ -1841,7 +1829,6 @@ export class AdminComponent {
       tags: (item.tags ?? []).join('\n'),
       shortDescription: item.shortDescription ?? '',
       description: item.description ?? '',
-      featured: item.featured,
     });
     this.message.set(null);
   }
@@ -1849,6 +1836,8 @@ export class AdminComponent {
   saveExhibition() {
     if (this.exhibitionForm.invalid) return;
     const v = this.exhibitionForm.getRawValue();
+    const slug = this.editingExhibitionSlug();
+    const existing = slug ? this.exhibitions().find(e => e.slug === slug) : null;
     const payload: Partial<Exhibition> = {
       title: v.title!,
       slug: v.slug || undefined,
@@ -1863,11 +1852,10 @@ export class AdminComponent {
       tags: this.splitLines(v.tags),
       shortDescription: v.shortDescription ?? '',
       description: v.description ?? '',
-      featured: !!v.featured,
+      featured: existing?.featured ?? false,
     };
 
     this.saving.set(true);
-    const slug = this.editingExhibitionSlug();
     const op$ = slug
       ? this.portfolio.updateExhibition(slug, payload)
       : this.portfolio.createExhibition(payload);

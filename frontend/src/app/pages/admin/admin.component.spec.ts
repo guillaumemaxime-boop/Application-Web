@@ -151,7 +151,6 @@ describe('AdminComponent', () => {
       expect(v.year).toBe(mockFurniture.year);
       expect(v.gallery).toBe(mockFurniture.gallery.join('\n'));
       expect(v.dimensions).toBe(mockFurniture.dimensions.join('\n'));
-      expect(v.featured).toBe(true);
     });
 
     it('should call createFurniture when saving without an editing slug', () => {
@@ -673,7 +672,7 @@ describe('AdminComponent', () => {
       portfolioServiceSpy.getContent.and.returnValue(of({
         'home.hero.eyebrow': 'Mon Studio',
         'home.hero.title': 'Titre héro',
-        'profile.studio': 'Studio Test',
+        'profile.contactEmail': 'studio@test.fr',
       }));
 
       const fix = TestBed.createComponent(AdminComponent);
@@ -681,7 +680,7 @@ describe('AdminComponent', () => {
       await fix.whenStable();
 
       expect(fix.componentInstance['textsForm'].value.home_hero_eyebrow).toBe('Mon Studio');
-      expect(fix.componentInstance['textsForm'].value.profile_studio).toBe('Studio Test');
+      expect(fix.componentInstance['textsForm'].value.profile_contactEmail).toBe('studio@test.fr');
     });
 
     it('should call updateContent when saveTexts is invoked', () => {
