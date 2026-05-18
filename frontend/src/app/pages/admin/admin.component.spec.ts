@@ -149,7 +149,7 @@ describe('AdminComponent', () => {
       expect(v.title).toBe(mockFurniture.title);
       expect(v.category).toBe(mockFurniture.category);
       expect(v.year).toBe(mockFurniture.year);
-      expect(v.gallery).toBe(mockFurniture.gallery.join('\n'));
+      expect(component['furnitureGallery']()).toEqual(mockFurniture.gallery);
       expect(v.dimensions).toBe(mockFurniture.dimensions.join('\n'));
     });
 
@@ -159,9 +159,9 @@ describe('AdminComponent', () => {
         title: 'Nouvelle pièce',
         category: 'Tables',
         year: 2026,
-        gallery: 'https://img/1.jpg\nhttps://img/2.jpg',
         dimensions: 'H 80\nL 60',
       });
+      component['furnitureGallery'].set(['https://img/1.jpg', 'https://img/2.jpg']);
 
       component.saveFurniture();
 
@@ -416,7 +416,7 @@ describe('AdminComponent', () => {
       expect(v.material).toBe('');
       expect(v.designer).toBe('');
       expect(v.coverImage).toBe('');
-      expect(v.gallery).toBe('');
+      expect(component['furnitureGallery']()).toEqual([]);
       expect(v.dimensions).toBe('');
     });
 
@@ -437,7 +437,7 @@ describe('AdminComponent', () => {
       const v = component['exhibitionForm'].value;
       expect(v.venue).toBe('');
       expect(v.city).toBe('');
-      expect(v.gallery).toBe('');
+      expect(component['exhibitionGallery']()).toEqual([]);
       expect(component['exhibitionTags']()).toEqual([]);
     });
 
@@ -632,23 +632,29 @@ describe('AdminComponent', () => {
       expect(component['photoPicker']()).toBeNull();
     });
 
-    it('should append url to gallery when selecting photo for furniture-gallery', () => {
-      component['furnitureForm'].patchValue({ gallery: 'https://existing.com/img.jpg' });
+    it('should append url to furniture gallery signal when selecting photo for furniture-gallery', () => {
+      component['furnitureGallery'].set(['https://existing.com/img.jpg']);
       component.openPicker('furniture-gallery');
       component.selectPhoto(mockPhoto);
 
-      const gallery = component['furnitureForm'].get('gallery')!.value as string;
-      expect(gallery).toContain('https://existing.com/img.jpg');
-      expect(gallery).toContain(mockPhoto.url);
+      expect(component['furnitureGallery']()).toEqual(['https://existing.com/img.jpg', mockPhoto.url]);
       expect(component['photoPicker']()).toBe('furniture-gallery');
     });
 
-    it('should set gallery url directly when gallery field is empty', () => {
-      component['furnitureForm'].patchValue({ gallery: '' });
+    it('should push url to furniture gallery when empty', () => {
+      component['furnitureGallery'].set([]);
       component.openPicker('furniture-gallery');
       component.selectPhoto(mockPhoto);
 
-      expect(component['furnitureForm'].get('gallery')!.value).toBe(mockPhoto.url);
+      expect(component['furnitureGallery']()).toEqual([mockPhoto.url]);
+    });
+
+    it('should not duplicate when same url is selected twice for furniture-gallery', () => {
+      component['furnitureGallery'].set([mockPhoto.url]);
+      component.openPicker('furniture-gallery');
+      component.selectPhoto(mockPhoto);
+
+      expect(component['furnitureGallery']()).toEqual([mockPhoto.url]);
     });
 
     it('should set coverImage when selecting photo for exhibition-cover', () => {
@@ -659,11 +665,12 @@ describe('AdminComponent', () => {
       expect(component['photoPicker']()).toBeNull();
     });
 
-    it('should append url to gallery when selecting photo for exhibition-gallery', () => {
+    it('should append url to exhibition gallery signal when selecting photo for exhibition-gallery', () => {
+      component['exhibitionGallery'].set([]);
       component.openPicker('exhibition-gallery');
       component.selectPhoto(mockPhoto);
 
-      expect(component['exhibitionForm'].get('gallery')!.value).toBe(mockPhoto.url);
+      expect(component['exhibitionGallery']()).toEqual([mockPhoto.url]);
       expect(component['photoPicker']()).toBe('exhibition-gallery');
     });
 
@@ -692,14 +699,38 @@ describe('AdminComponent', () => {
       expect(portfolioServiceSpy.getPhotos).not.toHaveBeenCalled();
     });
 
-    it('should append url to exhibition-gallery when gallery field already has content', () => {
-      component['exhibitionForm'].patchValue({ gallery: 'https://existing.com/img.jpg' });
+    it('should append url to exhibition gallery when it already has content', () => {
+      component['exhibitionGallery'].set(['https://existing.com/img.jpg']);
       component.openPicker('exhibition-gallery');
       component.selectPhoto(mockPhoto);
 
-      const gallery = component['exhibitionForm'].get('gallery')!.value as string;
-      expect(gallery).toContain('https://existing.com/img.jpg');
-      expect(gallery).toContain(mockPhoto.url);
+      expect(component['exhibitionGallery']()).toEqual(['https://existing.com/img.jpg', mockPhoto.url]);
+    });
+  });
+
+  describe('Gallery thumbnails (reorder & remove)', () => {
+    it('removeFurnitureGalleryImage removes the matching url', () => {
+      component['furnitureGallery'].set(['a.jpg', 'b.jpg', 'c.jpg']);
+      component.removeFurnitureGalleryImage('b.jpg');
+      expect(component['furnitureGallery']()).toEqual(['a.jpg', 'c.jpg']);
+    });
+
+    it('onFurnitureGalleryReorder reorders by the given index list', () => {
+      component['furnitureGallery'].set(['a.jpg', 'b.jpg', 'c.jpg']);
+      component.onFurnitureGalleryReorder([2, 0, 1]);
+      expect(component['furnitureGallery']()).toEqual(['c.jpg', 'a.jpg', 'b.jpg']);
+    });
+
+    it('removeExhibitionGalleryImage removes the matching url', () => {
+      component['exhibitionGallery'].set(['x.jpg', 'y.jpg']);
+      component.removeExhibitionGalleryImage('x.jpg');
+      expect(component['exhibitionGallery']()).toEqual(['y.jpg']);
+    });
+
+    it('onExhibitionGalleryReorder reorders by the given index list', () => {
+      component['exhibitionGallery'].set(['x.jpg', 'y.jpg']);
+      component.onExhibitionGalleryReorder([1, 0]);
+      expect(component['exhibitionGallery']()).toEqual(['y.jpg', 'x.jpg']);
     });
   });
 

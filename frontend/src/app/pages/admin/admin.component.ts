@@ -167,14 +167,26 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 </button>
               </div>
 
-              <div class="field-with-picker">
-                <label>
-                  <span>Galerie (une URL par ligne)</span>
-                  <textarea rows="3" formControlName="gallery"></textarea>
-                </label>
-                <button type="button" class="btn-pick" (click)="openPicker('furniture-gallery')" title="Ajouter depuis la médiathèque">
-                  Médiathèque
-                </button>
+              <div class="gallery-block">
+                <div class="gallery-block-head">
+                  <span class="gallery-label">Galerie</span>
+                  <button type="button" class="btn-pick" (click)="openPicker('furniture-gallery')" title="Ajouter depuis la médiathèque">
+                    + Ajouter
+                  </button>
+                </div>
+                @if (furnitureGallery().length === 0) {
+                  <p class="gallery-empty">Aucune image. Cliquez sur « Ajouter » pour insérer une photo depuis la médiathèque.</p>
+                } @else {
+                  <ul class="gallery-thumbs" appReorderable (reordered)="onFurnitureGalleryReorder($event)">
+                    @for (url of furnitureGallery(); track url) {
+                      <li class="gallery-thumb">
+                        <img [src]="url" alt="" />
+                        <button type="button" class="thumb-remove" (click)="removeFurnitureGalleryImage(url)" aria-label="Retirer">×</button>
+                      </li>
+                    }
+                  </ul>
+                  <p class="gallery-hint">Glisse une vignette pour réordonner.</p>
+                }
               </div>
 
               <label>
@@ -291,14 +303,26 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
                 </button>
               </div>
 
-              <div class="field-with-picker">
-                <label>
-                  <span>Galerie (une URL par ligne)</span>
-                  <textarea rows="3" formControlName="gallery"></textarea>
-                </label>
-                <button type="button" class="btn-pick" (click)="openPicker('exhibition-gallery')" title="Ajouter depuis la médiathèque">
-                  Médiathèque
-                </button>
+              <div class="gallery-block">
+                <div class="gallery-block-head">
+                  <span class="gallery-label">Galerie</span>
+                  <button type="button" class="btn-pick" (click)="openPicker('exhibition-gallery')" title="Ajouter depuis la médiathèque">
+                    + Ajouter
+                  </button>
+                </div>
+                @if (exhibitionGallery().length === 0) {
+                  <p class="gallery-empty">Aucune image. Cliquez sur « Ajouter » pour insérer une photo depuis la médiathèque.</p>
+                } @else {
+                  <ul class="gallery-thumbs" appReorderable (reordered)="onExhibitionGalleryReorder($event)">
+                    @for (url of exhibitionGallery(); track url) {
+                      <li class="gallery-thumb">
+                        <img [src]="url" alt="" />
+                        <button type="button" class="thumb-remove" (click)="removeExhibitionGalleryImage(url)" aria-label="Retirer">×</button>
+                      </li>
+                    }
+                  </ul>
+                  <p class="gallery-hint">Glisse une vignette pour réordonner.</p>
+                }
               </div>
 
               <label>
@@ -889,6 +913,76 @@ type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover'
       outline: none;
     }
 
+    .gallery-block {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .gallery-block-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .gallery-label {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+    }
+    .gallery-block .btn-pick { height: auto; padding: 8px 14px; }
+    .gallery-empty {
+      margin: 0;
+      padding: 16px;
+      font-size: 0.85rem;
+      color: var(--color-ink-soft);
+      font-style: italic;
+      background: var(--color-bg-alt);
+      border: 1px dashed var(--color-line);
+      text-align: center;
+    }
+    .gallery-thumbs {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .gallery-thumb {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      border: 1px solid var(--color-line);
+      background: var(--color-bg-alt);
+      cursor: grab;
+    }
+    .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      color: #fff;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .thumb-remove:hover { background: rgba(0, 0, 0, 0.9); }
+    .gallery-hint {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--color-mute);
+      font-style: italic;
+    }
+
     .field-with-picker {
       display: flex;
       gap: 12px;
@@ -1411,7 +1505,6 @@ export class AdminComponent {
     material: [''],
     designer: ['Milo GUILLAUME Design'],
     coverImage: [''],
-    gallery: [''],
     dimensions: [''],
     shortDescription: [''],
     description: [''],
@@ -1427,11 +1520,12 @@ export class AdminComponent {
     endDate: ['', Validators.required],
     curator: [''],
     coverImage: [''],
-    gallery: [''],
     shortDescription: [''],
     description: [''],
   });
 
+  protected readonly furnitureGallery = signal<string[]>([]);
+  protected readonly exhibitionGallery = signal<string[]>([]);
   protected readonly exhibitionTags = signal<string[]>([]);
   protected readonly newExhibitionTag = signal('');
 
@@ -1784,8 +1878,9 @@ export class AdminComponent {
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
       material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
-      gallery: '', dimensions: '', shortDescription: '', description: '',
+      dimensions: '', shortDescription: '', description: '',
     });
+    this.furnitureGallery.set([]);
     this.message.set(null);
   }
 
@@ -1800,12 +1895,21 @@ export class AdminComponent {
       material: item.material ?? '',
       designer: item.designer ?? '',
       coverImage: item.coverImage ?? '',
-      gallery: (item.gallery ?? []).join('\n'),
       dimensions: (item.dimensions ?? []).join('\n'),
       shortDescription: item.shortDescription ?? '',
       description: item.description ?? '',
     });
+    this.furnitureGallery.set([...(item.gallery ?? [])]);
     this.message.set(null);
+  }
+
+  removeFurnitureGalleryImage(url: string) {
+    this.furnitureGallery.update(g => g.filter(u => u !== url));
+  }
+
+  onFurnitureGalleryReorder(order: number[]) {
+    const current = this.furnitureGallery();
+    this.furnitureGallery.set(order.map(i => current[i]));
   }
 
   saveFurniture() {
@@ -1821,7 +1925,7 @@ export class AdminComponent {
       material: v.material ?? '',
       designer: v.designer ?? '',
       coverImage: v.coverImage ?? '',
-      gallery: this.splitLines(v.gallery),
+      gallery: [...this.furnitureGallery()],
       dimensions: this.splitLines(v.dimensions),
       shortDescription: v.shortDescription ?? '',
       description: v.description ?? '',
@@ -1864,8 +1968,9 @@ export class AdminComponent {
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
-      gallery: '', shortDescription: '', description: '',
+      shortDescription: '', description: '',
     });
+    this.exhibitionGallery.set([]);
     this.exhibitionTags.set([]);
     this.newExhibitionTag.set('');
     this.message.set(null);
@@ -1884,13 +1989,22 @@ export class AdminComponent {
       endDate: item.endDate ?? '',
       curator: item.curator ?? '',
       coverImage: item.coverImage ?? '',
-      gallery: (item.gallery ?? []).join('\n'),
       shortDescription: item.shortDescription ?? '',
       description: item.description ?? '',
     });
+    this.exhibitionGallery.set([...(item.gallery ?? [])]);
     this.exhibitionTags.set([...(item.tags ?? [])]);
     this.newExhibitionTag.set('');
     this.message.set(null);
+  }
+
+  removeExhibitionGalleryImage(url: string) {
+    this.exhibitionGallery.update(g => g.filter(u => u !== url));
+  }
+
+  onExhibitionGalleryReorder(order: number[]) {
+    const current = this.exhibitionGallery();
+    this.exhibitionGallery.set(order.map(i => current[i]));
   }
 
   addExhibitionTag(event: Event) {
@@ -1931,7 +2045,7 @@ export class AdminComponent {
       endDate: v.endDate!,
       curator: v.curator ?? '',
       coverImage: v.coverImage ?? '',
-      gallery: this.splitLines(v.gallery),
+      gallery: [...this.exhibitionGallery()],
       tags: [...this.exhibitionTags()],
       shortDescription: v.shortDescription ?? '',
       description: v.description ?? '',
@@ -2042,15 +2156,11 @@ export class AdminComponent {
     if (target === 'furniture-cover') {
       this.furnitureForm.patchValue({ coverImage: photo.url });
     } else if (target === 'furniture-gallery') {
-      const current = this.furnitureForm.get('gallery')!.value ?? '';
-      const updated = current.trim() ? current.trim() + '\n' + photo.url : photo.url;
-      this.furnitureForm.patchValue({ gallery: updated });
+      this.furnitureGallery.update(g => g.includes(photo.url) ? g : [...g, photo.url]);
     } else if (target === 'exhibition-cover') {
       this.exhibitionForm.patchValue({ coverImage: photo.url });
     } else if (target === 'exhibition-gallery') {
-      const current = this.exhibitionForm.get('gallery')!.value ?? '';
-      const updated = current.trim() ? current.trim() + '\n' + photo.url : photo.url;
-      this.exhibitionForm.patchValue({ gallery: updated });
+      this.exhibitionGallery.update(g => g.includes(photo.url) ? g : [...g, photo.url]);
     }
     if (!this.pickerIsGallery()) {
       this.photoPicker.set(null);
