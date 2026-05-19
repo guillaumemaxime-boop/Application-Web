@@ -3,6 +3,7 @@ package com.atelier.portfolio.service;
 import com.atelier.portfolio.entity.FurnitureEntity;
 import com.atelier.portfolio.model.Furniture;
 import com.atelier.portfolio.repository.FurnitureRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,6 +61,7 @@ public class FurnitureService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public Furniture create(Furniture input) {
         FurnitureEntity entity = new FurnitureEntity();
         String id = (input.id() == null || input.id().isBlank()) ? "f-" + UUID.randomUUID().toString().substring(0, 8) : input.id();
@@ -75,6 +77,7 @@ public class FurnitureService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public Optional<Furniture> update(String slug, Furniture input) {
         return repository.findBySlug(slug).map(entity -> {
             applyChanges(entity, input);
@@ -83,6 +86,7 @@ public class FurnitureService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public boolean deleteBySlug(String slug) {
         return repository.findBySlug(slug).map(entity -> {
             storyService.deleteAllForOwner("furniture", entity.getId());

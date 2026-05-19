@@ -3,6 +3,7 @@ package com.atelier.portfolio.service;
 import com.atelier.portfolio.entity.HomeFeedEntryEntity;
 import com.atelier.portfolio.repository.HomeFeedRepository;
 import jakarta.persistence.EntityManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class HomeFeedService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public List<FeedEntry> replace(List<FeedEntry> entries) {
         repository.deleteAllInBatch();
         // deleteAllInBatch passe outre le persistence context : on le vide pour
@@ -50,12 +52,8 @@ public class HomeFeedService {
 
     @Transactional
     public void appendIfNotPresent(String kind, String slug) {
-        boolean exists = repository.findAll().stream()
-                .anyMatch(e -> kind.equals(e.getKind()) && slug.equals(e.getRefSlug()));
-        if (exists) return;
-        int nextPos = repository.findAll().stream()
-                .mapToInt(HomeFeedEntryEntity::getPosition)
-                .max().orElse(-1) + 1;
+        if (repository.existsByKindAndRefSlug(kind, slug)) return;
+        int nextPos = repository.findMaxPosition() + 1;
         HomeFeedEntryEntity entry = new HomeFeedEntryEntity();
         entry.setPosition(nextPos);
         entry.setKind(kind);
@@ -64,6 +62,7 @@ public class HomeFeedService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public void removeBySlug(String kind, String slug) {
         List<HomeFeedEntryEntity> all = repository.findAllByOrderByPositionAsc();
         List<HomeFeedEntryEntity> kept = all.stream()

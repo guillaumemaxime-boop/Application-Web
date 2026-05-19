@@ -24,4 +24,9 @@ HEALTHCHECK --interval=20s --timeout=3s --start-period=30s --retries=3 \
   CMD wget -q -O- http://localhost:8080/actuator/health | grep -q UP || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["java", "-jar", "/app/app.jar"]
+CMD ["java", \
+     "-XX:+UseG1GC", \
+     "-XX:MaxGCPauseMillis=200", \
+     "-XX:+UseStringDeduplication", \
+     "-Xms256m", "-Xmx512m", \
+     "-jar", "/app/app.jar"]

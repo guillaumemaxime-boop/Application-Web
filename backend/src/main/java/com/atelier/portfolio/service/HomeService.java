@@ -4,6 +4,8 @@ import com.atelier.portfolio.entity.ExhibitionEntity;
 import com.atelier.portfolio.entity.FurnitureEntity;
 import com.atelier.portfolio.model.*;
 import com.atelier.portfolio.repository.*;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class HomeService {
         this.exhibitionMetaRepo = exhibitionMetaRepo;
     }
 
+    @Cacheable("home")
     public HomePageData getHomeData() {
         List<FurnitureEntity> allFurniture = furnitureRepo.findAll();
         List<ExhibitionEntity> allExhibitions = exhibitionRepo.findAll();

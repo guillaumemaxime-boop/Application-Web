@@ -2,6 +2,7 @@ package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.FurnitureCategoryMetaEntity;
 import com.atelier.portfolio.repository.FurnitureCategoryMetaRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class CategoryMetaService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public Optional<CategoryView> update(String category, CategoryView input) {
         return repository.findById(category).map(existing -> {
             existing.setCoverImage(input.coverImage());
@@ -52,9 +54,7 @@ public class CategoryMetaService {
     public void ensureExists(String category, String fallbackCoverImage) {
         if (category == null || category.isBlank()) return;
         if (repository.existsById(category)) return;
-        int nextPos = repository.findAll().stream()
-                .mapToInt(FurnitureCategoryMetaEntity::getPosition)
-                .max().orElse(-1) + 1;
+        int nextPos = repository.findMaxPosition() + 1;
         FurnitureCategoryMetaEntity e = new FurnitureCategoryMetaEntity();
         e.setCategory(category);
         e.setCoverImage(fallbackCoverImage != null ? fallbackCoverImage : "");
