@@ -11,8 +11,39 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Runtime env injected by Nginx envsubst; defines window.__UMAMI__ -->
   <script src="/env.js"></script>
+  <!-- Splash de cold-start : affiché avant que le bundle Angular ne soit chargé.
+       Retiré par LoadingService.hideHtmlSplash() une fois le contenu prêt.
+       NB : la couleur de fond doit rester alignée avec --color-bg dans styles.css. -->
+  <style>
+    #app-splash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      z-index: 9999;
+      transition: opacity 320ms ease;
+    }
+    #app-splash img {
+      height: 96px;
+      width: auto;
+      animation: app-splash-pulse 1.6s ease-in-out infinite;
+    }
+    #app-splash.is-hiding { opacity: 0; pointer-events: none; }
+    @keyframes app-splash-pulse {
+      0%, 100% { opacity: 0.55; transform: scale(1); }
+      50%      { opacity: 1;    transform: scale(1.04); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #app-splash img { animation: none; opacity: 0.9; }
+    }
+  </style>
 </head>
 <body>
+  <div id="app-splash" aria-hidden="true">
+    <img src="logo.jpg" alt="" />
+  </div>
   <app-root></app-root>
 </body>
 </html>
