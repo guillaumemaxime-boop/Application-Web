@@ -2,7 +2,7 @@ import 'zone.js/testing';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { provideRouter, RouterOutlet } from '@angular/router';
+import { provideRouter, Router, RouterOutlet } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { AppComponent } from './app.component';
 import { HeaderComponent } from './components/header/header.component';
@@ -21,7 +21,7 @@ describe('AppComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([]),
+        provideRouter([{ path: '**', children: [] }]),
       ],
     }).compileComponents();
 
@@ -93,4 +93,30 @@ describe('AppComponent', () => {
     const splash = fixture.nativeElement.querySelector('app-splash');
     expect(splash).toBeTruthy();
   });
+
+  it('does not render the splash overlay when URL is /admin', fakeAsync(() => {
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content');
+
+    const router = TestBed.inject(Router);
+    router.navigateByUrl('/admin');
+    tick();
+    fixture.detectChanges();
+
+    expect(loading.visible()).toBe(true);
+    expect(fixture.nativeElement.querySelector('app-splash')).toBeNull();
+  }));
+
+  it('does not start the nav key when navigating to /admin', fakeAsync(() => {
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({});
+    tick(500);
+    expect(loading.visible()).toBe(false);
+
+    const router = TestBed.inject(Router);
+    router.navigateByUrl('/admin');
+    tick();
+
+    expect(loading.visible()).toBe(false);
+  }));
 });

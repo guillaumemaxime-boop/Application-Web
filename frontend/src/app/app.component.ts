@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterOutlet, NavigationStart, NavigationCancel, NavigationError } from '@angular/router';
 import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
@@ -11,7 +11,7 @@ import { PortfolioService } from './services/portfolio.service';
   standalone: true,
   imports: [RouterOutlet, HeaderComponent, FooterComponent, SplashComponent],
   template: `
-    @if (loading.visible()) { <app-splash /> }
+    @if (showSplash()) { <app-splash /> }
     <app-header />
     <main>
       <router-outlet />
@@ -35,6 +35,12 @@ export class AppComponent implements OnInit {
   private readonly portfolio = inject(PortfolioService);
   private readonly router = inject(Router);
 
+  private readonly currentUrl = signal(typeof window !== 'undefined' ? window.location.pathname : '/');
+
+  protected readonly showSplash = computed(
+    () => this.loading.visible() && !this.isAdminUrl(this.currentUrl())
+  );
+
   ngOnInit(): void {
     this.loading.start('init');
     this.portfolio.getContent().subscribe({
@@ -44,11 +50,17 @@ export class AppComponent implements OnInit {
 
     this.router.events.subscribe(event => {
       if (event instanceof NavigationStart) {
-        this.loading.start('nav');
+        this.currentUrl.set(event.url);
+        if (!this.isAdminUrl(event.url)) {
+          this.loading.start('nav');
+        }
       } else if (event instanceof NavigationCancel || event instanceof NavigationError) {
         this.loading.stop('nav');
       }
-      // NavigationEnd → pas de stop ici ; c'est la page qui appellera stop('nav').
     });
+  }
+
+  private isAdminUrl(url: string): boolean {
+    return url.startsWith('/admin');
   }
 }
