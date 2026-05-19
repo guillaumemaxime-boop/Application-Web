@@ -275,7 +275,7 @@ interface Toast {
 
             <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
               <div class="form-head">
-                <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
+                <h2>Nouvelle exposition</h2>
                 @if (editingExhibitionSlug(); as s) {
                   <a class="view-link" [href]="'/expositions/' + s" target="_blank" rel="noopener" title="Voir sur le site">Voir sur le site ↗</a>
                 }
