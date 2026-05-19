@@ -6,6 +6,7 @@ import { PortfolioService } from '../../services/portfolio.service';
 import { HomePageData, HomeFeedItem, HomeCategoryView, HomeExhibitionView } from '../../models/home.model';
 import { SiteContent } from '../../models/site-content.model';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
+import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 
 @Component({
@@ -120,6 +121,7 @@ import { roleStyle } from '../../utils/title-style';
 })
 export class HomeComponent implements OnInit {
   private portfolio = inject(PortfolioService);
+  private readonly loadingSvc = inject(LoadingService);
 
   protected data = signal<HomePageData | null>(null);
   protected viewerQueue = signal<StoryItem[]>([]);
@@ -136,8 +138,22 @@ export class HomeComponent implements OnInit {
   protected cardTitleStyleVar = computed(() => roleStyle(this.content(), 'card-title'));
 
   ngOnInit() {
-    this.portfolio.getHome().subscribe(d => this.data.set(d));
-    this.portfolio.getContent().subscribe(c => this.content.set(c));
+    this.loadingSvc.start('page');
+    forkJoin({
+      home: this.portfolio.getHome(),
+      content: this.portfolio.getContent(),
+    }).subscribe({
+      next: ({ home, content }) => {
+        this.data.set(home);
+        this.content.set(content);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
+      error: () => {
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
+    });
   }
 
   openCategory(cat: HomeCategoryView) {

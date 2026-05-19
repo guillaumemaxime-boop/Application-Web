@@ -1,8 +1,10 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { NgStyle } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Profile } from '../../models/profile.model';
 import { SiteContent } from '../../models/site-content.model';
+import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 
 @Component({
@@ -164,6 +166,7 @@ import { roleStyle } from '../../utils/title-style';
 })
 export class StudioComponent {
   private readonly portfolio = inject(PortfolioService);
+  private readonly loadingSvc = inject(LoadingService);
 
   protected readonly profile = signal<Profile | null>(null);
   protected readonly loading = signal(true);
@@ -184,13 +187,23 @@ export class StudioComponent {
   });
 
   constructor() {
-    this.portfolio.getProfile().subscribe({
-      next: data => { this.profile.set(data); this.loading.set(false); },
-      error: () => this.loading.set(false)
-    });
-    this.portfolio.getContent().subscribe({
-      next: data => this.content.set(data),
-      error: () => {}
+    this.loadingSvc.start('page');
+    forkJoin({
+      profile: this.portfolio.getProfile(),
+      content: this.portfolio.getContent(),
+    }).subscribe({
+      next: ({ profile, content }) => {
+        this.profile.set(profile);
+        this.content.set(content);
+        this.loading.set(false);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
+      error: () => {
+        this.loading.set(false);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
     });
   }
 }

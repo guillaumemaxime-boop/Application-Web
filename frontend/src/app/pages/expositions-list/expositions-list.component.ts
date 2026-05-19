@@ -1,9 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Exhibition } from '../../models/exhibition.model';
 import { SiteContent } from '../../models/site-content.model';
+import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 
 interface YearGroup {
@@ -125,6 +127,7 @@ interface YearGroup {
 })
 export class ExpositionsListComponent {
   private readonly portfolio = inject(PortfolioService);
+  private readonly loadingSvc = inject(LoadingService);
 
   protected readonly items = signal<Exhibition[]>([]);
   protected readonly loading = signal(true);
@@ -155,14 +158,24 @@ export class ExpositionsListComponent {
 
   constructor() {
     document.title = 'Expositions — Milo GUILLAUME Design';
-    this.portfolio.getAllExhibitions().subscribe({
-      next: data => {
-        this.items.set(data);
+    this.loadingSvc.start('page');
+    forkJoin({
+      exhibitions: this.portfolio.getAllExhibitions(),
+      content: this.portfolio.getContent(),
+    }).subscribe({
+      next: ({ exhibitions, content }) => {
+        this.items.set(exhibitions);
+        this.content.set(content);
         this.loading.set(false);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
       },
-      error: () => { this.loading.set(false); }
+      error: () => {
+        this.loading.set(false);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
     });
-    this.portfolio.getContent().subscribe(c => this.content.set(c));
   }
 
   private yearOf(date: string): number {
