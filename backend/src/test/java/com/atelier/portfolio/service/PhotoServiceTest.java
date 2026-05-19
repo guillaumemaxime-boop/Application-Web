@@ -48,7 +48,8 @@ class PhotoServiceTest {
     void testFindAll_ReturnsMostRecentFirst() {
         PhotoEntity older = entity("ph-001", "a.jpg", "alpha.jpg", "2026-01-01T00:00:00Z");
         PhotoEntity newer = entity("ph-002", "b.jpg", "beta.jpg",  "2026-05-10T12:00:00Z");
-        when(repository.findAll()).thenReturn(List.of(older, newer));
+        // le tri est délégué au SQL (ORDER BY uploaded_at DESC)
+        when(repository.findAllByOrderByUploadedAtDesc()).thenReturn(List.of(newer, older));
 
         List<Photo> result = service.findAll();
 
@@ -59,7 +60,7 @@ class PhotoServiceTest {
 
     @Test
     void testFindAll_EmptyRepository_ReturnsEmptyList() {
-        when(repository.findAll()).thenReturn(List.of());
+        when(repository.findAllByOrderByUploadedAtDesc()).thenReturn(List.of());
 
         List<Photo> result = service.findAll();
 

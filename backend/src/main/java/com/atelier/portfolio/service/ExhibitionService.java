@@ -3,6 +3,7 @@ package com.atelier.portfolio.service;
 import com.atelier.portfolio.entity.ExhibitionEntity;
 import com.atelier.portfolio.model.Exhibition;
 import com.atelier.portfolio.repository.ExhibitionRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +58,7 @@ public class ExhibitionService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public Exhibition create(Exhibition input) {
         ExhibitionEntity entity = new ExhibitionEntity();
         String id = (input.id() == null || input.id().isBlank()) ? "e-" + UUID.randomUUID().toString().substring(0, 8) : input.id();
@@ -72,6 +74,7 @@ public class ExhibitionService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public Optional<Exhibition> update(String slug, Exhibition input) {
         return repository.findBySlug(slug).map(entity -> {
             applyChanges(entity, input);
@@ -80,6 +83,7 @@ public class ExhibitionService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public boolean deleteBySlug(String slug) {
         return repository.findBySlug(slug).map(entity -> {
             storyService.deleteAllForOwner("exhibition", entity.getId());

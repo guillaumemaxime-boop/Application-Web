@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,16 +50,18 @@ public class FurnitureEntity {
     @Column(nullable = false)
     private boolean featured;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "furniture_gallery", joinColumns = @JoinColumn(name = "furniture_id"))
     @OrderColumn(name = "position")
     @Column(name = "url", length = 500, nullable = false)
+    @BatchSize(size = 50)
     private List<String> gallery = new ArrayList<>();
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "furniture_dimension", joinColumns = @JoinColumn(name = "furniture_id"))
     @OrderColumn(name = "position")
     @Column(name = "entry_value", nullable = false)
+    @BatchSize(size = 50)
     private List<String> dimensions = new ArrayList<>();
 
     public String getId() { return id; }

@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -56,16 +57,18 @@ public class ExhibitionEntity {
     @Column(nullable = false)
     private boolean featured;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "exhibition_gallery", joinColumns = @JoinColumn(name = "exhibition_id"))
     @OrderColumn(name = "position")
     @Column(name = "url", length = 500, nullable = false)
+    @BatchSize(size = 50)
     private List<String> gallery = new ArrayList<>();
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "exhibition_tag", joinColumns = @JoinColumn(name = "exhibition_id"))
     @OrderColumn(name = "position")
     @Column(name = "entry_value", nullable = false)
+    @BatchSize(size = 50)
     private List<String> tags = new ArrayList<>();
 
     public String getId() { return id; }

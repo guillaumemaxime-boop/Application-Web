@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, tap, shareReplay } from 'rxjs';
 import { Furniture } from '../models/furniture.model';
 import { Exhibition } from '../models/exhibition.model';
 import { Profile } from '../models/profile.model';
@@ -16,8 +16,21 @@ const API = '/api';
 export class PortfolioService {
   private readonly http = inject(HttpClient);
 
+  private home$: Observable<HomePageData> | null = null;
+  private allFurniture$: Observable<Furniture[]> | null = null;
+  private allExhibitions$: Observable<Exhibition[]> | null = null;
+  private profile$: Observable<Profile> | null = null;
+  private content$: Observable<SiteContent> | null = null;
+
+  private invalidateCatalog(): void {
+    this.home$ = null;
+    this.allFurniture$ = null;
+    this.allExhibitions$ = null;
+  }
+
   getAllFurniture(): Observable<Furniture[]> {
-    return this.http.get<Furniture[]>(`${API}/furniture`);
+    this.allFurniture$ ??= this.http.get<Furniture[]>(`${API}/furniture`).pipe(shareReplay(1));
+    return this.allFurniture$;
   }
 
   getFeaturedFurniture(): Observable<Furniture[]> {
@@ -33,19 +46,26 @@ export class PortfolioService {
   }
 
   createFurniture(input: Partial<Furniture>): Observable<Furniture> {
-    return this.http.post<Furniture>(`${API}/furniture`, input);
+    return this.http.post<Furniture>(`${API}/furniture`, input).pipe(
+      tap(() => this.invalidateCatalog())
+    );
   }
 
   updateFurniture(slug: string, input: Partial<Furniture>): Observable<Furniture> {
-    return this.http.put<Furniture>(`${API}/furniture/${slug}`, input);
+    return this.http.put<Furniture>(`${API}/furniture/${slug}`, input).pipe(
+      tap(() => this.invalidateCatalog())
+    );
   }
 
   deleteFurniture(slug: string): Observable<void> {
-    return this.http.delete<void>(`${API}/furniture/${slug}`);
+    return this.http.delete<void>(`${API}/furniture/${slug}`).pipe(
+      tap(() => this.invalidateCatalog())
+    );
   }
 
   getAllExhibitions(): Observable<Exhibition[]> {
-    return this.http.get<Exhibition[]>(`${API}/exhibitions`);
+    this.allExhibitions$ ??= this.http.get<Exhibition[]>(`${API}/exhibitions`).pipe(shareReplay(1));
+    return this.allExhibitions$;
   }
 
   getFeaturedExhibitions(): Observable<Exhibition[]> {
@@ -57,27 +77,37 @@ export class PortfolioService {
   }
 
   createExhibition(input: Partial<Exhibition>): Observable<Exhibition> {
-    return this.http.post<Exhibition>(`${API}/exhibitions`, input);
+    return this.http.post<Exhibition>(`${API}/exhibitions`, input).pipe(
+      tap(() => this.invalidateCatalog())
+    );
   }
 
   updateExhibition(slug: string, input: Partial<Exhibition>): Observable<Exhibition> {
-    return this.http.put<Exhibition>(`${API}/exhibitions/${slug}`, input);
+    return this.http.put<Exhibition>(`${API}/exhibitions/${slug}`, input).pipe(
+      tap(() => this.invalidateCatalog())
+    );
   }
 
   deleteExhibition(slug: string): Observable<void> {
-    return this.http.delete<void>(`${API}/exhibitions/${slug}`);
+    return this.http.delete<void>(`${API}/exhibitions/${slug}`).pipe(
+      tap(() => this.invalidateCatalog())
+    );
   }
 
   getProfile(): Observable<Profile> {
-    return this.http.get<Profile>(`${API}/profile`);
+    this.profile$ ??= this.http.get<Profile>(`${API}/profile`).pipe(shareReplay(1));
+    return this.profile$;
   }
 
   getContent(): Observable<SiteContent> {
-    return this.http.get<SiteContent>(`${API}/content`);
+    this.content$ ??= this.http.get<SiteContent>(`${API}/content`).pipe(shareReplay(1));
+    return this.content$;
   }
 
   updateContent(content: SiteContent): Observable<SiteContent> {
-    return this.http.put<SiteContent>(`${API}/content`, content);
+    return this.http.put<SiteContent>(`${API}/content`, content).pipe(
+      tap(() => { this.content$ = null; })
+    );
   }
 
   getPhotos(): Observable<Photo[]> {
@@ -95,7 +125,8 @@ export class PortfolioService {
   }
 
   getHome(): Observable<HomePageData> {
-    return this.http.get<HomePageData>(`${API}/home`);
+    this.home$ ??= this.http.get<HomePageData>(`${API}/home`).pipe(shareReplay(1));
+    return this.home$;
   }
 
   getSlides(kind: 'furniture' | 'exhibition', ownerId: string): Observable<Slide[]> {
@@ -111,7 +142,9 @@ export class PortfolioService {
   }
 
   replaceAdminFeed(entries: AdminFeedEntry[]): Observable<AdminFeedEntry[]> {
-    return this.http.put<AdminFeedEntry[]>(`${API}/admin/home/feed`, entries);
+    return this.http.put<AdminFeedEntry[]>(`${API}/admin/home/feed`, entries).pipe(
+      tap(() => { this.home$ = null; })
+    );
   }
 
   getAdminCategories(): Observable<AdminCategoryView[]> {
@@ -119,7 +152,9 @@ export class PortfolioService {
   }
 
   updateAdminCategory(category: string, input: AdminCategoryView): Observable<AdminCategoryView> {
-    return this.http.put<AdminCategoryView>(`${API}/admin/categories/${encodeURIComponent(category)}`, input);
+    return this.http.put<AdminCategoryView>(`${API}/admin/categories/${encodeURIComponent(category)}`, input).pipe(
+      tap(() => { this.home$ = null; })
+    );
   }
 
   getAdminExhibitionsMeta(): Observable<AdminExhibitionMetaView[]> {
@@ -127,7 +162,9 @@ export class PortfolioService {
   }
 
   updateAdminExhibitionMeta(slug: string, input: AdminExhibitionMetaView): Observable<AdminExhibitionMetaView> {
-    return this.http.put<AdminExhibitionMetaView>(`${API}/admin/exhibitions-meta/${encodeURIComponent(slug)}`, input);
+    return this.http.put<AdminExhibitionMetaView>(`${API}/admin/exhibitions-meta/${encodeURIComponent(slug)}`, input).pipe(
+      tap(() => { this.home$ = null; })
+    );
   }
 
   submitContact(input: ContactRequestInput): Observable<ContactRequestAck> {

@@ -2,6 +2,7 @@ package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.ExhibitionMetaEntity;
 import com.atelier.portfolio.repository.ExhibitionMetaRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,7 @@ public class ExhibitionMetaService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public Optional<ExhibitionMetaView> update(String slug, ExhibitionMetaView input) {
         return repository.findById(slug).map(existing -> {
             existing.setPosition(input.position());
@@ -56,9 +58,7 @@ public class ExhibitionMetaService {
     public void ensureExists(String slug) {
         if (slug == null || slug.isBlank()) return;
         if (repository.existsById(slug)) return;
-        int nextPos = repository.findAll().stream()
-                .mapToInt(ExhibitionMetaEntity::getPosition)
-                .max().orElse(-1) + 1;
+        int nextPos = repository.findMaxPosition() + 1;
         ExhibitionMetaEntity e = new ExhibitionMetaEntity();
         e.setSlug(slug);
         e.setPosition(nextPos);
@@ -67,6 +67,7 @@ public class ExhibitionMetaService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
     public void removeBySlug(String slug) {
         if (slug != null && repository.existsById(slug)) {
             repository.deleteById(slug);

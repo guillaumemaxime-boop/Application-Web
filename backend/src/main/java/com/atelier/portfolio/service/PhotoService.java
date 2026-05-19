@@ -36,8 +36,7 @@ public class PhotoService {
     }
 
     public List<Photo> findAll() {
-        return repository.findAll().stream()
-                .sorted((a, b) -> b.getUploadedAt().compareTo(a.getUploadedAt()))
+        return repository.findAllByOrderByUploadedAtDesc().stream()
                 .map(PhotoService::toDto)
                 .toList();
     }
