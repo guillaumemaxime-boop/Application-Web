@@ -1,9 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Furniture } from '../../models/furniture.model';
 import { SiteContent } from '../../models/site-content.model';
+import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 import { StoryInlineComponent } from '../../components/story-inline/story-inline.component';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
@@ -248,6 +250,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
 export class FurnitureDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly portfolio = inject(PortfolioService);
+  private readonly loadingSvc = inject(LoadingService);
 
   protected readonly item = signal<Furniture | null>(null);
   protected readonly loading = signal(true);
@@ -264,15 +267,26 @@ export class FurnitureDetailComponent {
 
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
-    this.portfolio.getFurniture(slug).subscribe({
-      next: data => {
-        this.item.set(data);
+    this.loadingSvc.start('page');
+    forkJoin({
+      furniture: this.portfolio.getFurniture(slug),
+      content: this.portfolio.getContent(),
+    }).subscribe({
+      next: ({ furniture, content }) => {
+        this.item.set(furniture);
+        this.content.set(content);
         this.loading.set(false);
-        document.title = `${data.title} — Milo GUILLAUME Design`;
+        document.title = `${furniture.title} — Milo GUILLAUME Design`;
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
       },
-      error: () => { this.notFound.set(true); this.loading.set(false); }
+      error: () => {
+        this.notFound.set(true);
+        this.loading.set(false);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
     });
-    this.portfolio.getContent().subscribe(c => this.content.set(c));
   }
 
   protected openViewer() {

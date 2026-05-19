@@ -1,9 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Furniture } from '../../models/furniture.model';
 import { SiteContent } from '../../models/site-content.model';
+import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 
 type GroupKey = 'category' | 'year';
@@ -171,6 +173,7 @@ interface Group {
 })
 export class CatalogComponent {
   private readonly portfolio = inject(PortfolioService);
+  private readonly loadingSvc = inject(LoadingService);
 
   protected readonly items = signal<Furniture[]>([]);
   protected readonly loading = signal(true);
@@ -192,14 +195,24 @@ export class CatalogComponent {
 
   constructor() {
     document.title = 'Mobilier — Milo GUILLAUME Design';
-    this.portfolio.getAllFurniture().subscribe({
-      next: data => {
-        this.items.set(data);
+    this.loadingSvc.start('page');
+    forkJoin({
+      furniture: this.portfolio.getAllFurniture(),
+      content: this.portfolio.getContent(),
+    }).subscribe({
+      next: ({ furniture, content }) => {
+        this.items.set(furniture);
+        this.content.set(content);
         this.loading.set(false);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
       },
-      error: () => { this.loading.set(false); }
+      error: () => {
+        this.loading.set(false);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
     });
-    this.portfolio.getContent().subscribe(c => this.content.set(c));
   }
 
   protected setGroupBy(key: GroupKey) {

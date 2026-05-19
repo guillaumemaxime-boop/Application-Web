@@ -1,9 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Exhibition } from '../../models/exhibition.model';
 import { SiteContent } from '../../models/site-content.model';
+import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 
 @Component({
@@ -164,6 +166,7 @@ import { roleStyle } from '../../utils/title-style';
 export class ExhibitionDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly portfolio = inject(PortfolioService);
+  private readonly loadingSvc = inject(LoadingService);
 
   protected readonly item = signal<Exhibition | null>(null);
   protected readonly loading = signal(true);
@@ -175,15 +178,26 @@ export class ExhibitionDetailComponent {
 
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
-    this.portfolio.getExhibition(slug).subscribe({
-      next: data => {
-        this.item.set(data);
+    this.loadingSvc.start('page');
+    forkJoin({
+      exhibition: this.portfolio.getExhibition(slug),
+      content: this.portfolio.getContent(),
+    }).subscribe({
+      next: ({ exhibition, content }) => {
+        this.item.set(exhibition);
+        this.content.set(content);
         this.loading.set(false);
-        document.title = `${data.title} — Milo GUILLAUME Design`;
+        document.title = `${exhibition.title} — Milo GUILLAUME Design`;
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
       },
-      error: () => { this.notFound.set(true); this.loading.set(false); }
+      error: () => {
+        this.notFound.set(true);
+        this.loading.set(false);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
     });
-    this.portfolio.getContent().subscribe(c => this.content.set(c));
   }
 
   protected formatRange(start: string, end: string): string {

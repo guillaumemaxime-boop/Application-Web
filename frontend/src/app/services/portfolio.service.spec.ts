@@ -294,6 +294,49 @@ describe('PortfolioService', () => {
       req.flush(mockContent);
     });
 
+    it('should share a single HTTP request across multiple subscribers (cache)', () => {
+      let firstResult: any = null;
+      let secondResult: any = null;
+
+      service.getContent().subscribe(c => firstResult = c);
+      service.getContent().subscribe(c => secondResult = c);
+
+      // expectOne() échouerait si plusieurs requêtes étaient émises
+      const req = httpMock.expectOne('/api/content');
+      req.flush(mockContent);
+
+      expect(firstResult).toEqual(mockContent);
+      expect(secondResult).toEqual(mockContent);
+    });
+
+    it('should serve subsequent subscribers from cache without new HTTP call', () => {
+      service.getContent().subscribe();
+      const req = httpMock.expectOne('/api/content');
+      req.flush(mockContent);
+
+      let lateResult: any = null;
+      service.getContent().subscribe(c => lateResult = c);
+
+      // Aucune nouvelle requête : expectNone n'échoue pas
+      httpMock.expectNone('/api/content');
+      expect(lateResult).toEqual(mockContent);
+    });
+
+    it('should invalidate the cache when updateContent succeeds', () => {
+      service.getContent().subscribe();
+      httpMock.expectOne('/api/content').flush(mockContent);
+
+      const updates = { 'home.hero.eyebrow': 'Nouveau titre' };
+      service.updateContent(updates).subscribe();
+      httpMock.expectOne('/api/content').flush(mockContent);
+
+      // Après update, un nouveau getContent doit refaire une requête GET
+      service.getContent().subscribe();
+      const refreshReq = httpMock.expectOne('/api/content');
+      expect(refreshReq.request.method).toBe('GET');
+      refreshReq.flush(mockContent);
+    });
+
     it('should update site content via PUT', () => {
       const updates = { 'home.hero.eyebrow': 'Nouveau titre' };
 

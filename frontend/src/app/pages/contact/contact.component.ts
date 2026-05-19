@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { PortfolioService } from '../../services/portfolio.service';
 import { SiteContent } from '../../models/site-content.model';
 import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
+import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 
 @Component({
@@ -215,6 +216,7 @@ import { roleStyle } from '../../utils/title-style';
 })
 export class ContactComponent {
   private readonly portfolio = inject(PortfolioService);
+  private readonly loadingSvc = inject(LoadingService);
 
   protected readonly content = signal<SiteContent>({});
 
@@ -237,6 +239,17 @@ export class ContactComponent {
   });
 
   constructor() {
-    this.portfolio.getContent().subscribe(c => this.content.set(c));
+    this.loadingSvc.start('page');
+    this.portfolio.getContent().subscribe({
+      next: c => {
+        this.content.set(c);
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
+      error: () => {
+        this.loadingSvc.stop('page');
+        this.loadingSvc.stop('nav');
+      },
+    });
   }
 }
