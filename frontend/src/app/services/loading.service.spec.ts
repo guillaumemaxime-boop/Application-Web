@@ -49,6 +49,16 @@ describe('LoadingService', () => {
     expect(service.visible()).toBe(false);
   }));
 
+  it('cancels a pending stop when the same key is started again', fakeAsync(() => {
+    service.start('nav');
+    tick(100);
+    service.stop('nav');     // schedules removal in 300 ms (400 - 100)
+    tick(50);
+    service.start('nav');    // must cancel the pending stop
+    tick(500);               // well past the original scheduled removal
+    expect(service.visible()).toBe(true);
+  }));
+
   it('safety timeout releases a never-stopped key after 15 s', fakeAsync(() => {
     spyOn(console, 'warn');
     service.start('stuck');
@@ -78,5 +88,6 @@ describe('LoadingService', () => {
     tick(500);
     tick(400);
     // pas d'erreur, pas de re-insertion → ok implicite
+    expect(document.getElementById('app-splash')).toBeNull();
   }));
 });
