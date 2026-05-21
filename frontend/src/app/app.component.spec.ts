@@ -119,4 +119,30 @@ describe('AppComponent', () => {
 
     expect(loading.visible()).toBe(false);
   }));
+
+  it('does not render the splash overlay when URL is /login', fakeAsync(() => {
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content');
+
+    const router = TestBed.inject(Router);
+    router.navigateByUrl('/login');
+    tick();
+    fixture.detectChanges();
+
+    expect(loading.visible()).toBe(true);
+    expect(fixture.nativeElement.querySelector('app-splash')).toBeNull();
+  }));
+
+  it('does not start the nav key when navigating to /login', fakeAsync(() => {
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({});
+    tick(500);
+    expect(loading.visible()).toBe(false);
+
+    const router = TestBed.inject(Router);
+    router.navigateByUrl('/login');
+    tick();
+
+    expect(loading.visible()).toBe(false);
+  }));
 });

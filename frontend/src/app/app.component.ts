@@ -38,7 +38,7 @@ export class AppComponent implements OnInit {
   private readonly currentUrl = signal(typeof window !== 'undefined' ? window.location.pathname : '/');
 
   protected readonly showSplash = computed(
-    () => this.loading.visible() && !this.isAdminUrl(this.currentUrl())
+    () => this.loading.visible() && !this.isSplashExcludedUrl(this.currentUrl())
   );
 
   ngOnInit(): void {
@@ -51,7 +51,7 @@ export class AppComponent implements OnInit {
     this.router.events.subscribe(event => {
       if (event instanceof NavigationStart) {
         this.currentUrl.set(event.url);
-        if (!this.isAdminUrl(event.url)) {
+        if (!this.isSplashExcludedUrl(event.url)) {
           this.loading.start('nav');
         }
       } else if (event instanceof NavigationCancel || event instanceof NavigationError) {
@@ -60,7 +60,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  private isAdminUrl(url: string): boolean {
-    return url.startsWith('/admin');
+  private isSplashExcludedUrl(url: string): boolean {
+    return url.startsWith('/admin') || url.startsWith('/login');
   }
 }
