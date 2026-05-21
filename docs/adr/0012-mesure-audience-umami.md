@@ -50,6 +50,7 @@ Adopter **Umami auto-hébergé** dans la stack Docker existante.
 
 - L'exclusion de `/admin*` du tracking est configurée dans l'UI Umami (filtre dashboard), pas via le code — choix volontaire pour éviter de coupler le code et la config opérationnelle.
 - La rétention 14 mois est gérée par Umami (purge automatique configurée dans l'UI) — pas de job CRON applicatif à maintenir.
+- L'upstream Umami du Nginx frontend est paramétrable (`UMAMI_HOST` / `UMAMI_PORT`) : Umami peut être déployé comme service séparé sans changer le proxy same-origin ni la CSP. Voir [`docs/superpowers/specs/2026-05-21-umami-externe-design.md`](../superpowers/specs/2026-05-21-umami-externe-design.md).
 
 ## Alternatives envisagées
 

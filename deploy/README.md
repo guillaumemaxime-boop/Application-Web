@@ -70,6 +70,19 @@ For each Railway service (backend × {staging, prod}, frontend × {staging, prod
 
 The sync workflows move those floating tags to point at the SHA recorded in `versions.yaml`, then tell Railway to redeploy.
 
+## Umami comme service séparé
+
+Par défaut, Umami est co-localisé : un conteneur `umami` dans la même stack que le frontend (`docker-compose.yml`, `deploy/base/docker-compose.yml`). Le Nginx du frontend le joint via `UMAMI_HOST=umami` / `UMAMI_PORT=3000` (défauts de l'image).
+
+Pour déployer Umami comme service séparé sur Railway :
+
+1. Créer un service Umami dédié depuis l'image `ghcr.io/umami-software/umami:postgresql-vX.Y.Z` (même tag pinné que dans les fichiers compose).
+2. Conserver son `DATABASE_URL` vers la Postgres Railway, schéma `umami` — configuration inchangée.
+3. Sur le service **frontend** Railway, définir les variables d'environnement `UMAMI_HOST=<service-umami>.railway.internal` et `UMAMI_PORT=3000`.
+4. Le service Umami n'a pas besoin d'un domaine public : le frontend le proxifie via le réseau privé Railway, le navigateur ne voit que des URLs `/umami*` same-origin.
+
+Le proxy Nginx résout l'upstream Umami au démarrage du conteneur ; si le service Umami redémarre et change d'IP interne, redéployer le frontend pour reprendre la résolution.
+
 ## Rollback
 
 Revert the commit that bumped `versions.yaml`. The corresponding sync workflow will re-run with the previous SHA and Railway will pull the (still-immutable) older image.
