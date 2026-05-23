@@ -9,6 +9,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -63,7 +64,7 @@ public class SecretCipher {
             return Base64.getEncoder().encodeToString(iv)
                     + ":"
                     + Base64.getEncoder().encodeToString(ct);
-        } catch (Exception ex) {
+        } catch (GeneralSecurityException ex) {
             throw new IllegalStateException("Encryption failure", ex);
         }
     }
@@ -82,7 +83,7 @@ public class SecretCipher {
             Cipher cipher = Cipher.getInstance(ALGO);
             cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH_BITS, iv));
             return new String(cipher.doFinal(ct), StandardCharsets.UTF_8);
-        } catch (Exception ex) {
+        } catch (GeneralSecurityException | IllegalArgumentException ex) {
             throw new IllegalStateException("Decryption failure", ex);
         }
     }
