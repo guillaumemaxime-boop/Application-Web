@@ -45,6 +45,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
+                        // /api/admin/** must be authenticated regardless of method — ordered
+                        // BEFORE the GET catch-all below which is meant for the public catalog.
+                        .requestMatchers("/api/admin/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
                         .anyRequest().authenticated()
                 )
