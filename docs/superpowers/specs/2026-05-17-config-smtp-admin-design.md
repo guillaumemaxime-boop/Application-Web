@@ -194,7 +194,7 @@ Frontend :
 
 ## Documentation
 
-- ADR `0010-config-smtp-en-base-chiffree.md` (numéro à confirmer selon l'existant) consignant la décision et l'alternative rejetée (B).
+- ADR `0013-config-smtp-en-base-chiffree.md` consignant la décision et l'alternative rejetée (B).
 - Mise à jour du README backend : variable `APP_SECRETS_KEY` requise, suppression des mentions `SPRING_MAIL_*` / `APP_CONTACT_MAIL_*`.
 
 ## Risques

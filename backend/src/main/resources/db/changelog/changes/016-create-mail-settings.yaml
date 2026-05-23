@@ -1,0 +1,55 @@
+databaseChangeLog:
+  - changeSet:
+      id: 016-create-mail-settings
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: mail_settings
+            columns:
+              - column:
+                  name: id
+                  type: varchar(20)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: host
+                  type: varchar(200)
+              - column:
+                  name: port
+                  type: int
+              - column:
+                  name: username
+                  type: varchar(200)
+              - column:
+                  name: password_encrypted
+                  type: varchar(500)
+              - column:
+                  name: encryption
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+                  defaultValue: NONE
+              - column:
+                  name: from_address
+                  type: varchar(300)
+              - column:
+                  name: to_address
+                  type: varchar(300)
+              - column:
+                  name: updated_at
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+        - insert:
+            tableName: mail_settings
+            columns:
+              - column:
+                  name: id
+                  value: default
+              - column:
+                  name: encryption
+                  value: NONE
+              - column:
+                  name: updated_at
+                  value: "2026-05-17T00:00:00Z"

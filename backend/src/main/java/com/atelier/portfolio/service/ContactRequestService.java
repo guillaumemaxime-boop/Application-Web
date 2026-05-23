@@ -1,19 +1,19 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.ContactRequestEntity;
+import com.atelier.portfolio.entity.MailSettingsEntity;
 import com.atelier.portfolio.model.ContactRequestAck;
 import com.atelier.portfolio.model.ContactRequestInput;
 import com.atelier.portfolio.repository.ContactRequestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,18 +22,12 @@ public class ContactRequestService {
     private static final Logger log = LoggerFactory.getLogger(ContactRequestService.class);
 
     private final ContactRequestRepository repository;
-    private final ObjectProvider<JavaMailSender> mailSenderProvider;
-    private final String mailTo;
-    private final String mailFrom;
+    private final MailSettingsService mailSettingsService;
 
     public ContactRequestService(ContactRequestRepository repository,
-                                 ObjectProvider<JavaMailSender> mailSenderProvider,
-                                 @Value("${app.contact.mail-to:}") String mailTo,
-                                 @Value("${app.contact.mail-from:no-reply@atelier-lumen.fr}") String mailFrom) {
+                                 MailSettingsService mailSettingsService) {
         this.repository = repository;
-        this.mailSenderProvider = mailSenderProvider;
-        this.mailTo = mailTo;
-        this.mailFrom = mailFrom;
+        this.mailSettingsService = mailSettingsService;
     }
 
     @Transactional
@@ -56,15 +50,22 @@ public class ContactRequestService {
     }
 
     private boolean tryDeliver(ContactRequestEntity req) {
-        JavaMailSender sender = mailSenderProvider.getIfAvailable();
-        if (sender == null || mailTo == null || mailTo.isBlank()) {
-            log.info("Mail delivery skipped (mail not configured) — contact request {} stored only", req.getId());
+        JavaMailSender sender = mailSettingsService.buildSender();
+        if (sender == null) {
+            log.info("Mail delivery skipped (no SMTP sender) — contact request {} stored only", req.getId());
+            return false;
+        }
+        Optional<MailSettingsEntity> cfg = mailSettingsService.getConfigSnapshot();
+        if (cfg.isEmpty()
+                || cfg.get().getToAddress() == null || cfg.get().getToAddress().isBlank()
+                || cfg.get().getFromAddress() == null || cfg.get().getFromAddress().isBlank()) {
+            log.info("Mail delivery skipped (from/to missing) — contact request {} stored only", req.getId());
             return false;
         }
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(mailFrom);
-            msg.setTo(mailTo);
+            msg.setFrom(cfg.get().getFromAddress());
+            msg.setTo(cfg.get().getToAddress());
             msg.setReplyTo(req.getEmail());
             msg.setSubject(buildSubject(req));
             msg.setText(buildBody(req));

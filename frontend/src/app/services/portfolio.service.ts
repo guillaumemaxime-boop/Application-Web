@@ -9,6 +9,7 @@ import { Photo } from '../models/photo.model';
 import { HomePageData, AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../models/home.model';
 import { Slide } from '../models/slide.model';
 import { ContactRequestInput, ContactRequestAck } from '../models/contact.model';
+import { MailSettingsView, MailSettingsInput, MailTestResult } from '../models/mail-settings.model';
 
 const API = '/api';
 
@@ -169,5 +170,17 @@ export class PortfolioService {
 
   submitContact(input: ContactRequestInput): Observable<ContactRequestAck> {
     return this.http.post<ContactRequestAck>(`${API}/contact`, input);
+  }
+
+  getMailSettings(): Observable<MailSettingsView> {
+    return this.http.get<MailSettingsView>(`${API}/admin/mail-settings`);
+  }
+
+  saveMailSettings(input: MailSettingsInput): Observable<MailSettingsView> {
+    return this.http.put<MailSettingsView>(`${API}/admin/mail-settings`, input);
+  }
+
+  testMail(): Observable<MailTestResult> {
+    return this.http.post<MailTestResult>(`${API}/admin/mail-settings/test`, {});
   }
 }
