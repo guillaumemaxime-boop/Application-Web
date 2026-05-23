@@ -44,3 +44,6 @@ databaseChangeLog:
   - include:
       file: changes/015-create-contact-requests.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/016-create-mail-settings.yaml
+      relativeToChangelogFile: true
