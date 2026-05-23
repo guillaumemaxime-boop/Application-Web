@@ -115,7 +115,7 @@ describe('AdminComponent', () => {
 
   it('should display the furniture tab by default', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-    expect(tabs.length).toBe(7);
+    expect(tabs.length).toBe(8);
     expect(tabs[0].classList.contains('active')).toBe(true);
     for (let i = 1; i < tabs.length; i++) {
       expect(tabs[i].classList.contains('active')).toBe(false);

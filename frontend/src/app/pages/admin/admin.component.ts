@@ -11,6 +11,7 @@ import { AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../.
 import { PortfolioService } from '../../services/portfolio.service';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
 import { SlidesEditorComponent } from './slides-editor.component';
+import { MailSettingsComponent } from './mail-settings/mail-settings.component';
 import { TITLE_FONTS, TITLE_STYLES, titleStyle, TypoRole, TYPO_ROLES } from '../../utils/title-style';
 
 interface HomeAdminItem {
@@ -29,7 +30,7 @@ interface ExhibitionMetaRow {
   visible: boolean;
 }
 
-type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home' | 'typography' | 'analytics';
+type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home' | 'typography' | 'analytics' | 'email';
 type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover' | 'exhibition-gallery';
 
 interface Toast {
@@ -41,7 +42,7 @@ interface Toast {
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, NgStyle, ReorderableDirective, SlidesEditorComponent],
+  imports: [ReactiveFormsModule, FormsModule, NgStyle, ReorderableDirective, SlidesEditorComponent, MailSettingsComponent],
   template: `
     <section class="section">
       <div class="container">
@@ -100,6 +101,12 @@ interface Toast {
               [attr.aria-selected]="tab() === 'analytics'"
               [class.active]="tab() === 'analytics'"
               (click)="switchTab('analytics')">Analytics</button>
+            <button
+              type="button"
+              role="tab"
+              [attr.aria-selected]="tab() === 'email'"
+              [class.active]="tab() === 'email'"
+              (click)="switchTab('email')">Email</button>
           </nav>
 
           <div class="admin-content">
@@ -720,6 +727,10 @@ interface Toast {
               <p>Configuration analytics manquante. Renseignez <code>UMAMI_WEBSITE_ID</code> et <code>UMAMI_SHARE_TOKEN</code> dans les variables d'environnement du conteneur frontend, puis redémarrez-le.</p>
             </div>
           }
+        }
+
+        @if (tab() === 'email') {
+          <app-mail-settings></app-mail-settings>
         }
           </div>
         </div>
@@ -1658,6 +1669,7 @@ export class AdminComponent {
     home: 'Accueil',
     typography: 'Typographie',
     analytics: 'Analytics',
+    email: 'Email',
   };
   protected readonly currentTabLabel = computed(() => this.tabLabels[this.tab()]);
 
