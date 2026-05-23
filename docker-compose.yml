@@ -36,6 +36,8 @@ services:
       JWT_SECRET: "portfolio-dev-secret-key-must-be-changed-in-production"
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD_HASH: "$$2b$$10$$ylcY5PaYQeX8u3/tuDdSi.awSBx1KQ8ztLAyRTO6lOnqxPFzZUHZm"
+      # AES-256 base64 32 bytes — dev only, override in prod (voir ADR-0013).
+      APP_SECRETS_KEY: "${APP_SECRETS_KEY:-AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=}"
     expose:
       - "8080"
     ports:
