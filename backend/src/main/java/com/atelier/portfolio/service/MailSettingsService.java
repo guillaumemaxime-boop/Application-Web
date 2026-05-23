@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Properties;
 
 @Service
@@ -87,6 +88,15 @@ public class MailSettingsService {
         props.setProperty("mail.smtp.starttls.enable", Boolean.toString("STARTTLS".equals(entity.getEncryption())));
         props.setProperty("mail.smtp.ssl.enable", Boolean.toString("SSL".equals(entity.getEncryption())));
         return sender;
+    }
+
+    /**
+     * Renvoie l'entité brute (utile pour lire from/to sans repasser par le DTO).
+     * Optional.empty() si la ligne n'existe pas.
+     */
+    @Transactional(readOnly = true)
+    public Optional<MailSettingsEntity> getConfigSnapshot() {
+        return repository.findById(MailSettingsEntity.DEFAULT_ID);
     }
 
     public MailTestResult sendTest() {
