@@ -55,6 +55,7 @@ sync-rancher.yml  (self-hosted runner on Rancher Desktop)
 | `RAILWAY_SERVICE_FRONTEND_STAGING` | repo vars | service id of the staging frontend |
 | `RAILWAY_SERVICE_BACKEND_PRODUCTION` | environment `production` vars | id of the prod backend |
 | `RAILWAY_SERVICE_FRONTEND_PRODUCTION` | environment `production` vars | id of the prod frontend |
+| `RESEND_API_KEY` | injecté automatiquement par l'intégration Resend de Railway, ou à définir manuellement dans les variables du service backend (staging et production) | envoi des mails transactionnels (formulaire /contact) — voir [ADR-0014](../docs/adr/0014-bascule-vers-resend.md) |
 
 > **Note :** `sync-staging.yml` est appelé directement via `workflow_call` depuis `build-and-deploy.yml`.
 > Il reste aussi déclenché par tout push manuel sur `deploy/envs/staging/versions.yaml` (rollback, hotfix).
@@ -69,6 +70,20 @@ For each Railway service (backend × {staging, prod}, frontend × {staging, prod
 - production frontend → `ghcr.io/<owner>/portfolio-frontend:production`
 
 The sync workflows move those floating tags to point at the SHA recorded in `versions.yaml`, then tell Railway to redeploy.
+
+### Volumes persistants (backend)
+
+Le service backend écrit les photos uploadées (médiathèque admin) sur disque via `UPLOAD_DIR`. Le filesystem d'un conteneur Railway est **éphémère** : sans volume, les fichiers disparaissent à chaque redéploiement (les métadonnées en base Postgres survivent, mais les vignettes pointent vers des fichiers introuvables).
+
+Pour chaque service backend Railway (`backend × {staging, production}`) :
+
+1. Onglet **Volumes** → *New Volume* → mount path `/data/uploads`.
+2. Onglet **Variables** → ajouter `UPLOAD_DIR=/data/uploads`.
+3. Redéployer le service.
+
+Le `Dockerfile` crée déjà `/data/uploads` avec le bon `chown app:app` ; il suffit que Railway monte un volume par-dessus. La stack Rancher Desktop fait l'équivalent avec le volume nommé `uploads-data` dans `deploy/base/docker-compose.yml`.
+
+> Si le volume est ajouté **après** que des photos aient été perdues, les rows orphelines de la table `photos` doivent être purgées manuellement (sinon la médiathèque affiche des vignettes vides correspondant à des fichiers inexistants).
 
 ## Umami comme service séparé
 

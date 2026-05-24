@@ -32,7 +32,8 @@ Référence : [adr.github.io](https://adr.github.io/) — format inspiré de [MA
 | 0010 | [Supervision et monitoring — Actuator + healthchecks natifs + Railway](0010-supervision-et-monitoring.md) | Accepted  | 2026-05-04 |
 | 0011 | [Authentification JWT pour l'interface d'administration](0011-authentification-jwt-admin.md) | Accepted  | 2026-05-11 |
 | 0012 | [Mesure d'audience par Umami auto-hébergé](0012-mesure-audience-umami.md) | Accepted  | 2026-05-17 |
-| 0013 | [Configuration SMTP en base, password chiffré au repos](0013-config-smtp-en-base-chiffree.md) | Accepted  | 2026-05-23 |
+| 0013 | [Configuration SMTP en base, password chiffré au repos](0013-config-smtp-en-base-chiffree.md) | Superseded by 0014 | 2026-05-23 |
+| 0014 | [Bascule vers Resend pour l'envoi de mails transactionnels](0014-bascule-vers-resend.md) | Accepted | 2026-05-24 |
 
 ## Créer un nouvel ADR
 
