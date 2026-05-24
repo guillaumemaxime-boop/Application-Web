@@ -1,9 +1,9 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.ContactRequestEntity;
-import com.atelier.portfolio.entity.MailSettingsEntity;
 import com.atelier.portfolio.model.ContactRequestAck;
 import com.atelier.portfolio.model.ContactRequestInput;
+import com.atelier.portfolio.model.MailSettingsView;
 import com.atelier.portfolio.repository.ContactRequestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,14 +11,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mail.MailSendException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,14 +23,14 @@ class ContactRequestServiceTest {
 
     @Mock private ContactRequestRepository repository;
     @Mock private MailSettingsService mailSettingsService;
-    @Mock private JavaMailSender mailSender;
+    @Mock private ResendMailService resendMailService;
 
     private ContactRequestService service;
 
     @BeforeEach
     void setUp() {
         when(repository.save(any(ContactRequestEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        service = new ContactRequestService(repository, mailSettingsService);
+        service = new ContactRequestService(repository, mailSettingsService, resendMailService);
     }
 
     private ContactRequestInput sampleInput() {
@@ -44,21 +41,17 @@ class ContactRequestServiceTest {
         );
     }
 
-    private MailSettingsEntity configuredEntity() {
-        MailSettingsEntity e = new MailSettingsEntity();
-        e.setId(MailSettingsEntity.DEFAULT_ID);
-        e.setHost("smtp.x");
-        e.setPort(587);
-        e.setEncryption("STARTTLS");
-        e.setFromAddress("no-reply@studio.fr");
-        e.setToAddress("studio@example.com");
-        e.setUpdatedAt("now");
-        return e;
+    private MailSettingsView configuredView() {
+        return new MailSettingsView(
+                "no-reply@studio.fr", "studio@example.com",
+                true, "now"
+        );
     }
 
     @Test
     void testSubmit_PersistsTrimmedFields() {
-        when(mailSettingsService.buildSender()).thenReturn(null);
+        when(mailSettingsService.get()).thenReturn(configuredView());
+        when(resendMailService.send(any(), any(), any(), any(), any())).thenReturn(true);
         ContactRequestInput input = new ContactRequestInput(
                 "  Jean  ", "  jean@example.com ", "  ", "acquisition",
                 "  Hello world  ", "", "", ""
@@ -78,56 +71,60 @@ class ContactRequestServiceTest {
     }
 
     @Test
-    void testSubmit_NoSenderAvailable_SkipsDelivery() {
-        when(mailSettingsService.buildSender()).thenReturn(null);
+    void testSubmit_ApiKeyNotConfigured_SkipsDelivery() {
+        MailSettingsView noKey = new MailSettingsView(
+                "no-reply@studio.fr", "studio@example.com",
+                false, "now"
+        );
+        when(mailSettingsService.get()).thenReturn(noKey);
 
         service.submit(sampleInput());
 
-        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+        verify(resendMailService, never()).send(any(), any(), any(), any(), any());
         ArgumentCaptor<ContactRequestEntity> captor = ArgumentCaptor.forClass(ContactRequestEntity.class);
         verify(repository).save(captor.capture());
         assertFalse(captor.getValue().isMailSent());
     }
 
     @Test
-    void testSubmit_NoToAddress_SkipsDelivery() {
-        MailSettingsEntity noTo = configuredEntity();
-        noTo.setToAddress(null);
-        when(mailSettingsService.buildSender()).thenReturn(mailSender);
-        when(mailSettingsService.getConfigSnapshot()).thenReturn(Optional.of(noTo));
+    void testSubmit_NoFromOrTo_SkipsDelivery() {
+        MailSettingsView noTo = new MailSettingsView(
+                "no-reply@studio.fr", null,
+                true, "now"
+        );
+        when(mailSettingsService.get()).thenReturn(noTo);
 
         service.submit(sampleInput());
 
-        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+        verify(resendMailService, never()).send(any(), any(), any(), any(), any());
+        ArgumentCaptor<ContactRequestEntity> captor = ArgumentCaptor.forClass(ContactRequestEntity.class);
+        verify(repository).save(captor.capture());
+        assertFalse(captor.getValue().isMailSent());
     }
 
     @Test
-    void testSubmit_MailConfigured_SendsAndMarksMailSent() {
-        when(mailSettingsService.buildSender()).thenReturn(mailSender);
-        when(mailSettingsService.getConfigSnapshot()).thenReturn(Optional.of(configuredEntity()));
+    void testSubmit_MailConfigured_SendsViaResendAndMarksMailSent() {
+        when(mailSettingsService.get()).thenReturn(configuredView());
+        when(resendMailService.send(any(), any(), any(), any(), any())).thenReturn(true);
 
         service.submit(sampleInput());
 
-        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mailSender).send(captor.capture());
-        SimpleMailMessage msg = captor.getValue();
-        assertArrayEquals(new String[]{"studio@example.com"}, msg.getTo());
-        assertEquals("no-reply@studio.fr", msg.getFrom());
-        assertEquals("jean@example.com", msg.getReplyTo());
-        assertTrue(msg.getSubject().contains("Acquisition"));
-        assertTrue(msg.getSubject().contains("Onde"));
-        assertTrue(msg.getText().contains("/mobilier/onde"));
-
+        verify(resendMailService).send(
+                eq("no-reply@studio.fr"),
+                eq("studio@example.com"),
+                eq("jean@example.com"),
+                argThat(s -> s.contains("Acquisition") && s.contains("Onde")),
+                argThat(b -> b.contains("Jean Test") && b.contains("/mobilier/onde"))
+        );
         ArgumentCaptor<ContactRequestEntity> entityCaptor = ArgumentCaptor.forClass(ContactRequestEntity.class);
         verify(repository).save(entityCaptor.capture());
         assertTrue(entityCaptor.getValue().isMailSent());
     }
 
     @Test
-    void testSubmit_MailDeliveryFails_KeepsRecordWithMailSentFalse() {
-        when(mailSettingsService.buildSender()).thenReturn(mailSender);
-        when(mailSettingsService.getConfigSnapshot()).thenReturn(Optional.of(configuredEntity()));
-        doThrow(new MailSendException("smtp down")).when(mailSender).send(any(SimpleMailMessage.class));
+    void testSubmit_ResendReturnsFalse_KeepsRecordWithMailSentFalse() {
+        when(mailSettingsService.get()).thenReturn(configuredView());
+        when(resendMailService.send(any(), any(), any(), any(), any())).thenReturn(false);
 
         ContactRequestAck ack = service.submit(sampleInput());
 
@@ -139,8 +136,8 @@ class ContactRequestServiceTest {
 
     @Test
     void testSubmit_PressInterest_UsesPressLabelInSubject() {
-        when(mailSettingsService.buildSender()).thenReturn(mailSender);
-        when(mailSettingsService.getConfigSnapshot()).thenReturn(Optional.of(configuredEntity()));
+        when(mailSettingsService.get()).thenReturn(configuredView());
+        when(resendMailService.send(any(), any(), any(), any(), any())).thenReturn(true);
         ContactRequestInput input = new ContactRequestInput(
                 "Reporter", "r@p.fr", null, "press",
                 "Demande presse.", null, null, null
@@ -148,8 +145,10 @@ class ContactRequestServiceTest {
 
         service.submit(input);
 
-        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mailSender).send(captor.capture());
-        assertTrue(captor.getValue().getSubject().contains("Presse"));
+        verify(resendMailService).send(
+                any(), any(), any(),
+                argThat(s -> s.contains("Presse")),
+                any()
+        );
     }
 }

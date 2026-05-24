@@ -24,8 +24,7 @@ class AdminMailSettingsControllerTest {
     @Test
     void get_returnsServiceView() {
         MailSettingsView view = new MailSettingsView(
-                "smtp.x", 587, "u", true, "STARTTLS",
-                "from@x", "to@x", "2026-05-17T00:00:00Z");
+                "from@x", "to@x", true, "2026-05-24T00:00:00Z");
         when(service.get()).thenReturn(view);
 
         MailSettingsView result = controller.get();
@@ -35,10 +34,8 @@ class AdminMailSettingsControllerTest {
 
     @Test
     void put_delegatesToServiceSave() {
-        MailSettingsInput input = new MailSettingsInput(
-                "h", 25, "u", "p", "NONE", "f@x", "t@x");
-        MailSettingsView view = new MailSettingsView(
-                "h", 25, "u", true, "NONE", "f@x", "t@x", "now");
+        MailSettingsInput input = new MailSettingsInput("f@x", "t@x");
+        MailSettingsView view = new MailSettingsView("f@x", "t@x", true, "now");
         when(service.save(any(MailSettingsInput.class))).thenReturn(view);
 
         MailSettingsView result = controller.put(input);
@@ -68,14 +65,13 @@ class AdminMailSettingsControllerTest {
     }
 
     @Test
-    void test_smtpFailure_returns200WithErrorBody() {
-        when(service.sendTest()).thenReturn(MailTestResult.failure("connection refused"));
+    void test_resendFailure_returns200WithErrorBody() {
+        when(service.sendTest()).thenReturn(MailTestResult.failure("Resend a refusé l'envoi"));
 
         ResponseEntity<MailTestResult> resp = controller.test();
 
-        // Real SMTP error (host valid but refused) — not incomplete → 200 with error body.
         assertEquals(200, resp.getStatusCode().value());
         assertFalse(resp.getBody().success());
-        assertEquals("connection refused", resp.getBody().error());
+        assertTrue(resp.getBody().error().contains("Resend"));
     }
 }
