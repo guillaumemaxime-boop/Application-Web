@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 017-drop-smtp-columns-from-mail-settings
+      author: atelier-lumen
+      comment: Bascule vers Resend (ADR-0014) — les colonnes SMTP ne sont plus utilisees.
+      changes:
+        - dropColumn:
+            tableName: mail_settings
+            columns:
+              - column:
+                  name: host
+              - column:
+                  name: port
+              - column:
+                  name: username
+              - column:
+                  name: password_encrypted
+              - column:
+                  name: encryption
