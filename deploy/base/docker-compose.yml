@@ -34,6 +34,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
+      RESEND_API_KEY: ${RESEND_API_KEY}
       UPLOAD_DIR: /data/uploads
     ports:
       - "${BACKEND_PORT:-8080}:8080"

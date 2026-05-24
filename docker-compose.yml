@@ -36,6 +36,8 @@ services:
       JWT_SECRET: "portfolio-dev-secret-key-must-be-changed-in-production"
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD_HASH: "$$2b$$10$$ylcY5PaYQeX8u3/tuDdSi.awSBx1KQ8ztLAyRTO6lOnqxPFzZUHZm"
+      # Resend API key — definie en local via env shell ou laisser vide pour mode degrade
+      RESEND_API_KEY: "${RESEND_API_KEY:-}"
     expose:
       - "8080"
     ports:
