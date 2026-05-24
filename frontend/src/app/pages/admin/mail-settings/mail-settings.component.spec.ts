@@ -11,14 +11,10 @@ describe('MailSettingsComponent', () => {
   let httpMock: HttpTestingController;
 
   const sampleView: MailSettingsView = {
-    host: 'smtp.example.com',
-    port: 587,
-    username: 'user@example.com',
-    hasPassword: true,
-    encryption: 'STARTTLS',
     fromAddress: 'from@example.com',
     toAddress: 'to@example.com',
-    updatedAt: '2026-05-17T10:00:00Z',
+    apiKeyConfigured: true,
+    updatedAt: '2026-05-24T10:00:00Z',
   };
 
   beforeEach(() => {
@@ -44,34 +40,22 @@ describe('MailSettingsComponent', () => {
   it('preloads the form with the GET response', () => {
     flushInitialGet();
 
-    expect(component.form.value.host).toBe('smtp.example.com');
-    expect(component.form.value.port).toBe(587);
-    expect(component.form.value.encryption).toBe('STARTTLS');
-    expect(component.form.value.password).toBe('');
-    expect(component.hasPassword()).toBeTrue();
+    expect(component.form.value.fromAddress).toBe('from@example.com');
+    expect(component.form.value.toAddress).toBe('to@example.com');
+    expect(component.apiKeyConfigured()).toBeTrue();
   });
 
-  it('omits the password key from the PUT payload when password input is empty', () => {
+  it('PUT payload only contains fromAddress and toAddress', () => {
     flushInitialGet();
-    component.form.patchValue({ host: 'smtp2.example.com' });
+    component.form.patchValue({ fromAddress: 'new@example.com' });
 
     component.save();
 
     const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/mail-settings');
-    expect(req.request.body.password).toBeUndefined();
-    expect(req.request.body.host).toBe('smtp2.example.com');
-    req.flush({ ...sampleView, host: 'smtp2.example.com' });
-  });
-
-  it('includes password in PUT payload when filled', () => {
-    flushInitialGet();
-    component.form.patchValue({ password: 'newsecret' });
-
-    component.save();
-
-    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/mail-settings');
-    expect(req.request.body.password).toBe('newsecret');
-    req.flush(sampleView);
+    expect(req.request.body.fromAddress).toBe('new@example.com');
+    expect(req.request.body.toAddress).toBe('to@example.com');
+    expect(Object.keys(req.request.body).sort()).toEqual(['fromAddress', 'toAddress']);
+    req.flush({ ...sampleView, fromAddress: 'new@example.com' });
   });
 
   it('disables the test button while the form is dirty', () => {
@@ -83,10 +67,22 @@ describe('MailSettingsComponent', () => {
     expect(component.testDisabled()).toBeTrue();
   });
 
-  it('disables the test button when required fields are missing', () => {
+  it('disables the test button when API key is not configured', () => {
     flushInitialGet({
-      host: null, port: null, username: null, hasPassword: false,
-      encryption: 'NONE', fromAddress: null, toAddress: null,
+      fromAddress: 'from@example.com',
+      toAddress: 'to@example.com',
+      apiKeyConfigured: false,
+      updatedAt: 'now',
+    });
+
+    expect(component.testDisabled()).toBeTrue();
+  });
+
+  it('disables the test button when from or to is empty', () => {
+    flushInitialGet({
+      fromAddress: null,
+      toAddress: null,
+      apiKeyConfigured: true,
       updatedAt: 'now',
     });
 
