@@ -5,6 +5,7 @@ import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +17,7 @@ public class ResendMailService {
     private final Resend client;
     private final boolean degraded;
 
-    /** Production constructor: receives the API key from Spring. */
+    @Autowired
     public ResendMailService(@Value("${app.resend.api-key:}") String apiKey) {
         if (apiKey == null || apiKey.isBlank()) {
             log.warn("RESEND_API_KEY not set — Resend in degraded mode, no email will be sent");
