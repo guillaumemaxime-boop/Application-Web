@@ -127,12 +127,19 @@ export class HomeComponent implements OnInit {
   protected viewerQueue = signal<StoryItem[]>([]);
   protected content = signal<SiteContent>({});
 
-  protected heroEyebrow = computed(() => this.content()['home.hero.eyebrow'] || 'Atelier Lumen — Portfolio');
+  protected heroEyebrow = computed(() => {
+    if (this.data() === null) return '';
+    return this.content()['home.hero.eyebrow'] || 'Atelier Lumen — Portfolio';
+  });
   protected heroTitle = computed(() => {
+    if (this.data() === null) return 'En chargement…';
     const t = this.content()['home.hero.title'];
     return (t && t.trim()) ? t.replace(/\n/g, '<br/>') : 'Mobilier sculpté,<br/>scénographies vivantes.';
   });
-  protected heroLead = computed(() => this.content()['home.hero.lead'] || 'À feuilleter en stories, à explorer en profondeur.');
+  protected heroLead = computed(() => {
+    if (this.data() === null) return '';
+    return this.content()['home.hero.lead'] || 'À feuilleter en stories, à explorer en profondeur.';
+  });
   protected titleStyleVar = computed(() => roleStyle(this.content(), 'title'));
   protected eyebrowStyleVar = computed(() => roleStyle(this.content(), 'eyebrow'));
   protected cardTitleStyleVar = computed(() => roleStyle(this.content(), 'card-title'));
