@@ -47,3 +47,6 @@ databaseChangeLog:
   - include:
       file: changes/016-create-mail-settings.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/017-drop-smtp-columns-from-mail-settings.yaml
+      relativeToChangelogFile: true

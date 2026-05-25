@@ -1,6 +1,6 @@
 # ADR-0013 : Configuration SMTP en base, password chiffré au repos
 
-- **Statut** : Accepted
+- **Statut** : Superseded by [ADR-0014](0014-bascule-vers-resend.md)
 - **Date** : 2026-05-23
 - **Décideurs** : Maxime Guillaume
 - **Tags** : backend, sécurité, configuration, smtp
