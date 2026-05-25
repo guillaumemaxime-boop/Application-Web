@@ -55,7 +55,7 @@ public class ResendMailService {
                     .build();
             client.emails().send(opts);
             return true;
-        } catch (ResendException ex) {
+        } catch (ResendException | RuntimeException ex) {
             log.warn("Resend send failed: {}", ex.getMessage());
             return false;
         }
