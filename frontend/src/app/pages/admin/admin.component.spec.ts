@@ -115,7 +115,7 @@ describe('AdminComponent', () => {
 
   it('should display the furniture tab by default', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-    expect(tabs.length).toBe(6);
+    expect(tabs.length).toBe(5);
     expect(tabs[0].classList.contains('active')).toBe(true);
     for (let i = 1; i < tabs.length; i++) {
       expect(tabs[i].classList.contains('active')).toBe(false);
@@ -490,7 +490,7 @@ describe('AdminComponent', () => {
       fixture.detectChanges();
 
       const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-      expect(tabs[3].classList.contains('active')).toBe(true);
+      expect(tabs[2].classList.contains('active')).toBe(true);
       expect(tabs[0].classList.contains('active')).toBe(false);
     });
 
@@ -863,69 +863,6 @@ describe('AdminComponent', () => {
       component['exhibitionGallery'].set(['x.jpg', 'y.jpg']);
       component.onExhibitionGalleryReorder([1, 0]);
       expect(component['exhibitionGallery']()).toEqual(['y.jpg', 'x.jpg']);
-    });
-  });
-
-  describe('Texts tab', () => {
-    it('should switch to the texts tab', () => {
-      component.switchTab('texts');
-      fixture.detectChanges();
-
-      const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-      expect(tabs[2].classList.contains('active')).toBe(true);
-      expect(tabs[0].classList.contains('active')).toBe(false);
-    });
-
-    it('should call getContent on init and populate the texts form', () => {
-      expect(portfolioServiceSpy.getContent).toHaveBeenCalled();
-      expect(component['textsForm'].value.home_hero_eyebrow).toBe('');
-    });
-
-    it('should populate texts form with content from the service', async () => {
-      portfolioServiceSpy.getContent.and.returnValue(of({
-        'home.hero.eyebrow': 'Mon Studio',
-        'home.hero.title': 'Titre héro',
-        'profile.contactEmail': 'studio@test.fr',
-      }));
-
-      const fix = TestBed.createComponent(AdminComponent);
-      fix.detectChanges();
-      await fix.whenStable();
-
-      expect(fix.componentInstance['textsForm'].value.home_hero_eyebrow).toBe('Mon Studio');
-      expect(fix.componentInstance['textsForm'].value.profile_contactEmail).toBe('studio@test.fr');
-    });
-
-    it('should call updateContent when saveTexts is invoked', () => {
-      component.saveTexts();
-
-      expect(portfolioServiceSpy.updateContent).toHaveBeenCalled();
-      expect(component['saving']()).toBeFalse();
-    });
-
-    it('should show success flash after saveTexts succeeds', () => {
-      component.saveTexts();
-
-      expect(component['message']()).toContain('succès');
-      expect(component['messageType']()).toBe('success');
-    });
-
-    it('should show error flash when saveTexts fails', () => {
-      portfolioServiceSpy.updateContent.and.returnValue(throwError(() => new Error('boom')));
-
-      component.saveTexts();
-
-      expect(component['messageType']()).toBe('error');
-      expect(component['saving']()).toBeFalse();
-    });
-
-    it('should show error flash when getContent fails on init', () => {
-      portfolioServiceSpy.getContent.and.returnValue(throwError(() => new Error('boom')));
-
-      const fix = TestBed.createComponent(AdminComponent);
-      fix.detectChanges();
-
-      expect(fix.componentInstance['loadingTexts']()).toBeFalse();
     });
   });
 

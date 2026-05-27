@@ -3,7 +3,6 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { forkJoin } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
-import { SiteContent } from '../../models/site-content.model';
 import { Photo } from '../../models/photo.model';
 import { AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../../models/home.model';
 import { PortfolioService } from '../../services/portfolio.service';
@@ -27,7 +26,7 @@ interface ExhibitionMetaRow {
   visible: boolean;
 }
 
-type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home' | 'email';
+type Tab = 'furniture' | 'exhibitions' | 'photos' | 'home' | 'email';
 type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover' | 'exhibition-gallery';
 
 interface Toast {
@@ -68,12 +67,6 @@ interface Toast {
               [attr.aria-selected]="tab() === 'exhibitions'"
               [class.active]="tab() === 'exhibitions'"
               (click)="switchTab('exhibitions')">Expositions</button>
-            <button
-              type="button"
-              role="tab"
-              [attr.aria-selected]="tab() === 'texts'"
-              [class.active]="tab() === 'texts'"
-              (click)="switchTab('texts')">Textes du site</button>
             <button
               type="button"
               role="tab"
@@ -387,128 +380,6 @@ interface Toast {
               </div>
             </form>
           </div>
-        }
-
-        @if (tab() === 'texts') {
-          @if (loadingTexts()) {
-            <p class="status">Chargement des textes…</p>
-          } @else {
-            <form class="texts-form" [formGroup]="textsForm" (ngSubmit)="saveTexts()">
-
-              <div class="texts-section">
-                <h2 class="texts-section-title">Page d'accueil</h2>
-
-                <div class="texts-group">
-                  <h3 class="texts-group-label">Bloc héro</h3>
-                  <label>
-                    <span>Chapeau</span>
-                    <input type="text" formControlName="home_hero_eyebrow" />
-                  </label>
-                  <label>
-                    <span>Titre (saut de ligne avec ↵)</span>
-                    <textarea rows="2" formControlName="home_hero_title"></textarea>
-                  </label>
-                  <label>
-                    <span>Accroche</span>
-                    <textarea rows="3" formControlName="home_hero_lead"></textarea>
-                  </label>
-                </div>
-
-                <div class="texts-group">
-                  <h3 class="texts-group-label">Section mobilier phare</h3>
-                  <label>
-                    <span>Chapeau</span>
-                    <input type="text" formControlName="home_featured_eyebrow" />
-                  </label>
-                  <label>
-                    <span>Titre</span>
-                    <input type="text" formControlName="home_featured_title" />
-                  </label>
-                </div>
-
-                <div class="texts-group">
-                  <h3 class="texts-group-label">Section expositions</h3>
-                  <label>
-                    <span>Chapeau</span>
-                    <input type="text" formControlName="home_exhibitions_eyebrow" />
-                  </label>
-                  <label>
-                    <span>Titre</span>
-                    <input type="text" formControlName="home_exhibitions_title" />
-                  </label>
-                </div>
-
-                <div class="texts-group">
-                  <h3 class="texts-group-label">Citation</h3>
-                  <label>
-                    <span>Texte de la citation</span>
-                    <textarea rows="2" formControlName="home_quote_text"></textarea>
-                  </label>
-                  <label>
-                    <span>Attribution</span>
-                    <input type="text" formControlName="home_quote_cite" />
-                  </label>
-                </div>
-              </div>
-
-              <div class="texts-section">
-                <h2 class="texts-section-title">Studio — Processus de création</h2>
-
-                @for (i of [1,2,3,4]; track i) {
-                  <div class="texts-group">
-                    <h3 class="texts-group-label">Étape 0{{ i }}</h3>
-                    <div class="row-2">
-                      <label>
-                        <span>Titre</span>
-                        <input type="text" [formControlName]="'studio_step' + i + '_title'" />
-                      </label>
-                    </div>
-                    <label>
-                      <span>Description</span>
-                      <textarea rows="3" [formControlName]="'studio_step' + i + '_desc'"></textarea>
-                    </label>
-                  </div>
-                }
-              </div>
-
-              <div class="texts-section">
-                <h2 class="texts-section-title">Contact &amp; réseaux sociaux</h2>
-
-                <div class="texts-group">
-                  <label>
-                    <span>Localisation</span>
-                    <input type="text" formControlName="profile_location" />
-                  </label>
-                  <div class="row-2">
-                    <label>
-                      <span>Email de contact</span>
-                      <input type="email" formControlName="profile_contactEmail" />
-                    </label>
-                    <label>
-                      <span>Téléphone</span>
-                      <input type="tel" formControlName="profile_phone" />
-                    </label>
-                  </div>
-                  <div class="row-2">
-                    <label>
-                      <span>Instagram (URL)</span>
-                      <input type="url" formControlName="profile_instagram" placeholder="https://instagram.com/votre-handle" />
-                    </label>
-                    <label>
-                      <span>LinkedIn (URL)</span>
-                      <input type="url" formControlName="profile_linkedin" placeholder="https://www.linkedin.com/in/votre-profil" />
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="texts-actions">
-                <button type="submit" class="btn-primary" [disabled]="saving()">
-                  {{ saving() ? 'Enregistrement…' : 'Enregistrer les textes' }}
-                </button>
-              </div>
-            </form>
-          }
         }
 
         @if (tab() === 'photos') {
@@ -1094,12 +965,12 @@ interface Toast {
     }
     .btn-pick:hover { border-color: var(--color-accent); color: var(--color-accent); }
 
-    .form label, .texts-form label {
+    .form label {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .form label > span, .texts-form label > span {
+    .form label > span {
       font-size: 0.75rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -1109,11 +980,7 @@ interface Toast {
     .form input[type="number"],
     .form input[type="url"],
     .form input[type="date"],
-    .form textarea,
-    .texts-form input[type="text"],
-    .texts-form input[type="email"],
-    .texts-form input[type="tel"],
-    .texts-form textarea {
+    .form textarea {
       padding: 10px 12px;
       border: 1px solid var(--color-line);
       background: var(--color-bg);
@@ -1122,13 +989,11 @@ interface Toast {
       border-radius: 0;
     }
     .form input:focus,
-    .form textarea:focus,
-    .texts-form input:focus,
-    .texts-form textarea:focus {
+    .form textarea:focus {
       outline: none;
       border-color: var(--color-accent);
     }
-    .form textarea, .texts-form textarea {
+    .form textarea {
       font-family: var(--sans, inherit);
       resize: vertical;
     }
@@ -1181,44 +1046,6 @@ interface Toast {
     }
 
     .status { color: var(--color-mute); padding: 16px 20px; }
-
-    /* Texts tab */
-    .texts-form {
-      display: flex;
-      flex-direction: column;
-      gap: 48px;
-    }
-    .texts-section {
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
-    }
-    .texts-section-title {
-      font-size: 1.25rem;
-      padding-bottom: 16px;
-      border-bottom: 2px solid var(--color-ink);
-      margin: 0;
-    }
-    .texts-group {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding: 24px;
-      border: 1px solid var(--color-line);
-      background: var(--color-bg);
-    }
-    .texts-group-label {
-      font-size: 0.75rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-      font-family: var(--sans);
-      font-weight: 500;
-      margin: 0 0 4px;
-    }
-    .texts-actions {
-      padding-top: 8px;
-    }
 
     /* Photos tab */
     .photos-tab {
@@ -1488,7 +1315,6 @@ export class AdminComponent {
   protected readonly photos = signal<Photo[]>([]);
   protected readonly loadingFurniture = signal(true);
   protected readonly loadingExhibitions = signal(true);
-  protected readonly loadingTexts = signal(true);
   protected readonly loadingPhotos = signal(false);
   protected readonly editingFurnitureSlug = signal<string | null>(null);
   protected readonly editingFurnitureId = signal<string | null>(null);
@@ -1500,7 +1326,6 @@ export class AdminComponent {
   private readonly tabLabels: Record<Tab, string> = {
     furniture: 'Mobilier',
     exhibitions: 'Expositions',
-    texts: 'Textes du site',
     photos: 'Médiathèque',
     home: 'Accueil',
     email: 'Email',
@@ -1556,35 +1381,14 @@ export class AdminComponent {
   protected readonly exhibitionTags = signal<string[]>([]);
   protected readonly newExhibitionTag = signal('');
 
-  protected readonly textsForm = this.fb.group({
-    home_hero_eyebrow: [''],
-    home_hero_title: [''],
-    home_hero_lead: [''],
-    home_featured_eyebrow: [''],
-    home_featured_title: [''],
-    home_exhibitions_eyebrow: [''],
-    home_exhibitions_title: [''],
-    home_quote_text: [''],
-    home_quote_cite: [''],
-    studio_step1_title: [''],
-    studio_step1_desc: [''],
-    studio_step2_title: [''],
-    studio_step2_desc: [''],
-    studio_step3_title: [''],
-    studio_step3_desc: [''],
-    studio_step4_title: [''],
-    studio_step4_desc: [''],
-    profile_contactEmail: [''],
-    profile_phone: [''],
-    profile_location: [''],
-    profile_instagram: [''],
-    profile_linkedin: [''],
-  });
-
   constructor() {
     this.refreshFurniture();
     this.refreshExhibitions();
-    this.refreshTexts();
+    this.portfolio.getContent().subscribe(c => {
+      this.navMobilierVisible.set(c['nav.mobilier.visible'] !== 'false');
+      this.navExpositionsVisible.set(c['nav.expositions.visible'] !== 'false');
+      this.navStudioVisible.set(c['nav.studio.visible'] !== 'false');
+    });
     this.refreshPhotos();
   }
 
@@ -1749,88 +1553,11 @@ export class AdminComponent {
     });
   }
 
-  private refreshTexts() {
-    this.loadingTexts.set(true);
-    this.portfolio.getContent().subscribe({
-      next: content => {
-        this.loadingTexts.set(false);
-        this.textsForm.reset({
-          home_hero_eyebrow: content['home.hero.eyebrow'] ?? '',
-          home_hero_title: content['home.hero.title'] ?? '',
-          home_hero_lead: content['home.hero.lead'] ?? '',
-          home_featured_eyebrow: content['home.featured.eyebrow'] ?? '',
-          home_featured_title: content['home.featured.title'] ?? '',
-          home_exhibitions_eyebrow: content['home.exhibitions.eyebrow'] ?? '',
-          home_exhibitions_title: content['home.exhibitions.title'] ?? '',
-          home_quote_text: content['home.quote.text'] ?? '',
-          home_quote_cite: content['home.quote.cite'] ?? '',
-          studio_step1_title: content['studio.step1.title'] ?? '',
-          studio_step1_desc: content['studio.step1.desc'] ?? '',
-          studio_step2_title: content['studio.step2.title'] ?? '',
-          studio_step2_desc: content['studio.step2.desc'] ?? '',
-          studio_step3_title: content['studio.step3.title'] ?? '',
-          studio_step3_desc: content['studio.step3.desc'] ?? '',
-          studio_step4_title: content['studio.step4.title'] ?? '',
-          studio_step4_desc: content['studio.step4.desc'] ?? '',
-          profile_contactEmail: content['profile.contactEmail'] ?? '',
-          profile_phone: content['profile.phone'] ?? '',
-          profile_location: content['profile.location'] ?? '',
-          profile_instagram: content['profile.instagram'] ?? '',
-          profile_linkedin: content['profile.linkedin'] ?? '',
-        });
-        this.navMobilierVisible.set(content['nav.mobilier.visible'] !== 'false');
-        this.navExpositionsVisible.set(content['nav.expositions.visible'] !== 'false');
-        this.navStudioVisible.set(content['nav.studio.visible'] !== 'false');
-      },
-      error: () => { this.loadingTexts.set(false); this.flash('Impossible de charger les textes.', 'error'); }
-    });
-  }
-
   private refreshPhotos() {
     this.loadingPhotos.set(true);
     this.portfolio.getPhotos().subscribe({
       next: data => { this.photos.set(data); this.loadingPhotos.set(false); },
       error: () => { this.loadingPhotos.set(false); }
-    });
-  }
-
-  saveTexts() {
-    const v = this.textsForm.getRawValue();
-    const payload: SiteContent = {
-      'home.hero.eyebrow': v.home_hero_eyebrow ?? '',
-      'home.hero.title': v.home_hero_title ?? '',
-      'home.hero.lead': v.home_hero_lead ?? '',
-      'home.featured.eyebrow': v.home_featured_eyebrow ?? '',
-      'home.featured.title': v.home_featured_title ?? '',
-      'home.exhibitions.eyebrow': v.home_exhibitions_eyebrow ?? '',
-      'home.exhibitions.title': v.home_exhibitions_title ?? '',
-      'home.quote.text': v.home_quote_text ?? '',
-      'home.quote.cite': v.home_quote_cite ?? '',
-      'studio.step1.title': v.studio_step1_title ?? '',
-      'studio.step1.desc': v.studio_step1_desc ?? '',
-      'studio.step2.title': v.studio_step2_title ?? '',
-      'studio.step2.desc': v.studio_step2_desc ?? '',
-      'studio.step3.title': v.studio_step3_title ?? '',
-      'studio.step3.desc': v.studio_step3_desc ?? '',
-      'studio.step4.title': v.studio_step4_title ?? '',
-      'studio.step4.desc': v.studio_step4_desc ?? '',
-      'profile.contactEmail': v.profile_contactEmail ?? '',
-      'profile.phone': v.profile_phone ?? '',
-      'profile.location': v.profile_location ?? '',
-      'profile.instagram': v.profile_instagram ?? '',
-      'profile.linkedin': v.profile_linkedin ?? '',
-    };
-
-    this.saving.set(true);
-    this.portfolio.updateContent(payload).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.flash('Textes mis à jour avec succès.', 'success');
-      },
-      error: () => {
-        this.saving.set(false);
-        this.flash('Erreur lors de l\'enregistrement des textes.', 'error');
-      }
     });
   }
 
