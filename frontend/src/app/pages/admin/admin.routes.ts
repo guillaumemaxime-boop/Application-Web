@@ -42,6 +42,11 @@ export const adminRoutes: Routes = [
         title: 'Mobilier — Administration',
       },
       {
+        path: 'expositions',
+        loadComponent: () => import('./expositions/expositions.component').then(m => m.ExpositionsComponent),
+        title: 'Expositions — Administration',
+      },
+      {
         path: 'legacy',
         loadComponent: () => import('./admin.component').then(m => m.AdminComponent),
         title: 'Administration (legacy) — Milo GUILLAUME Design',
