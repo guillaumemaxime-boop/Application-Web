@@ -1,7 +1,6 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { forkJoin } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
@@ -30,7 +29,7 @@ interface ExhibitionMetaRow {
   visible: boolean;
 }
 
-type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home' | 'typography' | 'analytics' | 'email';
+type Tab = 'furniture' | 'exhibitions' | 'texts' | 'photos' | 'home' | 'typography' | 'email';
 type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover' | 'exhibition-gallery';
 
 interface Toast {
@@ -95,12 +94,6 @@ interface Toast {
               [attr.aria-selected]="tab() === 'typography'"
               [class.active]="tab() === 'typography'"
               (click)="switchTab('typography')">Typographie</button>
-            <button
-              type="button"
-              role="tab"
-              [attr.aria-selected]="tab() === 'analytics'"
-              [class.active]="tab() === 'analytics'"
-              (click)="switchTab('analytics')">Analytics</button>
             <button
               type="button"
               role="tab"
@@ -712,21 +705,6 @@ interface Toast {
               </div>
             </form>
           </div>
-        }
-
-        @if (tab() === 'analytics') {
-          @if (umamiConfigured()) {
-            <iframe
-              class="umami-frame"
-              [src]="umamiIframeUrl()"
-              title="Analytics Umami"
-              loading="lazy"></iframe>
-          } @else {
-            <div class="umami-fallback">
-              <h2>Analytics</h2>
-              <p>Configuration analytics manquante. Renseignez <code>UMAMI_WEBSITE_ID</code> et <code>UMAMI_SHARE_TOKEN</code> dans les variables d'environnement du conteneur frontend, puis redémarrez-le.</p>
-            </div>
-          }
         }
 
         @if (tab() === 'email') {
@@ -1531,27 +1509,6 @@ interface Toast {
       display: block;
     }
 
-    .umami-frame {
-      width: 100%;
-      height: calc(100vh - 280px);
-      min-height: 600px;
-      border: 1px solid var(--color-line);
-      background: var(--color-bg);
-    }
-    .umami-fallback {
-      padding: 48px;
-      border: 1px dashed var(--color-line);
-      background: var(--color-bg-alt);
-      text-align: center;
-    }
-    .umami-fallback h2 { margin: 0 0 16px; font-size: 1.5rem; }
-    .umami-fallback p { margin: 0; color: var(--color-ink-soft); }
-    .umami-fallback code {
-      background: var(--color-bg);
-      padding: 2px 6px;
-      border: 1px solid var(--color-line);
-      font-size: 0.85rem;
-    }
     @media (max-width: 960px) {
       .grid-admin { grid-template-columns: 1fr; }
       .list { position: static; max-height: none; }
@@ -1643,7 +1600,6 @@ interface Toast {
 export class AdminComponent {
   private readonly portfolio = inject(PortfolioService);
   private readonly fb = inject(FormBuilder);
-  private readonly sanitizer = inject(DomSanitizer);
 
   protected readonly tab = signal<Tab>('furniture');
   protected readonly furniture = signal<Furniture[]>([]);
@@ -1668,7 +1624,6 @@ export class AdminComponent {
     photos: 'Médiathèque',
     home: 'Accueil',
     typography: 'Typographie',
-    analytics: 'Analytics',
     email: 'Email',
   };
   protected readonly currentTabLabel = computed(() => this.tabLabels[this.tab()]);
@@ -2409,17 +2364,6 @@ export class AdminComponent {
 
   closeViewer() {
     this.viewingPhoto.set(null);
-  }
-
-  protected umamiConfigured(): boolean {
-    const env = (window as unknown as { __UMAMI__?: { websiteId?: string; shareToken?: string } }).__UMAMI__;
-    return !!(env && env.websiteId && env.shareToken);
-  }
-
-  protected umamiIframeUrl(): SafeResourceUrl {
-    const env = (window as unknown as { __UMAMI__?: { websiteId?: string; shareToken?: string } }).__UMAMI__;
-    const url = `/umami/share/${env?.shareToken ?? ''}/${env?.websiteId ?? ''}`;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   private splitLines(value: string | null | undefined): string[] {

@@ -17,6 +17,11 @@ export const adminRoutes: Routes = [
         title: 'Email — Administration',
       },
       {
+        path: 'analytics',
+        loadComponent: () => import('./analytics/analytics.component').then(m => m.AnalyticsComponent),
+        title: 'Analytics — Administration',
+      },
+      {
         path: 'legacy',
         loadComponent: () => import('./admin.component').then(m => m.AdminComponent),
         title: 'Administration (legacy) — Milo GUILLAUME Design',
