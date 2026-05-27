@@ -1,11 +1,11 @@
 import { Component, Input, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { PortfolioService } from '../../services/portfolio.service';
+import { PortfolioService } from '../../../services/portfolio.service';
 import {
   Slide, CoverSlide, ImageSlide, SpecSlide, QuoteSlide, LinkSlide,
-} from '../../models/slide.model';
-import { ReorderableDirective } from '../../directives/reorderable.directive';
+} from '../../../models/slide.model';
+import { ReorderableDirective } from '../../../directives/reorderable.directive';
 
 @Component({
   selector: 'app-slides-editor',

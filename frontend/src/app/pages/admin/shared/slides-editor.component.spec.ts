@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { SlidesEditorComponent } from './slides-editor.component';
-import { Slide } from '../../models/slide.model';
+import { Slide } from '../../../models/slide.model';
 
 describe('SlidesEditorComponent', () => {
   let fixture: ComponentFixture<SlidesEditorComponent>;
