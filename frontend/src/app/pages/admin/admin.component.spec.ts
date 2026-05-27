@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AdminComponent } from './admin.component';
 import { PortfolioService } from '../../services/portfolio.service';
 import { of, throwError } from 'rxjs';
-import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
 import { Photo } from '../../models/photo.model';
 import { provideRouter } from '@angular/router';
@@ -13,23 +12,6 @@ describe('AdminComponent', () => {
   let component: AdminComponent;
   let fixture: ComponentFixture<AdminComponent>;
   let portfolioServiceSpy: jasmine.SpyObj<PortfolioService>;
-
-  const mockFurniture: Furniture = {
-    id: 'f-001',
-    title: 'Onde — Fauteuil sculpté',
-    slug: 'onde-fauteuil-sculpte',
-    category: 'Sièges',
-    material: 'Chêne massif & cuir tanné',
-    year: 2024,
-    coverImage: 'https://example.com/onde.jpg',
-    gallery: ['https://example.com/onde-1.jpg', 'https://example.com/onde-2.jpg'],
-    shortDescription: 'Une silhouette inspirée du mouvement de la mer',
-    description: 'Description détaillée',
-    dimensions: ['Hauteur 92 cm', 'Largeur 78 cm'],
-    designer: 'Milo GUILLAUME Design',
-    featured: true,
-    slides: [],
-  };
 
   const mockPhoto: Photo = {
     id: 'ph-abc12345',
@@ -62,9 +44,6 @@ describe('AdminComponent', () => {
     const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', [
       'getAllFurniture',
       'getAllExhibitions',
-      'createFurniture',
-      'updateFurniture',
-      'deleteFurniture',
       'createExhibition',
       'updateExhibition',
       'deleteExhibition',
@@ -73,12 +52,13 @@ describe('AdminComponent', () => {
       'getPhotos',
       'uploadPhoto',
       'deletePhoto',
+      'getAdminFeed',
+      'getAdminExhibitionsMeta',
+      'replaceAdminFeed',
+      'updateAdminExhibitionMeta',
     ]);
-    spy.getAllFurniture.and.returnValue(of([mockFurniture]));
+    spy.getAllFurniture.and.returnValue(of([]));
     spy.getAllExhibitions.and.returnValue(of([mockExhibition]));
-    spy.createFurniture.and.returnValue(of(mockFurniture));
-    spy.updateFurniture.and.returnValue(of(mockFurniture));
-    spy.deleteFurniture.and.returnValue(of(void 0));
     spy.createExhibition.and.returnValue(of(mockExhibition));
     spy.updateExhibition.and.returnValue(of(mockExhibition));
     spy.deleteExhibition.and.returnValue(of(void 0));
@@ -87,6 +67,10 @@ describe('AdminComponent', () => {
     spy.getPhotos.and.returnValue(of([]));
     spy.uploadPhoto.and.returnValue(of(mockPhoto));
     spy.deletePhoto.and.returnValue(of(void 0));
+    spy.getAdminFeed.and.returnValue(of([]));
+    spy.getAdminExhibitionsMeta.and.returnValue(of([]));
+    spy.replaceAdminFeed.and.returnValue(of([]));
+    spy.updateAdminExhibitionMeta.and.returnValue(of({} as any));
 
     await TestBed.configureTestingModule({
       imports: [AdminComponent],
@@ -108,120 +92,26 @@ describe('AdminComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should load furniture and exhibitions on init', () => {
-    expect(portfolioServiceSpy.getAllFurniture).toHaveBeenCalled();
+  it('should load exhibitions on init', () => {
     expect(portfolioServiceSpy.getAllExhibitions).toHaveBeenCalled();
   });
 
-  it('should display the furniture tab by default', () => {
+  it('should display the exhibitions tab by default', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-    expect(tabs.length).toBe(4);
+    expect(tabs.length).toBe(3);
     expect(tabs[0].classList.contains('active')).toBe(true);
     for (let i = 1; i < tabs.length; i++) {
       expect(tabs[i].classList.contains('active')).toBe(false);
     }
   });
 
-  it('should switch to the exhibitions tab', () => {
-    component.switchTab('exhibitions');
+  it('should switch to the home tab', () => {
+    component.switchTab('home');
     fixture.detectChanges();
 
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
     expect(tabs[0].classList.contains('active')).toBe(false);
     expect(tabs[1].classList.contains('active')).toBe(true);
-  });
-
-  describe('Furniture form', () => {
-    it('should reset the form when calling newFurniture', () => {
-      component.loadFurniture(mockFurniture);
-      expect(component['editingFurnitureSlug']()).toBe(mockFurniture.slug);
-
-      component.newFurniture();
-      expect(component['editingFurnitureSlug']()).toBeNull();
-      expect(component['furnitureForm'].value.title).toBe('');
-    });
-
-    it('should populate the form when loading an existing furniture', () => {
-      component.loadFurniture(mockFurniture);
-      const v = component['furnitureForm'].value;
-
-      expect(component['editingFurnitureSlug']()).toBe(mockFurniture.slug);
-      expect(v.title).toBe(mockFurniture.title);
-      expect(v.category).toBe(mockFurniture.category);
-      expect(v.year).toBe(mockFurniture.year);
-      expect(component['furnitureGallery']()).toEqual(mockFurniture.gallery);
-      // mockFurniture.dimensions = ['Hauteur 92 cm', 'Largeur 78 cm']
-      expect(v.dimH).toBe(92);
-      expect(v.dimW).toBe(78);
-      expect(v.dimD).toBeNull();
-      expect(v.dimNotes).toBe('');
-    });
-
-    it('should call createFurniture when saving without an editing slug', () => {
-      component.newFurniture();
-      component['furnitureForm'].patchValue({
-        title: 'Nouvelle pièce',
-        category: 'Tables',
-        year: 2026,
-        dimW: 60,
-        dimH: 80,
-      });
-      component['furnitureGallery'].set(['https://img/1.jpg', 'https://img/2.jpg']);
-
-      component.saveFurniture();
-
-      expect(portfolioServiceSpy.createFurniture).toHaveBeenCalled();
-      const payload = portfolioServiceSpy.createFurniture.calls.mostRecent().args[0];
-      expect(payload.title).toBe('Nouvelle pièce');
-      expect(payload.category).toBe('Tables');
-      expect(payload.gallery).toEqual(['https://img/1.jpg', 'https://img/2.jpg']);
-      expect(payload.dimensions).toEqual(['L 60 cm', 'H 80 cm']);
-    });
-
-    it('should call updateFurniture when saving an editing slug', () => {
-      component.loadFurniture(mockFurniture);
-      component['furnitureForm'].patchValue({ title: 'Onde — édition 2' });
-
-      component.saveFurniture();
-
-      expect(portfolioServiceSpy.updateFurniture).toHaveBeenCalled();
-      const [slug, payload] = portfolioServiceSpy.updateFurniture.calls.mostRecent().args;
-      expect(slug).toBe(mockFurniture.slug);
-      expect(payload.title).toBe('Onde — édition 2');
-    });
-
-    it('should not save furniture when the form is invalid', () => {
-      component.newFurniture();
-      component.saveFurniture();
-
-      expect(portfolioServiceSpy.createFurniture).not.toHaveBeenCalled();
-    });
-
-    it('should call deleteFurniture when confirmed', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
-
-      component.removeFurniture(mockFurniture);
-
-      expect(portfolioServiceSpy.deleteFurniture).toHaveBeenCalledWith(mockFurniture.slug);
-    });
-
-    it('should not call deleteFurniture when not confirmed', () => {
-      spyOn(window, 'confirm').and.returnValue(false);
-
-      component.removeFurniture(mockFurniture);
-
-      expect(portfolioServiceSpy.deleteFurniture).not.toHaveBeenCalled();
-    });
-
-    it('should refresh the furniture list after creation', () => {
-      portfolioServiceSpy.getAllFurniture.calls.reset();
-      component.newFurniture();
-      component['furnitureForm'].patchValue({ title: 'X', category: 'Tables', year: 2026 });
-
-      component.saveFurniture();
-
-      expect(portfolioServiceSpy.getAllFurniture).toHaveBeenCalled();
-    });
   });
 
   describe('Exhibition form', () => {
@@ -332,27 +222,6 @@ describe('AdminComponent', () => {
   });
 
   describe('Error handling', () => {
-    it('should display an error when furniture loading fails', () => {
-      portfolioServiceSpy.getAllFurniture.and.returnValue(throwError(() => new Error('boom')));
-
-      const fix = TestBed.createComponent(AdminComponent);
-      fix.detectChanges();
-
-      expect(fix.componentInstance['message']()).toContain('Impossible');
-      expect(fix.componentInstance['messageType']()).toBe('error');
-    });
-
-    it('should display an error when furniture save fails', () => {
-      portfolioServiceSpy.createFurniture.and.returnValue(throwError(() => new Error('boom')));
-
-      component.newFurniture();
-      component['furnitureForm'].patchValue({ title: 'X', category: 'Tables', year: 2026 });
-      component.saveFurniture();
-
-      expect(component['messageType']()).toBe('error');
-      expect(component['saving']()).toBe(false);
-    });
-
     it('should display an error when exhibition delete fails', () => {
       spyOn(window, 'confirm').and.returnValue(true);
       portfolioServiceSpy.deleteExhibition.and.returnValue(throwError(() => new Error('boom')));
@@ -384,42 +253,9 @@ describe('AdminComponent', () => {
       expect(component['messageType']()).toBe('error');
       expect(component['saving']()).toBe(false);
     });
-
-    it('should display an error when furniture delete fails', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
-      portfolioServiceSpy.deleteFurniture.and.returnValue(throwError(() => new Error('boom')));
-
-      component.removeFurniture(mockFurniture);
-
-      expect(component['messageType']()).toBe('error');
-    });
-
   });
 
   describe('Edge cases for nullable fields', () => {
-    it('should handle furniture with nullable optional fields', () => {
-      const partial = {
-        ...mockFurniture,
-        material: undefined as any,
-        designer: undefined as any,
-        coverImage: undefined as any,
-        gallery: undefined as any,
-        dimensions: undefined as any,
-        shortDescription: undefined as any,
-        description: undefined as any,
-      };
-      component.loadFurniture(partial);
-      const v = component['furnitureForm'].value;
-      expect(v.material).toBe('');
-      expect(v.designer).toBe('');
-      expect(v.coverImage).toBe('');
-      expect(component['furnitureGallery']()).toEqual([]);
-      expect(v.dimW).toBeNull();
-      expect(v.dimD).toBeNull();
-      expect(v.dimH).toBeNull();
-      expect(v.dimNotes).toBe('');
-    });
-
     it('should handle exhibition with nullable optional fields', () => {
       const partial = {
         ...mockExhibition,
@@ -441,26 +277,6 @@ describe('AdminComponent', () => {
       expect(component['exhibitionTags']()).toEqual([]);
     });
 
-    it('should treat empty slug input as undefined when creating', () => {
-      component.newFurniture();
-      component['furnitureForm'].patchValue({
-        title: 'New', category: 'Tables', year: 2026, slug: '',
-      });
-      component.saveFurniture();
-      const payload = portfolioServiceSpy.createFurniture.calls.mostRecent().args[0];
-      expect(payload.slug).toBeUndefined();
-    });
-
-    it('should reset editing form when removing the furniture currently being edited', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
-      component.loadFurniture(mockFurniture);
-      expect(component['editingFurnitureSlug']()).toBe(mockFurniture.slug);
-
-      component.removeFurniture(mockFurniture);
-
-      expect(component['editingFurnitureSlug']()).toBeNull();
-    });
-
     it('should reset editing form when removing the exhibition currently being edited', () => {
       spyOn(window, 'confirm').and.returnValue(true);
       component.loadExhibition(mockExhibition);
@@ -474,56 +290,23 @@ describe('AdminComponent', () => {
 
   describe('Photo picker', () => {
     it('should open picker and set target', () => {
-      component.openPicker('furniture-cover');
+      component.openPicker('exhibition-cover');
 
-      expect(component['photoPicker']()).toBe('furniture-cover');
+      expect(component['photoPicker']()).toBe('exhibition-cover');
     });
 
     it('should close picker', () => {
-      component.openPicker('furniture-cover');
+      component.openPicker('exhibition-cover');
       component.closePicker();
 
       expect(component['photoPicker']()).toBeNull();
     });
 
     it('should close picker on Escape key', () => {
-      component.openPicker('furniture-gallery');
+      component.openPicker('exhibition-gallery');
       component.onKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
 
       expect(component['photoPicker']()).toBeNull();
-    });
-
-    it('should set coverImage when selecting photo for furniture-cover', () => {
-      component.openPicker('furniture-cover');
-      component.selectPhoto(mockPhoto);
-
-      expect(component['furnitureForm'].get('coverImage')!.value).toBe(mockPhoto.url);
-      expect(component['photoPicker']()).toBeNull();
-    });
-
-    it('should append url to furniture gallery signal when selecting photo for furniture-gallery', () => {
-      component['furnitureGallery'].set(['https://existing.com/img.jpg']);
-      component.openPicker('furniture-gallery');
-      component.selectPhoto(mockPhoto);
-
-      expect(component['furnitureGallery']()).toEqual(['https://existing.com/img.jpg', mockPhoto.url]);
-      expect(component['photoPicker']()).toBe('furniture-gallery');
-    });
-
-    it('should push url to furniture gallery when empty', () => {
-      component['furnitureGallery'].set([]);
-      component.openPicker('furniture-gallery');
-      component.selectPhoto(mockPhoto);
-
-      expect(component['furnitureGallery']()).toEqual([mockPhoto.url]);
-    });
-
-    it('should not duplicate when same url is selected twice for furniture-gallery', () => {
-      component['furnitureGallery'].set([mockPhoto.url]);
-      component.openPicker('furniture-gallery');
-      component.selectPhoto(mockPhoto);
-
-      expect(component['furnitureGallery']()).toEqual([mockPhoto.url]);
     });
 
     it('should set coverImage when selecting photo for exhibition-cover', () => {
@@ -544,17 +327,11 @@ describe('AdminComponent', () => {
     });
 
     it('pickerIsGallery should return true for gallery targets', () => {
-      component.openPicker('furniture-gallery');
-      expect(component['pickerIsGallery']()).toBe(true);
-
       component.openPicker('exhibition-gallery');
       expect(component['pickerIsGallery']()).toBe(true);
     });
 
     it('pickerIsGallery should return false for cover targets', () => {
-      component.openPicker('furniture-cover');
-      expect(component['pickerIsGallery']()).toBe(false);
-
       component.openPicker('exhibition-cover');
       expect(component['pickerIsGallery']()).toBe(false);
     });
@@ -563,7 +340,7 @@ describe('AdminComponent', () => {
       component['photos'].set([mockPhoto]);
       portfolioServiceSpy.getPhotos.calls.reset();
 
-      component.openPicker('furniture-cover');
+      component.openPicker('exhibition-cover');
 
       expect(portfolioServiceSpy.getPhotos).not.toHaveBeenCalled();
     });
@@ -588,7 +365,7 @@ describe('AdminComponent', () => {
 
     it('switchTab auto-closes the sidebar (used on mobile drawer)', () => {
       component['sidebarOpen'].set(true);
-      component.switchTab('exhibitions');
+      component.switchTab('home');
       expect(component['sidebarOpen']()).toBeFalse();
     });
 
@@ -602,12 +379,11 @@ describe('AdminComponent', () => {
 
   describe('Toast stack', () => {
     it('stacks multiple toasts and dismisses the targeted one', () => {
-      portfolioServiceSpy.createFurniture.and.returnValue(throwError(() => new Error('boom1')));
-      portfolioServiceSpy.createExhibition.and.returnValue(throwError(() => new Error('boom2')));
+      portfolioServiceSpy.createExhibition.and.returnValue(throwError(() => new Error('boom1')));
 
-      component.newFurniture();
-      component['furnitureForm'].patchValue({ title: 'A', category: 'X', year: 2026 });
-      component.saveFurniture();
+      component.newExhibition();
+      component['exhibitionForm'].patchValue({ title: 'A', startDate: '2026-01-01', endDate: '2026-02-01' });
+      component.saveExhibition();
 
       component.newExhibition();
       component['exhibitionForm'].patchValue({ title: 'B', startDate: '2026-01-01', endDate: '2026-02-01' });
@@ -622,10 +398,10 @@ describe('AdminComponent', () => {
     });
 
     it('message() and messageType() reflect the most recent toast', () => {
-      portfolioServiceSpy.createFurniture.and.returnValue(throwError(() => new Error('boom')));
-      component.newFurniture();
-      component['furnitureForm'].patchValue({ title: 'A', category: 'X', year: 2026 });
-      component.saveFurniture();
+      portfolioServiceSpy.createExhibition.and.returnValue(throwError(() => new Error('boom')));
+      component.newExhibition();
+      component['exhibitionForm'].patchValue({ title: 'A', startDate: '2026-01-01', endDate: '2026-02-01' });
+      component.saveExhibition();
       expect(component['messageType']()).toBe('error');
 
       // Success flash after error → latest toast wins
@@ -635,85 +411,7 @@ describe('AdminComponent', () => {
     });
   });
 
-  describe('Dimensions parsing & serialization', () => {
-    it('parses Largeur / Profondeur / Hauteur formats', () => {
-      component.loadFurniture({
-        ...mockFurniture,
-        dimensions: ['Largeur 78 cm', 'Profondeur 60 cm', 'Hauteur 92 cm'],
-      });
-      const v = component['furnitureForm'].value;
-      expect(v.dimW).toBe(78);
-      expect(v.dimD).toBe(60);
-      expect(v.dimH).toBe(92);
-      expect(v.dimNotes).toBe('');
-    });
-
-    it('parses L / P / H short formats', () => {
-      component.loadFurniture({
-        ...mockFurniture,
-        dimensions: ['L 50', 'P 40', 'H 60'],
-      });
-      const v = component['furnitureForm'].value;
-      expect(v.dimW).toBe(50);
-      expect(v.dimD).toBe(40);
-      expect(v.dimH).toBe(60);
-    });
-
-    it('puts unrecognized lines into dimNotes', () => {
-      component.loadFurniture({
-        ...mockFurniture,
-        dimensions: ['L 50', 'Diamètre assise 45 cm', 'Empilable jusqu\'à 5'],
-      });
-      const v = component['furnitureForm'].value;
-      expect(v.dimW).toBe(50);
-      expect(v.dimNotes).toBe('Diamètre assise 45 cm\nEmpilable jusqu\'à 5');
-    });
-
-    it('serializes L / P / H values into "L X cm" format and appends notes', () => {
-      component.newFurniture();
-      component['furnitureForm'].patchValue({
-        title: 'X', category: 'Tables', year: 2026,
-        dimW: 80, dimD: 60, dimH: 75,
-        dimNotes: 'Diamètre 45 cm\nEmpilable',
-      });
-      component.saveFurniture();
-      const payload = portfolioServiceSpy.createFurniture.calls.mostRecent().args[0];
-      expect(payload.dimensions).toEqual(['L 80 cm', 'P 60 cm', 'H 75 cm', 'Diamètre 45 cm', 'Empilable']);
-    });
-
-    it('omits absent dimensions from serialization', () => {
-      component.newFurniture();
-      component['furnitureForm'].patchValue({
-        title: 'X', category: 'Tables', year: 2026,
-        dimW: 80, dimH: 75,
-      });
-      component.saveFurniture();
-      const payload = portfolioServiceSpy.createFurniture.calls.mostRecent().args[0];
-      expect(payload.dimensions).toEqual(['L 80 cm', 'H 75 cm']);
-    });
-
-    it('handles decimal values with comma in source', () => {
-      component.loadFurniture({
-        ...mockFurniture,
-        dimensions: ['L 80,5 cm'],
-      });
-      expect(component['furnitureForm'].value.dimW).toBe(80.5);
-    });
-  });
-
   describe('Gallery thumbnails (reorder & remove)', () => {
-    it('removeFurnitureGalleryImage removes the matching url', () => {
-      component['furnitureGallery'].set(['a.jpg', 'b.jpg', 'c.jpg']);
-      component.removeFurnitureGalleryImage('b.jpg');
-      expect(component['furnitureGallery']()).toEqual(['a.jpg', 'c.jpg']);
-    });
-
-    it('onFurnitureGalleryReorder reorders by the given index list', () => {
-      component['furnitureGallery'].set(['a.jpg', 'b.jpg', 'c.jpg']);
-      component.onFurnitureGalleryReorder([2, 0, 1]);
-      expect(component['furnitureGallery']()).toEqual(['c.jpg', 'a.jpg', 'b.jpg']);
-    });
-
     it('removeExhibitionGalleryImage removes the matching url', () => {
       component['exhibitionGallery'].set(['x.jpg', 'y.jpg']);
       component.removeExhibitionGalleryImage('x.jpg');
@@ -730,17 +428,12 @@ describe('AdminComponent', () => {
   describe('Home tab', () => {
     beforeEach(() => {
       portfolioServiceSpy.getAdminFeed = jasmine.createSpy('getAdminFeed').and.returnValue(of([
-        { kind: 'furniture', slug: 'onde-fauteuil-sculpte', position: 0 },
-      ])) as any;
-      portfolioServiceSpy.getAdminCategories = jasmine.createSpy('getAdminCategories').and.returnValue(of([
-        { category: 'Sièges', coverImage: 'cat.jpg', position: 0, visible: true },
-        { category: 'Tables', coverImage: 'tbl.jpg', position: 1, visible: true },
+        { kind: 'exhibition', slug: 'matieres-silencieuses', position: 0 },
       ])) as any;
       portfolioServiceSpy.getAdminExhibitionsMeta = jasmine.createSpy('getAdminExhibitionsMeta').and.returnValue(of([
         { slug: 'matieres-silencieuses', position: 0, visible: true },
       ])) as any;
       portfolioServiceSpy.replaceAdminFeed = jasmine.createSpy('replaceAdminFeed').and.returnValue(of([])) as any;
-      portfolioServiceSpy.updateAdminCategory = jasmine.createSpy('updateAdminCategory').and.returnValue(of({} as any)) as any;
       portfolioServiceSpy.updateAdminExhibitionMeta = jasmine.createSpy('updateAdminExhibitionMeta').and.returnValue(of({} as any)) as any;
 
       component['switchTab']('home');
@@ -750,16 +443,8 @@ describe('AdminComponent', () => {
     it('loadHomeTab() builds the feed items mixing included furniture and exhibitions', () => {
       const items = component['homeItems']();
       expect(items).not.toBeNull();
-      expect(items!.length).toBe(2);
+      expect(items!.length).toBe(1);
       expect(items!.some(i => i.included)).toBeTrue();
-    });
-
-    it('onFeedReorder reorders the items and persists the new feed', () => {
-      const initial = component['homeItems']()!;
-      component['onFeedReorder']([1, 0]);
-      const reordered = component['homeItems']()!;
-      expect(reordered[0]).toBe(initial[1]);
-      expect(portfolioServiceSpy.replaceAdminFeed).toHaveBeenCalled();
     });
 
     it('onFeedReorder is a no-op when homeItems is null', () => {
@@ -795,31 +480,6 @@ describe('AdminComponent', () => {
       const event = { target: { checked: false } } as unknown as Event;
       component['toggleNavSection']('mobilier', event);
       expect(component['message']()).toContain('Impossible');
-    });
-
-    it('onCategoryReorder reorders categories with new positions and persists', () => {
-      const before = component['categoryMeta']()!;
-      component['onCategoryReorder']([1, 0]);
-      const after = component['categoryMeta']()!;
-      expect(after[0].category).toBe(before[1].category);
-      expect(after[0].position).toBe(0);
-      expect(after[1].position).toBe(1);
-      expect(portfolioServiceSpy.updateAdminCategory).toHaveBeenCalled();
-    });
-
-    it('onCategoryReorder is a no-op when categoryMeta is null', () => {
-      component['categoryMeta'].set(null as any);
-      component['onCategoryReorder']([0, 1]);
-      expect(portfolioServiceSpy.updateAdminCategory).not.toHaveBeenCalled();
-    });
-
-    it('toggleCategoryVisibility flips the visibility flag and persists', () => {
-      const cat = component['categoryMeta']()![0];
-      const event = { target: { checked: false } } as unknown as Event;
-      component['toggleCategoryVisibility'](cat, event);
-      const after = component['categoryMeta']()!.find(c => c.category === cat.category)!;
-      expect(after.visible).toBeFalse();
-      expect(portfolioServiceSpy.updateAdminCategory).toHaveBeenCalled();
     });
 
     it('onExhibitionMetaReorder reorders exhibitions with new positions and persists', () => {

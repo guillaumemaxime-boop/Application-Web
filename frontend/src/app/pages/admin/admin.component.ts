@@ -4,7 +4,7 @@ import { forkJoin } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
 import { Photo } from '../../models/photo.model';
-import { AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../../models/home.model';
+import { AdminFeedEntry, AdminExhibitionMetaView } from '../../models/home.model';
 import { PortfolioService } from '../../services/portfolio.service';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
 import { SlidesEditorComponent } from './slides-editor.component';
@@ -26,8 +26,8 @@ interface ExhibitionMetaRow {
   visible: boolean;
 }
 
-type Tab = 'furniture' | 'exhibitions' | 'home' | 'email';
-type PickerTarget = 'furniture-cover' | 'furniture-gallery' | 'exhibition-cover' | 'exhibition-gallery';
+type Tab = 'exhibitions' | 'home' | 'email';
+type PickerTarget = 'exhibition-cover' | 'exhibition-gallery';
 
 interface Toast {
   id: number;
@@ -58,12 +58,6 @@ interface Toast {
             <button
               type="button"
               role="tab"
-              [attr.aria-selected]="tab() === 'furniture'"
-              [class.active]="tab() === 'furniture'"
-              (click)="switchTab('furniture')">Mobilier</button>
-            <button
-              type="button"
-              role="tab"
               [attr.aria-selected]="tab() === 'exhibitions'"
               [class.active]="tab() === 'exhibitions'"
               (click)="switchTab('exhibitions')">Expositions</button>
@@ -82,149 +76,6 @@ interface Toast {
           </nav>
 
           <div class="admin-content">
-
-        @if (tab() === 'furniture') {
-          <div class="grid-admin">
-            <aside class="list">
-              <div class="list-head">
-                <h2>Pièces existantes</h2>
-                <button type="button" class="btn-link" (click)="newFurniture()">+ Nouvelle pièce</button>
-              </div>
-              @if (loadingFurniture()) {
-                <p class="status">Chargement…</p>
-              } @else if (furniture().length === 0) {
-                <p class="status">Aucune pièce.</p>
-              } @else {
-                <ul>
-                  @for (item of furniture(); track item.id) {
-                    <li [class.selected]="editingFurnitureSlug() === item.slug">
-                      <button type="button" class="row" (click)="loadFurniture(item)">
-                        <span class="row-title">{{ item.title }}</span>
-                        <span class="row-meta">{{ item.category }} · {{ item.year }}</span>
-                      </button>
-                      <button type="button" class="row-del" (click)="removeFurniture(item)" aria-label="Supprimer">×</button>
-                    </li>
-                  }
-                </ul>
-              }
-            </aside>
-
-            <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
-              <div class="form-head">
-                <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
-                @if (editingFurnitureSlug(); as s) {
-                  <a class="view-link" [href]="'/mobilier/' + s" target="_blank" rel="noopener" title="Voir sur le site">Voir sur le site ↗</a>
-                }
-              </div>
-
-              <label>
-                <span>Titre *</span>
-                <input type="text" formControlName="title" />
-              </label>
-              @if (editingFurnitureSlug()) {
-                <label class="readonly-row">
-                  <span>Slug</span>
-                  <input type="text" formControlName="slug" readonly />
-                </label>
-              }
-              <div class="row-2">
-                <label>
-                  <span>Catégorie *</span>
-                  <input type="text" formControlName="category" placeholder="Sièges, Tables…" />
-                </label>
-                <label>
-                  <span>Année</span>
-                  <input type="number" formControlName="year" />
-                </label>
-              </div>
-              <label>
-                <span>Matériaux</span>
-                <input type="text" formControlName="material" />
-              </label>
-              <label>
-                <span>Designer</span>
-                <input type="text" formControlName="designer" />
-              </label>
-
-              <div class="field-with-picker">
-                <label>
-                  <span>Image principale (URL)</span>
-                  <input type="url" formControlName="coverImage" />
-                </label>
-                <button type="button" class="btn-pick" (click)="openPicker('furniture-cover')" title="Choisir depuis la médiathèque">
-                  Médiathèque
-                </button>
-              </div>
-
-              <div class="gallery-block">
-                <div class="gallery-block-head">
-                  <span class="gallery-label">Galerie</span>
-                  <button type="button" class="btn-pick" (click)="openPicker('furniture-gallery')" title="Ajouter depuis la médiathèque">
-                    + Ajouter
-                  </button>
-                </div>
-                @if (furnitureGallery().length === 0) {
-                  <p class="gallery-empty">Aucune image. Cliquez sur « Ajouter » pour insérer une photo depuis la médiathèque.</p>
-                } @else {
-                  <ul class="gallery-thumbs" appReorderable (reordered)="onFurnitureGalleryReorder($event)">
-                    @for (url of furnitureGallery(); track url) {
-                      <li class="gallery-thumb">
-                        <img [src]="url" alt="" />
-                        <button type="button" class="thumb-remove" (click)="removeFurnitureGalleryImage(url)" aria-label="Retirer">×</button>
-                      </li>
-                    }
-                  </ul>
-                  <p class="gallery-hint">Glisse une vignette pour réordonner.</p>
-                }
-              </div>
-
-              <fieldset class="dim-fieldset">
-                <legend>Dimensions</legend>
-                <div class="dim-grid">
-                  <label class="dim-cell">
-                    <span>Largeur (cm)</span>
-                    <input type="number" step="0.1" min="0" formControlName="dimW" placeholder="—" />
-                  </label>
-                  <label class="dim-cell">
-                    <span>Profondeur (cm)</span>
-                    <input type="number" step="0.1" min="0" formControlName="dimD" placeholder="—" />
-                  </label>
-                  <label class="dim-cell">
-                    <span>Hauteur (cm)</span>
-                    <input type="number" step="0.1" min="0" formControlName="dimH" placeholder="—" />
-                  </label>
-                </div>
-                <label class="dim-notes">
-                  <span>Autres dimensions (une par ligne)</span>
-                  <textarea rows="2" formControlName="dimNotes" placeholder="Ex. : Diamètre assise 45 cm"></textarea>
-                </label>
-              </fieldset>
-              <label>
-                <span>Description courte</span>
-                <textarea rows="2" formControlName="shortDescription"></textarea>
-              </label>
-              <label>
-                <span>Description longue</span>
-                <textarea rows="5" formControlName="description"></textarea>
-              </label>
-
-              @if (editingFurnitureId(); as ownerId) {
-                <app-slides-editor kind="furniture" [ownerId]="ownerId" [ownerSlug]="editingFurnitureSlug()" />
-              } @else {
-                <p class="slides-hint">Enregistre la pièce une première fois pour pouvoir éditer ses slides.</p>
-              }
-
-              <div class="actions">
-                <button type="submit" class="btn-primary" [disabled]="furnitureForm.invalid || saving()">
-                  {{ saving() ? 'Enregistrement…' : (editingFurnitureSlug() ? 'Mettre à jour' : 'Créer') }}
-                </button>
-                @if (editingFurnitureSlug()) {
-                  <button type="button" class="btn-link" (click)="newFurniture()">Annuler</button>
-                }
-              </div>
-            </form>
-          </div>
-        }
 
         @if (tab() === 'exhibitions') {
           <div class="grid-admin">
@@ -416,24 +267,6 @@ interface Toast {
                     <span class="title">{{ entry.title }}</span>
                     <label class="incl">
                       <input type="checkbox" [checked]="entry.included" (change)="toggleIncluded(entry, $event)" /> Inclure
-                    </label>
-                  </li>
-                }
-              </ul>
-            } @else {
-              <p class="status">Chargement…</p>
-            }
-
-            <h2 style="margin-top: 48px">Catégories de mobilier</h2>
-            @if (categoryMeta(); as cats) {
-              <ul class="cat-list" appReorderable (reordered)="onCategoryReorder($event)">
-                @for (c of cats; track c.category) {
-                  <li class="home-row">
-                    <span class="handle">⠿</span>
-                    <img [src]="c.coverImage" [alt]="c.category" class="thumb-round" />
-                    <span class="title">{{ c.category }}</span>
-                    <label class="incl">
-                      <input type="checkbox" [checked]="c.visible" (change)="toggleCategoryVisibility(c, $event)" /> Visible
                     </label>
                   </li>
                 }
@@ -841,34 +674,6 @@ interface Toast {
       font-style: italic;
     }
 
-    .dim-fieldset {
-      border: 1px solid var(--color-line);
-      padding: 16px;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .dim-fieldset legend {
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--color-ink-soft);
-      padding: 0 8px;
-    }
-    .dim-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-    .dim-cell { gap: 4px; }
-    .dim-cell span { font-size: 0.78rem; color: var(--color-ink-soft); }
-    .dim-notes { gap: 4px; }
-    .dim-notes span { font-size: 0.78rem; color: var(--color-ink-soft); }
-    @media (max-width: 600px) {
-      .dim-grid { grid-template-columns: 1fr; }
-    }
-
     .field-with-picker {
       display: flex;
       gap: 12px;
@@ -1054,10 +859,10 @@ interface Toast {
       .btn-pick { align-self: flex-start; }
     }
 
-    /* Onglet Accueil (ordre éditorial + catégories) */
+    /* Onglet Accueil (ordre éditorial) */
     .home-editor h2 { margin: 32px 0 8px; font-family: var(--serif); font-weight: 400; font-size: 1.5rem; }
     .home-editor .hint { font-size: 0.85rem; color: var(--color-mute); margin-bottom: 16px; }
-    .ordering-list, .cat-list, .nav-vis-list { list-style: none; padding: 0; margin: 0; }
+    .ordering-list, .nav-vis-list, .exh-list { list-style: none; padding: 0; margin: 0; }
 
     .home-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 6px; border: 1px solid var(--color-line); background: var(--color-bg); cursor: grab; }
     .home-row .handle { color: var(--color-mute); font-size: 1.1rem; cursor: grab; user-select: none; }
@@ -1067,7 +872,7 @@ interface Toast {
     .home-row .title { flex: 1; font-size: 0.9rem; color: var(--color-ink); }
     .home-row .incl { font-size: 0.78rem; color: var(--color-ink-soft); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 
-    /* Hint sous le formulaire pièce/expo quand pas encore enregistré */
+    /* Hint sous le formulaire expo quand pas encore enregistré */
     .slides-hint { margin-top: 24px; padding: 12px 16px; background: var(--color-bg-alt); border-left: 3px solid var(--color-mute); font-size: 0.85rem; color: var(--color-ink-soft); font-style: italic; }
   `]
 })
@@ -1075,22 +880,17 @@ export class AdminComponent {
   private readonly portfolio = inject(PortfolioService);
   private readonly fb = inject(FormBuilder);
 
-  protected readonly tab = signal<Tab>('furniture');
-  protected readonly furniture = signal<Furniture[]>([]);
+  protected readonly tab = signal<Tab>('exhibitions');
   protected readonly exhibitions = signal<Exhibition[]>([]);
   protected readonly photos = signal<Photo[]>([]);
-  protected readonly loadingFurniture = signal(true);
   protected readonly loadingExhibitions = signal(true);
   protected readonly loadingPhotos = signal(false);
-  protected readonly editingFurnitureSlug = signal<string | null>(null);
-  protected readonly editingFurnitureId = signal<string | null>(null);
   protected readonly editingExhibitionSlug = signal<string | null>(null);
   protected readonly editingExhibitionId = signal<string | null>(null);
   protected readonly saving = signal(false);
   protected readonly uploading = signal(false);
   protected readonly sidebarOpen = signal(false);
   private readonly tabLabels: Record<Tab, string> = {
-    furniture: 'Mobilier',
     exhibitions: 'Expositions',
     home: 'Accueil',
     email: 'Email',
@@ -1111,22 +911,6 @@ export class AdminComponent {
   protected readonly photoPicker = signal<PickerTarget | null>(null);
   protected readonly viewingPhoto = signal<Photo | null>(null);
 
-  protected readonly furnitureForm = this.fb.group({
-    title: ['', Validators.required],
-    slug: [''],
-    category: ['', Validators.required],
-    year: [new Date().getFullYear(), Validators.required],
-    material: [''],
-    designer: ['Milo GUILLAUME Design'],
-    coverImage: [''],
-    dimW: [null as number | null],
-    dimD: [null as number | null],
-    dimH: [null as number | null],
-    dimNotes: [''],
-    shortDescription: [''],
-    description: [''],
-  });
-
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
     slug: [''],
@@ -1141,13 +925,11 @@ export class AdminComponent {
     description: [''],
   });
 
-  protected readonly furnitureGallery = signal<string[]>([]);
   protected readonly exhibitionGallery = signal<string[]>([]);
   protected readonly exhibitionTags = signal<string[]>([]);
   protected readonly newExhibitionTag = signal('');
 
   constructor() {
-    this.refreshFurniture();
     this.refreshExhibitions();
     this.portfolio.getContent().subscribe(c => {
       this.navMobilierVisible.set(c['nav.mobilier.visible'] !== 'false');
@@ -1168,7 +950,6 @@ export class AdminComponent {
   }
 
   protected readonly homeItems = signal<HomeAdminItem[] | null>(null);
-  protected readonly categoryMeta = signal<AdminCategoryView[] | null>(null);
   protected readonly exhibitionsMeta = signal<ExhibitionMetaRow[] | null>(null);
 
   protected readonly navMobilierVisible = signal(true);
@@ -1201,8 +982,6 @@ export class AdminComponent {
       }
       this.homeItems.set(items);
     });
-
-    this.portfolio.getAdminCategories().subscribe(c => this.categoryMeta.set(c));
 
     forkJoin([
       this.portfolio.getAllExhibitions(),
@@ -1243,13 +1022,6 @@ export class AdminComponent {
     });
   }
 
-  onCategoryReorder(order: number[]) {
-    const current = this.categoryMeta();
-    if (!current) return;
-    this.categoryMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
-    this.persistCategories();
-  }
-
   toggleNavSection(section: 'mobilier' | 'expositions' | 'studio', event: Event) {
     const visible = (event.target as HTMLInputElement).checked;
     if (section === 'mobilier') this.navMobilierVisible.set(visible);
@@ -1258,22 +1030,6 @@ export class AdminComponent {
     this.portfolio.updateContent({ [`nav.${section}.visible`]: visible ? 'true' : 'false' }).subscribe({
       next: () => this.flash('Visibilité de la section enregistrée.', 'success'),
       error: () => this.flash('Impossible d\'enregistrer la visibilité.', 'error'),
-    });
-  }
-
-  toggleCategoryVisibility(c: AdminCategoryView, event: Event) {
-    const visible = (event.target as HTMLInputElement).checked;
-    this.categoryMeta.update(cats => cats?.map(x => x.category === c.category ? { ...x, visible } : x) ?? null);
-    this.persistCategories();
-  }
-
-  private persistCategories() {
-    const cats = this.categoryMeta() ?? [];
-    const requests = cats.map(c => this.portfolio.updateAdminCategory(c.category, c));
-    if (requests.length === 0) return;
-    forkJoin(requests).subscribe({
-      next: () => this.flash('Catégories enregistrées.', 'success'),
-      error: () => this.flash('Impossible d\'enregistrer les catégories.', 'error'),
     });
   }
 
@@ -1302,14 +1058,6 @@ export class AdminComponent {
     });
   }
 
-  private refreshFurniture() {
-    this.loadingFurniture.set(true);
-    this.portfolio.getAllFurniture().subscribe({
-      next: data => { this.furniture.set(data); this.loadingFurniture.set(false); },
-      error: () => { this.loadingFurniture.set(false); this.flash('Impossible de charger les pièces.', 'error'); }
-    });
-  }
-
   private refreshExhibitions() {
     this.loadingExhibitions.set(true);
     this.portfolio.getAllExhibitions().subscribe({
@@ -1323,128 +1071,6 @@ export class AdminComponent {
     this.portfolio.getPhotos().subscribe({
       next: data => { this.photos.set(data); this.loadingPhotos.set(false); },
       error: () => { this.loadingPhotos.set(false); }
-    });
-  }
-
-  newFurniture() {
-    this.editingFurnitureSlug.set(null);
-    this.editingFurnitureId.set(null);
-    this.furnitureForm.reset({
-      title: '', slug: '', category: '', year: new Date().getFullYear(),
-      material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
-      dimW: null, dimD: null, dimH: null, dimNotes: '',
-      shortDescription: '', description: '',
-    });
-    this.furnitureGallery.set([]);
-  }
-
-  loadFurniture(item: Furniture) {
-    this.editingFurnitureSlug.set(item.slug);
-    this.editingFurnitureId.set(item.id ?? null);
-    const dims = this.parseDimensions(item.dimensions ?? []);
-    this.furnitureForm.reset({
-      title: item.title,
-      slug: item.slug,
-      category: item.category,
-      year: item.year,
-      material: item.material ?? '',
-      designer: item.designer ?? '',
-      coverImage: item.coverImage ?? '',
-      dimW: dims.w,
-      dimD: dims.d,
-      dimH: dims.h,
-      dimNotes: dims.notes,
-      shortDescription: item.shortDescription ?? '',
-      description: item.description ?? '',
-    });
-    this.furnitureGallery.set([...(item.gallery ?? [])]);
-  }
-
-  private parseDimensions(list: string[]): { w: number | null; d: number | null; h: number | null; notes: string } {
-    const widthRe = /^(L|Larg(?:eur)?\.?)\s*[:.]?\s*([0-9]+(?:[.,][0-9]+)?)/i;
-    const depthRe = /^(P|Prof(?:ondeur)?\.?)\s*[:.]?\s*([0-9]+(?:[.,][0-9]+)?)/i;
-    const heightRe = /^(H|Haut(?:eur)?\.?)\s*[:.]?\s*([0-9]+(?:[.,][0-9]+)?)/i;
-    let w: number | null = null, d: number | null = null, h: number | null = null;
-    const notes: string[] = [];
-    for (const raw of list) {
-      const line = (raw ?? '').trim();
-      if (!line) continue;
-      let m = w === null ? line.match(widthRe) : null;
-      if (m) { w = parseFloat(m[2].replace(',', '.')); continue; }
-      m = d === null ? line.match(depthRe) : null;
-      if (m) { d = parseFloat(m[2].replace(',', '.')); continue; }
-      m = h === null ? line.match(heightRe) : null;
-      if (m) { h = parseFloat(m[2].replace(',', '.')); continue; }
-      notes.push(line);
-    }
-    return { w, d, h, notes: notes.join('\n') };
-  }
-
-  private serializeDimensions(w: number | null, d: number | null, h: number | null, notesText: string): string[] {
-    const result: string[] = [];
-    if (w !== null && w !== undefined && !isNaN(w)) result.push(`L ${w} cm`);
-    if (d !== null && d !== undefined && !isNaN(d)) result.push(`P ${d} cm`);
-    if (h !== null && h !== undefined && !isNaN(h)) result.push(`H ${h} cm`);
-    result.push(...this.splitLines(notesText));
-    return result;
-  }
-
-  removeFurnitureGalleryImage(url: string) {
-    this.furnitureGallery.update(g => g.filter(u => u !== url));
-  }
-
-  onFurnitureGalleryReorder(order: number[]) {
-    const current = this.furnitureGallery();
-    this.furnitureGallery.set(order.map(i => current[i]));
-  }
-
-  saveFurniture() {
-    if (this.furnitureForm.invalid) return;
-    const v = this.furnitureForm.getRawValue();
-    const slug = this.editingFurnitureSlug();
-    const existing = slug ? this.furniture().find(f => f.slug === slug) : null;
-    const payload: Partial<Furniture> = {
-      title: v.title!,
-      slug: v.slug || undefined,
-      category: v.category!,
-      year: v.year ?? undefined,
-      material: v.material ?? '',
-      designer: v.designer ?? '',
-      coverImage: v.coverImage ?? '',
-      gallery: [...this.furnitureGallery()],
-      dimensions: this.serializeDimensions(v.dimW ?? null, v.dimD ?? null, v.dimH ?? null, v.dimNotes ?? ''),
-      shortDescription: v.shortDescription ?? '',
-      description: v.description ?? '',
-      featured: existing?.featured ?? false,
-    };
-
-    this.saving.set(true);
-    const op$ = slug
-      ? this.portfolio.updateFurniture(slug, payload)
-      : this.portfolio.createFurniture(payload);
-    op$.subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.flash(slug ? 'Pièce mise à jour.' : 'Pièce créée.', 'success');
-        this.refreshFurniture();
-        this.newFurniture();
-      },
-      error: () => {
-        this.saving.set(false);
-        this.flash('Erreur lors de l\'enregistrement.', 'error');
-      }
-    });
-  }
-
-  removeFurniture(item: Furniture) {
-    if (!confirm(`Supprimer la pièce "${item.title}" ?`)) return;
-    this.portfolio.deleteFurniture(item.slug).subscribe({
-      next: () => {
-        this.flash('Pièce supprimée.', 'success');
-        if (this.editingFurnitureSlug() === item.slug) this.newFurniture();
-        this.refreshFurniture();
-      },
-      error: () => this.flash('Erreur lors de la suppression.', 'error')
     });
   }
 
@@ -1632,16 +1258,12 @@ export class AdminComponent {
 
   protected pickerIsGallery(): boolean {
     const t = this.photoPicker();
-    return t === 'furniture-gallery' || t === 'exhibition-gallery';
+    return t === 'exhibition-gallery';
   }
 
   selectPhoto(photo: Photo) {
     const target = this.photoPicker();
-    if (target === 'furniture-cover') {
-      this.furnitureForm.patchValue({ coverImage: photo.url });
-    } else if (target === 'furniture-gallery') {
-      this.furnitureGallery.update(g => g.includes(photo.url) ? g : [...g, photo.url]);
-    } else if (target === 'exhibition-cover') {
+    if (target === 'exhibition-cover') {
       this.exhibitionForm.patchValue({ coverImage: photo.url });
     } else if (target === 'exhibition-gallery') {
       this.exhibitionGallery.update(g => g.includes(photo.url) ? g : [...g, photo.url]);
@@ -1666,11 +1288,6 @@ export class AdminComponent {
 
   closeViewer() {
     this.viewingPhoto.set(null);
-  }
-
-  private splitLines(value: string | null | undefined): string[] {
-    if (!value) return [];
-    return value.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
   }
 
   private flash(text: string, type: 'success' | 'error') {
