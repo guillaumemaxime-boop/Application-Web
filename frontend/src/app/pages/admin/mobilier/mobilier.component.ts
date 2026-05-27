@@ -6,7 +6,7 @@ import { PortfolioService } from '../../../services/portfolio.service';
 import { Furniture } from '../../../models/furniture.model';
 import { AdminCategoryView } from '../../../models/home.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
-import { SlidesEditorComponent } from '../slides-editor.component';
+import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
 import { ToastService } from '../shared/toast.service';
 

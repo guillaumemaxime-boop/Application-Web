@@ -56,11 +56,6 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./navigation/navigation.component').then(m => m.NavigationComponent),
         title: 'Navigation — Administration',
       },
-      {
-        path: 'legacy',
-        loadComponent: () => import('./admin.component').then(m => m.AdminComponent),
-        title: 'Administration (legacy) — Milo GUILLAUME Design',
-      },
     ],
   },
 ];
