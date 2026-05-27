@@ -115,7 +115,7 @@ describe('AdminComponent', () => {
 
   it('should display the furniture tab by default', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-    expect(tabs.length).toBe(5);
+    expect(tabs.length).toBe(4);
     expect(tabs[0].classList.contains('active')).toBe(true);
     for (let i = 1; i < tabs.length; i++) {
       expect(tabs[i].classList.contains('active')).toBe(false);
@@ -394,14 +394,6 @@ describe('AdminComponent', () => {
       expect(component['messageType']()).toBe('error');
     });
 
-    it('should set loadingPhotos to false when refreshPhotos fails', () => {
-      portfolioServiceSpy.getPhotos.and.returnValue(throwError(() => new Error('boom')));
-
-      const fix = TestBed.createComponent(AdminComponent);
-      fix.detectChanges();
-
-      expect(fix.componentInstance['loadingPhotos']()).toBeFalse();
-    });
   });
 
   describe('Edge cases for nullable fields', () => {
@@ -477,137 +469,6 @@ describe('AdminComponent', () => {
       component.removeExhibition(mockExhibition);
 
       expect(component['editingExhibitionSlug']()).toBeNull();
-    });
-  });
-
-  describe('Photos tab', () => {
-    beforeEach(() => {
-      portfolioServiceSpy.getPhotos.and.returnValue(of([mockPhoto]));
-    });
-
-    it('should switch to the photos tab', () => {
-      component.switchTab('photos');
-      fixture.detectChanges();
-
-      const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-      expect(tabs[2].classList.contains('active')).toBe(true);
-      expect(tabs[0].classList.contains('active')).toBe(false);
-    });
-
-    it('should call getPhotos on init', () => {
-      expect(portfolioServiceSpy.getPhotos).toHaveBeenCalled();
-    });
-
-    it('should display photos grid after loading', () => {
-      component['photos'].set([mockPhoto]);
-      component.switchTab('photos');
-      fixture.detectChanges();
-
-      const cards = fixture.nativeElement.querySelectorAll('.photo-card');
-      expect(cards.length).toBe(1);
-    });
-
-    it('should show empty state when no photos', () => {
-      component['photos'].set([]);
-      component.switchTab('photos');
-      fixture.detectChanges();
-
-      const empty = fixture.nativeElement.querySelector('.photos-empty');
-      expect(empty).toBeTruthy();
-    });
-
-    it('should open viewer when openViewer is called', () => {
-      component.openViewer(mockPhoto);
-
-      expect(component['viewingPhoto']()).toEqual(mockPhoto);
-    });
-
-    it('should close viewer when closeViewer is called', () => {
-      component.openViewer(mockPhoto);
-      component.closeViewer();
-
-      expect(component['viewingPhoto']()).toBeNull();
-    });
-
-    it('should close viewer on Escape key', () => {
-      component.openViewer(mockPhoto);
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
-
-      expect(component['viewingPhoto']()).toBeNull();
-    });
-
-    it('should not close viewer on other keys', () => {
-      component.openViewer(mockPhoto);
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'Enter' }));
-
-      expect(component['viewingPhoto']()).toEqual(mockPhoto);
-    });
-
-    it('should remove photo when confirmed', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
-      component['photos'].set([mockPhoto]);
-
-      component.removePhoto(mockPhoto);
-
-      expect(portfolioServiceSpy.deletePhoto).toHaveBeenCalledWith(mockPhoto.id);
-    });
-
-    it('should not remove photo when not confirmed', () => {
-      spyOn(window, 'confirm').and.returnValue(false);
-
-      component.removePhoto(mockPhoto);
-
-      expect(portfolioServiceSpy.deletePhoto).not.toHaveBeenCalled();
-    });
-
-    it('should remove photo from local list after deletion', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
-      component['photos'].set([mockPhoto]);
-
-      component.removePhoto(mockPhoto);
-
-      expect(component['photos']()).toEqual([]);
-    });
-
-    it('should show error flash when deletePhoto fails', () => {
-      spyOn(window, 'confirm').and.returnValue(true);
-      portfolioServiceSpy.deletePhoto.and.returnValue(throwError(() => new Error('boom')));
-
-      component.removePhoto(mockPhoto);
-
-      expect(component['messageType']()).toBe('error');
-    });
-
-    it('should do nothing when uploadFiles receives no files', () => {
-      const event = { target: { files: null, value: '' } } as unknown as Event;
-
-      component.uploadFiles(event);
-
-      expect(portfolioServiceSpy.uploadPhoto).not.toHaveBeenCalled();
-      expect(component['uploading']()).toBeFalse();
-    });
-
-    it('should show error flash and stop uploading when uploadPhoto fails', () => {
-      portfolioServiceSpy.uploadPhoto.and.returnValue(throwError(() => new Error('upload failed')));
-
-      const mockFile = new File([], 'fail.jpg', { type: 'image/jpeg' });
-      const mockFileList = { 0: mockFile, length: 1, item: (_: number) => mockFile } as unknown as FileList;
-      const event = { target: { files: mockFileList, value: '' } } as unknown as Event;
-
-      component.uploadFiles(event);
-
-      expect(component['messageType']()).toBe('error');
-      expect(component['uploading']()).toBeFalse();
-    });
-
-    it('should do nothing on Escape when viewer and picker are both closed', () => {
-      component.closeViewer();
-      component.closePicker();
-
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
-
-      expect(component['viewingPhoto']()).toBeNull();
-      expect(component['photoPicker']()).toBeNull();
     });
   });
 
@@ -732,8 +593,8 @@ describe('AdminComponent', () => {
     });
 
     it('currentTabLabel reflects the active tab', () => {
-      component['tab'].set('photos');
-      expect(component['currentTabLabel']()).toBe('Médiathèque');
+      component['tab'].set('home');
+      expect(component['currentTabLabel']()).toBe('Accueil');
       component['tab'].set('email');
       expect(component['currentTabLabel']()).toBe('Email');
     });
