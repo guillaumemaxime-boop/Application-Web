@@ -42,7 +42,7 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
-    loadComponent: () => import('./pages/admin/admin.component').then(m => m.AdminComponent),
+    loadChildren: () => import('./pages/admin/admin.routes').then(m => m.adminRoutes),
     title: 'Administration — Milo GUILLAUME Design',
     canActivate: [authGuard],
   },
