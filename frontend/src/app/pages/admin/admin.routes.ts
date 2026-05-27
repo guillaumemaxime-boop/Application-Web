@@ -12,6 +12,11 @@ export const adminRoutes: Routes = [
         title: 'Tableau de bord — Administration',
       },
       {
+        path: 'typographie',
+        loadComponent: () => import('./typographie/typographie.component').then(m => m.TypographieComponent),
+        title: 'Typographie — Administration',
+      },
+      {
         path: 'email',
         loadComponent: () => import('./mail-settings/mail-settings.component').then(m => m.MailSettingsComponent),
         title: 'Email — Administration',

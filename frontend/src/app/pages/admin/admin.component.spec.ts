@@ -115,7 +115,7 @@ describe('AdminComponent', () => {
 
   it('should display the furniture tab by default', () => {
     const tabs = fixture.nativeElement.querySelectorAll('.tabs button');
-    expect(tabs.length).toBe(7);
+    expect(tabs.length).toBe(6);
     expect(tabs[0].classList.contains('active')).toBe(true);
     for (let i = 1; i < tabs.length; i++) {
       expect(tabs[i].classList.contains('active')).toBe(false);
@@ -734,8 +734,8 @@ describe('AdminComponent', () => {
     it('currentTabLabel reflects the active tab', () => {
       component['tab'].set('photos');
       expect(component['currentTabLabel']()).toBe('Médiathèque');
-      component['tab'].set('typography');
-      expect(component['currentTabLabel']()).toBe('Typographie');
+      component['tab'].set('email');
+      expect(component['currentTabLabel']()).toBe('Email');
     });
   });
 
@@ -1058,34 +1058,4 @@ describe('AdminComponent', () => {
     });
   });
 
-  describe('Typography tab', () => {
-    beforeEach(() => {
-      component['switchTab']('typography');
-      fixture.detectChanges();
-    });
-
-    it('saveTypo sends a flat typo.* payload and flashes success', () => {
-      component['typoForm'].patchValue({ title_font: 'serif', title_style: 'italic' });
-      component['saveTypo']();
-      expect(portfolioServiceSpy.updateContent).toHaveBeenCalledWith(jasmine.objectContaining({
-        'typo.title.font': 'serif',
-        'typo.title.style': 'italic',
-      }));
-      expect(component['message']()).toContain('Typographie');
-    });
-
-    it('saveTypo flashes an error and clears the savingTypo flag on failure', () => {
-      portfolioServiceSpy.updateContent.and.returnValue(throwError(() => new Error('boom')));
-      component['saveTypo']();
-      expect(component['savingTypo']()).toBeFalse();
-      expect(component['message']()).toContain('Erreur');
-    });
-
-    it('previewStyleFor returns a style map for the given role', () => {
-      component['typoForm'].patchValue({ eyebrow_font: 'sans', eyebrow_style: 'caps' });
-      const style = component['previewStyleFor']('eyebrow');
-      expect(style).toBeDefined();
-      expect(typeof style).toBe('object');
-    });
-  });
 });
