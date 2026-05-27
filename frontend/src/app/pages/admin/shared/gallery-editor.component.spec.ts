@@ -4,6 +4,16 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { By } from '@angular/platform-browser';
 import { GalleryEditorComponent } from './gallery-editor.component';
 
+type GalleryInternals = {
+  pickerOpen: () => boolean;
+  photos: () => unknown[];
+  openPicker: () => void;
+  closePicker: () => void;
+  onPhotoSelected: (photo: { url: string }) => void;
+  removeImage: (url: string) => void;
+  onReorder: (order: number[]) => void;
+};
+
 describe('GalleryEditorComponent', () => {
   let httpMock: HttpTestingController;
 
@@ -49,5 +59,73 @@ describe('GalleryEditorComponent', () => {
     httpMock.expectOne('/api/photos').flush([]);
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('app-photo-picker'))).toBeTruthy();
+  });
+
+  it('openPicker() set pickerOpen=true et populate photos signal', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', []);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.openPicker();
+    const photos = [{ id: 'p1', url: '/p1.jpg', originalName: 'p1.jpg' }];
+    httpMock.expectOne('/api/photos').flush(photos);
+    expect(cmp.pickerOpen()).toBe(true);
+    expect(cmp.photos()).toEqual(photos);
+  });
+
+  it('closePicker() set pickerOpen=false', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', []);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.openPicker();
+    httpMock.expectOne('/api/photos').flush([]);
+    expect(cmp.pickerOpen()).toBe(true);
+    cmp.closePicker();
+    expect(cmp.pickerOpen()).toBe(false);
+  });
+
+  it('onPhotoSelected() ajoute l\'URL si elle n\'existe pas déjà', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', ['/existing.jpg']);
+    const received: string[][] = [];
+    fixture.componentInstance.imagesChange.subscribe((v: string[]) => { received.push(v); });
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.onPhotoSelected({ url: '/new.jpg' });
+    expect(received[0]).toEqual(['/existing.jpg', '/new.jpg']);
+  });
+
+  it('onPhotoSelected() ignore si URL déjà présente', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', ['/existing.jpg']);
+    const received: string[][] = [];
+    fixture.componentInstance.imagesChange.subscribe((v: string[]) => { received.push(v); });
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.onPhotoSelected({ url: '/existing.jpg' });
+    expect(received.length).toBe(0);
+  });
+
+  it('removeImage() émet la liste sans l\'URL ciblée', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', ['/a.jpg', '/b.jpg', '/c.jpg']);
+    const received: string[][] = [];
+    fixture.componentInstance.imagesChange.subscribe((v: string[]) => { received.push(v); });
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.removeImage('/b.jpg');
+    expect(received[0]).toEqual(['/a.jpg', '/c.jpg']);
+  });
+
+  it('onReorder() émet la liste réordonnée selon l\'index', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', ['/a.jpg', '/b.jpg', '/c.jpg']);
+    const received: string[][] = [];
+    fixture.componentInstance.imagesChange.subscribe((v: string[]) => { received.push(v); });
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.onReorder([2, 0, 1]);
+    expect(received[0]).toEqual(['/c.jpg', '/a.jpg', '/b.jpg']);
   });
 });
