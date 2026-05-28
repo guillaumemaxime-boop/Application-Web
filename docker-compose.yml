@@ -38,10 +38,15 @@ services:
       ADMIN_PASSWORD_HASH: "$$2b$$10$$ylcY5PaYQeX8u3/tuDdSi.awSBx1KQ8ztLAyRTO6lOnqxPFzZUHZm"
       # Resend API key — definie en local via env shell ou laisser vide pour mode degrade
       RESEND_API_KEY: "${RESEND_API_KEY:-}"
+      # Photos uploadees : repertoire persiste via le volume uploads-data
+      # (sinon les fichiers sont perdus a chaque rebuild du conteneur).
+      UPLOAD_DIR: /data/uploads
     expose:
       - "8080"
     ports:
       - "8080:8080"
+    volumes:
+      - uploads-data:/data/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -108,3 +113,4 @@ networks:
 
 volumes:
   postgres-data:
+  uploads-data:
