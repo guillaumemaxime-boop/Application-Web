@@ -21,13 +21,6 @@ import { roleStyle } from '../../utils/title-style';
           <div class="grid">
             <div>
               <p class="bio">{{ p.bio }}</p>
-              <p class="contact">
-                <span>{{ p.location }}</span>
-                @if (content()['profile.phone']) {
-                  <span>{{ content()['profile.phone'] }}</span>
-                }
-                <a [href]="'mailto:' + p.contactEmail">{{ p.contactEmail }}</a>
-              </p>
             </div>
 
             <aside>
@@ -90,22 +83,6 @@ import { roleStyle } from '../../utils/title-style';
       color: var(--color-ink);
       white-space: pre-line;
     }
-    .contact {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 40px;
-      padding-top: 32px;
-      border-top: 1px solid var(--color-line);
-      font-size: 0.95rem;
-      color: var(--color-ink-soft);
-    }
-    .contact a {
-      color: var(--color-ink);
-      transition: opacity var(--transition);
-    }
-    .contact a:hover { opacity: 0.5; }
-
     aside h3 {
       font-size: 0.75rem;
       letter-spacing: 0.16em;
