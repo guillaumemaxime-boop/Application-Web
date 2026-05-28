@@ -61,6 +61,14 @@ import { ToastService } from '../shared/toast.service';
             </label>
           </div>
 
+          <div class="texts-group">
+            <h3 class="texts-group-label">Processus de création</h3>
+            <label class="check-row">
+              <input type="checkbox" formControlName="studio_process_visible" />
+              <span>Afficher la section « Processus » sur la page Studio</span>
+            </label>
+          </div>
+
           @for (i of [1,2,3,4]; track i) {
             <div class="texts-group">
               <h3 class="texts-group-label">Étape 0{{ i }}</h3>
@@ -126,6 +134,9 @@ import { ToastService } from '../shared/toast.service';
     .texts-group-label { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-mute); margin: 0; }
     .texts-group label { display: flex; flex-direction: column; gap: 6px; }
     .texts-group label > span { font-size: 0.78rem; color: var(--color-ink-soft); }
+    .texts-group label.check-row { flex-direction: row; align-items: center; gap: 10px; }
+    .texts-group label.check-row > span { font-size: 0.9rem; color: var(--color-ink); }
+    .texts-group label.check-row input { width: auto; }
     .texts-group input, .texts-group textarea {
       font: inherit; padding: 8px 10px; border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink); resize: vertical;
     }
@@ -153,6 +164,7 @@ export class TextesComponent {
     profile_bio: [''],
     profile_awards: [''],
     profile_press: [''],
+    studio_process_visible: [true],
     studio_step1_title: [''],
     studio_step1_desc: [''],
     studio_step2_title: [''],
@@ -179,6 +191,7 @@ export class TextesComponent {
           profile_bio: content['profile.bio'] ?? '',
           profile_awards: content['profile.awards'] ?? '',
           profile_press: content['profile.press'] ?? '',
+          studio_process_visible: content['studio.process.visible'] !== 'false',
           studio_step1_title: content['studio.step1.title'] ?? '',
           studio_step1_desc: content['studio.step1.desc'] ?? '',
           studio_step2_title: content['studio.step2.title'] ?? '',
@@ -210,6 +223,7 @@ export class TextesComponent {
       'profile.bio': v.profile_bio ?? '',
       'profile.awards': v.profile_awards ?? '',
       'profile.press': v.profile_press ?? '',
+      'studio.process.visible': v.studio_process_visible ? 'true' : 'false',
       'studio.step1.title': v.studio_step1_title ?? '',
       'studio.step1.desc': v.studio_step1_desc ?? '',
       'studio.step2.title': v.studio_step2_title ?? '',

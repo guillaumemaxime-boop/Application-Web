@@ -89,6 +89,21 @@ describe('TextesComponent', () => {
     put.flush({});
   });
 
+  it('coche l\'affichage du processus par défaut et persiste studio.process.visible', () => {
+    const fixture = TestBed.createComponent(TextesComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({ 'studio.process.visible': 'false' });
+    fixture.detectChanges();
+    const check = fixture.debugElement.query(By.css('input[formControlName="studio_process_visible"]'));
+    expect(check.nativeElement.checked).toBeFalse();
+    const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
+    cmp.textsForm.patchValue({ studio_process_visible: true });
+    cmp.saveTexts();
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    expect((put.request.body as Record<string, string>)['studio.process.visible']).toBe('true');
+    put.flush({});
+  });
+
   it('saveTexts() envoie un PUT et notifie via ToastService', () => {
     const fixture = TestBed.createComponent(TextesComponent);
     const toast = TestBed.inject(ToastService);

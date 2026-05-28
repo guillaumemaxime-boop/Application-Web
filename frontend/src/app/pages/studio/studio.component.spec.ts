@@ -114,4 +114,18 @@ describe('StudioComponent', () => {
     expect(fixture.nativeElement.querySelector('.contact')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('+33 1 00 00 00 00');
   });
+
+  it('affiche la section Processus par défaut', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({}));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.process')).toBeTruthy();
+  });
+
+  it('masque la section Processus quand studio.process.visible vaut false', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({ 'studio.process.visible': 'false' }));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.process')).toBeNull();
+  });
 });

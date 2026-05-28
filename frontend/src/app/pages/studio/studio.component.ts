@@ -48,22 +48,24 @@ import { roleStyle } from '../../utils/title-style';
       </div>
     </section>
 
-    <section class="section process">
-      <div class="container">
-        <span class="eyebrow proc-label" [ngStyle]="eyebrowStyleVar()">Processus</span>
-        <div class="proc-list">
-          @for (step of steps(); track step.num) {
-            <div class="step">
-              <span class="num">{{ step.num }}</span>
-              <div>
-                <h3 [ngStyle]="subtitleStyleVar()">{{ step.title }}</h3>
-                <p>{{ step.desc }}</p>
+    @if (processVisible()) {
+      <section class="section process">
+        <div class="container">
+          <span class="eyebrow proc-label" [ngStyle]="eyebrowStyleVar()">Processus</span>
+          <div class="proc-list">
+            @for (step of steps(); track step.num) {
+              <div class="step">
+                <span class="num">{{ step.num }}</span>
+                <div>
+                  <h3 [ngStyle]="subtitleStyleVar()">{{ step.title }}</h3>
+                  <p>{{ step.desc }}</p>
+                </div>
               </div>
-            </div>
-          }
+            }
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    }
   `,
   styles: [`
     .page-head { padding-top: 64px; }
@@ -152,6 +154,7 @@ export class StudioComponent {
   protected readonly titleStyleVar = computed(() => roleStyle(this.content(), 'title'));
   protected readonly subtitleStyleVar = computed(() => roleStyle(this.content(), 'subtitle'));
   protected readonly eyebrowStyleVar = computed(() => roleStyle(this.content(), 'eyebrow'));
+  protected readonly processVisible = computed(() => this.content()['studio.process.visible'] !== 'false');
 
   protected readonly steps = computed(() => {
     const c = this.content();
