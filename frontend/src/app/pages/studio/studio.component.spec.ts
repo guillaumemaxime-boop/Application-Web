@@ -128,4 +128,30 @@ describe('StudioComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.process')).toBeNull();
   });
+
+  it('masque la zone Distinctions quand awards est vide', () => {
+    portfolioServiceSpy.getProfile.and.returnValue(of({ ...mockProfile, awards: [] }));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.awards')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Distinctions');
+    // la zone Presse reste affichée
+    expect(fixture.nativeElement.querySelector('.press')).toBeTruthy();
+  });
+
+  it('masque la zone Presse quand press est vide', () => {
+    portfolioServiceSpy.getProfile.and.returnValue(of({ ...mockProfile, press: [] }));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.press')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Presse');
+    expect(fixture.nativeElement.querySelector('.awards')).toBeTruthy();
+  });
+
+  it('masque tout l\'aside quand distinctions et presse sont vides', () => {
+    portfolioServiceSpy.getProfile.and.returnValue(of({ ...mockProfile, awards: [], press: [] }));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('aside')).toBeNull();
+  });
 });

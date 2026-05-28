@@ -23,22 +23,28 @@ import { roleStyle } from '../../utils/title-style';
               <p class="bio">{{ p.bio }}</p>
             </div>
 
-            <aside>
-              <h3>Distinctions</h3>
-              <ul class="awards">
-                @for (a of p.awards; track a) { <li>{{ a }}</li> }
-              </ul>
-
-              <h3>Presse</h3>
-              <ul class="press">
-                @for (item of p.press; track item.title) {
-                  <li>
-                    <span class="t">{{ item.title }}</span>
-                    <span class="y">{{ item.year }}</span>
-                  </li>
+            @if (p.awards.length > 0 || p.press.length > 0) {
+              <aside>
+                @if (p.awards.length > 0) {
+                  <h3>Distinctions</h3>
+                  <ul class="awards">
+                    @for (a of p.awards; track a) { <li>{{ a }}</li> }
+                  </ul>
                 }
-              </ul>
-            </aside>
+
+                @if (p.press.length > 0) {
+                  <h3>Presse</h3>
+                  <ul class="press">
+                    @for (item of p.press; track item.title) {
+                      <li>
+                        <span class="t">{{ item.title }}</span>
+                        <span class="y">{{ item.year }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </aside>
+            }
           </div>
         } @else if (loading()) {
           <p class="status">Chargement…</p>
