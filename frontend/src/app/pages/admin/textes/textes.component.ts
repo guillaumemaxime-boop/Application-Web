@@ -32,42 +32,6 @@ import { ToastService } from '../shared/toast.service';
               <textarea rows="3" formControlName="home_hero_lead"></textarea>
             </label>
           </div>
-
-          <div class="texts-group">
-            <h3 class="texts-group-label">Section mobilier phare</h3>
-            <label>
-              <span>Chapeau</span>
-              <input type="text" formControlName="home_featured_eyebrow" />
-            </label>
-            <label>
-              <span>Titre</span>
-              <input type="text" formControlName="home_featured_title" />
-            </label>
-          </div>
-
-          <div class="texts-group">
-            <h3 class="texts-group-label">Section expositions</h3>
-            <label>
-              <span>Chapeau</span>
-              <input type="text" formControlName="home_exhibitions_eyebrow" />
-            </label>
-            <label>
-              <span>Titre</span>
-              <input type="text" formControlName="home_exhibitions_title" />
-            </label>
-          </div>
-
-          <div class="texts-group">
-            <h3 class="texts-group-label">Citation</h3>
-            <label>
-              <span>Texte de la citation</span>
-              <textarea rows="2" formControlName="home_quote_text"></textarea>
-            </label>
-            <label>
-              <span>Attribution</span>
-              <input type="text" formControlName="home_quote_cite" />
-            </label>
-          </div>
         </div>
 
         <div class="texts-section">
@@ -162,12 +126,6 @@ export class TextesComponent {
     home_hero_eyebrow: [''],
     home_hero_title: [''],
     home_hero_lead: [''],
-    home_featured_eyebrow: [''],
-    home_featured_title: [''],
-    home_exhibitions_eyebrow: [''],
-    home_exhibitions_title: [''],
-    home_quote_text: [''],
-    home_quote_cite: [''],
     studio_step1_title: [''],
     studio_step1_desc: [''],
     studio_step2_title: [''],
@@ -191,12 +149,6 @@ export class TextesComponent {
           home_hero_eyebrow: content['home.hero.eyebrow'] ?? '',
           home_hero_title: content['home.hero.title'] ?? '',
           home_hero_lead: content['home.hero.lead'] ?? '',
-          home_featured_eyebrow: content['home.featured.eyebrow'] ?? '',
-          home_featured_title: content['home.featured.title'] ?? '',
-          home_exhibitions_eyebrow: content['home.exhibitions.eyebrow'] ?? '',
-          home_exhibitions_title: content['home.exhibitions.title'] ?? '',
-          home_quote_text: content['home.quote.text'] ?? '',
-          home_quote_cite: content['home.quote.cite'] ?? '',
           studio_step1_title: content['studio.step1.title'] ?? '',
           studio_step1_desc: content['studio.step1.desc'] ?? '',
           studio_step2_title: content['studio.step2.title'] ?? '',
@@ -225,12 +177,6 @@ export class TextesComponent {
       'home.hero.eyebrow': v.home_hero_eyebrow ?? '',
       'home.hero.title': v.home_hero_title ?? '',
       'home.hero.lead': v.home_hero_lead ?? '',
-      'home.featured.eyebrow': v.home_featured_eyebrow ?? '',
-      'home.featured.title': v.home_featured_title ?? '',
-      'home.exhibitions.eyebrow': v.home_exhibitions_eyebrow ?? '',
-      'home.exhibitions.title': v.home_exhibitions_title ?? '',
-      'home.quote.text': v.home_quote_text ?? '',
-      'home.quote.cite': v.home_quote_cite ?? '',
       'studio.step1.title': v.studio_step1_title ?? '',
       'studio.step1.desc': v.studio_step1_desc ?? '',
       'studio.step2.title': v.studio_step2_title ?? '',
