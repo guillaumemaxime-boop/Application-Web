@@ -37,6 +37,28 @@ describe('TextesComponent', () => {
     expect(titles.length).toBe(3);
   });
 
+  it('pré-remplit la présentation studio depuis profile.bio', () => {
+    const fixture = TestBed.createComponent(TextesComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({ 'profile.bio': 'Fondé en 2017…' });
+    fixture.detectChanges();
+    const bio = fixture.debugElement.query(By.css('textarea[formControlName="profile_bio"]'));
+    expect(bio.nativeElement.value).toBe('Fondé en 2017…');
+  });
+
+  it('saveTexts() inclut profile.bio dans le payload', () => {
+    const fixture = TestBed.createComponent(TextesComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({ 'profile.bio': 'Texte initial' });
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
+    cmp.textsForm.patchValue({ profile_bio: 'Nouvelle présentation' });
+    cmp.saveTexts();
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    expect((put.request.body as Record<string, string>)['profile.bio']).toBe('Nouvelle présentation');
+    put.flush({});
+  });
+
   it('saveTexts() envoie un PUT et notifie via ToastService', () => {
     const fixture = TestBed.createComponent(TextesComponent);
     const toast = TestBed.inject(ToastService);

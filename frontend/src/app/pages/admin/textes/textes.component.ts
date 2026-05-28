@@ -35,7 +35,15 @@ import { ToastService } from '../shared/toast.service';
         </div>
 
         <div class="texts-section">
-          <h2 class="texts-section-title">Studio — Processus de création</h2>
+          <h2 class="texts-section-title">Studio</h2>
+
+          <div class="texts-group">
+            <h3 class="texts-group-label">Présentation</h3>
+            <label>
+              <span>Texte de présentation (affiché sur la page Studio)</span>
+              <textarea rows="5" formControlName="profile_bio"></textarea>
+            </label>
+          </div>
 
           @for (i of [1,2,3,4]; track i) {
             <div class="texts-group">
@@ -126,6 +134,7 @@ export class TextesComponent {
     home_hero_eyebrow: [''],
     home_hero_title: [''],
     home_hero_lead: [''],
+    profile_bio: [''],
     studio_step1_title: [''],
     studio_step1_desc: [''],
     studio_step2_title: [''],
@@ -149,6 +158,7 @@ export class TextesComponent {
           home_hero_eyebrow: content['home.hero.eyebrow'] ?? '',
           home_hero_title: content['home.hero.title'] ?? '',
           home_hero_lead: content['home.hero.lead'] ?? '',
+          profile_bio: content['profile.bio'] ?? '',
           studio_step1_title: content['studio.step1.title'] ?? '',
           studio_step1_desc: content['studio.step1.desc'] ?? '',
           studio_step2_title: content['studio.step2.title'] ?? '',
@@ -177,6 +187,7 @@ export class TextesComponent {
       'home.hero.eyebrow': v.home_hero_eyebrow ?? '',
       'home.hero.title': v.home_hero_title ?? '',
       'home.hero.lead': v.home_hero_lead ?? '',
+      'profile.bio': v.profile_bio ?? '',
       'studio.step1.title': v.studio_step1_title ?? '',
       'studio.step1.desc': v.studio_step1_desc ?? '',
       'studio.step2.title': v.studio_step2_title ?? '',
