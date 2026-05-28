@@ -37,6 +37,21 @@ describe('TextesComponent', () => {
     expect(titles.length).toBe(3);
   });
 
+  it('pré-remplit le titre studio depuis profile.tagline et l\'inclut au save', () => {
+    const fixture = TestBed.createComponent(TextesComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({ 'profile.tagline': 'Mobiliers sculptés' });
+    fixture.detectChanges();
+    const input = fixture.debugElement.query(By.css('input[formControlName="profile_tagline"]'));
+    expect(input.nativeElement.value).toBe('Mobiliers sculptés');
+    const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
+    cmp.textsForm.patchValue({ profile_tagline: 'Nouveau titre' });
+    cmp.saveTexts();
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    expect((put.request.body as Record<string, string>)['profile.tagline']).toBe('Nouveau titre');
+    put.flush({});
+  });
+
   it('pré-remplit la présentation studio depuis profile.bio', () => {
     const fixture = TestBed.createComponent(TextesComponent);
     fixture.detectChanges();

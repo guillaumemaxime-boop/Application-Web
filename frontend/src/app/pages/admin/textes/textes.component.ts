@@ -40,6 +40,10 @@ import { ToastService } from '../shared/toast.service';
           <div class="texts-group">
             <h3 class="texts-group-label">Présentation</h3>
             <label>
+              <span>Titre (affiché en grand sur la page Studio)</span>
+              <input type="text" formControlName="profile_tagline" />
+            </label>
+            <label>
               <span>Texte de présentation (affiché sur la page Studio)</span>
               <textarea rows="5" formControlName="profile_bio"></textarea>
             </label>
@@ -161,6 +165,7 @@ export class TextesComponent {
     home_hero_eyebrow: [''],
     home_hero_title: [''],
     home_hero_lead: [''],
+    profile_tagline: [''],
     profile_bio: [''],
     profile_awards: [''],
     profile_press: [''],
@@ -188,6 +193,7 @@ export class TextesComponent {
           home_hero_eyebrow: content['home.hero.eyebrow'] ?? '',
           home_hero_title: content['home.hero.title'] ?? '',
           home_hero_lead: content['home.hero.lead'] ?? '',
+          profile_tagline: content['profile.tagline'] ?? '',
           profile_bio: content['profile.bio'] ?? '',
           profile_awards: content['profile.awards'] ?? '',
           profile_press: content['profile.press'] ?? '',
@@ -220,6 +226,7 @@ export class TextesComponent {
       'home.hero.eyebrow': v.home_hero_eyebrow ?? '',
       'home.hero.title': v.home_hero_title ?? '',
       'home.hero.lead': v.home_hero_lead ?? '',
+      'profile.tagline': v.profile_tagline ?? '',
       'profile.bio': v.profile_bio ?? '',
       'profile.awards': v.profile_awards ?? '',
       'profile.press': v.profile_press ?? '',
