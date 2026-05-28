@@ -1,9 +1,11 @@
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Photo } from '../../../models/photo.model';
 
 @Component({
   selector: 'app-photo-picker',
   standalone: true,
+  imports: [FormsModule],
   template: `
     <div class="picker-backdrop" (click)="emitClose()">
       <div class="picker-panel" (click)="$event.stopPropagation()">
@@ -21,13 +23,26 @@ import { Photo } from '../../../models/photo.model';
         @if (photos.length === 0) {
           <p class="picker-empty">Aucune photo disponible. Importez des images dans la Médiathèque.</p>
         } @else {
-          <div class="picker-grid">
-            @for (photo of photos; track photo.id) {
-              <button type="button" class="picker-item" (click)="select(photo)" [title]="photo.originalName">
-                <img [src]="photo.url" [alt]="photo.originalName" loading="lazy" />
-              </button>
-            }
+          <div class="picker-search">
+            <input
+              type="search"
+              class="picker-search-input"
+              [ngModel]="query()"
+              (ngModelChange)="query.set($event)"
+              placeholder="Rechercher par nom de fichier…"
+              aria-label="Rechercher une photo" />
           </div>
+          @if (filtered().length === 0) {
+            <p class="picker-empty">Aucun résultat pour « {{ query() }} ».</p>
+          } @else {
+            <div class="picker-grid">
+              @for (photo of filtered(); track photo.id) {
+                <button type="button" class="picker-item" (click)="select(photo)" [title]="photo.originalName">
+                  <img [src]="photo.url" [alt]="photo.originalName" loading="lazy" />
+                </button>
+              }
+            </div>
+          }
         }
       </div>
     </div>
@@ -52,6 +67,12 @@ import { Photo } from '../../../models/photo.model';
     }
     .picker-close:hover { color: var(--color-ink); }
     .picker-hint { padding: 12px 24px 0; font-size: 0.85rem; color: var(--color-mute); flex-shrink: 0; margin: 0; }
+    .picker-search { padding: 12px 24px 0; flex-shrink: 0; }
+    .picker-search-input {
+      width: 100%; box-sizing: border-box; font: inherit; padding: 8px 12px;
+      border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink);
+    }
+    .picker-search-input:focus { outline: none; border-color: var(--color-accent); }
     .picker-empty { padding: 32px 24px; color: var(--color-mute); font-size: 0.9rem; }
     .picker-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -71,6 +92,14 @@ export class PhotoPickerComponent {
 
   @Output() selected = new EventEmitter<Photo>();
   @Output() closed = new EventEmitter<void>();
+
+  protected readonly query = signal('');
+
+  protected filtered(): Photo[] {
+    const q = this.query().trim().toLowerCase();
+    if (!q) return this.photos;
+    return this.photos.filter(p => p.originalName.toLowerCase().includes(q));
+  }
 
   select(photo: Photo): void {
     this.selected.emit(photo);

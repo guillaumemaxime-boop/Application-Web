@@ -8,12 +8,13 @@ import { AdminCategoryView } from '../../../models/home.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
+import { ImageFieldComponent } from '../shared/image-field.component';
 import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'app-mobilier',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -77,10 +78,7 @@ import { ToastService } from '../shared/toast.service';
           <input type="text" formControlName="designer" />
         </label>
 
-        <label>
-          <span>Image principale (URL)</span>
-          <input type="url" formControlName="coverImage" />
-        </label>
+        <app-image-field formControlName="coverImage" label="Image principale (URL)" />
 
         <app-gallery-editor
           [images]="furnitureGallery()"

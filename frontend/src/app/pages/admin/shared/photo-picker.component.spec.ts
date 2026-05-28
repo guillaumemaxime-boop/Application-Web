@@ -5,8 +5,8 @@ import { Photo } from '../../../models/photo.model';
 
 describe('PhotoPickerComponent', () => {
   const photos: Photo[] = [
-    { id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '' },
-    { id: '2', filename: 'b.jpg', originalName: 'B', url: '/uploads/b.jpg', uploadedAt: '' },
+    { id: '1', filename: 'a.jpg', originalName: 'Chaise longue', url: '/uploads/a.jpg', uploadedAt: '' },
+    { id: '2', filename: 'b.jpg', originalName: 'Table basse', url: '/uploads/b.jpg', uploadedAt: '' },
   ];
 
   beforeEach(async () => {
@@ -60,5 +60,30 @@ describe('PhotoPickerComponent', () => {
     fixture.componentInstance.closed.subscribe(() => state.closed = true);
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(state.closed).toBeTrue();
+  });
+
+  it('filtre la grille par nom de fichier via la recherche', () => {
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'cover');
+    fixture.componentRef.setInput('photos', photos);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as { query: { set: (v: string) => void } };
+    cmp.query.set('table');
+    fixture.detectChanges();
+    const items = fixture.debugElement.queryAll(By.css('.picker-item'));
+    expect(items.length).toBe(1);
+    expect(items[0].nativeElement.getAttribute('title')).toBe('Table basse');
+  });
+
+  it('affiche « Aucun résultat » quand la recherche ne matche rien', () => {
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'cover');
+    fixture.componentRef.setInput('photos', photos);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as { query: { set: (v: string) => void } };
+    cmp.query.set('zzz introuvable');
+    fixture.detectChanges();
+    expect(fixture.debugElement.queryAll(By.css('.picker-item')).length).toBe(0);
+    expect(fixture.debugElement.query(By.css('.picker-empty')).nativeElement.textContent).toContain('Aucun résultat');
   });
 });

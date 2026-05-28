@@ -8,6 +8,7 @@ import { AdminExhibitionMetaView } from '../../../models/home.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
+import { ImageFieldComponent } from '../shared/image-field.component';
 import { ToastService } from '../shared/toast.service';
 
 interface ExhibitionMetaRow {
@@ -21,7 +22,7 @@ interface ExhibitionMetaRow {
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent],
+  imports: [ReactiveFormsModule, FormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -71,7 +72,7 @@ interface ExhibitionMetaRow {
         </div>
         <label><span>Commissaire</span><input type="text" formControlName="curator" /></label>
 
-        <label><span>Image principale (URL)</span><input type="url" formControlName="coverImage" /></label>
+        <app-image-field formControlName="coverImage" label="Image principale (URL)" />
 
         <app-gallery-editor
           [images]="exhibitionGallery()"
