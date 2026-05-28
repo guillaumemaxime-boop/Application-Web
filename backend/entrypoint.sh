@@ -47,4 +47,15 @@ if [ -n "${DATABASE_URL:-}" ] && echo "$DATABASE_URL" | grep -qiE '^postgres(ql)
   echo "[entrypoint] Translated DATABASE_URL -> ${JDBC_URL} (user=${DB_USER})"
 fi
 
+# Repertoire d'upload : sur Railway/K8s le volume monte est root-owned et masque
+# le dossier chown'e dans l'image, rendant l'ecriture impossible pour `app`.
+# Si on tourne en root, on (re)cree et chown le point de montage, puis on
+# redescend vers l'utilisateur non privilegie `app` pour lancer la JVM.
+UPLOAD_DIR_PATH="${UPLOAD_DIR:-/data/uploads}"
+if [ "$(id -u)" = "0" ]; then
+  mkdir -p "$UPLOAD_DIR_PATH"
+  chown -R app:app "$UPLOAD_DIR_PATH"
+  exec su-exec app:app "$@"
+fi
+
 exec "$@"
