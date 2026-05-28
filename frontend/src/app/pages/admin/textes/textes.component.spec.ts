@@ -59,6 +59,21 @@ describe('TextesComponent', () => {
     put.flush({});
   });
 
+  it('pré-remplit les distinctions depuis profile.awards et les inclut au save', () => {
+    const fixture = TestBed.createComponent(TextesComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({ 'profile.awards': 'Prix A — 2024\nNomination B — 2023' });
+    fixture.detectChanges();
+    const awards = fixture.debugElement.query(By.css('textarea[formControlName="profile_awards"]'));
+    expect(awards.nativeElement.value).toBe('Prix A — 2024\nNomination B — 2023');
+    const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
+    cmp.textsForm.patchValue({ profile_awards: 'Prix C — 2025' });
+    cmp.saveTexts();
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    expect((put.request.body as Record<string, string>)['profile.awards']).toBe('Prix C — 2025');
+    put.flush({});
+  });
+
   it('saveTexts() envoie un PUT et notifie via ToastService', () => {
     const fixture = TestBed.createComponent(TextesComponent);
     const toast = TestBed.inject(ToastService);

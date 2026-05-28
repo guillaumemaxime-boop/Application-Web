@@ -45,6 +45,14 @@ import { ToastService } from '../shared/toast.service';
             </label>
           </div>
 
+          <div class="texts-group">
+            <h3 class="texts-group-label">Distinctions</h3>
+            <label>
+              <span>Une distinction par ligne</span>
+              <textarea rows="4" formControlName="profile_awards" placeholder="Prix XYZ — 2024&#10;Nomination ABC — 2023"></textarea>
+            </label>
+          </div>
+
           @for (i of [1,2,3,4]; track i) {
             <div class="texts-group">
               <h3 class="texts-group-label">Étape 0{{ i }}</h3>
@@ -135,6 +143,7 @@ export class TextesComponent {
     home_hero_title: [''],
     home_hero_lead: [''],
     profile_bio: [''],
+    profile_awards: [''],
     studio_step1_title: [''],
     studio_step1_desc: [''],
     studio_step2_title: [''],
@@ -159,6 +168,7 @@ export class TextesComponent {
           home_hero_title: content['home.hero.title'] ?? '',
           home_hero_lead: content['home.hero.lead'] ?? '',
           profile_bio: content['profile.bio'] ?? '',
+          profile_awards: content['profile.awards'] ?? '',
           studio_step1_title: content['studio.step1.title'] ?? '',
           studio_step1_desc: content['studio.step1.desc'] ?? '',
           studio_step2_title: content['studio.step2.title'] ?? '',
@@ -188,6 +198,7 @@ export class TextesComponent {
       'home.hero.title': v.home_hero_title ?? '',
       'home.hero.lead': v.home_hero_lead ?? '',
       'profile.bio': v.profile_bio ?? '',
+      'profile.awards': v.profile_awards ?? '',
       'studio.step1.title': v.studio_step1_title ?? '',
       'studio.step1.desc': v.studio_step1_desc ?? '',
       'studio.step2.title': v.studio_step2_title ?? '',
