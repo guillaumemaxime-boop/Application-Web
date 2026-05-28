@@ -53,6 +53,14 @@ import { ToastService } from '../shared/toast.service';
             </label>
           </div>
 
+          <div class="texts-group">
+            <h3 class="texts-group-label">Presse</h3>
+            <label>
+              <span>Une parution par ligne, au format <code>Titre|Année</code></span>
+              <textarea rows="4" formControlName="profile_press" placeholder="AD Magazine — Portrait|2024&#10;Le Monde — Cahier Design|2023"></textarea>
+            </label>
+          </div>
+
           @for (i of [1,2,3,4]; track i) {
             <div class="texts-group">
               <h3 class="texts-group-label">Étape 0{{ i }}</h3>
@@ -144,6 +152,7 @@ export class TextesComponent {
     home_hero_lead: [''],
     profile_bio: [''],
     profile_awards: [''],
+    profile_press: [''],
     studio_step1_title: [''],
     studio_step1_desc: [''],
     studio_step2_title: [''],
@@ -169,6 +178,7 @@ export class TextesComponent {
           home_hero_lead: content['home.hero.lead'] ?? '',
           profile_bio: content['profile.bio'] ?? '',
           profile_awards: content['profile.awards'] ?? '',
+          profile_press: content['profile.press'] ?? '',
           studio_step1_title: content['studio.step1.title'] ?? '',
           studio_step1_desc: content['studio.step1.desc'] ?? '',
           studio_step2_title: content['studio.step2.title'] ?? '',
@@ -199,6 +209,7 @@ export class TextesComponent {
       'home.hero.lead': v.home_hero_lead ?? '',
       'profile.bio': v.profile_bio ?? '',
       'profile.awards': v.profile_awards ?? '',
+      'profile.press': v.profile_press ?? '',
       'studio.step1.title': v.studio_step1_title ?? '',
       'studio.step1.desc': v.studio_step1_desc ?? '',
       'studio.step2.title': v.studio_step2_title ?? '',

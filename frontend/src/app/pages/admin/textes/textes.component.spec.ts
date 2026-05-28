@@ -74,6 +74,21 @@ describe('TextesComponent', () => {
     put.flush({});
   });
 
+  it('pré-remplit la presse depuis profile.press et l\'inclut au save', () => {
+    const fixture = TestBed.createComponent(TextesComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({ 'profile.press': 'AD Magazine — Portrait|2024' });
+    fixture.detectChanges();
+    const press = fixture.debugElement.query(By.css('textarea[formControlName="profile_press"]'));
+    expect(press.nativeElement.value).toBe('AD Magazine — Portrait|2024');
+    const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
+    cmp.textsForm.patchValue({ profile_press: 'Le Monde — Design|2025' });
+    cmp.saveTexts();
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    expect((put.request.body as Record<string, string>)['profile.press']).toBe('Le Monde — Design|2025');
+    put.flush({});
+  });
+
   it('saveTexts() envoie un PUT et notifie via ToastService', () => {
     const fixture = TestBed.createComponent(TextesComponent);
     const toast = TestBed.inject(ToastService);
