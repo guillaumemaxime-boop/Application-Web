@@ -46,12 +46,11 @@ public class StoryService {
 
     private static Slide toDto(StorySlideEntity e) {
         return switch (e.getType()) {
-            case "cover" -> new Slide.CoverSlide(e.getId(), e.getPosition(), e.getSrc());
             case "image" -> new Slide.ImageSlide(e.getId(), e.getPosition(), e.getSrc(), e.getCaption());
+            case "video" -> new Slide.VideoSlide(e.getId(), e.getPosition(), e.getSrc(), e.getCaption());
             case "spec"  -> new Slide.SpecSlide(e.getId(), e.getPosition(),
                     e.getSpecs().stream().map(s -> new SpecEntry(s.getLabel(), s.getValue())).toList());
             case "quote" -> new Slide.QuoteSlide(e.getId(), e.getPosition(), e.getQuoteBody(), e.getQuoteCite());
-            case "link"  -> new Slide.LinkSlide(e.getId(), e.getPosition(), e.getLinkLabel(), e.getLinkDesc(), e.getLinkHref());
             default -> throw new IllegalStateException("Unknown slide type: " + e.getType());
         };
     }
@@ -63,8 +62,8 @@ public class StoryService {
         e.setOwnerId(ownerId);
         e.setPosition(position);
         switch (slide) {
-            case Slide.CoverSlide c -> { e.setType("cover"); e.setSrc(c.src()); }
             case Slide.ImageSlide i -> { e.setType("image"); e.setSrc(i.src()); e.setCaption(i.caption()); }
+            case Slide.VideoSlide v -> { e.setType("video"); e.setSrc(v.src()); e.setCaption(v.caption()); }
             case Slide.SpecSlide s -> {
                 e.setType("spec");
                 List<StorySlideSpecEntry> specs = s.specs().stream().map(entry -> {
@@ -76,7 +75,6 @@ public class StoryService {
                 e.setSpecs(new ArrayList<>(specs));
             }
             case Slide.QuoteSlide q -> { e.setType("quote"); e.setQuoteBody(q.body()); e.setQuoteCite(q.cite()); }
-            case Slide.LinkSlide l -> { e.setType("link"); e.setLinkLabel(l.label()); e.setLinkDesc(l.description()); e.setLinkHref(l.href()); }
         }
         return e;
     }
