@@ -17,8 +17,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -174,6 +176,89 @@ class PhotoServiceTest {
 
         assertTrue(result);
         verify(repository, times(1)).delete(entity);
+    }
+
+    // --- updateTags ---
+
+    @Test
+    void updateTags_normalizesTrimLowercaseDistinct() {
+        PhotoEntity entity = entity("ph-tag01", "x.jpg", "x.jpg", "2026-05-10T00:00:00Z");
+        when(repository.findById("ph-tag01")).thenReturn(Optional.of(entity));
+        when(repository.save(any(PhotoEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Optional<Photo> result = service.updateTags(
+                "ph-tag01",
+                new ArrayList<>(List.of("  Atelier ", "STUDIO", "atelier", ""))
+        );
+
+        assertTrue(result.isPresent());
+        assertEquals(List.of("atelier", "studio"), entity.getTags());
+        assertEquals(List.of("atelier", "studio"), result.get().tags());
+    }
+
+    @Test
+    void updateTags_clipsAtMaxLength() {
+        PhotoEntity entity = entity("ph-tag02", "x.jpg", "x.jpg", "2026-05-10T00:00:00Z");
+        when(repository.findById("ph-tag02")).thenReturn(Optional.of(entity));
+        when(repository.save(any(PhotoEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        String huge = "x".repeat(150);
+
+        Optional<Photo> result = service.updateTags("ph-tag02", List.of(huge));
+
+        assertTrue(result.isPresent());
+        assertEquals(1, entity.getTags().size());
+        assertEquals(100, entity.getTags().get(0).length());
+    }
+
+    @Test
+    void updateTags_clipsAtMax30Tags() {
+        PhotoEntity entity = entity("ph-tag03", "x.jpg", "x.jpg", "2026-05-10T00:00:00Z");
+        when(repository.findById("ph-tag03")).thenReturn(Optional.of(entity));
+        when(repository.save(any(PhotoEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        List<String> manyTags = IntStream.range(0, 50)
+                .mapToObj(i -> "tag" + i)
+                .toList();
+
+        Optional<Photo> result = service.updateTags("ph-tag03", manyTags);
+
+        assertTrue(result.isPresent());
+        assertEquals(30, entity.getTags().size());
+    }
+
+    @Test
+    void updateTags_returnsEmptyForUnknownId() {
+        when(repository.findById("ph-ghost")).thenReturn(Optional.empty());
+
+        Optional<Photo> result = service.updateTags("ph-ghost", List.of("studio"));
+
+        assertTrue(result.isEmpty());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void updateTags_nullInput_storesEmptyList() {
+        PhotoEntity entity = entity("ph-tag04", "x.jpg", "x.jpg", "2026-05-10T00:00:00Z");
+        entity.getTags().add("preexisting");
+        when(repository.findById("ph-tag04")).thenReturn(Optional.of(entity));
+        when(repository.save(any(PhotoEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Optional<Photo> result = service.updateTags("ph-tag04", null);
+
+        assertTrue(result.isPresent());
+        assertTrue(entity.getTags().isEmpty());
+        assertTrue(result.get().tags().isEmpty());
+    }
+
+    @Test
+    void toDto_includesTagsListSnapshot() {
+        PhotoEntity entity = entity("ph-tag05", "x.jpg", "x.jpg", "2026-05-10T00:00:00Z");
+        entity.getTags().addAll(List.of("a", "b"));
+        when(repository.findAllByOrderByUploadedAtDesc()).thenReturn(List.of(entity));
+
+        List<Photo> result = service.findAll();
+
+        assertEquals(1, result.size());
+        assertEquals(List.of("a", "b"), result.get(0).tags());
     }
 
     // --- helper ---

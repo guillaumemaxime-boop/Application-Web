@@ -5,8 +5,8 @@ import { Photo } from '../../../models/photo.model';
 
 describe('PhotoPickerComponent', () => {
   const photos: Photo[] = [
-    { id: '1', filename: 'a.jpg', originalName: 'Chaise longue', url: '/uploads/a.jpg', uploadedAt: '' },
-    { id: '2', filename: 'b.jpg', originalName: 'Table basse', url: '/uploads/b.jpg', uploadedAt: '' },
+    { id: '1', filename: 'a.jpg', originalName: 'Chaise longue', url: '/uploads/a.jpg', uploadedAt: '', tags: [] },
+    { id: '2', filename: 'b.jpg', originalName: 'Table basse', url: '/uploads/b.jpg', uploadedAt: '', tags: [] },
   ];
 
   beforeEach(async () => {

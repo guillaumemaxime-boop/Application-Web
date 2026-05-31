@@ -1,4 +1,5 @@
-import { AfterViewInit, Component, ElementRef, HostListener, ViewChild, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, ViewChild, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
@@ -7,6 +8,7 @@ import { ToastService } from '../shared/toast.service';
 @Component({
   selector: 'app-mediatheque',
   standalone: true,
+  imports: [FormsModule],
   template: `
     <div class="photos-tab">
       <div class="photos-upload-zone">
@@ -23,9 +25,22 @@ import { ToastService } from '../shared/toast.service';
       } @else if (photos().length === 0) {
         <p class="status photos-empty">Aucune photo importée. Commencez par importer des images ci-dessus.</p>
       } @else {
-        <div class="photos-count">{{ photos().length }} photo{{ photos().length > 1 ? 's' : '' }}</div>
+        <input
+          type="search"
+          class="photos-search"
+          placeholder="Rechercher (nom de fichier ou tag)…"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+        />
+        <div class="photos-count">
+          @if (search().trim()) {
+            {{ filtered().length }} / {{ photos().length }} photo{{ photos().length > 1 ? 's' : '' }}
+          } @else {
+            {{ photos().length }} photo{{ photos().length > 1 ? 's' : '' }}
+          }
+        </div>
         <div class="photos-grid">
-          @for (photo of photos(); track photo.id) {
+          @for (photo of filtered(); track photo.id) {
             <div class="photo-card">
               <div class="photo-thumb">
                 <button type="button" class="photo-thumb-btn" (click)="openViewer(photo)" [title]="photo.originalName">
@@ -34,6 +49,19 @@ import { ToastService } from '../shared/toast.service';
               </div>
               <div class="photo-info">
                 <span class="photo-name" [title]="photo.originalName">{{ photo.originalName }}</span>
+              </div>
+              <div class="photo-tags">
+                @for (tag of photo.tags ?? []; track tag) {
+                  <span class="tag">{{ tag }}<button type="button" class="tag-remove" (click)="removeTag(photo, tag)" aria-label="Retirer le tag">×</button></span>
+                }
+                <input
+                  type="text"
+                  class="tag-input"
+                  placeholder="+ tag"
+                  maxlength="100"
+                  (keydown.enter)="addTag(photo, $any($event.target).value); $any($event.target).value = ''"
+                  (blur)="$any($event.target).value = ''"
+                />
               </div>
               <div class="photo-actions">
                 <button type="button" class="btn-copy" (click)="copyUrl(photo.url)" title="Copier l'URL">
@@ -74,6 +102,12 @@ import { ToastService } from '../shared/toast.service';
     }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .status { color: var(--color-mute); }
+    .photos-search {
+      display: block; width: 100%; max-width: 360px; padding: 10px 14px;
+      font-size: 0.9rem; border: 1px solid var(--color-line); background: var(--color-bg);
+      font-family: inherit; color: var(--color-ink); box-sizing: border-box;
+    }
+    .photos-search:focus { outline: 1px dashed var(--color-mute); outline-offset: 1px; }
     .photos-count { font-size: 0.85rem; color: var(--color-mute); }
     .photos-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px;
@@ -86,6 +120,22 @@ import { ToastService } from '../shared/toast.service';
     .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .photo-info { padding: 8px 12px; }
     .photo-name { font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .photo-tags {
+      display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 12px; border-top: 1px solid var(--color-line);
+    }
+    .photo-tags .tag {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 8px;
+      background: var(--color-bg-alt); border: 1px solid var(--color-line); font-size: 0.7rem; color: var(--color-ink-soft);
+    }
+    .photo-tags .tag-remove {
+      background: none; border: 0; color: var(--color-mute); cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 0 2px;
+    }
+    .photo-tags .tag-remove:hover { color: #b1532a; }
+    .photo-tags .tag-input {
+      flex: 1; min-width: 80px; border: 0; padding: 2px 4px; background: transparent; font-size: 0.7rem;
+      color: var(--color-ink); font-family: inherit;
+    }
+    .photo-tags .tag-input:focus { outline: 1px dashed var(--color-mute); outline-offset: 1px; }
     .photo-actions { display: flex; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--color-line); }
     .btn-copy { background: transparent; border: 1px solid var(--color-line); padding: 4px 10px; font-size: 0.75rem; cursor: pointer; }
     .photo-del { background: transparent; border: 0; color: var(--color-mute); font-size: 1.2rem; cursor: pointer; padding: 0 6px; }
@@ -128,6 +178,16 @@ export class MediathequeComponent implements AfterViewInit {
   protected readonly loading = signal(true);
   protected readonly uploading = signal(false);
   protected readonly viewingPhoto = signal<Photo | null>(null);
+  protected readonly search = signal('');
+  protected readonly filtered = computed<Photo[]>(() => {
+    const q = this.search().trim().toLowerCase();
+    const list = this.photos();
+    if (!q) return list;
+    return list.filter(p =>
+      p.originalName.toLowerCase().includes(q) ||
+      (p.tags ?? []).some(t => t.includes(q))
+    );
+  });
 
   constructor() {
     this.refresh();
@@ -203,6 +263,33 @@ export class MediathequeComponent implements AfterViewInit {
 
   copyUrl(url: string): void {
     navigator.clipboard.writeText(url).then(() => this.toast.success('URL copiée dans le presse-papier.'));
+  }
+
+  addTag(photo: Photo, raw: string): void {
+    const tag = raw.trim().toLowerCase();
+    if (!tag) return;
+    if ((photo.tags ?? []).includes(tag)) return;
+    const next = [...(photo.tags ?? []), tag];
+    this.persistTags(photo, next);
+  }
+
+  removeTag(photo: Photo, tag: string): void {
+    const next = (photo.tags ?? []).filter(t => t !== tag);
+    this.persistTags(photo, next);
+  }
+
+  private persistTags(photo: Photo, next: string[]): void {
+    // Optimistic update
+    this.photos.update(list => list.map(p => p.id === photo.id ? { ...p, tags: next } : p));
+    this.portfolio.updatePhotoTags(photo.id, next).subscribe({
+      next: updated => {
+        this.photos.update(list => list.map(p => p.id === photo.id ? updated : p));
+      },
+      error: () => {
+        this.toast.error('Impossible d\'enregistrer les tags.');
+        this.photos.update(list => list.map(p => p.id === photo.id ? photo : p));
+      }
+    });
   }
 
   openViewer(photo: Photo): void { this.viewingPhoto.set(photo); }

@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { MediathequeComponent } from './mediatheque.component';
 import { ToastService } from '../shared/toast.service';
+import { Photo } from '../../../models/photo.model';
 
 describe('MediathequeComponent', () => {
   let httpMock: HttpTestingController;
@@ -24,6 +25,18 @@ describe('MediathequeComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   }
 
+  function makePhoto(overrides: Partial<Photo> = {}): Photo {
+    return {
+      id: '1',
+      filename: 'a.jpg',
+      originalName: 'A',
+      url: '/uploads/a.jpg',
+      uploadedAt: '',
+      tags: [],
+      ...overrides,
+    };
+  }
+
   afterEach(() => httpMock?.verify());
 
   it('charge la liste de photos au démarrage', () => {
@@ -31,7 +44,7 @@ describe('MediathequeComponent', () => {
     const fixture = TestBed.createComponent(MediathequeComponent);
     fixture.detectChanges();
     const req = httpMock.expectOne('/api/photos');
-    req.flush([{ id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '' }]);
+    req.flush([makePhoto()]);
     fixture.detectChanges();
     expect(fixture.debugElement.queryAll(By.css('.photo-card')).length).toBe(1);
   });
@@ -52,9 +65,7 @@ describe('MediathequeComponent', () => {
     spyOn(toast, 'success');
     spyOn(window, 'confirm').and.returnValue(true);
     fixture.detectChanges();
-    httpMock.expectOne('/api/photos').flush([
-      { id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '' }
-    ]);
+    httpMock.expectOne('/api/photos').flush([makePhoto()]);
     fixture.detectChanges();
     (fixture.componentInstance as any).removePhoto({ id: '1', originalName: 'A' });
     httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/photos/1').flush(null);
@@ -123,7 +134,7 @@ describe('MediathequeComponent', () => {
     const fakeInput = { files: [new File(['x'], 'photo.jpg', { type: 'image/jpeg' })], value: '' } as unknown as HTMLInputElement;
     (fixture.componentInstance as any).uploadFiles({ target: fakeInput } as unknown as Event);
     httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/photos')
-      .flush({ id: 'p1', filename: 'photo.jpg', originalName: 'photo.jpg', url: '/uploads/photo.jpg', uploadedAt: '' });
+      .flush(makePhoto({ id: 'p1', filename: 'photo.jpg', originalName: 'photo.jpg', url: '/uploads/photo.jpg' }));
     expect(toast.success).toHaveBeenCalled();
   });
 
@@ -150,4 +161,131 @@ describe('MediathequeComponent', () => {
     fixture.detectChanges();
     expect(fileInput.click).toHaveBeenCalled();
   }));
+
+  // --- Recherche + tags ---
+
+  it('affiche un input de recherche', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([makePhoto()]);
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('input.photos-search'))).toBeTruthy();
+  });
+
+  it('filtre les photos par nom de fichier', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', originalName: 'portrait.jpg' }),
+      makePhoto({ id: '2', originalName: 'paysage.jpg' }),
+    ]);
+    fixture.detectChanges();
+    (fixture.componentInstance as any).search.set('port');
+    fixture.detectChanges();
+    expect(fixture.debugElement.queryAll(By.css('.photo-card')).length).toBe(1);
+  });
+
+  it('filtre les photos par tag (case-insensitive)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', originalName: 'a.jpg', tags: ['studio'] }),
+      makePhoto({ id: '2', originalName: 'b.jpg', tags: ['atelier'] }),
+    ]);
+    fixture.detectChanges();
+    (fixture.componentInstance as any).search.set('Stud');
+    fixture.detectChanges();
+    const cards = fixture.debugElement.queryAll(By.css('.photo-card'));
+    expect(cards.length).toBe(1);
+  });
+
+  it('affiche "X / Y photo(s)" quand une recherche est active', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', originalName: 'a.jpg' }),
+      makePhoto({ id: '2', originalName: 'b.jpg' }),
+    ]);
+    fixture.detectChanges();
+    (fixture.componentInstance as any).search.set('a.jpg');
+    fixture.detectChanges();
+    const count = fixture.debugElement.query(By.css('.photos-count')).nativeElement.textContent as string;
+    expect(count).toMatch(/1\s*\/\s*2/);
+  });
+
+  it('ajoute un tag normalise et appelle updatePhotoTags', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    const photo = makePhoto({ id: '1', tags: [] });
+    httpMock.expectOne('/api/photos').flush([photo]);
+    fixture.detectChanges();
+
+    (fixture.componentInstance as any).addTag(photo, '  Studio  ');
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+    expect(req.request.body).toEqual({ tags: ['studio'] });
+    req.flush(makePhoto({ id: '1', tags: ['studio'] }));
+  });
+
+  it('retire un tag', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    const photo = makePhoto({ id: '1', tags: ['studio', 'atelier'] });
+    httpMock.expectOne('/api/photos').flush([photo]);
+    fixture.detectChanges();
+
+    (fixture.componentInstance as any).removeTag(photo, 'studio');
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+    expect(req.request.body).toEqual({ tags: ['atelier'] });
+    req.flush(makePhoto({ id: '1', tags: ['atelier'] }));
+  });
+
+  it('tag duplique est ignore (pas d\'appel HTTP)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    const photo = makePhoto({ id: '1', tags: ['studio'] });
+    httpMock.expectOne('/api/photos').flush([photo]);
+    fixture.detectChanges();
+
+    (fixture.componentInstance as any).addTag(photo, 'STUDIO');
+    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+  });
+
+  it('tag vide est ignore (pas d\'appel HTTP)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    const photo = makePhoto({ id: '1', tags: [] });
+    httpMock.expectOne('/api/photos').flush([photo]);
+    fixture.detectChanges();
+
+    (fixture.componentInstance as any).addTag(photo, '   ');
+    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+  });
+
+  it('revert local si le PUT echoue', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'error');
+    fixture.detectChanges();
+    const photo = makePhoto({ id: '1', tags: [] });
+    httpMock.expectOne('/api/photos').flush([photo]);
+    fixture.detectChanges();
+
+    (fixture.componentInstance as any).addTag(photo, 'studio');
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+    req.flush({ error: 'oops' }, { status: 500, statusText: 'Error' });
+    fixture.detectChanges();
+
+    const photos = (fixture.componentInstance as any).photos() as Photo[];
+    expect(photos[0].tags).toEqual([]);
+    expect(toast.error).toHaveBeenCalled();
+  });
 });

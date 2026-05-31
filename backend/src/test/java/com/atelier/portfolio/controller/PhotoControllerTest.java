@@ -15,6 +15,7 @@ import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -37,7 +38,8 @@ class PhotoControllerTest {
                 "8f3a1b2c-uuid.jpg",
                 "portrait-studio.jpg",
                 "/api/photos/files/8f3a1b2c-uuid.jpg",
-                "2026-05-10T18:47:54.746Z"
+                "2026-05-10T18:47:54.746Z",
+                List.of()
         );
     }
 
@@ -138,5 +140,43 @@ class PhotoControllerTest {
         ResponseEntity<Void> result = controller.delete("ph-unknown");
 
         assertEquals(404, result.getStatusCode().value());
+    }
+
+    // --- updateTags ---
+
+    @Test
+    void testUpdateTags_ExistingId_ReturnsOkWithBody() {
+        Photo updated = new Photo(
+                samplePhoto.id(),
+                samplePhoto.filename(),
+                samplePhoto.originalName(),
+                samplePhoto.url(),
+                samplePhoto.uploadedAt(),
+                List.of("studio", "atelier")
+        );
+        when(service.updateTags("ph-abc12345", List.of("Studio", "Atelier")))
+                .thenReturn(Optional.of(updated));
+
+        ResponseEntity<Photo> result = controller.updateTags(
+                "ph-abc12345",
+                new PhotoController.TagsRequest(List.of("Studio", "Atelier"))
+        );
+
+        assertEquals(200, result.getStatusCode().value());
+        assertNotNull(result.getBody());
+        assertEquals(List.of("studio", "atelier"), result.getBody().tags());
+    }
+
+    @Test
+    void testUpdateTags_UnknownId_ReturnsNotFound() {
+        when(service.updateTags("ph-ghost", List.of("studio"))).thenReturn(Optional.empty());
+
+        ResponseEntity<Photo> result = controller.updateTags(
+                "ph-ghost",
+                new PhotoController.TagsRequest(List.of("studio"))
+        );
+
+        assertEquals(404, result.getStatusCode().value());
+        assertNull(result.getBody());
     }
 }

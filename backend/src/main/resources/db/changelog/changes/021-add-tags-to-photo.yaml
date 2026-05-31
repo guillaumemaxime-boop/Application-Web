@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 021-create-photo-tag
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: photo_tag
+            columns:
+              - column:
+                  name: photo_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_photo_tag_photo
+                    references: photo(id)
+                    deleteCascade: true
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entry_value
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: photo_tag
+            columnNames: photo_id, position
+            constraintName: pk_photo_tag

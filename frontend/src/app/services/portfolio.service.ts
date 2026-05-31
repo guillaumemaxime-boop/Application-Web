@@ -125,6 +125,10 @@ export class PortfolioService {
     return this.http.delete<void>(`${API}/photos/${id}`);
   }
 
+  updatePhotoTags(id: string, tags: string[]): Observable<Photo> {
+    return this.http.put<Photo>(`${API}/photos/${id}/tags`, { tags });
+  }
+
   getHome(): Observable<HomePageData> {
     this.home$ ??= this.http.get<HomePageData>(`${API}/home`).pipe(shareReplay(1));
     return this.home$;

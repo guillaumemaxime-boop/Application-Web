@@ -16,7 +16,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -64,6 +68,7 @@ public class PhotoService {
         entity.setOriginalName(originalName);
         entity.setUrl(url);
         entity.setUploadedAt(Instant.now().toString());
+        entity.setTags(new ArrayList<>());
 
         return toDto(repository.save(entity));
     }
@@ -90,13 +95,36 @@ public class PhotoService {
         }).orElse(false);
     }
 
+    @Transactional
+    public Optional<Photo> updateTags(String id, List<String> tags) {
+        return repository.findById(id).map(entity -> {
+            entity.getTags().clear();
+            entity.getTags().addAll(normalizeTags(tags));
+            return toDto(repository.save(entity));
+        });
+    }
+
+    static List<String> normalizeTags(List<String> input) {
+        if (input == null) return List.of();
+        return input.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> s.toLowerCase(Locale.ROOT))
+                .map(s -> s.length() > 100 ? s.substring(0, 100) : s)
+                .distinct()
+                .limit(30)
+                .toList();
+    }
+
     private static Photo toDto(PhotoEntity entity) {
         return new Photo(
                 entity.getId(),
                 entity.getFilename(),
                 entity.getOriginalName(),
                 entity.getUrl(),
-                entity.getUploadedAt()
+                entity.getUploadedAt(),
+                List.copyOf(entity.getTags())
         );
     }
 }

@@ -362,6 +362,7 @@ describe('PortfolioService', () => {
       originalName: 'portrait-studio.jpg',
       url: '/api/photos/files/8f3a1b2c-uuid.jpg',
       uploadedAt: '2026-05-10T18:47:54.746Z',
+      tags: [],
     };
 
     it('should retrieve all photos', () => {
@@ -421,6 +422,19 @@ describe('PortfolioService', () => {
 
       const req = httpMock.expectOne('/api/photos');
       req.flush('Payload Too Large', { status: 413, statusText: 'Payload Too Large' });
+    });
+
+    it('should update photo tags via PUT', () => {
+      const updated: Photo = { ...mockPhoto, tags: ['studio', 'atelier'] };
+
+      service.updatePhotoTags('ph-abc12345', ['Studio', 'Atelier']).subscribe((photo) => {
+        expect(photo).toEqual(updated);
+      });
+
+      const req = httpMock.expectOne('/api/photos/ph-abc12345/tags');
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ tags: ['Studio', 'Atelier'] });
+      req.flush(updated);
     });
   });
 

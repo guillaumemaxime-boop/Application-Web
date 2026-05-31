@@ -58,7 +58,7 @@ describe('ImageFieldComponent', () => {
     fixture.detectChanges();
     fixture.debugElement.query(By.css('.btn-pick')).nativeElement.click();
     httpMock.expectOne('/api/photos').flush([
-      { id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '' },
+      { id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '', tags: [] },
     ]);
     fixture.detectChanges();
     const picker = fixture.debugElement.query(By.css('app-photo-picker'));

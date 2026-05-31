@@ -4,4 +4,5 @@ export interface Photo {
   originalName: string;
   url: string;
   uploadedAt: string;
+  tags: string[];
 }
