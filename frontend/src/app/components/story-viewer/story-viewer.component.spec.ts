@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { StoryViewerComponent, StoryItem } from './story-viewer.component';
 import { Slide } from '../../models/slide.model';
+import { DisplaySlide } from '../../models/display-slide.model';
 
 describe('StoryViewerComponent', () => {
   let fixture: ComponentFixture<StoryViewerComponent>;
@@ -268,5 +270,25 @@ describe('StoryViewerComponent', () => {
   it('ngOnDestroy stops the timer without throwing', () => {
     setQueue([{ title: 'T', subtitle: 's', slides: [cover()] }]);
     expect(() => component.ngOnDestroy()).not.toThrow();
+  });
+
+  it('rend un iframe YouTube pour un slide video YouTube', () => {
+    const slides: DisplaySlide[] = [
+      { type: 'video', id: 'v1', position: 0, src: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', caption: null },
+    ];
+    setQueue([{ title: 'T', subtitle: 's', slides }]);
+    const iframe = fixture.debugElement.query(By.css('iframe'));
+    expect(iframe).toBeTruthy();
+    expect(iframe.nativeElement.src).toContain('youtube.com/embed/dQw4w9WgXcQ');
+  });
+
+  it('rend un iframe Vimeo pour un slide video Vimeo', () => {
+    const slides: DisplaySlide[] = [
+      { type: 'video', id: 'v1', position: 0, src: 'https://vimeo.com/123456789', caption: null },
+    ];
+    setQueue([{ title: 'T', subtitle: 's', slides }]);
+    const iframe = fixture.debugElement.query(By.css('iframe'));
+    expect(iframe).toBeTruthy();
+    expect(iframe.nativeElement.src).toContain('player.vimeo.com/video/123456789');
   });
 });

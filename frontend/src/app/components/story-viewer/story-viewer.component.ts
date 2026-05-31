@@ -1,12 +1,14 @@
 import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { Slide } from '../../models/slide.model';
+import { DisplaySlide } from '../../models/display-slide.model';
+import { parseVideoUrl } from '../../utils/video-url';
 
 export interface StoryItem {
   title: string;
   subtitle: string;
-  slides: Slide[];
+  slides: DisplaySlide[];
   kind?: 'furniture' | 'exhibition';
   slug?: string;
 }
@@ -45,6 +47,19 @@ const SLIDE_DURATION_MS = 5000;
             @case ('cover')  { <img [src]="$any(currentSlide()).src" alt="" /> }
             @case ('image')  {
               <img [src]="$any(currentSlide()).src" alt="" />
+              @if ($any(currentSlide()).caption) {
+                <div class="caption">{{ $any(currentSlide()).caption }}</div>
+              }
+            }
+            @case ('video') {
+              @if (videoEmbedUrl($any(currentSlide()).src); as url) {
+                <iframe
+                  [src]="url"
+                  title="Vidéo"
+                  allow="autoplay; fullscreen; encrypted-media"
+                  allowfullscreen
+                  style="width:100%;height:100%;border:0;display:block"></iframe>
+              }
               @if ($any(currentSlide()).caption) {
                 <div class="caption">{{ $any(currentSlide()).caption }}</div>
               }
@@ -130,6 +145,7 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
   @Output() closed = new EventEmitter<void>();
 
   private router = inject(Router);
+  private readonly sanitizer = inject(DomSanitizer);
 
   protected itemIndex = signal(0);
   protected slideIndex = signal(0);
@@ -147,7 +163,7 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
 
   protected isMediaSlide = computed(() => {
     const t = this.currentSlide()?.type;
-    return t === 'cover' || t === 'image';
+    return t === 'cover' || t === 'image' || t === 'video';
   });
 
   protected bodyClass = computed(() => this.isMediaSlide() ? '' : 'cream');
@@ -162,6 +178,15 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
     }
     return null;
   });
+
+  protected videoEmbedUrl(src: string): SafeResourceUrl | null {
+    const parsed = parseVideoUrl(src);
+    if (!parsed) return null;
+    const url = parsed.platform === 'youtube'
+      ? `https://www.youtube.com/embed/${parsed.id}`
+      : `https://player.vimeo.com/video/${parsed.id}`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
 
   ngOnInit() { this.startTimer(); }
   ngOnDestroy() { this.stopTimer(); }
