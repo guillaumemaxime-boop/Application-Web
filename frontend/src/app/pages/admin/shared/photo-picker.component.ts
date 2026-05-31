@@ -29,8 +29,8 @@ import { Photo } from '../../../models/photo.model';
               class="picker-search-input"
               [ngModel]="query()"
               (ngModelChange)="query.set($event)"
-              placeholder="Rechercher par nom de fichier…"
-              aria-label="Rechercher une photo" />
+              placeholder="Rechercher (nom de fichier ou tag)…"
+              aria-label="Rechercher une photo par nom de fichier ou tag" />
           </div>
           @if (filtered().length === 0) {
             <p class="picker-empty">Aucun résultat pour « {{ query() }} ».</p>
@@ -98,7 +98,10 @@ export class PhotoPickerComponent {
   protected filtered(): Photo[] {
     const q = this.query().trim().toLowerCase();
     if (!q) return this.photos;
-    return this.photos.filter(p => p.originalName.toLowerCase().includes(q));
+    return this.photos.filter(p =>
+      p.originalName.toLowerCase().includes(q) ||
+      (p.tags ?? []).some(t => t.includes(q))
+    );
   }
 
   select(photo: Photo): void {

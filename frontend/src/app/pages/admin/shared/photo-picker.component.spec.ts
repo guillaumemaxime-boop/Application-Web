@@ -75,6 +75,23 @@ describe('PhotoPickerComponent', () => {
     expect(items[0].nativeElement.getAttribute('title')).toBe('Table basse');
   });
 
+  it('filtre la grille par tag via la recherche', () => {
+    const photosAvecTags: Photo[] = [
+      { id: '1', filename: 'a.jpg', originalName: 'IMG_1234.jpg', url: '/uploads/a.jpg', uploadedAt: '', tags: ['atelier', 'bois'] },
+      { id: '2', filename: 'b.jpg', originalName: 'IMG_5678.jpg', url: '/uploads/b.jpg', uploadedAt: '', tags: ['exterieur'] },
+    ];
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'cover');
+    fixture.componentRef.setInput('photos', photosAvecTags);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as { query: { set: (v: string) => void } };
+    cmp.query.set('atelier');
+    fixture.detectChanges();
+    const items = fixture.debugElement.queryAll(By.css('.picker-item'));
+    expect(items.length).toBe(1);
+    expect(items[0].nativeElement.getAttribute('title')).toBe('IMG_1234.jpg');
+  });
+
   it('affiche « Aucun résultat » quand la recherche ne matche rien', () => {
     const fixture = TestBed.createComponent(PhotoPickerComponent);
     fixture.componentRef.setInput('target', 'cover');
