@@ -125,6 +125,29 @@ describe('HomeComponent', () => {
     expect(excerpts[1].textContent).toContain('calcaire');
   });
 
+  it('heroTitle returns the default text when content is empty', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({}));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    expect((f.componentInstance as any).heroTitle()).toContain('Mobilier');
+  });
+
+  it('heroTitle uses the configured value when content provides a non-empty title', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.hero.title': 'Atelier\nLumen' }));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    const title = (f.componentInstance as any).heroTitle();
+    expect(title).toContain('Atelier');
+    expect(title).toContain('<br/>');
+  });
+
+  it('heroTitle falls back to the default when content has a whitespace-only title', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.hero.title': '   ' }));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    expect((f.componentInstance as any).heroTitle()).toContain('Mobilier');
+  });
+
   it('closeViewer empties the queue', () => {
     (component as any).viewerQueue.set([{ title: 't', subtitle: 's', slides: [] }]);
     (component as any).closeViewer();

@@ -161,6 +161,24 @@ describe('FurnitureDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('app-story-viewer')).not.toBeNull();
   });
 
+  it('openViewer is a no-op when item is null or slides are empty', () => {
+    const pending = new Subject<Furniture>();
+    setup('onde', pending.asObservable());
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    // item() is still null while the service hasn't emitted
+    c.openViewer();
+    expect(c.viewerQueue().length).toBe(0);
+
+    // After loading a furniture with no slides and no coverImage, displaySlides() is empty
+    pending.next({ ...mockFurniture, coverImage: '', slides: [], showStoryLink: false });
+    pending.complete();
+    fixture.detectChanges();
+    c.openViewer();
+    expect(c.viewerQueue().length).toBe(0);
+  });
+
   it('should close the viewer by emptying the queue', () => {
     setup('onde', of({ ...mockFurniture, slides }));
     const fixture = TestBed.createComponent(FurnitureDetailComponent);

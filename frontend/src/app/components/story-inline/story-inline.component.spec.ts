@@ -17,6 +17,14 @@ describe('StoryInlineComponent', () => {
     expect(fixture.nativeElement.querySelector('.story-inline')).toBeNull();
   });
 
+  it('should treat undefined slides input as an empty list (??)', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    fixture.componentRef.setInput('slides', undefined as unknown as DisplaySlide[]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.story-inline')).toBeNull();
+  });
+
   it('should skip cover and link slides', () => {
     const fixture = createWithSlides([
       { id: '1', position: 1, type: 'cover', src: 'a.jpg' },

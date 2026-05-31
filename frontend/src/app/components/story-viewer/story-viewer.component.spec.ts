@@ -239,6 +239,22 @@ describe('StoryViewerComponent', () => {
     }
   });
 
+  it('a second hold while already paused is a no-op (pause early-return)', () => {
+    jasmine.clock().install();
+    try {
+      setQueue([{ title: 'T', subtitle: 's', slides: [cover()] }]);
+      component.onHoldStart();
+      jasmine.clock().tick(200);
+      expect(component['running']()).toBeFalse();
+      // Second hold/release while already paused: should not throw nor flip running back on
+      component.onHoldStart();
+      jasmine.clock().tick(200);
+      expect(component['running']()).toBeFalse();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
   it('onHoldEnd clears the hold timer before pause triggers', () => {
     jasmine.clock().install();
     try {
