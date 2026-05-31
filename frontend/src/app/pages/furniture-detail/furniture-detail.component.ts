@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Furniture } from '../../models/furniture.model';
 import { SiteContent } from '../../models/site-content.model';
+import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 import { StoryInlineComponent } from '../../components/story-inline/story-inline.component';
@@ -57,7 +58,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
         </section>
 
         @if (hasSlides()) {
-          <app-story-inline [slides]="f.slides"></app-story-inline>
+          <app-story-inline [slides]="displaySlides()"></app-story-inline>
 
           <div class="container narrow viewer-link-wrap">
             <button type="button" class="viewer-link" (click)="openViewer()">
@@ -259,7 +260,29 @@ export class FurnitureDetailComponent {
   protected readonly contactOpen = signal(false);
   protected readonly content = signal<SiteContent>({});
 
-  protected readonly hasSlides = computed(() => (this.item()?.slides?.length ?? 0) > 0);
+  protected readonly hasSlides = computed(() => {
+    const f = this.item();
+    if (!f) return false;
+    return !!f.coverImage || (f.slides?.length ?? 0) > 0;
+  });
+
+  protected readonly displaySlides = computed<DisplaySlide[]>(() => {
+    const f = this.item();
+    if (!f) return [];
+    const apiSlides = (f.slides ?? [])
+      // Filtre défensif : si l'API renvoie encore des cover/link legacy
+      // (pré-migration 008), on les ignore — on génère cover/link nous-mêmes.
+      .filter(s => s.type !== 'cover' && s.type !== 'link');
+    const cover: DisplaySlide = {
+      type: 'cover', id: '_cover', position: 0, src: f.coverImage ?? '',
+    };
+    const link: DisplaySlide = {
+      type: 'link', id: '_link', position: apiSlides.length + 1,
+      label: 'Découvrir la pièce', description: null,
+      href: `/mobilier/${f.slug}`,
+    };
+    return [cover, ...apiSlides as DisplaySlide[], link];
+  });
 
   protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));
   protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
@@ -291,11 +314,13 @@ export class FurnitureDetailComponent {
 
   protected openViewer() {
     const f = this.item();
-    if (!f || f.slides.length === 0) return;
+    if (!f) return;
+    const slides = this.displaySlides();
+    if (slides.length === 0) return;
     this.viewerQueue.set([{
       title: f.title,
       subtitle: `${f.category} · ${f.year}`,
-      slides: f.slides,
+      slides,
       kind: 'furniture',
       slug: f.slug,
     }]);

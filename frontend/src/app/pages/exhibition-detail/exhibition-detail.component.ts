@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Exhibition } from '../../models/exhibition.model';
 import { SiteContent } from '../../models/site-content.model';
+import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 
@@ -175,6 +176,30 @@ export class ExhibitionDetailComponent {
 
   protected readonly titleStyle   = computed(() => roleStyle(this.content(), 'title'));
   protected readonly eyebrowStyle = computed(() => roleStyle(this.content(), 'eyebrow'));
+
+  protected readonly hasSlides = computed(() => {
+    const e = this.item();
+    if (!e) return false;
+    return !!e.coverImage || (e.slides?.length ?? 0) > 0;
+  });
+
+  protected readonly displaySlides = computed<DisplaySlide[]>(() => {
+    const e = this.item();
+    if (!e) return [];
+    const apiSlides = (e.slides ?? [])
+      // Filtre défensif : si l'API renvoie encore des cover/link legacy
+      // (pré-migration 008), on les ignore — on génère cover/link nous-mêmes.
+      .filter(s => s.type !== 'cover' && s.type !== 'link');
+    const cover: DisplaySlide = {
+      type: 'cover', id: '_cover', position: 0, src: e.coverImage ?? '',
+    };
+    const link: DisplaySlide = {
+      type: 'link', id: '_link', position: apiSlides.length + 1,
+      label: 'Voir l\'exposition', description: null,
+      href: `/expositions/${e.slug}`,
+    };
+    return [cover, ...apiSlides as DisplaySlide[], link];
+  });
 
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';

@@ -4,6 +4,7 @@ import { PortfolioService } from '../../services/portfolio.service';
 import { of, Subject, throwError } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Slide } from '../../models/slide.model';
+import { DisplaySlide } from '../../models/display-slide.model';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { convertToParamMap } from '@angular/router';
 
@@ -117,8 +118,8 @@ describe('FurnitureDetailComponent', () => {
     expect(spy.getFurniture).toHaveBeenCalledWith('');
   });
 
-  it('should not render the story-inline section when slides are empty', () => {
-    setup('onde', of(mockFurniture));
+  it('should not render the story-inline section when slides are empty and no cover image', () => {
+    setup('onde', of({ ...mockFurniture, coverImage: '', slides: [] }));
     const fixture = TestBed.createComponent(FurnitureDetailComponent);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-story-inline')).toBeNull();
@@ -149,7 +150,10 @@ describe('FurnitureDetailComponent', () => {
     const queue = c.viewerQueue();
     expect(queue.length).toBe(1);
     expect(queue[0].title).toBe('Onde');
-    expect(queue[0].slides.length).toBe(2);
+    // cover prefix + 2 narrative slides + link suffix = 4
+    expect(queue[0].slides.length).toBe(4);
+    expect(queue[0].slides[0].type).toBe('cover');
+    expect(queue[0].slides[queue[0].slides.length - 1].type).toBe('link');
     expect(queue[0].kind).toBe('furniture');
     expect(queue[0].slug).toBe('onde');
     expect(fixture.nativeElement.querySelector('app-story-viewer')).not.toBeNull();
@@ -184,6 +188,47 @@ describe('FurnitureDetailComponent', () => {
 
     expect(c.contactOpen()).toBeTrue();
     expect(fixture.nativeElement.querySelector('app-contact-form')).not.toBeNull();
+  });
+
+  it('enrichit la liste de slides avec cover prefix + link suffix', () => {
+    const furniture: Furniture = {
+      ...mockFurniture,
+      slug: 'chaise-bois',
+      coverImage: '/uploads/cover.jpg',
+      slides: [
+        { id: 's1', position: 0, type: 'image', src: '/uploads/photo.jpg', caption: 'détail' },
+      ],
+    };
+    setup('chaise-bois', of(furniture));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const display: DisplaySlide[] = (fixture.componentInstance as any).displaySlides();
+    expect(display.length).toBe(3);
+    expect(display[0].type).toBe('cover');
+    expect((display[0] as any).src).toBe('/uploads/cover.jpg');
+    expect(display[1].type).toBe('image');
+    expect(display[display.length - 1].type).toBe('link');
+    expect((display[display.length - 1] as any).href).toBe('/mobilier/chaise-bois');
+  });
+
+  it('filtre les slides legacy de type cover/link recues de l API', () => {
+    const furniture: Furniture = {
+      ...mockFurniture,
+      slug: 'x',
+      coverImage: '/c.jpg',
+      slides: [
+        { id: 'legacy-c', position: 0, type: 'cover', src: '/legacy.jpg' },
+        { id: 's1', position: 1, type: 'image', src: '/photo.jpg', caption: null },
+        { id: 'legacy-l', position: 2, type: 'link', label: 'old', description: null, href: '/old' },
+      ],
+    };
+    setup('x', of(furniture));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const display: DisplaySlide[] = (fixture.componentInstance as any).displaySlides();
+    expect(display.length).toBe(3);
+    expect(display.filter((s: DisplaySlide) => s.type === 'cover').length).toBe(1);
+    expect((display[0] as any).src).toBe('/c.jpg');
   });
 
   it('should close the contact form on close event', () => {
