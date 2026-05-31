@@ -68,6 +68,7 @@ public class SecurityConfig {
                                         "font-src 'self' https://fonts.gstatic.com; " +
                                         "img-src 'self' data: https:; " +
                                         "connect-src 'self'; " +
+                                        "frame-src 'self' https://www.youtube.com https://player.vimeo.com; " +
                                         "frame-ancestors 'none'"))
                 );
         return http.build();
