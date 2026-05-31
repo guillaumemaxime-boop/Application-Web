@@ -272,7 +272,7 @@ export class FurnitureDetailComponent {
     const apiSlides = (f.slides ?? [])
       // Filtre défensif : si l'API renvoie encore des cover/link legacy
       // (pré-migration 008), on les ignore — on génère cover/link nous-mêmes.
-      .filter(s => s.type !== 'cover' && s.type !== 'link');
+      .filter(s => (s.type as string) !== 'cover' && (s.type as string) !== 'link');
     const cover: DisplaySlide = {
       type: 'cover', id: '_cover', position: 0, src: f.coverImage ?? '',
     };

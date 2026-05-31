@@ -220,7 +220,7 @@ describe('FurnitureDetailComponent', () => {
         { id: 'legacy-c', position: 0, type: 'cover', src: '/legacy.jpg' },
         { id: 's1', position: 1, type: 'image', src: '/photo.jpg', caption: null },
         { id: 'legacy-l', position: 2, type: 'link', label: 'old', description: null, href: '/old' },
-      ],
+      ] as any,
     };
     setup('x', of(furniture));
     const fixture = TestBed.createComponent(FurnitureDetailComponent);

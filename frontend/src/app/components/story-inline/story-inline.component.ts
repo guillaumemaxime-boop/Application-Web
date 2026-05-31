@@ -1,11 +1,11 @@
 import { Component, Input, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ImageSlide, SpecSlide, QuoteSlide } from '../../models/slide.model';
-import { DisplaySlide, VideoDisplaySlide } from '../../models/display-slide.model';
+import { ImageSlide, VideoSlide, SpecSlide, QuoteSlide } from '../../models/slide.model';
+import { DisplaySlide } from '../../models/display-slide.model';
 import { parseVideoUrl } from '../../utils/video-url';
 
-type InlineSlide = ImageSlide | VideoDisplaySlide | SpecSlide | QuoteSlide;
+type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
 
 @Component({
   selector: 'app-story-inline',

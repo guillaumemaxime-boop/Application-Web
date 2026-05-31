@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { StoryViewerComponent, StoryItem } from './story-viewer.component';
-import { Slide } from '../../models/slide.model';
 import { DisplaySlide } from '../../models/display-slide.model';
 
 describe('StoryViewerComponent', () => {
@@ -27,11 +26,11 @@ describe('StoryViewerComponent', () => {
     fixture.detectChanges();
   }
 
-  const cover = (id = 's1', src = 'x.jpg'): Slide => ({ type: 'cover', id, position: 0, src });
-  const image = (id = 's2', caption: string | null = null): Slide => ({ type: 'image', id, position: 1, src: 'b.jpg', caption });
-  const spec = (): Slide => ({ type: 'spec', id: 'sp', position: 2, specs: [{ label: 'Bois', value: 'Chêne' }] });
-  const quote = (cite: string | null = null): Slide => ({ type: 'quote', id: 'q', position: 3, body: 'Une citation', cite });
-  const link = (href: string | null = null, label: string | null = null, description: string | null = ''): Slide => ({
+  const cover = (id = 's1', src = 'x.jpg'): DisplaySlide => ({ type: 'cover', id, position: 0, src });
+  const image = (id = 's2', caption: string | null = null): DisplaySlide => ({ type: 'image', id, position: 1, src: 'b.jpg', caption });
+  const spec = (): DisplaySlide => ({ type: 'spec', id: 'sp', position: 2, specs: [{ label: 'Bois', value: 'Chêne' }] });
+  const quote = (cite: string | null = null): DisplaySlide => ({ type: 'quote', id: 'q', position: 3, body: 'Une citation', cite });
+  const link = (href: string | null = null, label: string | null = null, description: string | null = ''): DisplaySlide => ({
     type: 'link', id: 'l', position: 4, href, label, description,
   });
 
