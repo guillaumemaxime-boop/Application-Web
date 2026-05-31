@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 018-drop-legacy-cover-link-slides
+      author: milo-guillaume
+      comment: >
+        Supprime les rows story_slide de type 'cover' et 'link' devenues obsoletes
+        avec l'editeur de slides v2 (cover/lien generes implicitement par le
+        rendu public a partir de coverImage et du slug). Idempotent : un second
+        run ne trouvera plus rien a supprimer.
+      changes:
+        - sql:
+            sql: DELETE FROM story_slide WHERE type IN ('cover', 'link');
