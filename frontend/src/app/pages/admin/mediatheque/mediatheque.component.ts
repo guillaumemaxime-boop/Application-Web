@@ -11,7 +11,7 @@ import { ToastService } from '../shared/toast.service';
     <div class="photos-tab">
       <div class="photos-upload-zone">
         <h2>Importer des photos</h2>
-        <p class="photos-upload-hint">Formats acceptés : JPG, PNG, WebP, GIF · Taille max : 20 Mo par fichier</p>
+        <p class="photos-upload-hint">Formats acceptés : JPG, PNG, WebP, GIF · Taille max : 50 Mo par fichier</p>
         <input #fileInput type="file" accept="image/*" multiple style="display:none" (change)="uploadFiles($event)" />
         <button type="button" class="btn-primary" [disabled]="uploading()" (click)="fileInput.click()">
           {{ uploading() ? 'Importation en cours…' : 'Choisir des fichiers' }}
@@ -171,12 +171,18 @@ export class MediathequeComponent implements AfterViewInit {
             if (errors > 0) this.toast.error(msg); else this.toast.success(msg);
           }
         },
-        error: () => {
+        error: (err) => {
+          const reason =
+            err?.status === 413 ? 'fichier trop volumineux' :
+            err?.status === 401 || err?.status === 403 ? 'session expirée — reconnecte-toi' :
+            err?.status === 0 ? 'pas de connexion au serveur' :
+            err?.status ? `erreur HTTP ${err.status}` : 'erreur inconnue';
+          console.error('[mediatheque] upload failed:', err);
           errors++;
           remaining--;
           if (remaining === 0) {
             this.uploading.set(false);
-            this.toast.error(`${files.length - errors} photo(s) importée(s), ${errors} erreur(s).`);
+            this.toast.error(`${files.length - errors} importée(s), ${errors} erreur(s) (${reason}).`);
           }
         }
       });
