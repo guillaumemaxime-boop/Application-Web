@@ -122,7 +122,7 @@ class ExhibitionServiceTest {
                 "https://example.com/souffles.jpg",
                 List.of("https://example.com/souffles-1.jpg"),
                 "Camille Lévy", "court", "long",
-                List.of("Sculpture", "Lumière"), true, true, List.of()
+                List.of("Sculpture", "Lumière"), true, true, true, List.of()
         );
 
         Exhibition created = exhibitionService.create(input);
@@ -140,7 +140,7 @@ class ExhibitionServiceTest {
                 null, "Test", "custom-expo-slug",
                 "Lieu", "Ville", "Pays",
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
-                null, List.of(), "", "", "", List.of(), false, true, List.of()
+                null, List.of(), "", "", "", List.of(), false, true, true, List.of()
         );
 
         Exhibition created = exhibitionService.create(input);
@@ -159,7 +159,7 @@ class ExhibitionServiceTest {
                 original.startDate(), original.endDate(),
                 original.coverImage(), original.gallery(), original.curator(),
                 "Description courte mise à jour", original.description(),
-                original.tags(), false, true, List.of()
+                original.tags(), false, true, true, List.of()
         );
 
         Optional<Exhibition> updated = exhibitionService.update(slug, changes);
@@ -175,7 +175,7 @@ class ExhibitionServiceTest {
         Exhibition changes = new Exhibition(
                 null, "X", null, "", "", "",
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
-                null, List.of(), "", "", "", List.of(), false, true, List.of()
+                null, List.of(), "", "", "", List.of(), false, true, true, List.of()
         );
 
         Optional<Exhibition> updated = exhibitionService.update("non-existent", changes);

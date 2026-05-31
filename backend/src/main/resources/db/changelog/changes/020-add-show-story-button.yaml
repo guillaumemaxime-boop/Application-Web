@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 020-add-show-story-button
+      author: milo-guillaume
+      comment: >
+        Ajoute la colonne show_story_button (default TRUE) sur furniture et
+        exhibition pour controler l'affichage du bouton "Voir en plein ecran"
+        / "Voir la story" sur la fiche publique. Valeur par defaut TRUE :
+        compatibilite ascendante.
+      changes:
+        - sql:
+            sql: ALTER TABLE furniture ADD COLUMN show_story_button BOOLEAN NOT NULL DEFAULT TRUE;
+        - sql:
+            sql: ALTER TABLE exhibition ADD COLUMN show_story_button BOOLEAN NOT NULL DEFAULT TRUE;

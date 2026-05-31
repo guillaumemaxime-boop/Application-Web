@@ -10,17 +10,17 @@ describe('CatalogComponent', () => {
     {
       id: '1', title: 'Onde', slug: 'onde', category: 'Sièges', material: 'Chêne',
       year: 2024, coverImage: 'a.jpg', gallery: [], shortDescription: '',
-      description: '', dimensions: [], designer: 'Lumen', featured: false, showStoryLink: true, slides: [],
+      description: '', dimensions: [], designer: 'Lumen', featured: false, showStoryLink: true, showStoryButton: true, slides: [],
     },
     {
       id: '2', title: 'Volume', slug: 'volume', category: 'Tables', material: 'Noyer',
       year: 2025, coverImage: 'b.jpg', gallery: [], shortDescription: '',
-      description: '', dimensions: [], designer: 'Lumen', featured: false, showStoryLink: true, slides: [],
+      description: '', dimensions: [], designer: 'Lumen', featured: false, showStoryLink: true, showStoryButton: true, slides: [],
     },
     {
       id: '3', title: 'Aube', slug: 'aube', category: 'Sièges', material: 'Laiton',
       year: 2025, coverImage: 'c.jpg', gallery: [], shortDescription: '',
-      description: '', dimensions: [], designer: 'Lumen', featured: false, showStoryLink: true, slides: [],
+      description: '', dimensions: [], designer: 'Lumen', featured: false, showStoryLink: true, showStoryButton: true, slides: [],
     },
   ];
 
@@ -111,7 +111,7 @@ describe('CatalogComponent', () => {
         id: 'x', title: 'Sans date', slug: 'sans-date', category: 'Divers',
         material: 'Acier', year: null as unknown as number, coverImage: 'x.jpg',
         gallery: [], shortDescription: '', description: '', dimensions: [],
-        designer: 'Lumen', featured: false, showStoryLink: true, slides: [],
+        designer: 'Lumen', featured: false, showStoryLink: true, showStoryButton: true, slides: [],
       },
     ];
     setup(of(undated));

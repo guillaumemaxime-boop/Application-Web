@@ -61,11 +61,13 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
         @if (hasSlides()) {
           <app-story-inline [slides]="displaySlides()"></app-story-inline>
 
-          <div class="container narrow viewer-link-wrap">
-            <button type="button" class="viewer-link" (click)="openViewer()">
-              Voir en plein écran →
-            </button>
-          </div>
+          @if (f.showStoryButton) {
+            <div class="container narrow viewer-link-wrap">
+              <button type="button" class="viewer-link" (click)="openViewer()">
+                Voir en plein écran →
+              </button>
+            </div>
+          }
         }
 
         @if (f.gallery.length > 0) {

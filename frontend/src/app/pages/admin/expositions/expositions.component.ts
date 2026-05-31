@@ -103,6 +103,11 @@ interface ExhibitionMetaRow {
           <span>Afficher le lien en fin de story</span>
         </label>
 
+        <label class="checkbox">
+          <input type="checkbox" formControlName="showStoryButton" />
+          <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
+        </label>
+
         @if (editingExhibitionId(); as ownerId) {
           <app-slides-editor kind="exhibition" [ownerId]="ownerId" [ownerSlug]="editingExhibitionSlug()" />
         } @else {
@@ -223,6 +228,7 @@ export class ExpositionsComponent {
     shortDescription: [''],
     description: [''],
     showStoryLink: [true],
+    showStoryButton: [true],
   });
 
   constructor() {
@@ -267,6 +273,7 @@ export class ExpositionsComponent {
       startDate: '', endDate: '', curator: '', coverImage: '',
       shortDescription: '', description: '',
       showStoryLink: true,
+      showStoryButton: true,
     });
     this.exhibitionGallery.set([]);
     this.exhibitionTags.set([]);
@@ -281,6 +288,7 @@ export class ExpositionsComponent {
       startDate: item.startDate ?? '', endDate: item.endDate ?? '', curator: item.curator ?? '',
       coverImage: item.coverImage ?? '', shortDescription: item.shortDescription ?? '', description: item.description ?? '',
       showStoryLink: item.showStoryLink ?? true,
+      showStoryButton: item.showStoryButton ?? true,
     });
     this.exhibitionGallery.set([...(item.gallery ?? [])]);
     this.exhibitionTags.set([...(item.tags ?? [])]);
@@ -325,6 +333,7 @@ export class ExpositionsComponent {
       shortDescription: v.shortDescription ?? '', description: v.description ?? '',
       featured: existing?.featured ?? false,
       showStoryLink: v.showStoryLink ?? true,
+      showStoryButton: v.showStoryButton ?? true,
     };
     this.saving.set(true);
     const op$ = slug

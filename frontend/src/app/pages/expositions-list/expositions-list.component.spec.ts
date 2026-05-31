@@ -11,19 +11,19 @@ describe('ExpositionsListComponent', () => {
       id: '1', title: 'Paris Nuit', slug: 'paris-nuit', venue: 'Galerie X',
       city: 'Paris', country: 'France', startDate: '2025-03-10', endDate: '2025-04-12',
       coverImage: 'a.jpg', gallery: [], curator: 'C', shortDescription: '',
-      description: '', tags: [], featured: false, showStoryLink: true, slides: [],
+      description: '', tags: [], featured: false, showStoryLink: true, showStoryButton: true, slides: [],
     },
     {
       id: '2', title: 'Bruges Hiver', slug: 'bruges', venue: 'Maison Y',
       city: 'Bruges', country: 'Belgique', startDate: '2024-12-01', endDate: '2025-01-30',
       coverImage: 'b.jpg', gallery: [], curator: 'C', shortDescription: '',
-      description: '', tags: [], featured: false, showStoryLink: true, slides: [],
+      description: '', tags: [], featured: false, showStoryLink: true, showStoryButton: true, slides: [],
     },
     {
       id: '3', title: 'Milan', slug: 'milan', venue: 'Salone',
       city: 'Milan', country: 'Italie', startDate: '2025-06-01', endDate: '2025-06-12',
       coverImage: 'c.jpg', gallery: [], curator: 'C', shortDescription: '',
-      description: '', tags: [], featured: false, showStoryLink: true, slides: [],
+      description: '', tags: [], featured: false, showStoryLink: true, showStoryButton: true, slides: [],
     },
   ];
 
@@ -118,7 +118,7 @@ describe('ExpositionsListComponent', () => {
         id: 'x', title: 'No date', slug: 'no-date', venue: 'V',
         city: 'C', country: 'F', startDate: '', endDate: '',
         coverImage: 'x.jpg', gallery: [], curator: 'C', shortDescription: '',
-        description: '', tags: [], featured: false, showStoryLink: true, slides: [],
+        description: '', tags: [], featured: false, showStoryLink: true, showStoryButton: true, slides: [],
       },
     ];
     setup(of(broken));

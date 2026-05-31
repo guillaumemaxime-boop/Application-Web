@@ -60,6 +60,9 @@ public class ExhibitionEntity {
     @Column(name = "show_story_link", nullable = false)
     private boolean showStoryLink = true;
 
+    @Column(name = "show_story_button", nullable = false)
+    private boolean showStoryButton = true;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "exhibition_gallery", joinColumns = @JoinColumn(name = "exhibition_id"))
     @OrderColumn(name = "position")
@@ -115,6 +118,9 @@ public class ExhibitionEntity {
 
     public boolean isShowStoryLink() { return showStoryLink; }
     public void setShowStoryLink(boolean showStoryLink) { this.showStoryLink = showStoryLink; }
+
+    public boolean isShowStoryButton() { return showStoryButton; }
+    public void setShowStoryButton(boolean showStoryButton) { this.showStoryButton = showStoryButton; }
 
     public List<String> getGallery() { return gallery; }
     public void setGallery(List<String> gallery) { this.gallery = gallery; }

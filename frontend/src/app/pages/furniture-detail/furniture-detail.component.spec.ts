@@ -26,6 +26,7 @@ describe('FurnitureDetailComponent', () => {
     designer: 'Lumen',
     featured: true,
     showStoryLink: true,
+    showStoryButton: true,
     slides: [],
   };
 

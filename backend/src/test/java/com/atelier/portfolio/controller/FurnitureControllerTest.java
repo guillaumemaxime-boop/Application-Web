@@ -46,6 +46,7 @@ class FurnitureControllerTest {
                 "Milo GUILLAUME Design",
                 true,
                 true,
+                true,
                 List.of()
         );
 

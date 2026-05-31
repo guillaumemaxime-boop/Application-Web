@@ -15,5 +15,6 @@ export interface Furniture {
   designer: string;
   featured: boolean;
   showStoryLink: boolean;
+  showStoryButton: boolean;
   slides: Slide[];
 }

@@ -50,6 +50,7 @@ describe('PortfolioService', () => {
         designer: 'Milo GUILLAUME Design',
         featured: true,
         showStoryLink: true,
+        showStoryButton: true,
         slides: [],
       },
     ];
@@ -166,6 +167,7 @@ describe('PortfolioService', () => {
         tags: ['Mobilier', 'Sculpture'],
         featured: true,
         showStoryLink: true,
+        showStoryButton: true,
         slides: [],
       },
     ];

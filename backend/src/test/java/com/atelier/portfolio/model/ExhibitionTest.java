@@ -29,6 +29,7 @@ class ExhibitionTest {
                 List.of("Mobilier", "Sculpture"),
                 true,
                 true,
+                true,
                 List.of()
         );
 
@@ -71,6 +72,7 @@ class ExhibitionTest {
                 List.of(),
                 false,
                 true,
+                true,
                 List.of()
         );
 
@@ -107,6 +109,7 @@ class ExhibitionTest {
                 List.of(),
                 false,
                 true,
+                true,
                 List.of()
         );
 
@@ -138,6 +141,7 @@ class ExhibitionTest {
                 List.of(),
                 false,
                 true,
+                true,
                 List.of()
         );
         assertNotNull(exhibition);
@@ -165,6 +169,7 @@ class ExhibitionTest {
                 List.of("Tag1"),
                 true,
                 true,
+                true,
                 List.of()
         );
 
@@ -183,6 +188,7 @@ class ExhibitionTest {
                 "Short description",
                 "Full description",
                 List.of("Tag1"),
+                true,
                 true,
                 true,
                 List.of()
@@ -211,6 +217,7 @@ class ExhibitionTest {
                 "Full description",
                 List.of(),
                 false,
+                true,
                 true,
                 List.of()
         );
@@ -245,6 +252,7 @@ class ExhibitionTest {
                 List.of(),
                 false,
                 true,
+                true,
                 List.of()
         );
 
@@ -264,6 +272,7 @@ class ExhibitionTest {
                 "Full description",
                 List.of(),
                 false,
+                true,
                 true,
                 List.of()
         );
@@ -291,6 +300,7 @@ class ExhibitionTest {
                 "Full description",
                 List.of(),
                 false,
+                true,
                 true,
                 List.of()
         );
@@ -321,6 +331,7 @@ class ExhibitionTest {
                 "Full description",
                 List.of(),
                 false,
+                true,
                 true,
                 List.of()
         );

@@ -26,6 +26,7 @@ describe('ExhibitionDetailComponent', () => {
     tags: ['Mobilier'],
     featured: true,
     showStoryLink: true,
+    showStoryButton: true,
     slides: [],
   };
 

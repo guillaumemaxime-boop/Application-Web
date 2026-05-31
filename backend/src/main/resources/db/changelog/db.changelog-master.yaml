@@ -56,3 +56,6 @@ databaseChangeLog:
   - include:
       file: changes/019-add-show-story-link.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/020-add-show-story-button.yaml
+      relativeToChangelogFile: true

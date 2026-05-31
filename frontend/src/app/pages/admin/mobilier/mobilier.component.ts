@@ -119,6 +119,11 @@ import { ToastService } from '../shared/toast.service';
           <span>Afficher le lien en fin de story</span>
         </label>
 
+        <label class="checkbox">
+          <input type="checkbox" formControlName="showStoryButton" />
+          <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
+        </label>
+
         @if (editingFurnitureId(); as ownerId) {
           <app-slides-editor kind="furniture" [ownerId]="ownerId" [ownerSlug]="editingFurnitureSlug()" />
         } @else {
@@ -260,6 +265,7 @@ export class MobilierComponent {
     shortDescription: [''],
     description: [''],
     showStoryLink: [true],
+    showStoryButton: [true],
   });
 
   constructor() {
@@ -287,6 +293,7 @@ export class MobilierComponent {
       dimW: null, dimD: null, dimH: null, dimNotes: '',
       shortDescription: '', description: '',
       showStoryLink: true,
+      showStoryButton: true,
     });
     this.furnitureGallery.set([]);
   }
@@ -301,6 +308,7 @@ export class MobilierComponent {
       dimW: dims.w, dimD: dims.d, dimH: dims.h, dimNotes: dims.notes,
       shortDescription: item.shortDescription ?? '', description: item.description ?? '',
       showStoryLink: item.showStoryLink ?? true,
+      showStoryButton: item.showStoryButton ?? true,
     });
     this.furnitureGallery.set([...(item.gallery ?? [])]);
   }
@@ -358,6 +366,7 @@ export class MobilierComponent {
       description: v.description ?? '',
       featured: existing?.featured ?? false,
       showStoryLink: v.showStoryLink ?? true,
+      showStoryButton: v.showStoryButton ?? true,
     };
     this.saving.set(true);
     const op$ = slug
