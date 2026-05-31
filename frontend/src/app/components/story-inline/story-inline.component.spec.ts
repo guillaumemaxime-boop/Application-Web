@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { StoryInlineComponent } from './story-inline.component';
 import { Slide } from '../../models/slide.model';
+import { DisplaySlide } from '../../models/display-slide.model';
 
 describe('StoryInlineComponent', () => {
-  function createWithSlides(slides: Slide[]) {
+  function createWithSlides(slides: DisplaySlide[]) {
     TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
     const fixture = TestBed.createComponent(StoryInlineComponent);
     fixture.componentRef.setInput('slides', slides);
@@ -84,5 +85,23 @@ describe('StoryInlineComponent', () => {
     expect(blocks[0].classList.contains('image')).toBeTrue();
     expect(blocks[1].classList.contains('quote')).toBeTrue();
     expect(blocks[2].classList.contains('spec')).toBeTrue();
+  });
+
+  it('rend un iframe YouTube pour un slide video YouTube', () => {
+    const fixture = createWithSlides([
+      { id: 'v1', position: 1, type: 'video', src: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', caption: null },
+    ]);
+    const iframe = fixture.nativeElement.querySelector('iframe');
+    expect(iframe).not.toBeNull();
+    expect(iframe.src).toContain('youtube.com/embed/dQw4w9WgXcQ');
+  });
+
+  it('rend un iframe Vimeo pour un slide video Vimeo', () => {
+    const fixture = createWithSlides([
+      { id: 'v1', position: 1, type: 'video', src: 'https://vimeo.com/123456789', caption: null },
+    ]);
+    const iframe = fixture.nativeElement.querySelector('iframe');
+    expect(iframe).not.toBeNull();
+    expect(iframe.src).toContain('player.vimeo.com/video/123456789');
   });
 });

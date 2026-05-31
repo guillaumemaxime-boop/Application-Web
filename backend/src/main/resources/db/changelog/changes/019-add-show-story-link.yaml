@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 019-add-show-story-link
+      author: milo-guillaume
+      comment: >
+        Ajoute la colonne show_story_link (default TRUE) sur furniture et
+        exhibition pour controler l'affichage du lien implicite "Voir l'exposition"
+        / "Decouvrir la piece" en fin de story. Valeur par defaut TRUE :
+        compatibilite ascendante.
+      changes:
+        - sql:
+            sql: ALTER TABLE furniture ADD COLUMN show_story_link BOOLEAN NOT NULL DEFAULT TRUE;
+        - sql:
+            sql: ALTER TABLE exhibition ADD COLUMN show_story_link BOOLEAN NOT NULL DEFAULT TRUE;

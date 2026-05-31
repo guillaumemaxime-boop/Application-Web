@@ -8,6 +8,7 @@ import { SiteContent } from '../../models/site-content.model';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
+import { enrichSlides } from '../../utils/display-slides';
 
 @Component({
   selector: 'app-home',
@@ -170,7 +171,12 @@ export class HomeComponent implements OnInit {
       const queue: StoryItem[] = furnitureList.map(f => ({
         title: f.title,
         subtitle: `${f.category} · ${f.year}`,
-        slides: f.slides,
+        slides: enrichSlides({
+          slug: f.slug,
+          coverImage: f.coverImage,
+          slides: f.slides ?? [],
+          showStoryLink: f.showStoryLink,
+        }, 'furniture'),
         kind: 'furniture',
         slug: f.slug,
       }));
@@ -183,7 +189,12 @@ export class HomeComponent implements OnInit {
       this.viewerQueue.set([{
         title: e.title,
         subtitle: `${e.venue} · ${exh.period}`,
-        slides: e.slides,
+        slides: enrichSlides({
+          slug: e.slug,
+          coverImage: e.coverImage,
+          slides: e.slides ?? [],
+          showStoryLink: e.showStoryLink,
+        }, 'exhibition'),
         kind: 'exhibition',
         slug: e.slug,
       }]);

@@ -5,13 +5,16 @@ import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Exhibition } from '../../models/exhibition.model';
 import { SiteContent } from '../../models/site-content.model';
+import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
+import { enrichSlides } from '../../utils/display-slides';
+import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 
 @Component({
   selector: 'app-exhibition-detail',
   standalone: true,
-  imports: [NgStyle, RouterLink],
+  imports: [NgStyle, RouterLink, StoryViewerComponent],
   template: `
     @if (loading()) {
       <div class="container section"><p class="status">Chargement…</p></div>
@@ -57,7 +60,19 @@ import { roleStyle } from '../../utils/title-style';
             </div>
           </div>
         </section>
+
+        @if (hasSlides() && e.showStoryButton) {
+          <div class="container narrow viewer-link-wrap">
+            <button type="button" class="viewer-link" (click)="openViewer()">
+              Voir la story →
+            </button>
+          </div>
+        }
       </article>
+
+      @if (viewerQueue().length > 0) {
+        <app-story-viewer [queue]="viewerQueue()" (closed)="closeViewer()"></app-story-viewer>
+      }
     }
   `,
   styles: [`
@@ -157,6 +172,27 @@ import { roleStyle } from '../../utils/title-style';
 
     .status { color: var(--color-mute); }
 
+    .viewer-link-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 0 0 96px;
+    }
+    .viewer-link {
+      background: none;
+      border: 1px solid var(--color-ink);
+      color: var(--color-ink);
+      padding: 12px 28px;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+    }
+    .viewer-link:hover {
+      background: var(--color-ink);
+      color: var(--color-bg);
+    }
+
     @media (max-width: 720px) {
       .gallery .g-grid { grid-template-columns: 1fr; }
       figure.wide { aspect-ratio: 4 / 3; }
@@ -172,9 +208,27 @@ export class ExhibitionDetailComponent {
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
   protected readonly content = signal<SiteContent>({});
+  protected readonly viewerQueue = signal<StoryItem[]>([]);
 
   protected readonly titleStyle   = computed(() => roleStyle(this.content(), 'title'));
   protected readonly eyebrowStyle = computed(() => roleStyle(this.content(), 'eyebrow'));
+
+  protected readonly hasSlides = computed(() => {
+    const e = this.item();
+    if (!e) return false;
+    return !!e.coverImage || (e.slides?.length ?? 0) > 0;
+  });
+
+  protected readonly displaySlides = computed<DisplaySlide[]>(() => {
+    const e = this.item();
+    if (!e) return [];
+    return enrichSlides({
+      slug: e.slug,
+      coverImage: e.coverImage,
+      slides: e.slides ?? [],
+      showStoryLink: e.showStoryLink,
+    }, 'exhibition');
+  });
 
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
@@ -198,6 +252,24 @@ export class ExhibitionDetailComponent {
         this.loadingSvc.stop('nav');
       },
     });
+  }
+
+  protected openViewer() {
+    const e = this.item();
+    if (!e) return;
+    const slides = this.displaySlides();
+    if (slides.length === 0) return;
+    this.viewerQueue.set([{
+      title: e.title,
+      subtitle: `${e.venue} · ${this.formatRange(e.startDate, e.endDate)}`,
+      slides,
+      kind: 'exhibition',
+      slug: e.slug,
+    }]);
+  }
+
+  protected closeViewer() {
+    this.viewerQueue.set([]);
   }
 
   protected formatRange(start: string, end: string): string {

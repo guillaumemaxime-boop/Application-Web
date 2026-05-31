@@ -14,5 +14,7 @@ export interface Furniture {
   dimensions: string[];
   designer: string;
   featured: boolean;
+  showStoryLink: boolean;
+  showStoryButton: boolean;
   slides: Slide[];
 }

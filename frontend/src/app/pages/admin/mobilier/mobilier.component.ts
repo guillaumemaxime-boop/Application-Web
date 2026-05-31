@@ -114,6 +114,16 @@ import { ToastService } from '../shared/toast.service';
           <textarea rows="5" formControlName="description"></textarea>
         </label>
 
+        <label class="checkbox">
+          <input type="checkbox" formControlName="showStoryLink" />
+          <span>Afficher le lien en fin de story</span>
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" formControlName="showStoryButton" />
+          <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
+        </label>
+
         @if (editingFurnitureId(); as ownerId) {
           <app-slides-editor kind="furniture" [ownerId]="ownerId" [ownerSlug]="editingFurnitureSlug()" />
         } @else {
@@ -204,6 +214,8 @@ import { ToastService } from '../shared/toast.service';
     .btn-link { background: none; border: 0; color: var(--color-accent); font-size: 0.875rem; cursor: pointer; padding: 0; text-decoration: underline; }
     .status { color: var(--color-mute); padding: 16px 20px; }
     .slides-hint { margin-top: 24px; padding: 12px 16px; background: var(--color-bg-alt); border-left: 3px solid var(--color-mute); font-size: 0.85rem; color: var(--color-ink-soft); font-style: italic; }
+    .form label.checkbox { flex-direction: row; align-items: center; gap: 10px; }
+    .form label.checkbox > span { text-transform: none; letter-spacing: normal; font-size: 0.9rem; color: var(--color-ink); }
 
     .categories-section { margin-top: 64px; }
     .categories-section h2 { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; margin: 0 0 8px; }
@@ -252,6 +264,8 @@ export class MobilierComponent {
     dimNotes: [''],
     shortDescription: [''],
     description: [''],
+    showStoryLink: [true],
+    showStoryButton: [true],
   });
 
   constructor() {
@@ -278,6 +292,8 @@ export class MobilierComponent {
       material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
       dimW: null, dimD: null, dimH: null, dimNotes: '',
       shortDescription: '', description: '',
+      showStoryLink: true,
+      showStoryButton: true,
     });
     this.furnitureGallery.set([]);
   }
@@ -291,6 +307,8 @@ export class MobilierComponent {
       material: item.material ?? '', designer: item.designer ?? '', coverImage: item.coverImage ?? '',
       dimW: dims.w, dimD: dims.d, dimH: dims.h, dimNotes: dims.notes,
       shortDescription: item.shortDescription ?? '', description: item.description ?? '',
+      showStoryLink: item.showStoryLink ?? true,
+      showStoryButton: item.showStoryButton ?? true,
     });
     this.furnitureGallery.set([...(item.gallery ?? [])]);
   }
@@ -347,6 +365,8 @@ export class MobilierComponent {
       shortDescription: v.shortDescription ?? '',
       description: v.description ?? '',
       featured: existing?.featured ?? false,
+      showStoryLink: v.showStoryLink ?? true,
+      showStoryButton: v.showStoryButton ?? true,
     };
     this.saving.set(true);
     const op$ = slug

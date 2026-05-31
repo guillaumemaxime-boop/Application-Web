@@ -5,8 +5,10 @@ import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Furniture } from '../../models/furniture.model';
 import { SiteContent } from '../../models/site-content.model';
+import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
+import { enrichSlides } from '../../utils/display-slides';
 import { StoryInlineComponent } from '../../components/story-inline/story-inline.component';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
@@ -57,13 +59,15 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
         </section>
 
         @if (hasSlides()) {
-          <app-story-inline [slides]="f.slides"></app-story-inline>
+          <app-story-inline [slides]="displaySlides()"></app-story-inline>
 
-          <div class="container narrow viewer-link-wrap">
-            <button type="button" class="viewer-link" (click)="openViewer()">
-              Voir en plein écran →
-            </button>
-          </div>
+          @if (f.showStoryButton) {
+            <div class="container narrow viewer-link-wrap">
+              <button type="button" class="viewer-link" (click)="openViewer()">
+                Voir en plein écran →
+              </button>
+            </div>
+          }
         }
 
         @if (f.gallery.length > 0) {
@@ -259,7 +263,22 @@ export class FurnitureDetailComponent {
   protected readonly contactOpen = signal(false);
   protected readonly content = signal<SiteContent>({});
 
-  protected readonly hasSlides = computed(() => (this.item()?.slides?.length ?? 0) > 0);
+  protected readonly hasSlides = computed(() => {
+    const f = this.item();
+    if (!f) return false;
+    return !!f.coverImage || (f.slides?.length ?? 0) > 0;
+  });
+
+  protected readonly displaySlides = computed<DisplaySlide[]>(() => {
+    const f = this.item();
+    if (!f) return [];
+    return enrichSlides({
+      slug: f.slug,
+      coverImage: f.coverImage,
+      slides: f.slides ?? [],
+      showStoryLink: f.showStoryLink,
+    }, 'furniture');
+  });
 
   protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));
   protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
@@ -291,11 +310,13 @@ export class FurnitureDetailComponent {
 
   protected openViewer() {
     const f = this.item();
-    if (!f || f.slides.length === 0) return;
+    if (!f) return;
+    const slides = this.displaySlides();
+    if (slides.length === 0) return;
     this.viewerQueue.set([{
       title: f.title,
       subtitle: `${f.category} · ${f.year}`,
-      slides: f.slides,
+      slides,
       kind: 'furniture',
       slug: f.slug,
     }]);

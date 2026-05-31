@@ -1,12 +1,14 @@
 import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { Slide } from '../../models/slide.model';
+import { DisplaySlide } from '../../models/display-slide.model';
+import { parseVideoUrl } from '../../utils/video-url';
 
 export interface StoryItem {
   title: string;
   subtitle: string;
-  slides: Slide[];
+  slides: DisplaySlide[];
   kind?: 'furniture' | 'exhibition';
   slug?: string;
 }
@@ -49,6 +51,19 @@ const SLIDE_DURATION_MS = 5000;
                 <div class="caption">{{ $any(currentSlide()).caption }}</div>
               }
             }
+            @case ('video') {
+              @if (videoEmbedUrl($any(currentSlide()).src); as url) {
+                <iframe
+                  [src]="url"
+                  title="Vidéo"
+                  allow="autoplay; fullscreen; encrypted-media"
+                  allowfullscreen
+                  style="width:100%;height:100%;border:0;display:block"></iframe>
+              }
+              @if ($any(currentSlide()).caption) {
+                <div class="caption">{{ $any(currentSlide()).caption }}</div>
+              }
+            }
             @case ('spec') {
               <div class="slide-spec">
                 <span class="eyebrow">Caractéristiques</span>
@@ -83,10 +98,17 @@ const SLIDE_DURATION_MS = 5000;
           }
         </div>
 
-        <div class="tap-zones">
-          <div class="zone left" (click)="prev()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></div>
-          <div class="zone right" (click)="next()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></div>
-        </div>
+        @if (!isVideoSlide()) {
+          <div class="tap-zones">
+            <div class="zone left" (click)="prev()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></div>
+            <div class="zone right" (click)="next()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></div>
+          </div>
+        } @else {
+          <div class="video-nav">
+            <button type="button" class="nav prev" (click)="prev()" aria-label="Slide précédent">‹</button>
+            <button type="button" class="nav next" (click)="next()" aria-label="Slide suivant">›</button>
+          </div>
+        }
       </div>
     </div>
   `,
@@ -123,6 +145,9 @@ const SLIDE_DURATION_MS = 5000;
     .tap-zones { position: absolute; inset: 0; display: flex; z-index: 2; }
     .zone { flex: 1; cursor: pointer; }
     .zone.left { flex: 0 0 33%; }
+    .video-nav { position: absolute; left: 0; right: 0; bottom: 16px; display: flex; justify-content: space-between; padding: 0 16px; z-index: 4; pointer-events: none; }
+    .video-nav .nav { pointer-events: auto; background: rgba(0,0,0,0.55); color: #fff; border: 1px solid rgba(255,255,255,0.25); width: 36px; height: 36px; border-radius: 50%; font-size: 1.4rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .video-nav .nav:hover { background: rgba(0,0,0,0.75); }
   `]
 })
 export class StoryViewerComponent implements OnInit, OnDestroy {
@@ -130,6 +155,7 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
   @Output() closed = new EventEmitter<void>();
 
   private router = inject(Router);
+  private readonly sanitizer = inject(DomSanitizer);
 
   protected itemIndex = signal(0);
   protected slideIndex = signal(0);
@@ -147,8 +173,10 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
 
   protected isMediaSlide = computed(() => {
     const t = this.currentSlide()?.type;
-    return t === 'cover' || t === 'image';
+    return t === 'cover' || t === 'image' || t === 'video';
   });
+
+  protected isVideoSlide = computed(() => this.currentSlide()?.type === 'video');
 
   protected bodyClass = computed(() => this.isMediaSlide() ? '' : 'cream');
 
@@ -162,6 +190,15 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
     }
     return null;
   });
+
+  protected videoEmbedUrl(src: string): SafeResourceUrl | null {
+    const parsed = parseVideoUrl(src);
+    if (!parsed) return null;
+    const url = parsed.platform === 'youtube'
+      ? `https://www.youtube.com/embed/${parsed.id}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`
+      : `https://player.vimeo.com/video/${parsed.id}?autoplay=1&muted=1&playsinline=1`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
 
   ngOnInit() { this.startTimer(); }
   ngOnDestroy() { this.stopTimer(); }
@@ -230,6 +267,11 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
   }
 
   private startTimer() {
+    if (this.isVideoSlide()) {
+      this.running.set(false);
+      this.startWidth.set('0%');
+      return;
+    }
     this.running.set(true);
     this.startedAt = Date.now();
     this.pausedAt = 0;

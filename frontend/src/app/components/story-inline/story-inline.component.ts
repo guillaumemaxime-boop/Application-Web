@@ -1,8 +1,11 @@
-import { Component, Input, computed, signal } from '@angular/core';
+import { Component, Input, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Slide, ImageSlide, SpecSlide, QuoteSlide } from '../../models/slide.model';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ImageSlide, VideoSlide, SpecSlide, QuoteSlide } from '../../models/slide.model';
+import { DisplaySlide } from '../../models/display-slide.model';
+import { parseVideoUrl } from '../../utils/video-url';
 
-type InlineSlide = ImageSlide | SpecSlide | QuoteSlide;
+type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
 
 @Component({
   selector: 'app-story-inline',
@@ -20,6 +23,22 @@ type InlineSlide = ImageSlide | SpecSlide | QuoteSlide;
             @case ('image') {
               <figure class="block image">
                 <img [src]="s.src" [alt]="s.caption ?? ''" loading="lazy" />
+                @if (s.caption) {
+                  <figcaption class="container narrow">{{ s.caption }}</figcaption>
+                }
+              </figure>
+            }
+            @case ('video') {
+              <figure class="block video">
+                @if (videoEmbedUrl(s.src); as url) {
+                  <div class="video-frame">
+                    <iframe
+                      [src]="url"
+                      title="Vidéo"
+                      allow="autoplay; fullscreen; encrypted-media"
+                      allowfullscreen></iframe>
+                  </div>
+                }
                 @if (s.caption) {
                   <figcaption class="container narrow">{{ s.caption }}</figcaption>
                 }
@@ -68,12 +87,25 @@ type InlineSlide = ImageSlide | SpecSlide | QuoteSlide;
       max-height: 88vh;
       object-fit: cover;
     }
-    .image figcaption {
+    .image figcaption,
+    .video figcaption {
       margin-top: 18px;
       font-family: var(--serif);
       font-size: 1.15rem;
       line-height: 1.5;
       color: var(--color-ink);
+    }
+    .video-frame {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+    }
+    .video-frame iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
     }
 
     .spec dl {
@@ -130,16 +162,27 @@ type InlineSlide = ImageSlide | SpecSlide | QuoteSlide;
   `]
 })
 export class StoryInlineComponent {
-  private readonly _slides = signal<Slide[]>([]);
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly _slides = signal<DisplaySlide[]>([]);
 
   @Input({ required: true })
-  set slides(value: Slide[]) {
+  set slides(value: DisplaySlide[]) {
     this._slides.set(value ?? []);
   }
 
   protected readonly sections = computed<InlineSlide[]>(() =>
     this._slides().filter(
-      (s): s is InlineSlide => s.type === 'image' || s.type === 'spec' || s.type === 'quote'
+      (s): s is InlineSlide =>
+        s.type === 'image' || s.type === 'video' || s.type === 'spec' || s.type === 'quote'
     )
   );
+
+  protected videoEmbedUrl(src: string): SafeResourceUrl | null {
+    const parsed = parseVideoUrl(src);
+    if (!parsed) return null;
+    const url = parsed.platform === 'youtube'
+      ? `https://www.youtube.com/embed/${parsed.id}`
+      : `https://player.vimeo.com/video/${parsed.id}`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
 }

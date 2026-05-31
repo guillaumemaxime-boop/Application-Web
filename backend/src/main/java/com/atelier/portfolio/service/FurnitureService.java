@@ -51,6 +51,8 @@ public class FurnitureService {
                     base.id(), base.title(), base.slug(), base.category(), base.material(),
                     base.year(), base.coverImage(), base.gallery(), base.shortDescription(),
                     base.description(), base.dimensions(), base.designer(), base.featured(),
+                    base.showStoryLink(),
+                    base.showStoryButton(),
                     storyService.findByOwner("furniture", entity.getId())
             );
         });
@@ -107,6 +109,8 @@ public class FurnitureService {
         if (input.description() != null) entity.setDescription(input.description());
         if (input.designer() != null) entity.setDesigner(input.designer());
         entity.setFeatured(input.featured());
+        entity.setShowStoryLink(input.showStoryLink());
+        entity.setShowStoryButton(input.showStoryButton());
         if (input.gallery() != null) {
             entity.getGallery().clear();
             entity.getGallery().addAll(new ArrayList<>(input.gallery()));
@@ -142,6 +146,8 @@ public class FurnitureService {
                 List.copyOf(entity.getDimensions()),
                 entity.getDesigner(),
                 entity.isFeatured(),
+                entity.isShowStoryLink(),
+                entity.isShowStoryButton(),
                 List.of()
         );
     }

@@ -32,7 +32,7 @@ describe('HomeComponent', () => {
     material: 'Chêne', year: 2024, coverImage: 'f.jpg', gallery: [],
     shortDescription: '', description: '', dimensions: [], designer: '',
     featured: true,
-    slides: [{ type: 'cover', id: 's1', position: 0, src: 'cover.jpg' }],
+    showStoryLink: true, showStoryButton: true, slides: [{ type: 'cover', id: 's1', position: 0, src: 'cover.jpg' }] as any,
   };
 
   const mockExhibition: Exhibition = {
@@ -42,7 +42,7 @@ describe('HomeComponent', () => {
     coverImage: 'e.jpg', gallery: [], curator: '',
     shortDescription: '', description: '', tags: [],
     featured: true,
-    slides: [{ type: 'cover', id: 's2', position: 0, src: 'cover2.jpg' }],
+    showStoryLink: true, showStoryButton: true, slides: [{ type: 'cover', id: 's2', position: 0, src: 'cover2.jpg' }] as any,
   };
 
   beforeEach(async () => {

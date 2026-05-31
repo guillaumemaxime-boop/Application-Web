@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
 import { SlidesEditorComponent } from './slides-editor.component';
 import { Slide } from '../../../models/slide.model';
 
@@ -34,30 +35,30 @@ describe('SlidesEditorComponent', () => {
 
   it('loads slides on init', () => {
     build();
-    flushSlides([{ type: 'cover', id: 's1', position: 0, src: 'x.jpg' } as Slide]);
+    flushSlides([{ type: 'image', id: 's1', position: 0, src: 'x.jpg', caption: null } as Slide]);
     expect((component as any).slides().length).toBe(1);
   });
 
   it('add() can append each supported slide type', () => {
     build();
     flushSlides([]);
-    for (const t of ['cover', 'image', 'spec', 'quote', 'link'] as const) {
+    for (const t of ['image', 'video', 'spec', 'quote'] as const) {
       (component as any).add(t);
     }
     const types = (component as any).slides().map((s: Slide) => s.type);
-    expect(types).toEqual(['cover', 'image', 'spec', 'quote', 'link']);
+    expect(types).toEqual(['image', 'video', 'spec', 'quote']);
   });
 
   it('remove() drops the slide at the given index', () => {
     build();
     flushSlides([
-      { type: 'cover', id: 'a', position: 0, src: 'a.jpg' } as Slide,
+      { type: 'image', id: 'a', position: 0, src: 'a.jpg', caption: null } as Slide,
       { type: 'image', id: 'b', position: 1, src: 'b.jpg', caption: null } as Slide,
     ]);
     (component as any).remove(0);
     const slides = (component as any).slides();
     expect(slides.length).toBe(1);
-    expect(slides[0].type).toBe('image');
+    expect(slides[0].id).toBe('b');
   });
 
   it('patch() updates a slide in place', () => {
@@ -98,9 +99,9 @@ describe('SlidesEditorComponent', () => {
 
   it('addSpec() is a no-op on non-spec slides', () => {
     build();
-    flushSlides([{ type: 'cover', id: 'a', position: 0, src: 'x.jpg' } as Slide]);
+    flushSlides([{ type: 'image', id: 'a', position: 0, src: 'x.jpg', caption: null } as Slide]);
     (component as any).addSpec(0);
-    expect((component as any).slides()[0].type).toBe('cover');
+    expect((component as any).slides()[0].type).toBe('image');
   });
 
   it('removeSpec() drops one entry from a spec slide', () => {
@@ -121,10 +122,10 @@ describe('SlidesEditorComponent', () => {
 
   it('canSave() returns false when slides are invalid (each type)', () => {
     build();
-    flushSlides([{ type: 'cover', id: 'a', position: 0, src: '' } as Slide]);
+    flushSlides([{ type: 'image', id: 'a', position: 0, src: '', caption: null } as Slide]);
     expect((component as any).canSave()).toBeFalse();
 
-    (component as any).slides.set([{ type: 'image', id: 'b', position: 0, src: '', caption: null } as Slide]);
+    (component as any).slides.set([{ type: 'video', id: 'v', position: 0, src: '', caption: null } as Slide]);
     expect((component as any).canSave()).toBeFalse();
 
     (component as any).slides.set([{ type: 'quote', id: 'c', position: 0, body: '', cite: null } as Slide]);
@@ -137,32 +138,17 @@ describe('SlidesEditorComponent', () => {
   it('canSave() returns true when slides are valid', () => {
     build();
     flushSlides([
-      { type: 'cover', id: 'a', position: 0, src: 'a.jpg' } as Slide,
-      { type: 'link', id: 'b', position: 1, label: null, description: null, href: null } as Slide,
+      { type: 'image', id: 'a', position: 0, src: 'a.jpg', caption: null } as Slide,
     ]);
     expect((component as any).canSave()).toBeTrue();
-  });
-
-  it('warnings flag a missing cover slide at start', () => {
-    build();
-    flushSlides([{ type: 'image', id: 'a', position: 0, src: 'x.jpg', caption: null } as Slide]);
-    const warnings = (component as any).warnings();
-    expect(warnings.some((w: string) => w.includes('cover'))).toBeTrue();
-  });
-
-  it('warnings flag a missing link slide at end', () => {
-    build();
-    flushSlides([{ type: 'cover', id: 'a', position: 0, src: 'x.jpg' } as Slide]);
-    const warnings = (component as any).warnings();
-    expect(warnings.some((w: string) => w.includes('lien'))).toBeTrue();
   });
 
   it('onReorder reorders slides according to the given indices', () => {
     build();
     flushSlides([
-      { type: 'cover', id: 'a', position: 0, src: 'a.jpg' } as Slide,
+      { type: 'image', id: 'a', position: 0, src: 'a.jpg', caption: null } as Slide,
       { type: 'image', id: 'b', position: 1, src: 'b.jpg', caption: null } as Slide,
-      { type: 'link', id: 'c', position: 2, label: null, description: null, href: null } as Slide,
+      { type: 'image', id: 'c', position: 2, src: 'c.jpg', caption: null } as Slide,
     ]);
     (component as any).onReorder([2, 0, 1]);
     const slides = (component as any).slides();
@@ -171,35 +157,32 @@ describe('SlidesEditorComponent', () => {
     expect(slides[2].id).toBe('b');
   });
 
-  it('reload() enriches a link slide with a furniture fallback href when ownerSlug is set', () => {
-    build('furniture', 'f-001', 'commode-noyer');
-    httpMock.expectOne('/api/admin/slides/furniture/f-001').flush([
-      { type: 'link', id: 'l', position: 0, label: null, description: null, href: null } as Slide,
-    ]);
-    const slide = (component as any).slides()[0] as Extract<Slide, { type: 'link' }>;
-    expect(slide.href).toBe('/mobilier/commode-noyer');
-  });
-
-  it('reload() derives an /expositions/<slug> href when kind=exhibition', () => {
-    build('exhibition', 'e-001', 'reflets');
-    httpMock.expectOne('/api/admin/slides/exhibition/e-001').flush([
-      { type: 'link', id: 'l', position: 0, label: null, description: null, href: null } as Slide,
-    ]);
-    const slide = (component as any).slides()[0] as Extract<Slide, { type: 'link' }>;
-    expect(slide.href).toBe('/expositions/reflets');
-  });
-
-  it('save() PUTs the slides and replaces local state with the server response', () => {
+  it('reload() filtre les rows legacy cover/link', () => {
     build();
-    flushSlides([{ type: 'cover', id: 'a', position: 0, src: 'x.jpg' } as Slide]);
+    httpMock.expectOne('/api/admin/slides/furniture/f-001').flush([
+      { type: 'cover', id: 'c', position: 0, src: 'x.jpg' },
+      { type: 'image', id: 'i', position: 1, src: 'y.jpg', caption: null },
+      { type: 'link', id: 'l', position: 2, label: null, description: null, href: null },
+    ]);
+    const slides = (component as any).slides();
+    expect(slides.length).toBe(1);
+    expect(slides[0].type).toBe('image');
+  });
+
+  it('save() PUTs the slides et filtre les rows legacy cover/link de la reponse', () => {
+    build();
+    flushSlides([{ type: 'image', id: 'a', position: 0, src: 'x.jpg', caption: null } as Slide]);
     (component as any).save();
     const put = httpMock.expectOne('/api/admin/slides/furniture/f-001');
     expect(put.request.method).toBe('PUT');
     put.flush([
-      { type: 'cover', id: 'a', position: 0, src: 'x.jpg' } as Slide,
-      { type: 'link', id: 'l', position: 1, label: null, description: null, href: null } as Slide,
+      { type: 'cover', id: 'c', position: 0, src: 'x.jpg' },
+      { type: 'image', id: 'a', position: 1, src: 'x.jpg', caption: null },
+      { type: 'link', id: 'l', position: 2, label: null, description: null, href: null },
     ]);
-    expect((component as any).slides().length).toBe(2);
+    const slides = (component as any).slides();
+    expect(slides.length).toBe(1);
+    expect(slides[0].type).toBe('image');
   });
 
   it('reload() is a no-op when ownerId is empty', () => {
@@ -218,5 +201,51 @@ describe('SlidesEditorComponent', () => {
     expect((component as any).open()).toBeFalse();
     (component as any).open.set(true);
     expect((component as any).open()).toBeTrue();
+  });
+
+  it('expose 4 boutons d\'ajout (image/video/spec/quote), plus de cover/link', () => {
+    build();
+    flushSlides([]);
+    (component as any).open.set(true);
+    fixture.detectChanges();
+    const buttons = fixture.debugElement.queryAll(By.css('.actions button'));
+    const labels = buttons.map(b => (b.nativeElement as HTMLElement).textContent?.trim());
+    expect(labels).toContain('+ Image');
+    expect(labels).toContain('+ Vidéo');
+    expect(labels).toContain('+ Caractéristiques');
+    expect(labels).toContain('+ Citation');
+    expect(labels).not.toContain('+ Cover');
+    expect(labels).not.toContain('+ Lien');
+  });
+
+  it('add(\'video\') ajoute un slide video avec src vide et caption null', () => {
+    build();
+    flushSlides([]);
+    (component as any).add('video');
+    expect((component as any).slides().length).toBe(1);
+    expect((component as any).slides()[0]).toEqual(jasmine.objectContaining({ type: 'video', src: '', caption: null }));
+  });
+
+  it('indique la plateforme detectee pour un slide video', () => {
+    build();
+    flushSlides([]);
+    (component as any).add('video');
+    (component as any).patch(0, { src: 'https://www.youtube.com/watch?v=abc12345' });
+    (component as any).open.set(true);
+    fixture.detectChanges();
+    const hint = fixture.debugElement.query(By.css('.video-detect'));
+    expect(hint).toBeTruthy();
+    const text = (hint.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('YouTube');
+    expect(text).toContain('abc12345');
+  });
+
+  it('canSave est faux quand un slide video a src vide', () => {
+    build();
+    flushSlides([]);
+    (component as any).add('video');
+    expect((component as any).canSave()).toBeFalse();
+    (component as any).patch(0, { src: 'https://www.youtube.com/watch?v=abc12345' });
+    expect((component as any).canSave()).toBeTrue();
   });
 });

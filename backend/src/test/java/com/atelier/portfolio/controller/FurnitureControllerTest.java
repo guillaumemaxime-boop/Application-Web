@@ -45,6 +45,8 @@ class FurnitureControllerTest {
                 List.of("Hauteur 92 cm", "Largeur 78 cm"),
                 "Milo GUILLAUME Design",
                 true,
+                true,
+                true,
                 List.of()
         );
 

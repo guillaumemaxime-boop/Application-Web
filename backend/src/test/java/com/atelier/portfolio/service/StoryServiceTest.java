@@ -1,7 +1,6 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.StorySlideEntity;
-import com.atelier.portfolio.entity.StorySlideSpecEntry;
 import com.atelier.portfolio.model.Slide;
 import com.atelier.portfolio.model.SpecEntry;
 import com.atelier.portfolio.repository.StorySlideRepository;
@@ -26,8 +25,9 @@ class StoryServiceTest {
 
     @Test
     void findByOwner_returnsMixedSlideTypes() {
-        StorySlideEntity cover = entity("s1", "furniture", "f-001", 0, "cover");
-        cover.setSrc("cover.jpg");
+        StorySlideEntity video = entity("s1", "furniture", "f-001", 0, "video");
+        video.setSrc("https://www.youtube.com/watch?v=abc123");
+        video.setCaption("Teaser");
 
         StorySlideEntity image = entity("s2", "furniture", "f-001", 1, "image");
         image.setSrc("img.jpg"); image.setCaption("Détail");
@@ -36,25 +36,73 @@ class StoryServiceTest {
         quote.setQuoteBody("Le bois parle"); quote.setQuoteCite("— Maître Asaba");
 
         when(repository.findByOwnerKindAndOwnerIdOrderByPosition("furniture", "f-001"))
-                .thenReturn(List.of(cover, image, quote));
+                .thenReturn(List.of(video, image, quote));
 
         List<Slide> result = service.findByOwner("furniture", "f-001");
 
         assertEquals(3, result.size());
-        assertInstanceOf(Slide.CoverSlide.class, result.get(0));
+        assertInstanceOf(Slide.VideoSlide.class, result.get(0));
         assertInstanceOf(Slide.ImageSlide.class, result.get(1));
         assertInstanceOf(Slide.QuoteSlide.class, result.get(2));
-        assertEquals("cover.jpg", ((Slide.CoverSlide) result.get(0)).src());
+        assertEquals("https://www.youtube.com/watch?v=abc123", ((Slide.VideoSlide) result.get(0)).src());
+        assertEquals("Teaser", ((Slide.VideoSlide) result.get(0)).caption());
         assertEquals("Détail", ((Slide.ImageSlide) result.get(1)).caption());
         assertEquals("Le bois parle", ((Slide.QuoteSlide) result.get(2)).body());
+    }
+
+    @Test
+    void findByOwner_mapsVideoEntityToDto() {
+        StorySlideEntity video = entity("v1", "furniture", "f-001", 0, "video");
+        video.setSrc("https://vimeo.com/12345");
+        video.setCaption("Présentation");
+
+        when(repository.findByOwnerKindAndOwnerIdOrderByPosition("furniture", "f-001"))
+                .thenReturn(List.of(video));
+
+        List<Slide> result = service.findByOwner("furniture", "f-001");
+
+        assertEquals(1, result.size());
+        assertInstanceOf(Slide.VideoSlide.class, result.get(0));
+        Slide.VideoSlide v = (Slide.VideoSlide) result.get(0);
+        assertEquals("v1", v.id());
+        assertEquals(0, v.position());
+        assertEquals("https://vimeo.com/12345", v.src());
+        assertEquals("Présentation", v.caption());
+    }
+
+    @Test
+    void findByOwner_throwsForLegacyCoverType() {
+        StorySlideEntity legacyCover = entity("s1", "furniture", "f-001", 0, "cover");
+        legacyCover.setSrc("old-cover.jpg");
+
+        when(repository.findByOwnerKindAndOwnerIdOrderByPosition("furniture", "f-001"))
+                .thenReturn(List.of(legacyCover));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.findByOwner("furniture", "f-001"));
+        assertTrue(ex.getMessage().contains("cover"));
+    }
+
+    @Test
+    void findByOwner_throwsForLegacyLinkType() {
+        StorySlideEntity legacyLink = entity("s1", "furniture", "f-001", 0, "link");
+        legacyLink.setLinkLabel("Voir");
+        legacyLink.setLinkHref("/x");
+
+        when(repository.findByOwnerKindAndOwnerIdOrderByPosition("furniture", "f-001"))
+                .thenReturn(List.of(legacyLink));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.findByOwner("furniture", "f-001"));
+        assertTrue(ex.getMessage().contains("link"));
     }
 
     @Test
     @SuppressWarnings("unchecked")
     void replaceSlides_deletesOldThenInsertsNewWithRecalculatedPositions() {
         List<Slide> input = List.of(
-                new Slide.CoverSlide(null, 99, "new-cover.jpg"),
-                new Slide.LinkSlide(null, 7, "Voir", "desc", "/x")
+                new Slide.ImageSlide(null, 99, "new-image.jpg", "légende"),
+                new Slide.VideoSlide(null, 7, "https://vimeo.com/123", "demo")
         );
 
         service.replaceSlides("furniture", "f-001", input);
@@ -67,9 +115,29 @@ class StoryServiceTest {
         assertEquals(2, saved.size());
         assertEquals(0, saved.get(0).getPosition());
         assertEquals(1, saved.get(1).getPosition());
-        assertEquals("cover", saved.get(0).getType());
-        assertEquals("link", saved.get(1).getType());
+        assertEquals("image", saved.get(0).getType());
+        assertEquals("video", saved.get(1).getType());
         assertNotNull(saved.get(0).getId());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void replaceSlides_persistsVideoDtoToEntity() {
+        List<Slide> input = List.of(
+                new Slide.VideoSlide(null, 0, "https://vimeo.com/123", "demo")
+        );
+
+        service.replaceSlides("furniture", "f-001", input);
+
+        ArgumentCaptor<List<StorySlideEntity>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+
+        StorySlideEntity saved = captor.getValue().get(0);
+        assertEquals("video", saved.getType());
+        assertEquals("https://vimeo.com/123", saved.getSrc());
+        assertEquals("demo", saved.getCaption());
+        assertEquals(0, saved.getPosition());
+        assertNotNull(saved.getId());
     }
 
     @Test

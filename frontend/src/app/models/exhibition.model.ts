@@ -16,5 +16,7 @@ export interface Exhibition {
   description: string;
   tags: string[];
   featured: boolean;
+  showStoryLink: boolean;
+  showStoryButton: boolean;
   slides: Slide[];
 }

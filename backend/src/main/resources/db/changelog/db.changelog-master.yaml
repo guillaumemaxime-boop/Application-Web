@@ -50,3 +50,12 @@ databaseChangeLog:
   - include:
       file: changes/017-drop-smtp-columns-from-mail-settings.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/018-drop-legacy-cover-link-slides.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/019-add-show-story-link.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/020-add-show-story-button.yaml
+      relativeToChangelogFile: true

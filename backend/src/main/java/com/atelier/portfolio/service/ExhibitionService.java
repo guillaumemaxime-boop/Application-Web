@@ -52,6 +52,8 @@ public class ExhibitionService {
                     base.country(), base.startDate(), base.endDate(), base.coverImage(),
                     base.gallery(), base.curator(), base.shortDescription(), base.description(),
                     base.tags(), base.featured(),
+                    base.showStoryLink(),
+                    base.showStoryButton(),
                     storyService.findByOwner("exhibition", entity.getId())
             );
         });
@@ -107,6 +109,8 @@ public class ExhibitionService {
         if (input.shortDescription() != null) entity.setShortDescription(input.shortDescription());
         if (input.description() != null) entity.setDescription(input.description());
         entity.setFeatured(input.featured());
+        entity.setShowStoryLink(input.showStoryLink());
+        entity.setShowStoryButton(input.showStoryButton());
         if (input.gallery() != null) {
             entity.getGallery().clear();
             entity.getGallery().addAll(new ArrayList<>(input.gallery()));
@@ -144,6 +148,8 @@ public class ExhibitionService {
                 entity.getDescription(),
                 List.copyOf(entity.getTags()),
                 entity.isFeatured(),
+                entity.isShowStoryLink(),
+                entity.isShowStoryButton(),
                 List.of()
         );
     }
