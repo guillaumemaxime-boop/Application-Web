@@ -20,7 +20,12 @@ ENV PORT=80 \
     UMAMI_PORT=3000 \
     UMAMI_WEBSITE_ID='' \
     UMAMI_SHARE_TOKEN='' \
-    NGINX_ENVSUBST_FILTER='^(PORT|BACKEND_HOST|BACKEND_PORT|UMAMI_HOST|UMAMI_PORT|UMAMI_WEBSITE_ID|UMAMI_SHARE_TOKEN)$'
+    # Active le script auto /docker-entrypoint.d/15-local-resolvers.envsh qui
+    # peuple NGINX_LOCAL_RESOLVERS depuis /etc/resolv.conf, puis injecte la
+    # valeur dans le template via envsubst. Necessaire pour que nginx
+    # re-resolve les hosts internes (Railway/K8s) au runtime.
+    NGINX_ENTRYPOINT_LOCAL_RESOLVERS=true \
+    NGINX_ENVSUBST_FILTER='^(PORT|BACKEND_HOST|BACKEND_PORT|UMAMI_HOST|UMAMI_PORT|UMAMI_WEBSITE_ID|UMAMI_SHARE_TOKEN|NGINX_LOCAL_RESOLVERS)$'
 
 COPY nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /workspace/dist/portfolio-frontend/browser /usr/share/nginx/html
