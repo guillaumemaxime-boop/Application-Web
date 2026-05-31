@@ -50,6 +50,9 @@ public class FurnitureEntity {
     @Column(nullable = false)
     private boolean featured;
 
+    @Column(name = "show_story_link", nullable = false)
+    private boolean showStoryLink = true;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "furniture_gallery", joinColumns = @JoinColumn(name = "furniture_id"))
     @OrderColumn(name = "position")
@@ -96,6 +99,9 @@ public class FurnitureEntity {
 
     public boolean isFeatured() { return featured; }
     public void setFeatured(boolean featured) { this.featured = featured; }
+
+    public boolean isShowStoryLink() { return showStoryLink; }
+    public void setShowStoryLink(boolean showStoryLink) { this.showStoryLink = showStoryLink; }
 
     public List<String> getGallery() { return gallery; }
     public void setGallery(List<String> gallery) { this.gallery = gallery; }

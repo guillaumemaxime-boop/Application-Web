@@ -47,6 +47,7 @@ class ExhibitionControllerTest {
                 "Description détaillée",
                 List.of("Mobilier", "Sculpture"),
                 true,
+                true,
                 List.of()
         );
 
@@ -218,6 +219,7 @@ class ExhibitionControllerTest {
                 "L'atelier reconstitué au cœur de la foire",
                 "Description",
                 List.of(),
+                true,
                 true,
                 List.of()
         );

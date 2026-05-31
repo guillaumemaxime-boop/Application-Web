@@ -25,6 +25,7 @@ describe('FurnitureDetailComponent', () => {
     dimensions: ['H 90 cm'],
     designer: 'Lumen',
     featured: true,
+    showStoryLink: true,
     slides: [],
   };
 

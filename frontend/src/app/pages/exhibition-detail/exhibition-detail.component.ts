@@ -8,6 +8,7 @@ import { SiteContent } from '../../models/site-content.model';
 import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
+import { enrichSlides } from '../../utils/display-slides';
 
 @Component({
   selector: 'app-exhibition-detail',
@@ -186,19 +187,12 @@ export class ExhibitionDetailComponent {
   protected readonly displaySlides = computed<DisplaySlide[]>(() => {
     const e = this.item();
     if (!e) return [];
-    const apiSlides = (e.slides ?? [])
-      // Filtre défensif : si l'API renvoie encore des cover/link legacy
-      // (pré-migration 008), on les ignore — on génère cover/link nous-mêmes.
-      .filter(s => (s.type as string) !== 'cover' && (s.type as string) !== 'link');
-    const cover: DisplaySlide = {
-      type: 'cover', id: '_cover', position: 0, src: e.coverImage ?? '',
-    };
-    const link: DisplaySlide = {
-      type: 'link', id: '_link', position: apiSlides.length + 1,
-      label: 'Voir l\'exposition', description: null,
-      href: `/expositions/${e.slug}`,
-    };
-    return [cover, ...apiSlides as DisplaySlide[], link];
+    return enrichSlides({
+      slug: e.slug,
+      coverImage: e.coverImage,
+      slides: e.slides ?? [],
+      showStoryLink: e.showStoryLink,
+    }, 'exhibition');
   });
 
   constructor() {

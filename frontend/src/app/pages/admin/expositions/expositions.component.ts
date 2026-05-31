@@ -98,6 +98,11 @@ interface ExhibitionMetaRow {
         <label><span>Description courte</span><textarea rows="2" formControlName="shortDescription"></textarea></label>
         <label><span>Description longue</span><textarea rows="5" formControlName="description"></textarea></label>
 
+        <label class="checkbox">
+          <input type="checkbox" formControlName="showStoryLink" />
+          <span>Afficher le lien en fin de story</span>
+        </label>
+
         @if (editingExhibitionId(); as ownerId) {
           <app-slides-editor kind="exhibition" [ownerId]="ownerId" [ownerSlug]="editingExhibitionSlug()" />
         } @else {
@@ -163,6 +168,8 @@ interface ExhibitionMetaRow {
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-link { background: transparent; border: 0; color: var(--color-accent); cursor: pointer; font-size: 0.85rem; }
     .slides-hint { padding: 12px 16px; background: var(--color-bg-alt); border-left: 3px solid var(--color-mute); font-size: 0.85rem; color: var(--color-ink-soft); font-style: italic; }
+    .form label.checkbox { flex-direction: row; align-items: center; gap: 10px; }
+    .form label.checkbox > span { text-transform: none; letter-spacing: normal; font-size: 0.9rem; color: var(--color-ink); }
 
     .chips-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border: 1px solid var(--color-line); background: var(--color-bg); }
     .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--color-bg-alt); font-size: 0.8rem; }
@@ -215,6 +222,7 @@ export class ExpositionsComponent {
     coverImage: [''],
     shortDescription: [''],
     description: [''],
+    showStoryLink: [true],
   });
 
   constructor() {
@@ -258,6 +266,7 @@ export class ExpositionsComponent {
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
       shortDescription: '', description: '',
+      showStoryLink: true,
     });
     this.exhibitionGallery.set([]);
     this.exhibitionTags.set([]);
@@ -271,6 +280,7 @@ export class ExpositionsComponent {
       title: item.title, slug: item.slug, venue: item.venue ?? '', city: item.city ?? '', country: item.country ?? '',
       startDate: item.startDate ?? '', endDate: item.endDate ?? '', curator: item.curator ?? '',
       coverImage: item.coverImage ?? '', shortDescription: item.shortDescription ?? '', description: item.description ?? '',
+      showStoryLink: item.showStoryLink ?? true,
     });
     this.exhibitionGallery.set([...(item.gallery ?? [])]);
     this.exhibitionTags.set([...(item.tags ?? [])]);
@@ -314,6 +324,7 @@ export class ExpositionsComponent {
       tags: [...this.exhibitionTags()],
       shortDescription: v.shortDescription ?? '', description: v.description ?? '',
       featured: existing?.featured ?? false,
+      showStoryLink: v.showStoryLink ?? true,
     };
     this.saving.set(true);
     const op$ = slug

@@ -8,6 +8,7 @@ import { SiteContent } from '../../models/site-content.model';
 import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
+import { enrichSlides } from '../../utils/display-slides';
 import { StoryInlineComponent } from '../../components/story-inline/story-inline.component';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
@@ -269,19 +270,12 @@ export class FurnitureDetailComponent {
   protected readonly displaySlides = computed<DisplaySlide[]>(() => {
     const f = this.item();
     if (!f) return [];
-    const apiSlides = (f.slides ?? [])
-      // Filtre défensif : si l'API renvoie encore des cover/link legacy
-      // (pré-migration 008), on les ignore — on génère cover/link nous-mêmes.
-      .filter(s => (s.type as string) !== 'cover' && (s.type as string) !== 'link');
-    const cover: DisplaySlide = {
-      type: 'cover', id: '_cover', position: 0, src: f.coverImage ?? '',
-    };
-    const link: DisplaySlide = {
-      type: 'link', id: '_link', position: apiSlides.length + 1,
-      label: 'Découvrir la pièce', description: null,
-      href: `/mobilier/${f.slug}`,
-    };
-    return [cover, ...apiSlides as DisplaySlide[], link];
+    return enrichSlides({
+      slug: f.slug,
+      coverImage: f.coverImage,
+      slides: f.slides ?? [],
+      showStoryLink: f.showStoryLink,
+    }, 'furniture');
   });
 
   protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));

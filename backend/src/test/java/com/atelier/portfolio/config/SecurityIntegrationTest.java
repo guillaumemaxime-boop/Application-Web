@@ -172,7 +172,7 @@ class SecurityIntegrationTest {
     void testPostFurniture_ValidToken_Returns201() throws Exception {
         String token = getValidToken();
         String payload = "{\"title\":\"Test Securite\",\"slug\":\"test-securite\","
-                + "\"category\":\"Test\",\"year\":2026,\"featured\":false}";
+                + "\"category\":\"Test\",\"year\":2026,\"featured\":false,\"showStoryLink\":true}";
         var request = HttpRequest.newBuilder()
                 .uri(uri("/api/furniture"))
                 .header("Content-Type", "application/json")

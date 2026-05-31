@@ -53,3 +53,6 @@ databaseChangeLog:
   - include:
       file: changes/018-drop-legacy-cover-link-slides.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/019-add-show-story-link.yaml
+      relativeToChangelogFile: true

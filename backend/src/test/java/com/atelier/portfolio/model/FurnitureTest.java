@@ -25,6 +25,7 @@ class FurnitureTest {
                 List.of("Hauteur 92 cm", "Largeur 78 cm"),
                 "Milo GUILLAUME Design",
                 true,
+                true,
                 List.of()
         );
 
@@ -62,6 +63,7 @@ class FurnitureTest {
                 List.of(),
                 "Test Designer",
                 false,
+                true,
                 List.of()
         );
 
@@ -95,6 +97,7 @@ class FurnitureTest {
                 List.of(),
                 "Test Designer",
                 false,
+                true,
                 List.of()
         );
 
@@ -123,6 +126,7 @@ class FurnitureTest {
                 List.of(),
                 "", // Empty designer
                 false,
+                true,
                 List.of()
         );
         assertNotNull(furniture);
@@ -147,6 +151,7 @@ class FurnitureTest {
                 List.of("Dimension 1"),
                 "Test Designer",
                 true,
+                true,
                 List.of()
         );
 
@@ -163,6 +168,7 @@ class FurnitureTest {
                 "Full description",
                 List.of("Dimension 1"),
                 "Test Designer",
+                true,
                 true,
                 List.of()
         );
@@ -188,6 +194,7 @@ class FurnitureTest {
                 List.of(),
                 "Test Designer",
                 false,
+                true,
                 List.of()
         );
 
@@ -218,6 +225,7 @@ class FurnitureTest {
                 List.of(),
                 "Test Designer",
                 false,
+                true,
                 List.of()
         );
 
@@ -235,6 +243,7 @@ class FurnitureTest {
                 List.of(),
                 "Test Designer",
                 false,
+                true,
                 List.of()
         );
 

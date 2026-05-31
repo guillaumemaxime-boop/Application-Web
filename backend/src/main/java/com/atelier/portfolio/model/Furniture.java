@@ -21,6 +21,7 @@ public record Furniture(
         @Size(max = 20) List<String> dimensions,
         @Size(max = 200) String designer,
         boolean featured,
+        boolean showStoryLink,
         List<Slide> slides
 ) {
 }

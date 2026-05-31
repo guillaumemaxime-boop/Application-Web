@@ -49,6 +49,7 @@ describe('PortfolioService', () => {
         dimensions: ['Hauteur 92 cm'],
         designer: 'Milo GUILLAUME Design',
         featured: true,
+        showStoryLink: true,
         slides: [],
       },
     ];
@@ -164,6 +165,7 @@ describe('PortfolioService', () => {
         description: 'Description détaillée',
         tags: ['Mobilier', 'Sculpture'],
         featured: true,
+        showStoryLink: true,
         slides: [],
       },
     ];
