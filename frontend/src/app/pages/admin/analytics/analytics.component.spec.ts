@@ -30,4 +30,14 @@ describe('AnalyticsComponent', () => {
     expect(fixture.debugElement.query(By.css('iframe.umami-frame'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('.umami-fallback'))).toBeFalsy();
   });
+
+  it('construit l\'URL de l\'iframe au format /share/<shareToken> (sans websiteId)', async () => {
+    (window as any).__UMAMI__ = { websiteId: 'wid-123', shareToken: 'tok-xyz' };
+    await TestBed.configureTestingModule({ imports: [AnalyticsComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(AnalyticsComponent);
+    fixture.detectChanges();
+    const iframe = fixture.debugElement.query(By.css('iframe.umami-frame')).nativeElement as HTMLIFrameElement;
+    // Le DomSanitizer expose la valeur via getAttribute('src')
+    expect(iframe.getAttribute('src')).toBe('/share/tok-xyz');
+  });
 });

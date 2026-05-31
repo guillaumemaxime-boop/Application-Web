@@ -52,7 +52,12 @@ export class AnalyticsComponent {
 
   protected umamiIframeUrl(): SafeResourceUrl {
     const env = (window as unknown as { __UMAMI__?: { websiteId?: string; shareToken?: string } }).__UMAMI__;
-    const url = `/umami/share/${env?.shareToken ?? ''}/${env?.websiteId ?? ''}`;
+    // URL Umami v2 : /share/<shareToken> uniquement. Le websiteId est resolu
+    // serveur via le token (JWT). Ajouter un segment supplementaire (ex. le
+    // websiteId) est interprete par SharePage.tsx comme un nom de section, et
+    // declenche un router.replace vers /share/<token>, ce qui sort du proxy
+    // nginx et fait fallback sur la home du SPA.
+    const url = `/share/${env?.shareToken ?? ''}`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 }
