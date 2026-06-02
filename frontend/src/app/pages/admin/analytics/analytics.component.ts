@@ -50,14 +50,22 @@ export class AnalyticsComponent {
     return !!(env && env.websiteId && env.shareToken);
   }
 
+  // Format token attendu : 8..64 caracteres parmi [A-Za-z0-9_-]. On bloque
+  // tout caractere hors de ce charset avant d'appeler bypassSecurityTrustResourceUrl
+  // pour limiter une eventuelle injection via la config window.__UMAMI__.
+  private static readonly SHARE_TOKEN_REGEX = /^[A-Za-z0-9_-]{8,64}$/;
+
   protected umamiIframeUrl(): SafeResourceUrl {
     const env = (window as unknown as { __UMAMI__?: { websiteId?: string; shareToken?: string } }).__UMAMI__;
+    const token = env?.shareToken ?? '';
+    if (!AnalyticsComponent.SHARE_TOKEN_REGEX.test(token)) {
+      return this.sanitizer.bypassSecurityTrustResourceUrl('about:blank');
+    }
     // URL Umami v2 : /share/<shareToken> uniquement. Le websiteId est resolu
     // serveur via le token (JWT). Ajouter un segment supplementaire (ex. le
     // websiteId) est interprete par SharePage.tsx comme un nom de section, et
     // declenche un router.replace vers /share/<token>, ce qui sort du proxy
     // nginx et fait fallback sur la home du SPA.
-    const url = `/share/${env?.shareToken ?? ''}`;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    return this.sanitizer.bypassSecurityTrustResourceUrl(`/share/${token}`);
   }
 }

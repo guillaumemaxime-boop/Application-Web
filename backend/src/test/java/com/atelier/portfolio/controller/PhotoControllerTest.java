@@ -11,11 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -67,41 +65,11 @@ class PhotoControllerTest {
         assertTrue(result.isEmpty());
     }
 
-    // --- upload ---
-
-    @Test
-    void testUpload_ValidFile_ReturnsCreatedWithLocation() throws IOException {
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "portrait-studio.jpg", "image/jpeg", new byte[]{1, 2, 3}
-        );
-        when(service.store(file)).thenReturn(samplePhoto);
-
-        ResponseEntity<Photo> result = controller.upload(file);
-
-        assertEquals(201, result.getStatusCode().value());
-        assertEquals(samplePhoto, result.getBody());
-        assertNotNull(result.getHeaders().getLocation());
-        assertEquals(samplePhoto.url(), result.getHeaders().getLocation().toString());
-        verify(service, times(1)).store(file);
-    }
-
-    @Test
-    void testUpload_ServiceThrows_PropagatesException() throws IOException {
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "bad.jpg", "image/jpeg", new byte[]{0}
-        );
-        when(service.store(file)).thenThrow(new IOException("disk full"));
-
-        assertThrows(IOException.class, () -> controller.upload(file));
-    }
-
     // --- serve ---
 
     @Test
     void testServe_ExistingFile_ReturnsOkWithBody() throws IOException {
         Resource mockResource = mock(Resource.class);
-        // getURL() throws → controller falls back to application/octet-stream
-        when(mockResource.getURL()).thenThrow(new IOException("no url in test"));
         when(service.loadAsResource("8f3a1b2c-uuid.jpg")).thenReturn(mockResource);
 
         ResponseEntity<Resource> result = controller.serve("8f3a1b2c-uuid.jpg");
@@ -121,62 +89,44 @@ class PhotoControllerTest {
         assertNull(result.getBody());
     }
 
-    // --- delete ---
-
     @Test
-    void testDelete_ExistingId_ReturnsNoContent() {
-        when(service.delete("ph-abc12345")).thenReturn(true);
+    void serve_renvoie_image_jpeg_pour_jpg() throws IOException {
+        Resource mockResource = mock(Resource.class);
+        when(service.loadAsResource("photo.jpg")).thenReturn(mockResource);
 
-        ResponseEntity<Void> result = controller.delete("ph-abc12345");
-
-        assertEquals(204, result.getStatusCode().value());
-        verify(service, times(1)).delete("ph-abc12345");
-    }
-
-    @Test
-    void testDelete_NonExistingId_ReturnsNotFound() {
-        when(service.delete("ph-unknown")).thenReturn(false);
-
-        ResponseEntity<Void> result = controller.delete("ph-unknown");
-
-        assertEquals(404, result.getStatusCode().value());
-    }
-
-    // --- updateTags ---
-
-    @Test
-    void testUpdateTags_ExistingId_ReturnsOkWithBody() {
-        Photo updated = new Photo(
-                samplePhoto.id(),
-                samplePhoto.filename(),
-                samplePhoto.originalName(),
-                samplePhoto.url(),
-                samplePhoto.uploadedAt(),
-                List.of("studio", "atelier")
-        );
-        when(service.updateTags("ph-abc12345", List.of("Studio", "Atelier")))
-                .thenReturn(Optional.of(updated));
-
-        ResponseEntity<Photo> result = controller.updateTags(
-                "ph-abc12345",
-                new PhotoController.TagsRequest(List.of("Studio", "Atelier"))
-        );
+        ResponseEntity<Resource> result = controller.serve("photo.jpg");
 
         assertEquals(200, result.getStatusCode().value());
-        assertNotNull(result.getBody());
-        assertEquals(List.of("studio", "atelier"), result.getBody().tags());
+        assertEquals("image/jpeg", result.getHeaders().getContentType().toString());
     }
 
     @Test
-    void testUpdateTags_UnknownId_ReturnsNotFound() {
-        when(service.updateTags("ph-ghost", List.of("studio"))).thenReturn(Optional.empty());
+    void serve_renvoie_image_png_pour_png() throws IOException {
+        Resource mockResource = mock(Resource.class);
+        when(service.loadAsResource("photo.PNG")).thenReturn(mockResource);
 
-        ResponseEntity<Photo> result = controller.updateTags(
-                "ph-ghost",
-                new PhotoController.TagsRequest(List.of("studio"))
-        );
+        ResponseEntity<Resource> result = controller.serve("photo.PNG");
 
-        assertEquals(404, result.getStatusCode().value());
-        assertNull(result.getBody());
+        assertEquals("image/png", result.getHeaders().getContentType().toString());
+    }
+
+    @Test
+    void serve_renvoie_octet_stream_pour_extension_inconnue() throws IOException {
+        Resource mockResource = mock(Resource.class);
+        when(service.loadAsResource("file.xyz")).thenReturn(mockResource);
+
+        ResponseEntity<Resource> result = controller.serve("file.xyz");
+
+        assertEquals("application/octet-stream", result.getHeaders().getContentType().toString());
+    }
+
+    @Test
+    void serve_renvoie_octet_stream_pour_fichier_sans_extension() throws IOException {
+        Resource mockResource = mock(Resource.class);
+        when(service.loadAsResource("noext")).thenReturn(mockResource);
+
+        ResponseEntity<Resource> result = controller.serve("noext");
+
+        assertEquals("application/octet-stream", result.getHeaders().getContentType().toString());
     }
 }

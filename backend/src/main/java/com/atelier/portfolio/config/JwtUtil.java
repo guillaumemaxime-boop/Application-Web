@@ -18,6 +18,13 @@ public class JwtUtil {
     public JwtUtil(
             @Value("${jwt.secret}") String secret,
             @Value("${jwt.expiration-ms}") long expirationMs) {
+        if (secret == null || secret.length() < 32) {
+            // HS256 exige 256 bits = 32 octets. En dessous, Keys.hmacShaKeyFor
+            // leve aussi, mais le message systeme n'aide pas l'admin a
+            // comprendre la cause au boot. On force un message explicite.
+            throw new IllegalStateException(
+                    "JWT_SECRET doit faire >= 32 caracteres (HS256 requiert 256 bits)");
+        }
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
     }

@@ -185,6 +185,20 @@ class SecurityIntegrationTest {
     }
 
     // -----------------------------------------------------------------------
+    // Headers de securite (F-12)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void securityHeaders_includes_xContentTypeOptions_nosniff() throws Exception {
+        var request = HttpRequest.newBuilder().uri(uri("/api/furniture")).GET().build();
+        var response = client.send(request, HttpResponse.BodyHandlers.discarding());
+
+        assertEquals("nosniff",
+                response.headers().firstValue("X-Content-Type-Options").orElse(null),
+                "X-Content-Type-Options doit etre explicitement positionne a nosniff");
+    }
+
+    // -----------------------------------------------------------------------
     // Helper
     // -----------------------------------------------------------------------
 

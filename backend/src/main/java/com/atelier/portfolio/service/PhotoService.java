@@ -21,11 +21,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
 public class PhotoService {
+
+    // .svg volontairement exclu — peut contenir du JS executable cote navigateur.
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
+            ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"
+    );
 
     private final PhotoRepository repository;
 
@@ -53,6 +59,10 @@ public class PhotoService {
         if (dotIndex >= 0) {
             extension = originalName.substring(dotIndex);
         }
+        String normalizedExt = extension.toLowerCase(Locale.ROOT);
+        if (!ALLOWED_EXTENSIONS.contains(normalizedExt)) {
+            throw new IllegalArgumentException("Extension non autorisee: " + extension);
+        }
         String filename = UUID.randomUUID() + extension;
 
         Path dir = Paths.get(uploadDir);
@@ -74,8 +84,15 @@ public class PhotoService {
     }
 
     public Resource loadAsResource(String filename) throws MalformedURLException {
-        Path file = Paths.get(uploadDir).resolve(filename).normalize();
-        Resource resource = new UrlResource(file.toUri());
+        // Confinement strict au repertoire d'upload : on calcule la cible
+        // resolue puis on verifie qu'elle reste sous uploadPath. Empeche
+        // les tentatives de path traversal du type "../etc/passwd".
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Path filePath = uploadPath.resolve(filename).normalize();
+        if (!filePath.startsWith(uploadPath)) {
+            return null;
+        }
+        Resource resource = new UrlResource(filePath.toUri());
         if (resource.exists() && resource.isReadable()) {
             return resource;
         }
