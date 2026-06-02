@@ -21,11 +21,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
 public class PhotoService {
+
+    // .svg volontairement exclu — peut contenir du JS executable cote navigateur.
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
+            ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"
+    );
 
     private final PhotoRepository repository;
 
@@ -52,6 +58,10 @@ public class PhotoService {
         int dotIndex = originalName.lastIndexOf('.');
         if (dotIndex >= 0) {
             extension = originalName.substring(dotIndex);
+        }
+        String normalizedExt = extension.toLowerCase(Locale.ROOT);
+        if (!ALLOWED_EXTENSIONS.contains(normalizedExt)) {
+            throw new IllegalArgumentException("Extension non autorisee: " + extension);
         }
         String filename = UUID.randomUUID() + extension;
 

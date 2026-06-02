@@ -21,6 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/photos")
@@ -38,9 +40,13 @@ public class PhotoController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Photo> upload(@RequestParam MultipartFile file) throws IOException {
-        Photo photo = service.store(file);
-        return ResponseEntity.created(URI.create(photo.url())).body(photo);
+    public ResponseEntity<?> upload(@RequestParam MultipartFile file) throws IOException {
+        try {
+            Photo photo = service.store(file);
+            return ResponseEntity.created(URI.create(photo.url())).body(photo);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/files/{filename:.+}")
@@ -49,15 +55,24 @@ public class PhotoController {
         if (resource == null) {
             return ResponseEntity.notFound().build();
         }
-        String contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
-        try {
-            contentType = resource.getURL().openConnection().getContentType();
-        } catch (IOException ignored) {
-        }
+        String contentType = contentTypeFor(filename);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);
+    }
+
+    private static String contentTypeFor(String filename) {
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0) return MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        return switch (filename.substring(dot + 1).toLowerCase(Locale.ROOT)) {
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "webp" -> "image/webp";
+            case "gif" -> "image/gif";
+            case "avif" -> "image/avif";
+            default -> MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        };
     }
 
     @DeleteMapping("/{id}")
