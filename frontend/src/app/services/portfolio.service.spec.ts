@@ -385,28 +385,28 @@ describe('PortfolioService', () => {
       req.flush([]);
     });
 
-    it('should upload a photo via POST with FormData', () => {
+    it('should upload a photo via POST on /api/admin/photos with FormData', () => {
       const file = new File([new Uint8Array([1, 2, 3])], 'portrait-studio.jpg', { type: 'image/jpeg' });
 
       service.uploadPhoto(file).subscribe((photo) => {
         expect(photo).toEqual(mockPhoto);
       });
 
-      const req = httpMock.expectOne('/api/photos');
+      const req = httpMock.expectOne('/api/admin/photos');
       expect(req.request.method).toBe('POST');
       expect(req.request.body instanceof FormData).toBe(true);
       expect(req.request.body.get('file')).toBe(file);
       req.flush(mockPhoto);
     });
 
-    it('should delete a photo via DELETE', () => {
+    it('should delete a photo via DELETE on /api/admin/photos/:id', () => {
       let completed = false;
 
       service.deletePhoto('ph-abc12345').subscribe({
         next: () => { completed = true; },
       });
 
-      const req = httpMock.expectOne('/api/photos/ph-abc12345');
+      const req = httpMock.expectOne('/api/admin/photos/ph-abc12345');
       expect(req.request.method).toBe('DELETE');
       req.flush(null, { status: 204, statusText: 'No Content' });
       expect(completed).toBe(true);
@@ -420,18 +420,18 @@ describe('PortfolioService', () => {
         error: (err) => expect(err.status).toBe(413),
       });
 
-      const req = httpMock.expectOne('/api/photos');
+      const req = httpMock.expectOne('/api/admin/photos');
       req.flush('Payload Too Large', { status: 413, statusText: 'Payload Too Large' });
     });
 
-    it('should update photo tags via PUT', () => {
+    it('should update photo tags via PUT on /api/admin/photos/:id/tags', () => {
       const updated: Photo = { ...mockPhoto, tags: ['studio', 'atelier'] };
 
       service.updatePhotoTags('ph-abc12345', ['Studio', 'Atelier']).subscribe((photo) => {
         expect(photo).toEqual(updated);
       });
 
-      const req = httpMock.expectOne('/api/photos/ph-abc12345/tags');
+      const req = httpMock.expectOne('/api/admin/photos/ph-abc12345/tags');
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual({ tags: ['Studio', 'Atelier'] });
       req.flush(updated);

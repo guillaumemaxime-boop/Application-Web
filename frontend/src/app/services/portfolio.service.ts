@@ -118,15 +118,15 @@ export class PortfolioService {
   uploadPhoto(file: File): Observable<Photo> {
     const fd = new FormData();
     fd.append('file', file);
-    return this.http.post<Photo>(`${API}/photos`, fd);
+    return this.http.post<Photo>(`${API}/admin/photos`, fd);
   }
 
   deletePhoto(id: string): Observable<void> {
-    return this.http.delete<void>(`${API}/photos/${id}`);
+    return this.http.delete<void>(`${API}/admin/photos/${id}`);
   }
 
   updatePhotoTags(id: string, tags: string[]): Observable<Photo> {
-    return this.http.put<Photo>(`${API}/photos/${id}/tags`, { tags });
+    return this.http.put<Photo>(`${API}/admin/photos/${id}/tags`, { tags });
   }
 
   getHome(): Observable<HomePageData> {

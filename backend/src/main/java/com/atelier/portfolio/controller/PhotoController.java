@@ -7,22 +7,14 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/photos")
@@ -37,16 +29,6 @@ public class PhotoController {
     @GetMapping
     public List<Photo> list() {
         return service.findAll();
-    }
-
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> upload(@RequestParam MultipartFile file) throws IOException {
-        try {
-            Photo photo = service.store(file);
-            return ResponseEntity.created(URI.create(photo.url())).body(photo);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
     }
 
     @GetMapping("/files/{filename:.+}")
@@ -73,20 +55,6 @@ public class PhotoController {
             case "avif" -> "image/avif";
             default -> MediaType.APPLICATION_OCTET_STREAM_VALUE;
         };
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        return service.delete(id)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
-    }
-
-    @PutMapping(value = "/{id}/tags", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Photo> updateTags(@PathVariable String id, @RequestBody TagsRequest body) {
-        return service.updateTags(id, body.tags())
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     public record TagsRequest(@Size(max = 30) List<@Size(max = 100) String> tags) {}

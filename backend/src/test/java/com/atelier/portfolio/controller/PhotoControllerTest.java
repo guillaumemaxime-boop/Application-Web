@@ -11,12 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -66,49 +63,6 @@ class PhotoControllerTest {
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
-    }
-
-    // --- upload ---
-
-    @Test
-    void testUpload_ValidFile_ReturnsCreatedWithLocation() throws IOException {
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "portrait-studio.jpg", "image/jpeg", new byte[]{1, 2, 3}
-        );
-        when(service.store(file)).thenReturn(samplePhoto);
-
-        ResponseEntity<?> result = controller.upload(file);
-
-        assertEquals(201, result.getStatusCode().value());
-        assertEquals(samplePhoto, result.getBody());
-        assertNotNull(result.getHeaders().getLocation());
-        assertEquals(samplePhoto.url(), result.getHeaders().getLocation().toString());
-        verify(service, times(1)).store(file);
-    }
-
-    @Test
-    void testUpload_ServiceThrows_PropagatesException() throws IOException {
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "bad.jpg", "image/jpeg", new byte[]{0}
-        );
-        when(service.store(file)).thenThrow(new IOException("disk full"));
-
-        assertThrows(IOException.class, () -> controller.upload(file));
-    }
-
-    @Test
-    void upload_renvoie_400_pour_extension_invalide() throws IOException {
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "evil.html", "text/html", "<script>".getBytes()
-        );
-        when(service.store(file)).thenThrow(new IllegalArgumentException("Extension non autorisee: .html"));
-
-        ResponseEntity<?> result = controller.upload(file);
-
-        assertEquals(400, result.getStatusCode().value());
-        assertTrue(result.getBody() instanceof Map);
-        Map<?, ?> body = (Map<?, ?>) result.getBody();
-        assertTrue(((String) body.get("error")).contains(".html"));
     }
 
     // --- serve ---
@@ -174,64 +128,5 @@ class PhotoControllerTest {
         ResponseEntity<Resource> result = controller.serve("noext");
 
         assertEquals("application/octet-stream", result.getHeaders().getContentType().toString());
-    }
-
-    // --- delete ---
-
-    @Test
-    void testDelete_ExistingId_ReturnsNoContent() {
-        when(service.delete("ph-abc12345")).thenReturn(true);
-
-        ResponseEntity<Void> result = controller.delete("ph-abc12345");
-
-        assertEquals(204, result.getStatusCode().value());
-        verify(service, times(1)).delete("ph-abc12345");
-    }
-
-    @Test
-    void testDelete_NonExistingId_ReturnsNotFound() {
-        when(service.delete("ph-unknown")).thenReturn(false);
-
-        ResponseEntity<Void> result = controller.delete("ph-unknown");
-
-        assertEquals(404, result.getStatusCode().value());
-    }
-
-    // --- updateTags ---
-
-    @Test
-    void testUpdateTags_ExistingId_ReturnsOkWithBody() {
-        Photo updated = new Photo(
-                samplePhoto.id(),
-                samplePhoto.filename(),
-                samplePhoto.originalName(),
-                samplePhoto.url(),
-                samplePhoto.uploadedAt(),
-                List.of("studio", "atelier")
-        );
-        when(service.updateTags("ph-abc12345", List.of("Studio", "Atelier")))
-                .thenReturn(Optional.of(updated));
-
-        ResponseEntity<Photo> result = controller.updateTags(
-                "ph-abc12345",
-                new PhotoController.TagsRequest(List.of("Studio", "Atelier"))
-        );
-
-        assertEquals(200, result.getStatusCode().value());
-        assertNotNull(result.getBody());
-        assertEquals(List.of("studio", "atelier"), result.getBody().tags());
-    }
-
-    @Test
-    void testUpdateTags_UnknownId_ReturnsNotFound() {
-        when(service.updateTags("ph-ghost", List.of("studio"))).thenReturn(Optional.empty());
-
-        ResponseEntity<Photo> result = controller.updateTags(
-                "ph-ghost",
-                new PhotoController.TagsRequest(List.of("studio"))
-        );
-
-        assertEquals(404, result.getStatusCode().value());
-        assertNull(result.getBody());
     }
 }
