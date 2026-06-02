@@ -9,12 +9,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional(readOnly = true)
 public class HomeFeedService {
 
     public record FeedEntry(String kind, String slug) {}
+
+    // Restreint le kind a la liste ferme des types autorises. Les valeurs
+    // arrivent via l'API admin et seront utilisees pour join avec furniture
+    // ou exhibition cote HomeService.
+    private static final Set<String> ALLOWED_KINDS = Set.of("furniture", "exhibition");
+    private static final int MAX_SLUG_LENGTH = 200;
 
     private final HomeFeedRepository repository;
     private final EntityManager entityManager;
@@ -33,6 +40,7 @@ public class HomeFeedService {
     @Transactional
     @CacheEvict(cacheNames = "home", allEntries = true)
     public List<FeedEntry> replace(List<FeedEntry> entries) {
+        validateEntries(entries);
         repository.deleteAllInBatch();
         // deleteAllInBatch passe outre le persistence context : on le vide pour
         // eviter une collision sur la PK quand on re-insere des entites a position=0..n.
@@ -48,6 +56,20 @@ public class HomeFeedService {
         }
         repository.saveAll(toSave);
         return getAll();
+    }
+
+    private static void validateEntries(List<FeedEntry> entries) {
+        if (entries == null) return;
+        for (FeedEntry e : entries) {
+            if (e == null || e.kind() == null || !ALLOWED_KINDS.contains(e.kind())) {
+                throw new IllegalArgumentException(
+                        "kind invalide: " + (e == null ? "null" : e.kind()));
+            }
+            if (e.slug() == null || e.slug().isBlank() || e.slug().length() > MAX_SLUG_LENGTH) {
+                throw new IllegalArgumentException(
+                        "slug invalide: " + (e.slug() == null ? "null" : "len=" + e.slug().length()));
+            }
+        }
     }
 
     @Transactional

@@ -42,4 +42,81 @@ class HomeFeedServiceTest {
         assertEquals(1, saved.get(1).getPosition());
         assertEquals("lumen", saved.get(1).getRefSlug());
     }
+
+    // --- F-07 : validation kind/slug ---
+
+    @Test
+    void replace_rejette_kind_inconnu() {
+        List<HomeFeedService.FeedEntry> input = List.of(
+                new HomeFeedService.FeedEntry("etrange-type", "ok-slug")
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.replace(input));
+        verify(repository, never()).deleteAllInBatch();
+        verify(repository, never()).saveAll(any());
+    }
+
+    @Test
+    void replace_rejette_kind_null() {
+        List<HomeFeedService.FeedEntry> input = List.of(
+                new HomeFeedService.FeedEntry(null, "ok-slug")
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.replace(input));
+        verify(repository, never()).deleteAllInBatch();
+    }
+
+    @Test
+    void replace_rejette_slug_vide() {
+        List<HomeFeedService.FeedEntry> input = List.of(
+                new HomeFeedService.FeedEntry("furniture", "")
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.replace(input));
+        verify(repository, never()).deleteAllInBatch();
+    }
+
+    @Test
+    void replace_rejette_slug_blank() {
+        List<HomeFeedService.FeedEntry> input = List.of(
+                new HomeFeedService.FeedEntry("furniture", "   ")
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.replace(input));
+    }
+
+    @Test
+    void replace_rejette_slug_null() {
+        List<HomeFeedService.FeedEntry> input = List.of(
+                new HomeFeedService.FeedEntry("furniture", null)
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.replace(input));
+    }
+
+    @Test
+    void replace_rejette_slug_trop_long() {
+        String longSlug = "a".repeat(201);
+        List<HomeFeedService.FeedEntry> input = List.of(
+                new HomeFeedService.FeedEntry("furniture", longSlug)
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.replace(input));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void replace_accepte_furniture_et_exhibition() {
+        List<HomeFeedService.FeedEntry> input = List.of(
+                new HomeFeedService.FeedEntry("furniture", "ok-1"),
+                new HomeFeedService.FeedEntry("exhibition", "ok-2")
+        );
+        when(repository.findAllByOrderByPositionAsc()).thenReturn(List.of());
+
+        service.replace(input);
+
+        verify(repository).deleteAllInBatch();
+        verify(repository).saveAll(any());
+    }
+
 }
