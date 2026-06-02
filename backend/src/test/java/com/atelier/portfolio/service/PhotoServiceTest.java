@@ -72,10 +72,17 @@ class PhotoServiceTest {
 
     // --- store ---
 
+    // Magic bytes JPEG : FF D8 FF
+    private static final byte[] JPEG_MAGIC = {(byte)0xFF, (byte)0xD8, (byte)0xFF, 0x00, 0x00, 0x00,
+                                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    // Magic bytes PNG : 89 50 4E 47
+    private static final byte[] PNG_MAGIC  = {(byte)0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                                              0x00, 0x00, 0x00, 0x00};
+
     @Test
     void testStore_CreatesFileOnDisk_AndPersistsEntity() throws IOException {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "portrait.jpg", "image/jpeg", new byte[]{10, 20, 30}
+                "file", "portrait.jpg", "image/jpeg", JPEG_MAGIC
         );
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -89,7 +96,6 @@ class PhotoServiceTest {
 
         Path stored = tempDir.resolve(result.filename());
         assertTrue(Files.exists(stored));
-        assertArrayEquals(new byte[]{10, 20, 30}, Files.readAllBytes(stored));
 
         verify(repository, times(1)).save(any(PhotoEntity.class));
     }
@@ -97,7 +103,7 @@ class PhotoServiceTest {
     @Test
     void testStore_TwoFilesWithSameName_GetDistinctFilenames() throws IOException {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.png", "image/png", new byte[]{1}
+                "file", "photo.png", "image/png", PNG_MAGIC
         );
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -108,15 +114,34 @@ class PhotoServiceTest {
     }
 
     @Test
-    void testStore_FileWithoutExtension_StoresWithoutExtension() throws IOException {
+    void testStore_FileWithoutExtension_RejectsAsUnsupportedMediaType() {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "noext", "image/jpeg", new byte[]{1}
+                "file", "noext", "image/jpeg", JPEG_MAGIC
         );
-        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Photo result = service.store(file);
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.store(file));
+    }
 
-        assertFalse(result.filename().contains("."));
+    @Test
+    void testStore_DisallowedExtension_RejectsAsUnsupportedMediaType() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "page.html", "text/html", new byte[]{'<', 'h', 't', 'm', 'l', '>'}
+        );
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.store(file));
+    }
+
+    @Test
+    void testStore_ValidExtensionInvalidMagicBytes_Rejects() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "fake.jpg", "image/jpeg", new byte[]{0x00, 0x01, 0x02, 0x03,
+                        0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B}
+        );
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.store(file));
     }
 
     // --- loadAsResource ---

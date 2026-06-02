@@ -6,11 +6,14 @@ import com.atelier.portfolio.repository.PhotoRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,11 +24,22 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
 public class PhotoService {
+
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".webp", ".gif");
+
+    // Magic bytes: JPEG (FF D8 FF), PNG (89 50 4E 47), GIF (47 49 46 38), WebP (52 49 46 46)
+    private static final byte[][] ALLOWED_MAGIC = {
+        {(byte)0xFF, (byte)0xD8, (byte)0xFF},
+        {(byte)0x89, 0x50, 0x4E, 0x47},
+        {0x47, 0x49, 0x46, 0x38},
+        {0x52, 0x49, 0x46, 0x46}
+    };
 
     private final PhotoRepository repository;
 
@@ -51,7 +65,16 @@ public class PhotoService {
         String extension = "";
         int dotIndex = originalName.lastIndexOf('.');
         if (dotIndex >= 0) {
-            extension = originalName.substring(dotIndex);
+            extension = originalName.substring(dotIndex).toLowerCase(Locale.ROOT);
+        }
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Type de fichier non autorisé");
+        }
+        try (InputStream in = file.getInputStream()) {
+            byte[] header = in.readNBytes(12);
+            if (!hasAllowedMagicBytes(header)) {
+                throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Type de fichier non autorisé");
+            }
         }
         String filename = UUID.randomUUID() + extension;
 
@@ -74,12 +97,31 @@ public class PhotoService {
     }
 
     public Resource loadAsResource(String filename) throws MalformedURLException {
-        Path file = Paths.get(uploadDir).resolve(filename).normalize();
+        Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Path file = dir.resolve(filename).normalize();
+        if (!file.startsWith(dir)) {
+            return null;
+        }
         Resource resource = new UrlResource(file.toUri());
         if (resource.exists() && resource.isReadable()) {
             return resource;
         }
         return null;
+    }
+
+    private static boolean hasAllowedMagicBytes(byte[] header) {
+        for (byte[] magic : ALLOWED_MAGIC) {
+            if (startsWith(header, magic)) return true;
+        }
+        return false;
+    }
+
+    private static boolean startsWith(byte[] data, byte[] prefix) {
+        if (data.length < prefix.length) return false;
+        for (int i = 0; i < prefix.length; i++) {
+            if (data[i] != prefix[i]) return false;
+        }
+        return true;
     }
 
     @Transactional
