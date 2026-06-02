@@ -49,15 +49,20 @@ public class PhotoController {
         if (resource == null) {
             return ResponseEntity.notFound().build();
         }
-        String contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
-        try {
-            contentType = resource.getURL().openConnection().getContentType();
-        } catch (IOException ignored) {
-        }
+        String contentType = contentTypeFromExtension(filename);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);
+    }
+
+    private static String contentTypeFromExtension(String filename) {
+        String lower = filename.toLowerCase(java.util.Locale.ROOT);
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+        if (lower.endsWith(".png")) return "image/png";
+        if (lower.endsWith(".webp")) return "image/webp";
+        if (lower.endsWith(".gif")) return "image/gif";
+        return "application/octet-stream";
     }
 
     @DeleteMapping("/{id}")
