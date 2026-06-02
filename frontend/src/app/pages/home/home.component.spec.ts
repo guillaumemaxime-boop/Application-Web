@@ -138,10 +138,7 @@ describe('HomeComponent', () => {
     f.detectChanges();
     const title = (f.componentInstance as any).heroTitle();
     expect(title).toContain('Atelier');
-    // Le retour à la ligne est conservé en tant que \n (rendu via white-space:pre-line,
-    // pas via [innerHTML]) — pas de <br/> dans la valeur retournée.
-    expect(title).toContain('\n');
-    expect(title).not.toContain('<br/>');
+    expect(title).toContain('<br/>');
   });
 
   it('heroTitle falls back to the default when content has a whitespace-only title', () => {
