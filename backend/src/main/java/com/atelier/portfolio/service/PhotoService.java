@@ -84,8 +84,15 @@ public class PhotoService {
     }
 
     public Resource loadAsResource(String filename) throws MalformedURLException {
-        Path file = Paths.get(uploadDir).resolve(filename).normalize();
-        Resource resource = new UrlResource(file.toUri());
+        // Confinement strict au repertoire d'upload : on calcule la cible
+        // resolue puis on verifie qu'elle reste sous uploadPath. Empeche
+        // les tentatives de path traversal du type "../etc/passwd".
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Path filePath = uploadPath.resolve(filename).normalize();
+        if (!filePath.startsWith(uploadPath)) {
+            return null;
+        }
+        Resource resource = new UrlResource(filePath.toUri());
         if (resource.exists() && resource.isReadable()) {
             return resource;
         }

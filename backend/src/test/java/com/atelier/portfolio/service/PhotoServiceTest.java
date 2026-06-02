@@ -185,6 +185,30 @@ class PhotoServiceTest {
         assertNull(resource);
     }
 
+    @Test
+    void loadAsResource_renvoie_null_pour_path_traversal() throws IOException {
+        // Creons un fichier "sensible" hors du tempDir, dans son parent.
+        Path outside = tempDir.getParent().resolve("outside-secret.txt");
+        Files.write(outside, "secret".getBytes());
+        try {
+            Resource viaTraversal = service.loadAsResource("../" + outside.getFileName());
+
+            assertNull(viaTraversal, "le traversal doit etre refuse meme si la cible existe");
+        } finally {
+            Files.deleteIfExists(outside);
+        }
+    }
+
+    @Test
+    void loadAsResource_renvoie_null_pour_chemin_absolu_hors_upload() throws IOException {
+        // Path absolu pointant vers la racine du FS — doit etre refuse.
+        Path target = tempDir.getRoot().resolve("etc").resolve("passwd");
+
+        Resource resource = service.loadAsResource(target.toString());
+
+        assertNull(resource);
+    }
+
     // --- delete ---
 
     @Test
