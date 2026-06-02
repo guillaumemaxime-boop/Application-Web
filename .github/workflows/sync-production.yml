@@ -40,9 +40,9 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
 
-      - name: Install crane (pinned)
+      - name: Install crane
         run: |
-          curl -fsSL https://github.com/google/go-containerregistry/releases/download/v0.20.3/go-containerregistry_Linux_x86_64.tar.gz \
+          curl -fsSL https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz \
             | sudo tar xz -C /usr/local/bin crane
 
       - name: Authenticate crane to GHCR

@@ -32,6 +32,3 @@ Thumbs.db
 # Local docker compose env file (UMAMI_* et autres secrets pour `docker compose up`).
 # Scope `/` est intentionnel : les .env de deploy/envs/<env>/ sont traces.
 /.env
-
-# Fichiers .env locaux de deploy (contiennent des secrets, ne jamais tracer).
-deploy/envs/local/.env
