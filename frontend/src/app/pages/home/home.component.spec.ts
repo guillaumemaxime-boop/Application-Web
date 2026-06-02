@@ -138,7 +138,25 @@ describe('HomeComponent', () => {
     f.detectChanges();
     const title = (f.componentInstance as any).heroTitle();
     expect(title).toContain('Atelier');
-    expect(title).toContain('<br/>');
+    expect(title).toContain('\n');
+    // XSS: la chaine ne doit JAMAIS contenir de <br/> brut ni d'HTML injecte.
+    expect(title).not.toContain('<br/>');
+    expect(title).not.toContain('<');
+  });
+
+  it('renders heroTitle as plain text without injecting HTML', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({
+      'home.hero.title': 'Innocent<script>alert(1)</script>\nLigne 2',
+    }));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    const h1 = f.nativeElement.querySelector('.hero h1.hero-title') as HTMLElement;
+    expect(h1).not.toBeNull();
+    // textContent contient le texte litteral (incluant les < > non-interpretes)
+    expect(h1.textContent).toContain('<script>');
+    // innerHTML est encode (les < sont &lt;), donc aucune balise script reelle
+    expect(h1.querySelector('script')).toBeNull();
+    expect(h1.querySelector('br')).toBeNull();
   });
 
   it('heroTitle falls back to the default when content has a whitespace-only title', () => {
