@@ -34,7 +34,7 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
       }
 
         @if (status() === 'success') {
-          <div class="success">
+          <div class="success" role="status" aria-live="polite">
             <p class="eyebrow">Demande envoyée</p>
             <p class="thanks">Merci. Votre message est bien arrivé au studio — vous recevrez une réponse à <strong>{{ form.email }}</strong>.</p>
             @if (!inline) {
@@ -87,7 +87,7 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
             </label>
 
             @if (status() === 'error') {
-              <p class="error">L'envoi a échoué. Vérifiez votre message ou réessayez dans un instant.</p>
+              <p class="error" role="alert">L'envoi a échoué. Vérifiez votre message ou réessayez dans un instant.</p>
             }
 
             <div class="actions">
@@ -166,8 +166,9 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
       font-size: 0.95rem;
       transition: border-color var(--transition);
     }
-    input:focus, textarea:focus {
-      outline: none;
+    input:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--color-ink);
+      outline-offset: 2px;
       border-color: var(--color-ink);
     }
     textarea { resize: vertical; min-height: 110px; font-family: inherit; }

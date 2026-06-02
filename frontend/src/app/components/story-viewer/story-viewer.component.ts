@@ -21,8 +21,10 @@ const SLIDE_DURATION_MS = 5000;
   imports: [CommonModule],
   template: `
     <div class="backdrop" (click)="onBackdropClick($event)">
-      <div class="frame">
-        <div class="progress">
+      <div class="frame" role="dialog" aria-modal="true"
+           [attr.aria-label]="'Visionneuse — ' + (currentItem()?.title ?? '')">
+
+        <div class="progress" aria-hidden="true">
           @for (s of currentItem()?.slides ?? []; track $index) {
             <div class="bar" [class.seen]="$index < slideIndex()">
               <div class="fill"
@@ -33,8 +35,12 @@ const SLIDE_DURATION_MS = 5000;
           }
         </div>
 
+        <span class="sr-only" aria-live="polite">
+          Slide {{ slideIndex() + 1 }} sur {{ currentItem()?.slides?.length ?? 1 }}
+        </span>
+
         <div class="header" [class.dark-text]="!isMediaSlide()">
-          <div class="avatar">L</div>
+          <div class="avatar" aria-hidden="true">L</div>
           <div class="title-block">
             <div class="title">{{ currentItem()?.title }}</div>
             <div class="sub">{{ currentItem()?.subtitle }}</div>
@@ -44,11 +50,14 @@ const SLIDE_DURATION_MS = 5000;
 
         <div class="body" [ngClass]="bodyClass()">
           @switch (currentSlide()?.type) {
-            @case ('cover')  { <img [src]="$any(currentSlide()).src" alt="" /> }
+            @case ('cover')  {
+              <img [src]="$any(currentSlide()).src" [alt]="currentItem()?.title ?? ''" />
+            }
             @case ('image')  {
-              <img [src]="$any(currentSlide()).src" alt="" />
+              <img [src]="$any(currentSlide()).src"
+                   [alt]="$any(currentSlide()).caption || currentItem()?.title || ''" />
               @if ($any(currentSlide()).caption) {
-                <div class="caption">{{ $any(currentSlide()).caption }}</div>
+                <div class="caption" aria-hidden="true">{{ $any(currentSlide()).caption }}</div>
               }
             }
             @case ('video') {
@@ -100,8 +109,12 @@ const SLIDE_DURATION_MS = 5000;
 
         @if (!isVideoSlide()) {
           <div class="tap-zones">
-            <div class="zone left" (click)="prev()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></div>
-            <div class="zone right" (click)="next()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></div>
+            <button type="button" class="zone left" (click)="prev()"
+                    (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"
+                    aria-label="Slide précédent"></button>
+            <button type="button" class="zone right" (click)="next()"
+                    (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"
+                    aria-label="Slide suivant"></button>
           </div>
         } @else {
           <div class="video-nav">
@@ -143,7 +156,8 @@ const SLIDE_DURATION_MS = 5000;
     .slide-link .cta { display: inline-flex; align-items: center; gap: 12px; padding: 14px 28px; border: 1px solid var(--ink); font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); margin-top: 24px; text-decoration: none; }
     .slide-link p { font-size: 0.92rem; max-width: 320px; color: rgba(26,24,21,0.7); }
     .tap-zones { position: absolute; inset: 0; display: flex; z-index: 2; }
-    .zone { flex: 1; cursor: pointer; }
+    .zone { flex: 1; cursor: pointer; background: none; border: none; padding: 0; }
+    .zone:focus-visible { outline: 2px solid rgba(255,255,255,0.8); outline-offset: -4px; }
     .zone.left { flex: 0 0 33%; }
     .video-nav { position: absolute; left: 0; right: 0; bottom: 16px; display: flex; justify-content: space-between; padding: 0 16px; z-index: 4; pointer-events: none; }
     .video-nav .nav { pointer-events: auto; background: rgba(0,0,0,0.55); color: #fff; border: 1px solid rgba(255,255,255,0.25); width: 36px; height: 36px; border-radius: 50%; font-size: 1.4rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
