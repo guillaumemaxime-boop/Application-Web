@@ -47,7 +47,7 @@ describe('TextesComponent', () => {
     const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
     cmp.textsForm.patchValue({ profile_tagline: 'Nouveau titre' });
     cmp.saveTexts();
-    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
     expect((put.request.body as Record<string, string>)['profile.tagline']).toBe('Nouveau titre');
     put.flush({});
   });
@@ -69,7 +69,7 @@ describe('TextesComponent', () => {
     const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
     cmp.textsForm.patchValue({ profile_bio: 'Nouvelle présentation' });
     cmp.saveTexts();
-    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
     expect((put.request.body as Record<string, string>)['profile.bio']).toBe('Nouvelle présentation');
     put.flush({});
   });
@@ -84,7 +84,7 @@ describe('TextesComponent', () => {
     const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
     cmp.textsForm.patchValue({ profile_awards: 'Prix C — 2025' });
     cmp.saveTexts();
-    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
     expect((put.request.body as Record<string, string>)['profile.awards']).toBe('Prix C — 2025');
     put.flush({});
   });
@@ -99,7 +99,7 @@ describe('TextesComponent', () => {
     const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
     cmp.textsForm.patchValue({ profile_press: 'Le Monde — Design|2025' });
     cmp.saveTexts();
-    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
     expect((put.request.body as Record<string, string>)['profile.press']).toBe('Le Monde — Design|2025');
     put.flush({});
   });
@@ -114,7 +114,7 @@ describe('TextesComponent', () => {
     const cmp = fixture.componentInstance as unknown as { textsForm: { patchValue: (v: Record<string, unknown>) => void }; saveTexts: () => void };
     cmp.textsForm.patchValue({ studio_process_visible: true });
     cmp.saveTexts();
-    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
     expect((put.request.body as Record<string, string>)['studio.process.visible']).toBe('true');
     put.flush({});
   });
@@ -127,7 +127,7 @@ describe('TextesComponent', () => {
     httpMock.expectOne('/api/content').flush({});
     fixture.detectChanges();
     (fixture.componentInstance as any).saveTexts();
-    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
     put.flush({});
     expect(toast.success).toHaveBeenCalled();
   });
@@ -140,7 +140,7 @@ describe('TextesComponent', () => {
     httpMock.expectOne('/api/content').flush({});
     fixture.detectChanges();
     (fixture.componentInstance as any).saveTexts();
-    httpMock.expectOne('/api/content').flush({}, { status: 500, statusText: 'fail' });
+    httpMock.expectOne('/api/admin/content').flush({}, { status: 500, statusText: 'fail' });
     expect(toast.error).toHaveBeenCalled();
   });
 });

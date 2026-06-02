@@ -46,7 +46,7 @@ describe('NavigationComponent', () => {
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as { toggleNavSection: (section: string, event: Event) => void };
     cmp.toggleNavSection('mobilier', { target: { checked: false } } as unknown as Event);
-    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
     expect(put.request.body).toEqual({ 'nav.mobilier.visible': 'false' });
     put.flush({});
     expect(toast.success).toHaveBeenCalled();

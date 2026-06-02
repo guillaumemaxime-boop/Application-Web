@@ -68,7 +68,7 @@ describe('MediathequeComponent', () => {
     httpMock.expectOne('/api/photos').flush([makePhoto()]);
     fixture.detectChanges();
     (fixture.componentInstance as any).removePhoto({ id: '1', originalName: 'A' });
-    httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/photos/1').flush(null);
+    httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/admin/photos/1').flush(null);
     expect(toast.success).toHaveBeenCalled();
   });
 
@@ -91,7 +91,7 @@ describe('MediathequeComponent', () => {
     (fixture.componentInstance as any).uploadFiles(event);
 
     for (let i = 0; i < count; i++) {
-      const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/photos');
+      const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/admin/photos');
       req.flush({ message: 'fail' }, { status, statusText: 'Error' });
     }
     return { fixture, toast };
@@ -133,7 +133,7 @@ describe('MediathequeComponent', () => {
 
     const fakeInput = { files: [new File(['x'], 'photo.jpg', { type: 'image/jpeg' })], value: '' } as unknown as HTMLInputElement;
     (fixture.componentInstance as any).uploadFiles({ target: fakeInput } as unknown as Event);
-    httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/photos')
+    httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/admin/photos')
       .flush(makePhoto({ id: 'p1', filename: 'photo.jpg', originalName: 'photo.jpg', url: '/uploads/photo.jpg' }));
     expect(toast.success).toHaveBeenCalled();
   });
@@ -146,7 +146,7 @@ describe('MediathequeComponent', () => {
     fixture.detectChanges();
     const fakeInput = { files: null, value: '' } as unknown as HTMLInputElement;
     (fixture.componentInstance as any).uploadFiles({ target: fakeInput } as unknown as Event);
-    httpMock.expectNone(r => r.method === 'POST' && r.url === '/api/photos');
+    httpMock.expectNone(r => r.method === 'POST' && r.url === '/api/admin/photos');
   });
 
   it('déclenche le file input quand ?import=1 est présent', fakeAsync(() => {
@@ -226,7 +226,7 @@ describe('MediathequeComponent', () => {
     fixture.detectChanges();
 
     (fixture.componentInstance as any).addTag(photo, '  Studio  ');
-    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
     expect(req.request.body).toEqual({ tags: ['studio'] });
     req.flush(makePhoto({ id: '1', tags: ['studio'] }));
   });
@@ -240,7 +240,7 @@ describe('MediathequeComponent', () => {
     fixture.detectChanges();
 
     (fixture.componentInstance as any).removeTag(photo, 'studio');
-    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
     expect(req.request.body).toEqual({ tags: ['atelier'] });
     req.flush(makePhoto({ id: '1', tags: ['atelier'] }));
   });
@@ -254,7 +254,7 @@ describe('MediathequeComponent', () => {
     fixture.detectChanges();
 
     (fixture.componentInstance as any).addTag(photo, 'STUDIO');
-    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
   });
 
   it('tag vide est ignore (pas d\'appel HTTP)', () => {
@@ -266,7 +266,7 @@ describe('MediathequeComponent', () => {
     fixture.detectChanges();
 
     (fixture.componentInstance as any).addTag(photo, '   ');
-    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
   });
 
   it('revert local si le PUT echoue', () => {
@@ -280,7 +280,7 @@ describe('MediathequeComponent', () => {
     fixture.detectChanges();
 
     (fixture.componentInstance as any).addTag(photo, 'studio');
-    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/photos/1/tags');
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
     req.flush({ error: 'oops' }, { status: 500, statusText: 'Error' });
     fixture.detectChanges();
 
