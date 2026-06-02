@@ -106,7 +106,7 @@ export class PortfolioService {
   }
 
   updateContent(content: SiteContent): Observable<SiteContent> {
-    return this.http.put<SiteContent>(`${API}/content`, content).pipe(
+    return this.http.put<SiteContent>(`${API}/admin/content`, content).pipe(
       tap(() => { this.content$ = null; })
     );
   }

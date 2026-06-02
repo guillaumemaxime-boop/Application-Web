@@ -332,7 +332,7 @@ describe('PortfolioService', () => {
 
       const updates = { 'home.hero.eyebrow': 'Nouveau titre' };
       service.updateContent(updates).subscribe();
-      httpMock.expectOne('/api/content').flush(mockContent);
+      httpMock.expectOne('/api/admin/content').flush(mockContent);
 
       // Après update, un nouveau getContent doit refaire une requête GET
       service.getContent().subscribe();
@@ -341,14 +341,14 @@ describe('PortfolioService', () => {
       refreshReq.flush(mockContent);
     });
 
-    it('should update site content via PUT', () => {
+    it('should update site content via PUT on /api/admin/content', () => {
       const updates = { 'home.hero.eyebrow': 'Nouveau titre' };
 
       service.updateContent(updates).subscribe((result) => {
         expect(result).toEqual(mockContent);
       });
 
-      const req = httpMock.expectOne('/api/content');
+      const req = httpMock.expectOne('/api/admin/content');
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual(updates);
       req.flush(mockContent);
