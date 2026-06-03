@@ -1,0 +1,33 @@
+{
+  "home.hero.eyebrow": "Atelier Lumen — Portfolio",
+  "home.hero.title": "Mobilier sculpté,\nscénographies vivantes.",
+  "home.hero.lead": "À feuilleter en stories, à explorer en profondeur.",
+
+  "nav.mobilier.visible": "true",
+  "nav.expositions.visible": "true",
+  "nav.studio.visible": "true",
+
+  "profile.contactEmail": "contact@atelier-lumen.test",
+  "profile.phone": "+33 1 23 45 67 89",
+  "profile.location": "Paris, France",
+  "profile.instagram": "https://instagram.com/atelier-lumen",
+  "profile.linkedin": "https://linkedin.com/in/atelier-lumen",
+
+  "contact.hero.eyebrow": "Contact",
+  "contact.hero.title": "Parlons de votre projet.",
+  "contact.hero.lead": "Une commande, une exposition, une collaboration : écrivez-moi.",
+  "contact.form.title": "Envoyer un message",
+  "contact.form.submit": "Envoyer",
+  "contact.form.success": "Merci, votre message a bien été envoyé.",
+
+  "typo.title.font": "serif",
+  "typo.title.style": "normal",
+  "typo.section-title.font": "serif",
+  "typo.section-title.style": "normal",
+  "typo.subtitle.font": "sans",
+  "typo.subtitle.style": "normal",
+  "typo.card-title.font": "serif",
+  "typo.card-title.style": "normal",
+  "typo.eyebrow.font": "sans",
+  "typo.eyebrow.style": "normal"
+}
