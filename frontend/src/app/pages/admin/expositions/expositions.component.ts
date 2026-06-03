@@ -130,7 +130,7 @@ interface ExhibitionMetaRow {
       <p class="hint">Glisse pour réordonner. Décoche pour masquer une exposition du bandeau (la fiche reste accessible via son URL).</p>
       @if (exhibitionsMeta(); as rows) {
         <ul class="exh-list" appReorderable (reordered)="onExhibitionMetaReorder($event)">
-          @for (r of rows; track r.slug) {
+          @for (r of rows; track r.slug; let i = $index) {
             <li class="home-row">
               <span class="handle" aria-hidden="true">⠿</span>
               <img [src]="r.cover" [alt]="r.title" class="thumb-round" />
@@ -138,6 +138,10 @@ interface ExhibitionMetaRow {
               <label class="incl">
                 <input type="checkbox" [checked]="r.visible" (change)="toggleExhibitionVisibility(r, $event)" /> Visible
               </label>
+              <button type="button" class="reorder-btn" aria-label="Monter l'exposition"
+                      (click)="moveExhibitionUp(i)" [disabled]="i === 0">↑</button>
+              <button type="button" class="reorder-btn" aria-label="Descendre l'exposition"
+                      (click)="moveExhibitionDown(i)" [disabled]="i === rows.length - 1">↓</button>
             </li>
           }
         </ul>
@@ -192,6 +196,9 @@ interface ExhibitionMetaRow {
     .home-row .thumb-round { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; flex-shrink: 0; }
     .home-row .title { flex: 1; font-size: 0.9rem; }
     .home-row .incl { font-size: 0.78rem; color: var(--color-ink-soft); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+    .reorder-btn { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); width: 28px; height: 28px; padding: 0; cursor: pointer; font-size: 0.9rem; line-height: 1; }
+    .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
+    .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .status { color: var(--color-mute); }
     @media (max-width: 960px) {
       .grid-admin { grid-template-columns: 1fr; }
@@ -373,6 +380,23 @@ export class ExpositionsComponent {
     if (!current) return;
     this.exhibitionsMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
     this.persistExhibitionsMeta();
+  }
+
+  moveExhibitionUp(index: number): void {
+    if (index <= 0) return;
+    const rows = this.exhibitionsMeta();
+    if (!rows) return;
+    const order = rows.map((_, i) => i);
+    [order[index - 1], order[index]] = [order[index], order[index - 1]];
+    this.onExhibitionMetaReorder(order);
+  }
+
+  moveExhibitionDown(index: number): void {
+    const rows = this.exhibitionsMeta();
+    if (!rows || index >= rows.length - 1) return;
+    const order = rows.map((_, i) => i);
+    [order[index], order[index + 1]] = [order[index + 1], order[index]];
+    this.onExhibitionMetaReorder(order);
   }
 
   toggleExhibitionVisibility(row: ExhibitionMetaRow, event: Event): void {
