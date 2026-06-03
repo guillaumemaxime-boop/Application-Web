@@ -29,6 +29,7 @@ import { ToastService } from '../shared/toast.service';
           type="search"
           class="photos-search"
           placeholder="Rechercher (nom de fichier ou tag)…"
+          aria-label="Rechercher dans la mediatheque (nom de fichier ou tag)"
           [ngModel]="search()"
           (ngModelChange)="search.set($event)"
         />
@@ -58,6 +59,7 @@ import { ToastService } from '../shared/toast.service';
                   type="text"
                   class="tag-input"
                   placeholder="+ tag"
+                  aria-label="Ajouter un tag"
                   maxlength="100"
                   (keydown.enter)="addTag(photo, $any($event.target).value); $any($event.target).value = ''"
                   (blur)="$any($event.target).value = ''"

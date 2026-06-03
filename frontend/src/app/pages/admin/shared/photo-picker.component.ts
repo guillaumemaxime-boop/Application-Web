@@ -73,6 +73,7 @@ import { Photo } from '../../../models/photo.model';
       border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink);
     }
     .picker-search-input:focus { outline: none; border-color: var(--color-accent); }
+    .picker-search-input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
     .picker-empty { padding: 32px 24px; color: var(--color-mute); font-size: 0.9rem; }
     .picker-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

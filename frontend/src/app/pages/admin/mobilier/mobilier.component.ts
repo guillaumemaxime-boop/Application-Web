@@ -148,7 +148,7 @@ import { ToastService } from '../shared/toast.service';
         <ul class="cat-list" appReorderable (reordered)="onCategoryReorder($event)">
           @for (c of cats; track c.category) {
             <li class="home-row">
-              <span class="handle">⠿</span>
+              <span class="handle" aria-hidden="true">⠿</span>
               <img [src]="c.coverImage" [alt]="c.category" class="thumb-round" />
               <span class="title">{{ c.category }}</span>
               <label class="incl">
@@ -193,6 +193,7 @@ import { ToastService } from '../shared/toast.service';
       font: inherit; color: var(--color-ink); border-radius: 0;
     }
     .form input:focus, .form textarea:focus { outline: none; border-color: var(--color-accent); }
+    .form input:focus-visible, .form textarea:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
     .form textarea { font-family: var(--sans, inherit); resize: vertical; }
     .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .readonly-row input[readonly] { background: var(--color-bg-alt); color: var(--color-ink-soft); cursor: default; }

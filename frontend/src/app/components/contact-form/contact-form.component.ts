@@ -170,6 +170,10 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
       outline: none;
       border-color: var(--color-ink);
     }
+    input:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--color-ink);
+      outline-offset: 2px;
+    }
     textarea { resize: vertical; min-height: 110px; font-family: inherit; }
 
     fieldset.interest {

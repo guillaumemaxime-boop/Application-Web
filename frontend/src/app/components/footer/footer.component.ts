@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PortfolioService } from '../../services/portfolio.service';
 
@@ -10,7 +10,7 @@ import { PortfolioService } from '../../services/portfolio.service';
     <footer>
       <div class="container">
         <div class="grid">
-          <div>
+          <nav aria-label="Pied de page">
             <span class="eyebrow">Navigation</span>
             <ul>
               <li><a routerLink="/">Accueil</a></li>
@@ -19,16 +19,16 @@ import { PortfolioService } from '../../services/portfolio.service';
               @if (studioVisible()) { <li><a routerLink="/studio">Studio</a></li> }
               <li><a routerLink="/contact">Contact</a></li>
             </ul>
-          </div>
+          </nav>
 
           <div>
             <span class="eyebrow">Contact</span>
             <ul>
               @if (email()) {
-                <li><a routerLink="/contact">{{ email() }}</a></li>
+                <li><a [href]="'mailto:' + email()">{{ email() }}</a></li>
               }
               @if (phone()) {
-                <li><a routerLink="/contact">{{ phone() }}</a></li>
+                <li><a [href]="'tel:' + phoneHref()">{{ phone() }}</a></li>
               }
               @if (location()) {
                 <li><a routerLink="/contact">{{ location() }}</a></li>
@@ -118,6 +118,7 @@ export class FooterComponent {
   protected readonly year = new Date().getFullYear();
   protected readonly email = signal('');
   protected readonly phone = signal('');
+  protected readonly phoneHref = computed(() => this.phone().replace(/[\s.]/g, ''));
   protected readonly location = signal('');
   protected readonly mobilierVisible = signal(true);
   protected readonly expositionsVisible = signal(true);

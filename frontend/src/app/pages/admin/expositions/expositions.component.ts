@@ -132,7 +132,7 @@ interface ExhibitionMetaRow {
         <ul class="exh-list" appReorderable (reordered)="onExhibitionMetaReorder($event)">
           @for (r of rows; track r.slug) {
             <li class="home-row">
-              <span class="handle">⠿</span>
+              <span class="handle" aria-hidden="true">⠿</span>
               <img [src]="r.cover" [alt]="r.title" class="thumb-round" />
               <span class="title">{{ r.title }}</span>
               <label class="incl">
@@ -181,6 +181,7 @@ interface ExhibitionMetaRow {
     .chip-remove { background: transparent; border: 0; color: var(--color-mute); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; }
     .chip-input-field { flex: 1; min-width: 120px; border: 0; padding: 4px; background: transparent; }
     .chip-input-field:focus { outline: none; }
+    .chip-input-field:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 
     .meta-section { margin-top: 64px; }
     .meta-section h2 { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; margin: 0 0 8px; }

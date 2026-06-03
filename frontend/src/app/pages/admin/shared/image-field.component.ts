@@ -50,6 +50,7 @@ import { PhotoPickerComponent } from './photo-picker.component';
       border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink);
     }
     .image-field-row input:focus { outline: none; border-color: var(--color-accent); }
+    .image-field-row input:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
     .btn-pick {
       background: transparent; border: 1px solid var(--color-line); padding: 6px 14px;
       font-size: 0.78rem; cursor: pointer; color: var(--color-ink-soft); white-space: nowrap;

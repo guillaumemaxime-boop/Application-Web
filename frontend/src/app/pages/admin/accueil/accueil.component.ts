@@ -25,7 +25,7 @@ interface HomeAdminItem {
         <ul class="ordering-list" appReorderable (reordered)="onFeedReorder($event)">
           @for (entry of items; track entry.kind + ':' + entry.slug) {
             <li class="home-row">
-              <span class="handle">⠿</span>
+              <span class="handle" aria-hidden="true">⠿</span>
               <span class="kind-badge">{{ entry.kind === 'furniture' ? 'MOBILIER' : 'EXPO' }}</span>
               <img [src]="entry.cover" [alt]="entry.title" class="thumb" />
               <span class="title">{{ entry.title }}</span>

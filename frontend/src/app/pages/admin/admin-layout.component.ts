@@ -22,7 +22,7 @@ import { ToastsComponent } from './shared/toasts.component';
             <span>Menu</span>
           </button>
 
-          <nav id="admin-nav" class="sidebar" [class.open]="sidebarOpen()" (click)="onNavClick()">
+          <nav id="admin-nav" class="sidebar" aria-label="Console d'administration" [class.open]="sidebarOpen()" (click)="onNavClick()">
             <a class="nav-item nav-dashboard" routerLink="/admin" routerLinkActive="active"
                [routerLinkActiveOptions]="{exact: true}">Tableau de bord</a>
 
