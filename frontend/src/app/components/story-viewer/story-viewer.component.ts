@@ -2,6 +2,7 @@ import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
+import { A11yModule } from '@angular/cdk/a11y';
 import { DisplaySlide } from '../../models/display-slide.model';
 import { parseVideoUrl } from '../../utils/video-url';
 
@@ -18,10 +19,18 @@ const SLIDE_DURATION_MS = 5000;
 @Component({
   selector: 'app-story-viewer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, A11yModule],
   template: `
-    <div class="backdrop" (click)="onBackdropClick($event)">
-      <div class="frame">
+    <div class="backdrop"
+         role="dialog"
+         aria-modal="true"
+         [attr.aria-label]="'Story ' + (currentItem()?.title || '')"
+         (click)="onBackdropClick($event)">
+      <div class="frame" cdkTrapFocus cdkTrapFocusAutoCapture>
+        <div class="sr-only" aria-live="polite" aria-atomic="true">
+          Slide {{ slideIndex() + 1 }} sur {{ currentItem()?.slides?.length || 0 }}
+        </div>
+
         <div class="progress">
           @for (s of currentItem()?.slides ?? []; track $index) {
             <div class="bar" [class.seen]="$index < slideIndex()">
@@ -34,12 +43,20 @@ const SLIDE_DURATION_MS = 5000;
         </div>
 
         <div class="header" [class.dark-text]="!isMediaSlide()">
-          <div class="avatar">L</div>
+          <div class="avatar" aria-hidden="true">L</div>
           <div class="title-block">
             <div class="title">{{ currentItem()?.title }}</div>
             <div class="sub">{{ currentItem()?.subtitle }}</div>
           </div>
-          <button class="close" (click)="close()" aria-label="Fermer">✕</button>
+          @if (!isVideoSlide()) {
+            <button type="button" class="pause"
+                    [attr.aria-pressed]="!running()"
+                    [attr.aria-label]="running() ? 'Mettre la lecture en pause' : 'Reprendre la lecture'"
+                    (click)="togglePause()">
+              {{ running() ? '❚❚' : '▶' }}
+            </button>
+          }
+          <button type="button" class="close" (click)="close()" #closeBtn aria-label="Fermer la story">✕</button>
         </div>
 
         <div class="body" [ngClass]="bodyClass()">
@@ -55,7 +72,7 @@ const SLIDE_DURATION_MS = 5000;
               @if (videoEmbedUrl($any(currentSlide()).src); as url) {
                 <iframe
                   [src]="url"
-                  title="Vidéo"
+                  [title]="'Vidéo — ' + ($any(currentSlide()).caption || currentItem()?.title || 'sans titre')"
                   allow="autoplay; fullscreen; encrypted-media"
                   allowfullscreen
                   style="width:100%;height:100%;border:0;display:block"></iframe>
@@ -100,8 +117,10 @@ const SLIDE_DURATION_MS = 5000;
 
         @if (!isVideoSlide()) {
           <div class="tap-zones">
-            <div class="zone left" (click)="prev()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></div>
-            <div class="zone right" (click)="next()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></div>
+            <button type="button" class="zone left" aria-label="Slide précédent"
+                    (click)="prev()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></button>
+            <button type="button" class="zone right" aria-label="Slide suivant"
+                    (click)="next()" (mousedown)="onHoldStart()" (mouseup)="onHoldEnd()" (mouseleave)="onHoldEnd()"></button>
           </div>
         } @else {
           <div class="video-nav">
@@ -143,8 +162,18 @@ const SLIDE_DURATION_MS = 5000;
     .slide-link .cta { display: inline-flex; align-items: center; gap: 12px; padding: 14px 28px; border: 1px solid var(--ink); font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); margin-top: 24px; text-decoration: none; }
     .slide-link p { font-size: 0.92rem; max-width: 320px; color: rgba(26,24,21,0.7); }
     .tap-zones { position: absolute; inset: 0; display: flex; z-index: 2; }
-    .zone { flex: 1; cursor: pointer; }
+    .zone {
+      flex: 1; cursor: pointer;
+      background: transparent; border: 0; padding: 0; color: inherit; font: inherit;
+    }
+    .zone:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
     .zone.left { flex: 0 0 33%; }
+    .pause {
+      margin-left: auto; pointer-events: auto; background: none; border: none;
+      color: inherit; font-size: 0.85rem; opacity: 0.8; cursor: pointer;
+      padding: 4px 8px; line-height: 1;
+    }
+    .pause + .close { margin-left: 4px; }
     .video-nav { position: absolute; left: 0; right: 0; bottom: 16px; display: flex; justify-content: space-between; padding: 0 16px; z-index: 4; pointer-events: none; }
     .video-nav .nav { pointer-events: auto; background: rgba(0,0,0,0.55); color: #fff; border: 1px solid rgba(255,255,255,0.25); width: 36px; height: 36px; border-radius: 50%; font-size: 1.4rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .video-nav .nav:hover { background: rgba(0,0,0,0.75); }
@@ -200,8 +229,32 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
-  ngOnInit() { this.startTimer(); }
-  ngOnDestroy() { this.stopTimer(); }
+  private previousFocus: HTMLElement | null = null;
+
+  ngOnInit() {
+    if (typeof document !== 'undefined') {
+      this.previousFocus = document.activeElement as HTMLElement | null;
+    }
+    this.startTimer();
+  }
+  ngOnDestroy() {
+    this.stopTimer();
+    this.restorePreviousFocus();
+  }
+
+  private restorePreviousFocus(): void {
+    const target = this.previousFocus;
+    this.previousFocus = null;
+    if (!target || typeof target.focus !== 'function') return;
+    setTimeout(() => {
+      try { target.focus(); } catch { /* ignore */ }
+    }, 0);
+  }
+
+  togglePause(): void {
+    if (this.isVideoSlide()) return;
+    if (this.running()) this.pause(); else this.resume();
+  }
 
   next() {
     this.stopTimer();
@@ -255,6 +308,14 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
     if (e.key === 'Escape') this.close();
     if (e.key === 'ArrowRight') this.next();
     if (e.key === 'ArrowLeft') this.prev();
+    if (e.key === ' ' || e.code === 'Space') {
+      const target = e.target as HTMLElement | null;
+      // Ne pas intercepter Space sur les champs de saisie
+      const tag = target?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+      e.preventDefault();
+      this.togglePause();
+    }
   }
 
   onHoldStart() {

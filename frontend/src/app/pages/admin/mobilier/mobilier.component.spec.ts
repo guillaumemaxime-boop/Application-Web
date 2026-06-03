@@ -27,6 +27,8 @@ type MobilierInternals = {
   removeFurniture: (item: unknown) => void;
   onCategoryReorder: (order: number[]) => void;
   toggleCategoryVisibility: (c: unknown, event: Event) => void;
+  moveCategoryUp: (i: number) => void;
+  moveCategoryDown: (i: number) => void;
   parseDimensions: (list: string[]) => { w: number | null; d: number | null; h: number | null; notes: string };
   serializeDimensions: (w: number | null, d: number | null, h: number | null, notesText: string) => string[];
   persistCategories: () => void;
@@ -321,6 +323,92 @@ describe('MobilierComponent', () => {
     cmp.onCategoryReorder([0]);
     expect(cmp.categoryMeta()).toBeNull();
     // Aucun PUT attendu — cleanup HTTP
+    httpMock.expectOne('/api/admin/categories').flush([]);
+  });
+
+  it('moveCategoryUp() echange avec la precedente (A-04)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'success');
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/admin/categories').flush([
+      { category: 'A', coverImage: '', position: 0, visible: true },
+      { category: 'B', coverImage: '', position: 1, visible: true },
+    ]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.moveCategoryUp(1);
+    const cats = cmp.categoryMeta() as Array<{ category: string }>;
+    expect(cats[0].category).toBe('B');
+    expect(cats[1].category).toBe('A');
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/B').flush({});
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/A').flush({});
+  });
+
+  it('moveCategoryUp(0) ne fait rien (A-04)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/admin/categories').flush([{ category: 'A', coverImage: '', position: 0, visible: true }]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.moveCategoryUp(0);
+    // pas de PUT
+  });
+
+  it('moveCategoryUp() ne fait rien quand categoryMeta null (A-04)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.moveCategoryUp(1);
+    expect(cmp.categoryMeta()).toBeNull();
+    httpMock.expectOne('/api/admin/categories').flush([]);
+  });
+
+  it('moveCategoryDown() echange avec la suivante (A-04)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/admin/categories').flush([
+      { category: 'A', coverImage: '', position: 0, visible: true },
+      { category: 'B', coverImage: '', position: 1, visible: true },
+    ]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.moveCategoryDown(0);
+    const cats = cmp.categoryMeta() as Array<{ category: string }>;
+    expect(cats[0].category).toBe('B');
+    expect(cats[1].category).toBe('A');
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/B').flush({});
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/A').flush({});
+  });
+
+  it('moveCategoryDown(last) ne fait rien (A-04)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/admin/categories').flush([{ category: 'A', coverImage: '', position: 0, visible: true }]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.moveCategoryDown(0);
+    // pas de PUT
+  });
+
+  it('moveCategoryDown() ne fait rien quand categoryMeta null (A-04)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.moveCategoryDown(0);
+    expect(cmp.categoryMeta()).toBeNull();
     httpMock.expectOne('/api/admin/categories').flush([]);
   });
 

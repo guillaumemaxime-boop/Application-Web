@@ -34,7 +34,7 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
                   <div class="video-frame">
                     <iframe
                       [src]="url"
-                      title="Vidéo"
+                      [title]="'Vidéo — ' + (s.caption || 'sans titre')"
                       allow="autoplay; fullscreen; encrypted-media"
                       allowfullscreen></iframe>
                   </div>

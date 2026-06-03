@@ -12,8 +12,9 @@ import { PortfolioService } from './services/portfolio.service';
   imports: [RouterOutlet, HeaderComponent, FooterComponent, SplashComponent],
   template: `
     @if (showSplash()) { <app-splash /> }
+    <a class="skip-link" href="#main-content">Aller au contenu principal</a>
     <app-header />
-    <main>
+    <main id="main-content" tabindex="-1">
       <router-outlet />
     </main>
     <app-footer />
@@ -27,6 +28,9 @@ import { PortfolioService } from './services/portfolio.service';
     main {
       flex: 1;
       padding-top: 88px;
+    }
+    main:focus {
+      outline: none;
     }
   `]
 })

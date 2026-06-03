@@ -14,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
         <h1>Connexion</h1>
 
         @if (error()) {
-          <p class="flash-error">Identifiants incorrects.</p>
+          <p class="flash-error" role="alert">Identifiants incorrects.</p>
         }
 
         <form [formGroup]="form" (ngSubmit)="submit()">
@@ -59,6 +59,7 @@ import { AuthService } from '../../services/auth.service';
       color: var(--color-ink);
     }
     input:focus { outline: none; border-color: var(--color-ink); }
+    input:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 
     .btn-primary {
       margin-top: 8px;

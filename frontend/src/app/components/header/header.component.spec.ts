@@ -85,4 +85,19 @@ describe('HeaderComponent', () => {
     setup();
     expect(fixture.nativeElement.querySelector('nav a.admin-link')).toBeNull();
   });
+
+  it('exposes the burger with aria-label and aria-controls (A-10)', () => {
+    setup();
+    const burger: HTMLButtonElement | null = fixture.nativeElement.querySelector('.burger');
+    expect(burger).not.toBeNull();
+    expect(burger!.getAttribute('aria-label')).toBe('Menu');
+    expect(burger!.getAttribute('aria-controls')).toBe('main-nav');
+  });
+
+  it('labels the navigation as "Navigation principale" (A-09)', () => {
+    setup();
+    const nav = fixture.nativeElement.querySelector('nav#main-nav');
+    expect(nav).not.toBeNull();
+    expect(nav.getAttribute('aria-label')).toBe('Navigation principale');
+  });
 });

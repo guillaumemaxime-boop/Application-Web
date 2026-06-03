@@ -13,11 +13,17 @@ import { PortfolioService } from '../../services/portfolio.service';
           <img src="logo.jpg" alt="Milo Guillaume — Design & Artisanat" class="brand-logo">
         </a>
 
-        <button class="burger" type="button" (click)="toggleMenu()" [attr.aria-expanded]="open()">
-          <span></span><span></span><span></span>
+        <button class="burger" type="button"
+                aria-label="Menu"
+                aria-controls="main-nav"
+                (click)="toggleMenu()"
+                [attr.aria-expanded]="open()">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
         </button>
 
-        <nav [class.open]="open()">
+        <nav id="main-nav" aria-label="Navigation principale" [class.open]="open()">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Accueil</a>
           @if (mobilierVisible()) {
             <a routerLink="/mobilier" routerLinkActive="active" (click)="closeMenu()">Mobilier</a>

@@ -71,6 +71,17 @@ describe('AppComponent', () => {
     expect(main).toBeTruthy();
   });
 
+  it('renders a skip-link targeting #main-content (A-03)', () => {
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({});
+    const link = fixture.nativeElement.querySelector('a.skip-link');
+    expect(link).toBeTruthy();
+    expect(link.getAttribute('href')).toBe('#main-content');
+    const main = fixture.nativeElement.querySelector('main#main-content');
+    expect(main).toBeTruthy();
+    expect(main.getAttribute('tabindex')).toBe('-1');
+  });
+
   // --- Tests feature splash ---
 
   it('starts the init loading key on bootstrap', () => {

@@ -1,6 +1,7 @@
-import { Component, EventEmitter, HostListener, Input, Output, inject, signal } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { PortfolioService } from '../../services/portfolio.service';
 import { ContactRequestInput } from '../../models/contact.model';
 
@@ -9,7 +10,7 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 @Component({
   selector: 'app-contact-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, A11yModule],
   template: `
     @if (inline) {
       <div class="inline-wrap">
@@ -17,7 +18,8 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
       </div>
     } @else {
       <div class="backdrop" (click)="onBackdropClick($event)">
-        <div class="panel" role="dialog" aria-modal="true" [attr.aria-labelledby]="'contact-title'">
+        <div class="panel" role="dialog" aria-modal="true" [attr.aria-labelledby]="'contact-title'"
+             cdkTrapFocus cdkTrapFocusAutoCapture>
           <button type="button" class="close" (click)="close()" aria-label="Fermer">✕</button>
           <ng-container *ngTemplateOutlet="body"></ng-container>
         </div>
@@ -44,15 +46,27 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
             }
           </div>
         } @else {
-          <form (ngSubmit)="submit()" #f="ngForm" novalidate>
+          <form (ngSubmit)="submit(f)" #f="ngForm" novalidate>
             <div class="row">
               <label>
                 <span>Nom <em>*</em></span>
-                <input type="text" name="name" [(ngModel)]="form.name" required maxlength="200" autocomplete="name" />
+                <input #nameInput type="text" name="name" [(ngModel)]="form.name"
+                       required maxlength="200" autocomplete="name"
+                       [attr.aria-invalid]="isInvalid(f, 'name') ? 'true' : null"
+                       [attr.aria-describedby]="isInvalid(f, 'name') ? 'name-error' : null" />
+                @if (isInvalid(f, 'name')) {
+                  <p id="name-error" class="field-error" role="alert">Indiquez votre nom.</p>
+                }
               </label>
               <label>
                 <span>Email <em>*</em></span>
-                <input type="email" name="email" [(ngModel)]="form.email" required maxlength="300" autocomplete="email" />
+                <input #emailInput type="email" name="email" [(ngModel)]="form.email"
+                       required maxlength="300" autocomplete="email"
+                       [attr.aria-invalid]="isInvalid(f, 'email') ? 'true' : null"
+                       [attr.aria-describedby]="isInvalid(f, 'email') ? 'email-error' : null" />
+                @if (isInvalid(f, 'email')) {
+                  <p id="email-error" class="field-error" role="alert">Indiquez une adresse email valide.</p>
+                }
               </label>
             </div>
 
@@ -83,18 +97,24 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 
             <label>
               <span>Message <em>*</em></span>
-              <textarea name="message" [(ngModel)]="form.message" required minlength="5" maxlength="5000" rows="5"></textarea>
+              <textarea #messageInput name="message" [(ngModel)]="form.message"
+                        required minlength="5" maxlength="5000" rows="5"
+                        [attr.aria-invalid]="isInvalid(f, 'message') ? 'true' : null"
+                        [attr.aria-describedby]="isInvalid(f, 'message') ? 'message-error' : null"></textarea>
+              @if (isInvalid(f, 'message')) {
+                <p id="message-error" class="field-error" role="alert">Le message doit faire au moins 5 caractères.</p>
+              }
             </label>
 
             @if (status() === 'error') {
-              <p class="error">L'envoi a échoué. Vérifiez votre message ou réessayez dans un instant.</p>
+              <p class="error" role="alert">L'envoi a échoué. Vérifiez votre message ou réessayez dans un instant.</p>
             }
 
             <div class="actions">
               @if (!inline) {
                 <button type="button" class="cancel" (click)="close()" [disabled]="status() === 'submitting'">Annuler</button>
               }
-              <button type="submit" class="primary" [disabled]="status() === 'submitting' || f.invalid">
+              <button type="submit" class="primary" [disabled]="status() === 'submitting'">
                 {{ status() === 'submitting' ? 'Envoi…' : 'Envoyer la demande' }}
               </button>
             </div>
@@ -170,6 +190,10 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
       outline: none;
       border-color: var(--color-ink);
     }
+    input:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--color-ink);
+      outline-offset: 2px;
+    }
     textarea { resize: vertical; min-height: 110px; font-family: inherit; }
 
     fieldset.interest {
@@ -206,6 +230,11 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
       color: #b43c32;
       padding: 10px 14px;
       font-size: 0.9rem;
+    }
+    .field-error {
+      color: #b1532a;
+      font-size: 0.78rem;
+      margin-top: 4px;
     }
 
     .actions {
@@ -249,8 +278,9 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
     }
   `]
 })
-export class ContactFormComponent {
+export class ContactFormComponent implements OnInit, OnDestroy {
   private readonly portfolio = inject(PortfolioService);
+  private previousFocus: HTMLElement | null = null;
 
   @Input() furnitureId: string | null = null;
   @Input() furnitureSlug: string | null = null;
@@ -259,6 +289,36 @@ export class ContactFormComponent {
   @Output() closed = new EventEmitter<void>();
 
   protected readonly status = signal<Status>('idle');
+
+  @ViewChild('nameInput') nameInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('emailInput') emailInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('messageInput') messageInput?: ElementRef<HTMLTextAreaElement>;
+
+  protected isInvalid(form: NgForm | null | undefined, field: string): boolean {
+    const ctrl = form?.controls?.[field];
+    if (!ctrl) return false;
+    return ctrl.invalid && (ctrl.touched || ctrl.dirty);
+  }
+
+  ngOnInit(): void {
+    if (!this.inline && typeof document !== 'undefined') {
+      this.previousFocus = document.activeElement as HTMLElement | null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.restorePreviousFocus();
+  }
+
+  private restorePreviousFocus(): void {
+    if (this.inline) return;
+    const target = this.previousFocus;
+    if (!target || typeof target.focus !== 'function') return;
+    setTimeout(() => {
+      try { target.focus(); } catch { /* ignore */ }
+    }, 0);
+    this.previousFocus = null;
+  }
 
   protected form: ContactRequestInput = {
     name: '',
@@ -271,7 +331,15 @@ export class ContactFormComponent {
     furnitureTitle: '',
   };
 
-  submit() {
+  submit(form?: NgForm | null) {
+    if (form) {
+      // Marquer tous les controles comme touched pour declencher l'affichage des erreurs
+      Object.values(form.controls).forEach(c => c.markAsTouched());
+      if (form.invalid) {
+        this.focusFirstError(form);
+        return;
+      }
+    }
     this.status.set('submitting');
     const payload: ContactRequestInput = {
       ...this.form,
@@ -285,9 +353,25 @@ export class ContactFormComponent {
     });
   }
 
+  private focusFirstError(form: NgForm): void {
+    const order: Array<{ key: string; ref?: ElementRef<HTMLElement> }> = [
+      { key: 'name', ref: this.nameInput },
+      { key: 'email', ref: this.emailInput },
+      { key: 'message', ref: this.messageInput },
+    ];
+    for (const entry of order) {
+      const ctrl = form.controls[entry.key];
+      if (ctrl?.invalid) {
+        entry.ref?.nativeElement?.focus();
+        return;
+      }
+    }
+  }
+
   close() {
     if (this.inline) return;
     this.closed.emit();
+    this.restorePreviousFocus();
   }
 
   resetForm() {

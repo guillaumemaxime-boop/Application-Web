@@ -23,15 +23,19 @@ interface HomeAdminItem {
       <p class="hint">Glisse pour réordonner. Décoche pour exclure du feed. Les modifications sont enregistrées automatiquement.</p>
       @if (homeItems(); as items) {
         <ul class="ordering-list" appReorderable (reordered)="onFeedReorder($event)">
-          @for (entry of items; track entry.kind + ':' + entry.slug) {
+          @for (entry of items; track entry.kind + ':' + entry.slug; let i = $index) {
             <li class="home-row">
-              <span class="handle">⠿</span>
+              <span class="handle" aria-hidden="true">⠿</span>
               <span class="kind-badge">{{ entry.kind === 'furniture' ? 'MOBILIER' : 'EXPO' }}</span>
               <img [src]="entry.cover" [alt]="entry.title" class="thumb" />
               <span class="title">{{ entry.title }}</span>
               <label class="incl">
                 <input type="checkbox" [checked]="entry.included" (change)="toggleIncluded(entry, $event)" /> Inclure
               </label>
+              <button type="button" class="reorder-btn" aria-label="Monter dans l'ordre"
+                      (click)="moveUp(i)" [disabled]="i === 0">↑</button>
+              <button type="button" class="reorder-btn" aria-label="Descendre dans l'ordre"
+                      (click)="moveDown(i)" [disabled]="i === items.length - 1">↓</button>
             </li>
           }
         </ul>
@@ -50,6 +54,12 @@ interface HomeAdminItem {
     .home-row .thumb { width: 40px; height: 40px; object-fit: cover; flex-shrink: 0; }
     .home-row .title { flex: 1; font-size: 0.9rem; color: var(--color-ink); }
     .home-row .incl { font-size: 0.78rem; color: var(--color-ink-soft); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+    .reorder-btn {
+      background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft);
+      width: 28px; height: 28px; padding: 0; cursor: pointer; font-size: 0.9rem; line-height: 1;
+    }
+    .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
+    .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .status { color: var(--color-mute); }
   `]
 })
@@ -92,6 +102,23 @@ export class AccueilComponent {
     if (!current) return;
     this.homeItems.set(order.map(i => current[i]));
     this.persistFeed();
+  }
+
+  moveUp(index: number): void {
+    if (index <= 0) return;
+    const items = this.homeItems();
+    if (!items) return;
+    const order = items.map((_, i) => i);
+    [order[index - 1], order[index]] = [order[index], order[index - 1]];
+    this.onFeedReorder(order);
+  }
+
+  moveDown(index: number): void {
+    const items = this.homeItems();
+    if (!items || index >= items.length - 1) return;
+    const order = items.map((_, i) => i);
+    [order[index], order[index + 1]] = [order[index + 1], order[index]];
+    this.onFeedReorder(order);
   }
 
   toggleIncluded(item: HomeAdminItem, event: Event): void {

@@ -3,7 +3,7 @@
   --color-bg-alt: #f7f7f7;
   --color-ink: #111111;
   --color-ink-soft: #555555;
-  --color-mute: #999999;
+  --color-mute: #717171;
   --color-line: #e8e8e8;
   --color-accent: #111111;
   --color-accent-deep: #111111;
@@ -116,4 +116,59 @@ button {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Accessibilite : focus clavier toujours visible */
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
+}
+/* Quand un fond sombre rend le ring noir invisible, override local */
+.story-viewer :focus-visible,
+.picker-backdrop :focus-visible,
+.viewer-backdrop :focus-visible,
+.backdrop :focus-visible {
+  outline-color: #fff;
+}
+
+/* Skip link : invisible jusqu'au focus clavier */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--color-ink);
+  color: var(--color-bg);
+  padding: 12px 20px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  z-index: 9999;
+  transition: top 0.15s ease-out;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 0;
+}
+
+/* Texte accessible uniquement aux lecteurs d'ecran */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
