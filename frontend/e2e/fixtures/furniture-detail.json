@@ -1,0 +1,18 @@
+{
+  "id": "tabouret-aurore",
+  "title": "Tabouret Aurore",
+  "slug": "tabouret-aurore",
+  "category": "Tabourets",
+  "material": "Frêne brûlé",
+  "year": 2025,
+  "coverImage": "__PLACEHOLDER__",
+  "gallery": ["__PLACEHOLDER__", "__PLACEHOLDER__", "__PLACEHOLDER__"],
+  "shortDescription": "Pièce unique en frêne brûlé selon la technique shou sugi ban.",
+  "description": "Le Tabouret Aurore est une pièce sculptée à la main, taillée dans un bloc de frêne massif puis brûlée selon la technique japonaise shou sugi ban. La surface carbonisée est ensuite brossée à la main, révélant les veines profondes du bois, avant d'être nourrie d'une cire d'abeille naturelle. Chaque exemplaire est unique : la flamme dessine son propre langage sur le matériau, et l'assise creusée à la gouge épouse la forme du corps.",
+  "dimensions": ["H 45 cm", "L 35 cm", "P 35 cm"],
+  "designer": "Milo Guillaume",
+  "featured": true,
+  "showStoryLink": false,
+  "showStoryButton": false,
+  "slides": []
+}
