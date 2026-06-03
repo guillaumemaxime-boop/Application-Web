@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, ElementRef, HostListener, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { A11yModule } from '@angular/cdk/a11y';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
 import { ToastService } from '../shared/toast.service';
@@ -8,7 +9,7 @@ import { ToastService } from '../shared/toast.service';
 @Component({
   selector: 'app-mediatheque',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   template: `
     <div class="photos-tab">
       <div class="photos-upload-zone">
@@ -78,14 +79,20 @@ import { ToastService } from '../shared/toast.service';
     </div>
 
     @if (viewingPhoto()) {
-      <div class="viewer-backdrop" (click)="closeViewer()">
-        <div class="viewer-panel" (click)="$event.stopPropagation()">
+      <div class="viewer-backdrop" role="presentation" (click)="closeViewer()">
+        <div class="viewer-panel"
+             role="dialog"
+             aria-modal="true"
+             [attr.aria-labelledby]="'viewer-title'"
+             cdkTrapFocus
+             cdkTrapFocusAutoCapture
+             (click)="$event.stopPropagation()">
           <button type="button" class="viewer-close" (click)="closeViewer()" aria-label="Fermer">×</button>
           <div class="viewer-img-wrap">
             <img [src]="viewingPhoto()!.url" [alt]="viewingPhoto()!.originalName" />
           </div>
           <div class="viewer-caption">
-            <span class="viewer-name">{{ viewingPhoto()!.originalName }}</span>
+            <span id="viewer-title" class="viewer-name">{{ viewingPhoto()!.originalName }}</span>
           </div>
         </div>
       </div>
@@ -294,8 +301,24 @@ export class MediathequeComponent implements AfterViewInit {
     });
   }
 
-  openViewer(photo: Photo): void { this.viewingPhoto.set(photo); }
-  closeViewer(): void { this.viewingPhoto.set(null); }
+  private viewerPreviousFocus: HTMLElement | null = null;
+
+  openViewer(photo: Photo): void {
+    if (typeof document !== 'undefined') {
+      this.viewerPreviousFocus = document.activeElement as HTMLElement | null;
+    }
+    this.viewingPhoto.set(photo);
+  }
+  closeViewer(): void {
+    this.viewingPhoto.set(null);
+    const target = this.viewerPreviousFocus;
+    this.viewerPreviousFocus = null;
+    if (target && typeof target.focus === 'function') {
+      setTimeout(() => {
+        try { target.focus(); } catch { /* ignore */ }
+      }, 0);
+    }
+  }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {

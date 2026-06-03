@@ -236,6 +236,15 @@ describe('ContactFormComponent', () => {
     expect(c.status()).toBe('idle');
   });
 
+  it('expose le dialog avec role et aria-modal (A-05)', () => {
+    const fixture = setup();
+    const panel = fixture.nativeElement.querySelector('.panel');
+    expect(panel).toBeTruthy();
+    expect(panel.getAttribute('role')).toBe('dialog');
+    expect(panel.getAttribute('aria-modal')).toBe('true');
+    expect(panel.getAttribute('aria-labelledby')).toBe('contact-title');
+  });
+
   it('submit() omits furniture context when no inputs are set', () => {
     portfolioSpy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['submitContact']);
     portfolioSpy.submitContact.and.returnValue(of({ id: 'c', createdAt: 't', status: 'NEW' } as ContactRequestAck));

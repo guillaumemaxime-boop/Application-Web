@@ -1,6 +1,7 @@
-import { Component, EventEmitter, HostListener, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { PortfolioService } from '../../services/portfolio.service';
 import { ContactRequestInput } from '../../models/contact.model';
 
@@ -9,7 +10,7 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 @Component({
   selector: 'app-contact-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, A11yModule],
   template: `
     @if (inline) {
       <div class="inline-wrap">
@@ -17,7 +18,8 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
       </div>
     } @else {
       <div class="backdrop" (click)="onBackdropClick($event)">
-        <div class="panel" role="dialog" aria-modal="true" [attr.aria-labelledby]="'contact-title'">
+        <div class="panel" role="dialog" aria-modal="true" [attr.aria-labelledby]="'contact-title'"
+             cdkTrapFocus cdkTrapFocusAutoCapture>
           <button type="button" class="close" (click)="close()" aria-label="Fermer">✕</button>
           <ng-container *ngTemplateOutlet="body"></ng-container>
         </div>
@@ -253,8 +255,9 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
     }
   `]
 })
-export class ContactFormComponent {
+export class ContactFormComponent implements OnInit, OnDestroy {
   private readonly portfolio = inject(PortfolioService);
+  private previousFocus: HTMLElement | null = null;
 
   @Input() furnitureId: string | null = null;
   @Input() furnitureSlug: string | null = null;
@@ -263,6 +266,26 @@ export class ContactFormComponent {
   @Output() closed = new EventEmitter<void>();
 
   protected readonly status = signal<Status>('idle');
+
+  ngOnInit(): void {
+    if (!this.inline && typeof document !== 'undefined') {
+      this.previousFocus = document.activeElement as HTMLElement | null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.restorePreviousFocus();
+  }
+
+  private restorePreviousFocus(): void {
+    if (this.inline) return;
+    const target = this.previousFocus;
+    if (!target || typeof target.focus !== 'function') return;
+    setTimeout(() => {
+      try { target.focus(); } catch { /* ignore */ }
+    }, 0);
+    this.previousFocus = null;
+  }
 
   protected form: ContactRequestInput = {
     name: '',
@@ -292,6 +315,7 @@ export class ContactFormComponent {
   close() {
     if (this.inline) return;
     this.closed.emit();
+    this.restorePreviousFocus();
   }
 
   resetForm() {
