@@ -26,15 +26,13 @@ interface Group {
         <h1 [ngStyle]="titleStyle()">Mobilier</h1>
         <p class="lead">L'ensemble des pièces de l'atelier, classées par {{ groupBy() === 'category' ? 'catégorie' : 'année' }}.</p>
 
-        <div class="toggle" role="tablist" aria-label="Mode d'organisation">
+        <div class="toggle" role="group" aria-label="Mode d'organisation">
           <button type="button"
-                  role="tab"
-                  [attr.aria-selected]="groupBy() === 'category'"
+                  [attr.aria-pressed]="groupBy() === 'category'"
                   [class.active]="groupBy() === 'category'"
                   (click)="setGroupBy('category')">Catégorie</button>
           <button type="button"
-                  role="tab"
-                  [attr.aria-selected]="groupBy() === 'year'"
+                  [attr.aria-pressed]="groupBy() === 'year'"
                   [class.active]="groupBy() === 'year'"
                   (click)="setGroupBy('year')">Année</button>
         </div>

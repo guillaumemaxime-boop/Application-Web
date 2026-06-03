@@ -66,7 +66,7 @@ import { ToastService } from '../shared/toast.service';
           </label>
           <label>
             <span>Année</span>
-            <input type="number" formControlName="year" />
+            <input type="number" inputmode="numeric" formControlName="year" />
           </label>
         </div>
         <label>
@@ -89,15 +89,15 @@ import { ToastService } from '../shared/toast.service';
           <div class="dim-grid">
             <label class="dim-cell">
               <span>Largeur (cm)</span>
-              <input type="number" step="0.1" min="0" formControlName="dimW" placeholder="—" />
+              <input type="number" inputmode="decimal" step="0.1" min="0" formControlName="dimW" placeholder="—" />
             </label>
             <label class="dim-cell">
               <span>Profondeur (cm)</span>
-              <input type="number" step="0.1" min="0" formControlName="dimD" placeholder="—" />
+              <input type="number" inputmode="decimal" step="0.1" min="0" formControlName="dimD" placeholder="—" />
             </label>
             <label class="dim-cell">
               <span>Hauteur (cm)</span>
-              <input type="number" step="0.1" min="0" formControlName="dimH" placeholder="—" />
+              <input type="number" inputmode="decimal" step="0.1" min="0" formControlName="dimH" placeholder="—" />
             </label>
           </div>
           <label class="dim-notes">
@@ -146,14 +146,18 @@ import { ToastService } from '../shared/toast.service';
       <p class="hint">Glisse pour réordonner. Décoche pour masquer une catégorie de la home.</p>
       @if (categoryMeta(); as cats) {
         <ul class="cat-list" appReorderable (reordered)="onCategoryReorder($event)">
-          @for (c of cats; track c.category) {
+          @for (c of cats; track c.category; let i = $index) {
             <li class="home-row">
-              <span class="handle">⠿</span>
+              <span class="handle" aria-hidden="true">⠿</span>
               <img [src]="c.coverImage" [alt]="c.category" class="thumb-round" />
               <span class="title">{{ c.category }}</span>
               <label class="incl">
                 <input type="checkbox" [checked]="c.visible" (change)="toggleCategoryVisibility(c, $event)" /> Visible
               </label>
+              <button type="button" class="reorder-btn" aria-label="Monter la categorie"
+                      (click)="moveCategoryUp(i)" [disabled]="i === 0">↑</button>
+              <button type="button" class="reorder-btn" aria-label="Descendre la categorie"
+                      (click)="moveCategoryDown(i)" [disabled]="i === cats.length - 1">↓</button>
             </li>
           }
         </ul>
@@ -193,6 +197,7 @@ import { ToastService } from '../shared/toast.service';
       font: inherit; color: var(--color-ink); border-radius: 0;
     }
     .form input:focus, .form textarea:focus { outline: none; border-color: var(--color-accent); }
+    .form input:focus-visible, .form textarea:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
     .form textarea { font-family: var(--sans, inherit); resize: vertical; }
     .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .readonly-row input[readonly] { background: var(--color-bg-alt); color: var(--color-ink-soft); cursor: default; }
@@ -226,6 +231,9 @@ import { ToastService } from '../shared/toast.service';
     .home-row .thumb-round { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; flex-shrink: 0; }
     .home-row .title { flex: 1; font-size: 0.9rem; color: var(--color-ink); }
     .home-row .incl { font-size: 0.78rem; color: var(--color-ink-soft); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+    .reorder-btn { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); width: 28px; height: 28px; padding: 0; cursor: pointer; font-size: 0.9rem; line-height: 1; }
+    .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
+    .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     @media (max-width: 960px) {
       .grid-admin { grid-template-columns: 1fr; }
       .list { position: static; max-height: none; }
@@ -403,6 +411,23 @@ export class MobilierComponent {
     if (!current) return;
     this.categoryMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
     this.persistCategories();
+  }
+
+  moveCategoryUp(index: number): void {
+    if (index <= 0) return;
+    const cats = this.categoryMeta();
+    if (!cats) return;
+    const order = cats.map((_, i) => i);
+    [order[index - 1], order[index]] = [order[index], order[index - 1]];
+    this.onCategoryReorder(order);
+  }
+
+  moveCategoryDown(index: number): void {
+    const cats = this.categoryMeta();
+    if (!cats || index >= cats.length - 1) return;
+    const order = cats.map((_, i) => i);
+    [order[index], order[index + 1]] = [order[index + 1], order[index]];
+    this.onCategoryReorder(order);
   }
 
   toggleCategoryVisibility(c: AdminCategoryView, event: Event): void {

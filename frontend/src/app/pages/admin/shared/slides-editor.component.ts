@@ -63,7 +63,7 @@ import { parseVideoUrl } from '../../../utils/video-url';
 
               <div class="form">
                 <div class="row">
-                  <span class="handle">⠿</span>
+                  <span class="handle" aria-hidden="true">⠿</span>
                   <span class="type-badge">{{ s.type.toUpperCase() }}</span>
                   <button type="button" class="del" (click)="remove(i)">✕</button>
                 </div>
@@ -103,9 +103,9 @@ import { parseVideoUrl } from '../../../utils/video-url';
                     <div class="specs">
                       @for (entry of $any(s).specs; track $index; let j = $index) {
                         <div class="spec-row">
-                          <input type="text" placeholder="Label" [ngModel]="entry.label" (ngModelChange)="patchSpec(i, j, 'label', $event)" />
-                          <input type="text" placeholder="Valeur" [ngModel]="entry.value" (ngModelChange)="patchSpec(i, j, 'value', $event)" />
-                          <button type="button" (click)="removeSpec(i, j)">✕</button>
+                          <input type="text" placeholder="Label" aria-label="Label de caracteristique" [ngModel]="entry.label" (ngModelChange)="patchSpec(i, j, 'label', $event)" />
+                          <input type="text" placeholder="Valeur" aria-label="Valeur de caracteristique" [ngModel]="entry.value" (ngModelChange)="patchSpec(i, j, 'value', $event)" />
+                          <button type="button" aria-label="Retirer la caracteristique" (click)="removeSpec(i, j)">✕</button>
                         </div>
                       }
                       <button type="button" (click)="addSpec(i)">+ Entrée</button>

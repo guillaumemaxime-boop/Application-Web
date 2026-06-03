@@ -306,4 +306,82 @@ describe('StoryViewerComponent', () => {
     expect(iframe).toBeTruthy();
     expect(iframe.nativeElement.src).toContain('player.vimeo.com/video/123456789');
   });
+
+  // --- A-01 : accessibilite (focus trap, role dialog, pause clavier) ---
+
+  it('expose un dialog accessible (role=dialog, aria-modal, aria-label)', () => {
+    setQueue([{ title: 'Chaise', subtitle: 's', slides: [cover()] }]);
+    const backdrop = fixture.nativeElement.querySelector('.backdrop') as HTMLElement;
+    expect(backdrop).toBeTruthy();
+    expect(backdrop.getAttribute('role')).toBe('dialog');
+    expect(backdrop.getAttribute('aria-modal')).toBe('true');
+    expect(backdrop.getAttribute('aria-label')).toContain('Chaise');
+  });
+
+  it('annonce le slide courant via aria-live polite (A-01)', () => {
+    setQueue([{ title: 'T', subtitle: 's', slides: [cover(), image('s2')] }]);
+    const live = fixture.nativeElement.querySelector('[aria-live="polite"]');
+    expect(live).toBeTruthy();
+    expect(live.textContent).toContain('Slide 1 sur 2');
+  });
+
+  it('affiche un bouton pause accessible sur slides non-video (A-01)', () => {
+    setQueue([{ title: 'T', subtitle: 's', slides: [cover()] }]);
+    const btn = fixture.nativeElement.querySelector('button.pause') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(btn.getAttribute('aria-pressed')).toBe('false');
+    expect(btn.getAttribute('aria-label')).toContain('pause');
+  });
+
+  it("ne rend pas le bouton pause sur slide video (gere par l'iframe)", () => {
+    const slides: DisplaySlide[] = [
+      { type: 'video', id: 'v1', position: 0, src: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', caption: null },
+    ];
+    setQueue([{ title: 'T', subtitle: 's', slides }]);
+    expect(fixture.nativeElement.querySelector('button.pause')).toBeNull();
+  });
+
+  it('togglePause bascule entre pause et reprise (A-01)', () => {
+    setQueue([{ title: 'T', subtitle: 's', slides: [cover()] }]);
+    expect(component['running']()).toBeTrue();
+    component.togglePause();
+    expect(component['running']()).toBeFalse();
+    component.togglePause();
+    expect(component['running']()).toBeTrue();
+  });
+
+  it('Space key declenche togglePause sur slides non-video (A-01)', () => {
+    setQueue([{ title: 'T', subtitle: 's', slides: [cover()] }]);
+    const event = { key: ' ', target: document.body, preventDefault: jasmine.createSpy('pd') } as unknown as KeyboardEvent;
+    expect(component['running']()).toBeTrue();
+    component.onKey(event);
+    expect(component['running']()).toBeFalse();
+  });
+
+  it('Space key ignoree sur input/textarea (A-01)', () => {
+    setQueue([{ title: 'T', subtitle: 's', slides: [cover()] }]);
+    const fakeInput = document.createElement('input');
+    const event = { key: ' ', target: fakeInput, preventDefault: jasmine.createSpy('pd') } as unknown as KeyboardEvent;
+    component.onKey(event);
+    expect(component['running']()).toBeTrue();
+  });
+
+  it("les zones de tap sont des boutons libelles (A-01)", () => {
+    setQueue([{ title: 'T', subtitle: 's', slides: [cover(), image('s2')] }]);
+    const left = fixture.nativeElement.querySelector('button.zone.left') as HTMLButtonElement;
+    const right = fixture.nativeElement.querySelector('button.zone.right') as HTMLButtonElement;
+    expect(left).toBeTruthy();
+    expect(right).toBeTruthy();
+    expect(left.getAttribute('aria-label')).toBe('Slide précédent');
+    expect(right.getAttribute('aria-label')).toBe('Slide suivant');
+  });
+
+  it("title de l'iframe video inclut la legende (A-01)", () => {
+    const slides: DisplaySlide[] = [
+      { type: 'video', id: 'v1', position: 0, src: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', caption: 'Atelier' },
+    ];
+    setQueue([{ title: 'T', subtitle: 's', slides }]);
+    const iframe = fixture.debugElement.query(By.css('iframe')).nativeElement as HTMLIFrameElement;
+    expect(iframe.title).toContain('Atelier');
+  });
 });

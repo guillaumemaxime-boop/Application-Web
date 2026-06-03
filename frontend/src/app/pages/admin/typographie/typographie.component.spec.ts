@@ -45,7 +45,7 @@ describe('TypographieComponent', () => {
     httpMock.expectOne('/api/content').flush({});
     fixture.detectChanges();
     (fixture.componentInstance as any).saveTypo();
-    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/content');
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
     put.flush({});
     expect(toast.success).toHaveBeenCalled();
   });
@@ -58,7 +58,7 @@ describe('TypographieComponent', () => {
     httpMock.expectOne('/api/content').flush({});
     fixture.detectChanges();
     (fixture.componentInstance as any).saveTypo();
-    httpMock.expectOne('/api/content').flush({}, { status: 500, statusText: 'fail' });
+    httpMock.expectOne('/api/admin/content').flush({}, { status: 500, statusText: 'fail' });
     expect(toast.error).toHaveBeenCalled();
   });
 });

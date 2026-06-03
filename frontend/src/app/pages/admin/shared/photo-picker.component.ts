@@ -1,16 +1,23 @@
-import { Component, EventEmitter, HostListener, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { Photo } from '../../../models/photo.model';
 
 @Component({
   selector: 'app-photo-picker',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   template: `
-    <div class="picker-backdrop" (click)="emitClose()">
-      <div class="picker-panel" (click)="$event.stopPropagation()">
+    <div class="picker-backdrop" role="presentation" (click)="emitClose()">
+      <div class="picker-panel"
+           role="dialog"
+           aria-modal="true"
+           [attr.aria-labelledby]="'picker-title'"
+           cdkTrapFocus
+           cdkTrapFocusAutoCapture
+           (click)="$event.stopPropagation()">
         <div class="picker-head">
-          <h3>
+          <h3 id="picker-title">
             @if (target === 'gallery') { Ajouter à la galerie } @else { Choisir une image }
           </h3>
           <button type="button" class="picker-close" (click)="emitClose()" aria-label="Fermer">×</button>
@@ -73,6 +80,7 @@ import { Photo } from '../../../models/photo.model';
       border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink);
     }
     .picker-search-input:focus { outline: none; border-color: var(--color-accent); }
+    .picker-search-input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
     .picker-empty { padding: 32px 24px; color: var(--color-mute); font-size: 0.9rem; }
     .picker-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -86,7 +94,7 @@ import { Photo } from '../../../models/photo.model';
     .picker-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
   `]
 })
-export class PhotoPickerComponent {
+export class PhotoPickerComponent implements OnInit, OnDestroy {
   @Input() target: 'cover' | 'gallery' = 'cover';
   @Input() photos: Photo[] = [];
 
@@ -94,6 +102,26 @@ export class PhotoPickerComponent {
   @Output() closed = new EventEmitter<void>();
 
   protected readonly query = signal('');
+  private previousFocus: HTMLElement | null = null;
+
+  ngOnInit(): void {
+    if (typeof document !== 'undefined') {
+      this.previousFocus = document.activeElement as HTMLElement | null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.restorePreviousFocus();
+  }
+
+  private restorePreviousFocus(): void {
+    const target = this.previousFocus;
+    if (!target || typeof target.focus !== 'function') return;
+    setTimeout(() => {
+      try { target.focus(); } catch { /* ignore */ }
+    }, 0);
+    this.previousFocus = null;
+  }
 
   protected filtered(): Photo[] {
     const q = this.query().trim().toLowerCase();
@@ -110,10 +138,11 @@ export class PhotoPickerComponent {
 
   emitClose(): void {
     this.closed.emit();
+    this.restorePreviousFocus();
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    this.closed.emit();
+    this.emitClose();
   }
 }

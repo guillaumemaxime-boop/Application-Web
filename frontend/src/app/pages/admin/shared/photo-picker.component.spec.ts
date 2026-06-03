@@ -92,6 +92,19 @@ describe('PhotoPickerComponent', () => {
     expect(items[0].nativeElement.getAttribute('title')).toBe('IMG_1234.jpg');
   });
 
+  it('expose le panel en role=dialog avec aria-modal (A-06)', () => {
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'cover');
+    fixture.componentRef.setInput('photos', photos);
+    fixture.detectChanges();
+    const panel = fixture.debugElement.query(By.css('.picker-panel')).nativeElement as HTMLElement;
+    expect(panel.getAttribute('role')).toBe('dialog');
+    expect(panel.getAttribute('aria-modal')).toBe('true');
+    expect(panel.getAttribute('aria-labelledby')).toBe('picker-title');
+    const title = fixture.debugElement.query(By.css('#picker-title'));
+    expect(title).toBeTruthy();
+  });
+
   it('affiche « Aucun résultat » quand la recherche ne matche rien', () => {
     const fixture = TestBed.createComponent(PhotoPickerComponent);
     fixture.componentRef.setInput('target', 'cover');

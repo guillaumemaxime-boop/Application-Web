@@ -18,7 +18,7 @@ import { enrichSlides } from '../../utils/display-slides';
     <section class="hero">
       <div class="container">
         <span class="eyebrow" [ngStyle]="eyebrowStyleVar()">{{ heroEyebrow() }}</span>
-        <h1 [innerHTML]="heroTitle()" [ngStyle]="titleStyleVar()"></h1>
+        <h1 class="hero-title" [ngStyle]="titleStyleVar()">{{ heroTitle() }}</h1>
         <p class="lead">{{ heroLead() }}</p>
       </div>
     </section>
@@ -82,6 +82,7 @@ import { enrichSlides } from '../../utils/display-slides';
     .hero { min-height: 50vh; padding: 96px 0 64px; display: flex; flex-direction: column; justify-content: center; }
     .hero .eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-mute); }
     .hero h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.05; margin-top: 20px; max-width: 820px; }
+    .hero .hero-title { white-space: pre-line; }
     .hero .lead { max-width: 540px; margin-top: 28px; font-size: 1.05rem; color: var(--color-ink-soft); }
 
     .stories { position: sticky; top: 72px; z-index: 30; background: var(--color-bg); border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); padding: 24px 0; }
@@ -135,7 +136,7 @@ export class HomeComponent implements OnInit {
   protected heroTitle = computed(() => {
     if (this.data() === null) return 'En chargement…';
     const t = this.content()['home.hero.title'];
-    return (t && t.trim()) ? t.replace(/\n/g, '<br/>') : 'Mobilier sculpté,<br/>scénographies vivantes.';
+    return (t && t.trim()) ? t : 'Mobilier sculpté,\nscénographies vivantes.';
   });
   protected heroLead = computed(() => {
     if (this.data() === null) return '';

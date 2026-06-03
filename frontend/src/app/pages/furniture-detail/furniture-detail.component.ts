@@ -22,7 +22,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       <div class="container section"><p class="status">Chargement…</p></div>
     } @else if (notFound()) {
       <div class="container section">
-        <h2>Pièce introuvable</h2>
+        <h1>Pièce introuvable</h1>
         <p><a class="btn-link" routerLink="/mobilier">Retour au catalogue</a></p>
       </div>
     } @else if (item(); as f) {

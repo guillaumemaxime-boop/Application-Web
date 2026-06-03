@@ -236,6 +236,90 @@ describe('ContactFormComponent', () => {
     expect(c.status()).toBe('idle');
   });
 
+  it('isInvalid retourne false pour un champ inconnu ou un form null (A-12)', () => {
+    const fixture = setup();
+    const c = fixture.componentInstance as any;
+    expect(c.isInvalid(null, 'name')).toBeFalse();
+    expect(c.isInvalid(undefined, 'name')).toBeFalse();
+    expect(c.isInvalid({ controls: {} }, 'inconnu')).toBeFalse();
+  });
+
+  it('isInvalid retourne true seulement quand invalid + touched/dirty (A-12)', () => {
+    const fixture = setup();
+    const c = fixture.componentInstance as any;
+    expect(c.isInvalid({ controls: { x: { invalid: true, touched: false, dirty: false } } }, 'x')).toBeFalse();
+    expect(c.isInvalid({ controls: { x: { invalid: true, touched: true, dirty: false } } }, 'x')).toBeTrue();
+    expect(c.isInvalid({ controls: { x: { invalid: false, touched: true } } }, 'x')).toBeFalse();
+  });
+
+  it('submit(form) bloque l\'envoi quand le formulaire est invalide (A-12)', () => {
+    portfolioSpy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['submitContact']);
+    TestBed.configureTestingModule({
+      imports: [ContactFormComponent],
+      providers: [{ provide: PortfolioService, useValue: portfolioSpy }],
+    });
+    const fixture = TestBed.createComponent(ContactFormComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    const fakeForm = {
+      controls: { name: { invalid: true, touched: false, markAsTouched: () => {} } },
+      invalid: true,
+    };
+    c.submit(fakeForm);
+    expect(portfolioSpy.submitContact).not.toHaveBeenCalled();
+  });
+
+  it('submit(form) marque tous les controles comme touched (A-12)', () => {
+    portfolioSpy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['submitContact']);
+    TestBed.configureTestingModule({
+      imports: [ContactFormComponent],
+      providers: [{ provide: PortfolioService, useValue: portfolioSpy }],
+    });
+    const fixture = TestBed.createComponent(ContactFormComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    const markName = jasmine.createSpy('markName');
+    const markEmail = jasmine.createSpy('markEmail');
+    const fakeForm = {
+      controls: {
+        name: { invalid: true, markAsTouched: markName },
+        email: { invalid: false, markAsTouched: markEmail },
+      },
+      invalid: true,
+    };
+    c.submit(fakeForm);
+    expect(markName).toHaveBeenCalled();
+    expect(markEmail).toHaveBeenCalled();
+  });
+
+  it('focusFirstError focus le premier champ invalide (A-12)', () => {
+    const fixture = setup();
+    const c = fixture.componentInstance as any;
+    const fakeInput = document.createElement('input');
+    document.body.appendChild(fakeInput);
+    c.nameInput = { nativeElement: fakeInput };
+    const fakeForm = {
+      controls: {
+        name: { invalid: true, markAsTouched: () => {} },
+        email: { invalid: false, markAsTouched: () => {} },
+        message: { invalid: false, markAsTouched: () => {} },
+      },
+      invalid: true,
+    };
+    c.submit(fakeForm);
+    expect(document.activeElement).toBe(fakeInput);
+    fakeInput.remove();
+  });
+
+  it('expose le dialog avec role et aria-modal (A-05)', () => {
+    const fixture = setup();
+    const panel = fixture.nativeElement.querySelector('.panel');
+    expect(panel).toBeTruthy();
+    expect(panel.getAttribute('role')).toBe('dialog');
+    expect(panel.getAttribute('aria-modal')).toBe('true');
+    expect(panel.getAttribute('aria-labelledby')).toBe('contact-title');
+  });
+
   it('submit() omits furniture context when no inputs are set', () => {
     portfolioSpy = jasmine.createSpyObj<PortfolioService>('PortfolioService', ['submitContact']);
     portfolioSpy.submitContact.and.returnValue(of({ id: 'c', createdAt: 't', status: 'NEW' } as ContactRequestAck));

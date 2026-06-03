@@ -91,7 +91,7 @@ describe('FooterComponent', () => {
     expect(labels).toEqual(['Accueil', 'Contact']);
   });
 
-  it('renders contact info items as links to the /contact page', () => {
+  it('renders email as mailto:, phone as tel: and location as /contact link (A-20)', () => {
     setup({
       'profile.contactEmail': 'test@example.com',
       'profile.phone': '+33 1 00 00 00 00',
@@ -100,10 +100,17 @@ describe('FooterComponent', () => {
     const contactUl = fixture.nativeElement.querySelectorAll('ul')[1] as HTMLElement;
     const links = contactUl.querySelectorAll('a');
     expect(links.length).toBe(3);
-    links.forEach((a: HTMLAnchorElement) => {
-      expect(a.getAttribute('href')).toBe('/contact');
-    });
-    expect(fixture.nativeElement.querySelector('a[href^="mailto:"]')).toBeNull();
+    expect((links[0] as HTMLAnchorElement).getAttribute('href')).toBe('mailto:test@example.com');
+    expect((links[1] as HTMLAnchorElement).getAttribute('href')).toBe('tel:+33100000000');
+    expect((links[2] as HTMLAnchorElement).getAttribute('href')).toBe('/contact');
+  });
+
+  it('wraps navigation links in a nav element with an accessible label (A-09)', () => {
+    setup();
+    const nav = fixture.nativeElement.querySelector('nav[aria-label="Pied de page"]');
+    expect(nav).not.toBeNull();
+    const links = nav.querySelectorAll('a');
+    expect(links.length).toBeGreaterThan(0);
   });
 
   it('should not render phone when only email is provided', () => {

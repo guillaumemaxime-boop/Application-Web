@@ -108,15 +108,60 @@ class PhotoServiceTest {
     }
 
     @Test
-    void testStore_FileWithoutExtension_StoresWithoutExtension() throws IOException {
+    void testStore_FileWithoutExtension_IsRejected() {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "noext", "image/jpeg", new byte[]{1}
         );
+
+        assertThrows(IllegalArgumentException.class, () -> service.store(file));
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void store_rejette_extension_html() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "evil.html", "text/html", "<script>alert(1)</script>".getBytes()
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.store(file));
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void store_rejette_extension_svg() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "logo.svg", "image/svg+xml",
+                "<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>".getBytes()
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> service.store(file));
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void store_accepte_jpg_webp_png_gif_avif() throws IOException {
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        for (String ext : new String[]{"jpg", "jpeg", "png", "webp", "gif", "avif"}) {
+            MockMultipartFile file = new MockMultipartFile(
+                    "file", "photo." + ext, "image/" + ext, new byte[]{1}
+            );
+            Photo result = service.store(file);
+            assertTrue(result.filename().endsWith("." + ext),
+                    "extension preservee pour " + ext);
+        }
+    }
+
+    @Test
+    void store_accepte_extension_majuscule() throws IOException {
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "photo.JPG", "image/jpeg", new byte[]{1}
+        );
 
         Photo result = service.store(file);
 
-        assertFalse(result.filename().contains("."));
+        assertTrue(result.filename().endsWith(".JPG"));
     }
 
     // --- loadAsResource ---
@@ -136,6 +181,30 @@ class PhotoServiceTest {
     @Test
     void testLoadAsResource_NonExistingFile_ReturnsNull() throws IOException {
         Resource resource = service.loadAsResource("ghost.jpg");
+
+        assertNull(resource);
+    }
+
+    @Test
+    void loadAsResource_renvoie_null_pour_path_traversal() throws IOException {
+        // Creons un fichier "sensible" hors du tempDir, dans son parent.
+        Path outside = tempDir.getParent().resolve("outside-secret.txt");
+        Files.write(outside, "secret".getBytes());
+        try {
+            Resource viaTraversal = service.loadAsResource("../" + outside.getFileName());
+
+            assertNull(viaTraversal, "le traversal doit etre refuse meme si la cible existe");
+        } finally {
+            Files.deleteIfExists(outside);
+        }
+    }
+
+    @Test
+    void loadAsResource_renvoie_null_pour_chemin_absolu_hors_upload() throws IOException {
+        // Path absolu pointant vers la racine du FS — doit etre refuse.
+        Path target = tempDir.getRoot().resolve("etc").resolve("passwd");
+
+        Resource resource = service.loadAsResource(target.toString());
 
         assertNull(resource);
     }

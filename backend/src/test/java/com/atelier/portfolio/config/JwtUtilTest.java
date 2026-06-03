@@ -82,4 +82,32 @@ class JwtUtilTest {
 
         assertNotEquals(t1, t2);
     }
+
+    // --- F-09 : validation longueur minimale du secret au boot ---
+
+    @Test
+    void constructor_rejette_secret_null() {
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> new JwtUtil(null, 3_600_000L));
+        assertTrue(ex.getMessage().contains("JWT_SECRET"));
+    }
+
+    @Test
+    void constructor_rejette_secret_trop_court() {
+        // 31 caracteres < 32 requis
+        String shortSecret = "x".repeat(31);
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> new JwtUtil(shortSecret, 3_600_000L));
+        assertTrue(ex.getMessage().contains("32 caracteres"));
+    }
+
+    @Test
+    void constructor_accepte_secret_pile_32_caracteres() {
+        String exactlyMin = "x".repeat(32);
+
+        assertDoesNotThrow(() -> new JwtUtil(exactlyMin, 3_600_000L));
+    }
 }

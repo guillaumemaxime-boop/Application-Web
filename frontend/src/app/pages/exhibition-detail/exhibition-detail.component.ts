@@ -20,7 +20,7 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
       <div class="container section"><p class="status">Chargement…</p></div>
     } @else if (notFound()) {
       <div class="container section">
-        <h2>Exposition introuvable</h2>
+        <h1>Exposition introuvable</h1>
         <p><a class="btn-link" routerLink="/expositions">Retour aux expositions</a></p>
       </div>
     } @else if (item(); as e) {
