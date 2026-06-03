@@ -26,14 +26,14 @@ import { roleStyle } from '../../utils/title-style';
             @if (p.awards.length > 0 || p.press.length > 0) {
               <aside>
                 @if (p.awards.length > 0) {
-                  <h3>Distinctions</h3>
+                  <h2>Distinctions</h2>
                   <ul class="awards">
                     @for (a of p.awards; track a) { <li>{{ a }}</li> }
                   </ul>
                 }
 
                 @if (p.press.length > 0) {
-                  <h3>Presse</h3>
+                  <h2>Presse</h2>
                   <ul class="press">
                     @for (item of p.press; track item.title) {
                       <li>
@@ -91,7 +91,7 @@ import { roleStyle } from '../../utils/title-style';
       color: var(--color-ink);
       white-space: pre-line;
     }
-    aside h3 {
+    aside h2 {
       font-size: 0.75rem;
       letter-spacing: 0.16em;
       text-transform: uppercase;
@@ -99,8 +99,9 @@ import { roleStyle } from '../../utils/title-style';
       font-family: var(--sans);
       font-weight: 500;
       margin-bottom: 16px;
+      line-height: 1.2;
     }
-    aside h3:not(:first-child) { margin-top: 40px; }
+    aside h2:not(:first-child) { margin-top: 40px; }
 
     .awards, .press { list-style: none; }
     .awards li {

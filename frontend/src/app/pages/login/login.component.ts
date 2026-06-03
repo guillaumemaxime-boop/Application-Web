@@ -14,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
         <h1>Connexion</h1>
 
         @if (error()) {
-          <p class="flash-error">Identifiants incorrects.</p>
+          <p class="flash-error" role="alert">Identifiants incorrects.</p>
         }
 
         <form [formGroup]="form" (ngSubmit)="submit()">
