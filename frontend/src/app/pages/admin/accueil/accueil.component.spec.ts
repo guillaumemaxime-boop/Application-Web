@@ -12,6 +12,8 @@ type AccueilInternals = {
   toggleIncluded: (item: HomeItem, event: Event) => void;
   onFeedReorder: (order: number[]) => void;
   persistFeed: () => void;
+  moveUp: (i: number) => void;
+  moveDown: (i: number) => void;
 };
 
 describe('AccueilComponent', () => {
@@ -134,6 +136,97 @@ describe('AccueilComponent', () => {
     const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/home/feed');
     expect(put.request.body).toEqual([{ kind: 'furniture', slug: 'a' }]);
     put.flush([]);
+  });
+
+  it('moveUp() echange avec le precedent et persiste (A-04)', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([
+      { id: '1', slug: 'a', title: 'A', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false },
+      { id: '2', slug: 'b', title: 'B', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false },
+    ]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([
+      { kind: 'furniture', slug: 'a' },
+      { kind: 'furniture', slug: 'b' },
+    ]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.moveUp(1);
+    const items = cmp.homeItems()!;
+    expect(items[0].slug).toBe('b');
+    expect(items[1].slug).toBe('a');
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/home/feed').flush([]);
+  });
+
+  it('moveUp(0) ne fait rien (A-04)', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([
+      { id: '1', slug: 'a', title: 'A', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false },
+    ]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.moveUp(0);
+    // Aucun PUT attendu
+  });
+
+  it('moveUp() ne fait rien quand homeItems est null (A-04)', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.moveUp(1);
+    expect(cmp.homeItems()).toBeNull();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+  });
+
+  it('moveDown() echange avec le suivant et persiste (A-04)', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([
+      { id: '1', slug: 'a', title: 'A', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false },
+      { id: '2', slug: 'b', title: 'B', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false },
+    ]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([
+      { kind: 'furniture', slug: 'a' },
+      { kind: 'furniture', slug: 'b' },
+    ]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.moveDown(0);
+    const items = cmp.homeItems()!;
+    expect(items[0].slug).toBe('b');
+    expect(items[1].slug).toBe('a');
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/home/feed').flush([]);
+  });
+
+  it('moveDown(last) ne fait rien (A-04)', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([
+      { id: '1', slug: 'a', title: 'A', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false },
+    ]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.moveDown(0); // dernier index, on ne bouge pas
+  });
+
+  it('moveDown() ne fait rien quand homeItems est null (A-04)', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.moveDown(0);
+    expect(cmp.homeItems()).toBeNull();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
   });
 
   it('persistFeed() error -> toast error', () => {
