@@ -48,3 +48,38 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage/
           retention-days: 30
+
+  visual:
+    name: Visual regression tests
+    runs-on: ubuntu-latest
+    container:
+      # Version pinned a celle de package.json (@playwright/test ^1.60.0).
+      # Bumper les 2 ensemble pour garder le rendu identique CI / local.
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build app
+        working-directory: frontend
+        run: npx ng build --configuration=development
+
+      - name: Run visual regression tests
+        working-directory: frontend
+        run: npx playwright test --config=e2e/playwright.config.ts
+
+      - name: Upload diff artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diff
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+            frontend/e2e/test-results/
+            frontend/e2e/playwright-report/
+          retention-days: 14
