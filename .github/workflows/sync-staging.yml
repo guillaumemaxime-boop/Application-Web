@@ -12,7 +12,11 @@ jobs:
   apply:
     name: Promote SHA → :staging and redeploy on Railway
     runs-on: ubuntu-latest
-    environment: staging
+    # Pas d'`environment: staging` : ce job n'a ni reviewers requis ni secrets
+    # env-scoped (RAILWAY_TOKEN_STAGING + service IDs sont repo-level). La ligne
+    # creait juste un deployment marker GitHub en doublon avec celui qu'emet
+    # l'integration Railway↔GitHub (`application-web / staging`), qui reste la
+    # source de verite du statut reel.
     concurrency:
       group: sync-staging
       cancel-in-progress: true
