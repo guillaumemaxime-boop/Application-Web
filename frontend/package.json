@@ -6,7 +6,12 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "e2e:install": "playwright install --with-deps chromium",
+    "test:visual": "playwright test --config=e2e/playwright.config.ts",
+    "test:visual:update": "playwright test --config=e2e/playwright.config.ts --update-snapshots",
+    "test:visual:docker": "docker run --rm -v \"%cd%:/work\" -w /work mcr.microsoft.com/playwright:v1.60.0-noble sh -c \"npm ci && npm run build && npx playwright test --config=e2e/playwright.config.ts\"",
+    "test:visual:docker:update": "docker run --rm -v \"%cd%:/work\" -w /work mcr.microsoft.com/playwright:v1.60.0-noble sh -c \"npm ci && npm run build && npx playwright test --config=e2e/playwright.config.ts --update-snapshots\""
   },
   "private": true,
   "dependencies": {
@@ -27,7 +32,9 @@
     "@angular-devkit/build-angular": "^21.0.0",
     "@angular/cli": "^21.0.0",
     "@angular/compiler-cli": "^21.0.0",
+    "@playwright/test": "^1.60.0",
     "@types/jasmine": "~5.1.0",
+    "http-server": "^14.1.1",
     "jasmine-core": "~5.4.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",

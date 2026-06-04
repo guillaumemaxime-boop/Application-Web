@@ -1,0 +1,58 @@
+{
+  "categories": [
+    {
+      "category": "Tabourets",
+      "slug": "tabourets",
+      "cover": "__PLACEHOLDER__",
+      "itemSlugs": ["tabouret-aurore", "tabouret-onyx"]
+    },
+    {
+      "category": "Tables",
+      "slug": "tables",
+      "cover": "__PLACEHOLDER__",
+      "itemSlugs": ["table-lumen"]
+    }
+  ],
+  "exhibitions": [
+    {
+      "title": "Lumen",
+      "slug": "lumen-2025",
+      "cover": "__PLACEHOLDER__",
+      "venue": "Galerie Test",
+      "period": "Mars 2025"
+    }
+  ],
+  "feed": [
+    {
+      "kind": "furniture",
+      "slug": "tabouret-aurore",
+      "title": "Tabouret Aurore",
+      "cover": "__PLACEHOLDER__",
+      "subtitle": "Frêne brûlé",
+      "description": "Pièce unique en frêne brûlé selon la technique shou sugi ban."
+    },
+    {
+      "kind": "furniture",
+      "slug": "tabouret-onyx",
+      "title": "Tabouret Onyx",
+      "cover": "__PLACEHOLDER__",
+      "subtitle": "Chêne noir",
+      "description": "Assise sculptée à la gouge, finition huile dure."
+    },
+    {
+      "kind": "furniture",
+      "slug": "table-lumen",
+      "title": "Table Lumen",
+      "cover": "__PLACEHOLDER__",
+      "subtitle": "Frêne massif",
+      "description": "Plateau aux veines apparentes, piètement minimal en acier brut."
+    },
+    {
+      "kind": "exhibition",
+      "slug": "lumen-2025",
+      "title": "Lumen — exposition",
+      "cover": "__PLACEHOLDER__",
+      "subtitle": "Galerie Test · Mars 2025"
+    }
+  ]
+}

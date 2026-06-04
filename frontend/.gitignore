@@ -1,0 +1,6 @@
+# Playwright outputs. Selon la version, Playwright place ces dossiers soit à
+# la racine de cwd (frontend/), soit à côté du config (e2e/), soit ailleurs.
+# On les ignore aux deux endroits pour ne jamais polluer le repo.
+test-results/
+playwright-report/
+playwright/.cache/

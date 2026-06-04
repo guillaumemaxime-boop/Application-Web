@@ -1,0 +1,20 @@
+{
+  "id": "lumen-2025",
+  "title": "Lumen",
+  "slug": "lumen-2025",
+  "venue": "Galerie Test",
+  "city": "Paris",
+  "country": "France",
+  "startDate": "2025-03-01",
+  "endDate": "2025-03-31",
+  "coverImage": "__PLACEHOLDER__",
+  "gallery": ["__PLACEHOLDER__", "__PLACEHOLDER__", "__PLACEHOLDER__"],
+  "curator": "Anna Reverdy",
+  "shortDescription": "Une exposition autour de la lumière et du bois brûlé.",
+  "description": "Lumen rassemble une série de pièces explorant le dialogue entre la flamme et la matière, dans la continuité du travail de l'atelier sur le shou sugi ban. Le parcours met en scène des assises, des plateaux et des objets de seuil, traités à la flamme puis brossés à la main, révélant la profondeur des veines sous une surface charbonnée. Chaque pièce est unique : la lumière qui les traverse dessine son propre relief, et la cire d'abeille nourrit le bois tout en captant les variations du jour. Les visiteurs sont invités à toucher, à s'asseoir, à percevoir la matière par le geste autant que par le regard.",
+  "tags": ["sculpture", "matiere brulee"],
+  "featured": true,
+  "showStoryLink": false,
+  "showStoryButton": false,
+  "slides": []
+}
