@@ -41,9 +41,9 @@ databaseChangeLog:
               - column:
                   name: position
                   type: int
+                  defaultValueNumeric: 0
                   constraints:
                     nullable: false
-                    defaultValueNumeric: 0
               - column:
                   name: created_at
                   type: timestamp
