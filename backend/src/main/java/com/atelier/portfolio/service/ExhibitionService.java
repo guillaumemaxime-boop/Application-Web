@@ -54,7 +54,7 @@ public class ExhibitionService {
                     base.tags(), base.featured(),
                     base.showStoryLink(),
                     base.showStoryButton(),
-                    storyService.findByOwner("exhibition", entity.getId())
+                    storyService.findSlidesForOwner("exhibition", entity.getId())
             );
         });
     }

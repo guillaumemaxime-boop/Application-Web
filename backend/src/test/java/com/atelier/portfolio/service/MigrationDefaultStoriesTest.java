@@ -6,6 +6,7 @@ import com.atelier.portfolio.repository.StorySlideRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -20,22 +21,22 @@ class MigrationDefaultStoriesTest {
     @Autowired StorySlideRepository slideRepo;
 
     @Test
+    @Transactional
     void seedCreatesOneStoryPerOwnerWithExistingSlides() {
         // Précondition : le seed initial (010-seed-stories.yaml) a créé des slides
-        // pour certains owners. Après 023, chaque (ownerKind, ownerId) ayant des
-        // slides doit avoir exactement une story.
+        // pour certains owners. Après 023 puis 024, chaque slide pointe vers une story
+        // (via story_id), donc chaque (ownerKind, ownerId) ayant des slides a >= 1 story.
         List<StoryEntity> allStories = storyRepo.findAll();
         assertThat(allStories).isNotEmpty();
 
+        // Owners (via la story attachee a chaque slide)
         Set<String> ownersWithSlides = slideRepo.findAll().stream()
-                .map(s -> s.getOwnerKind() + ":" + s.getOwnerId())
+                .map(s -> s.getStory().getOwnerKind() + ":" + s.getStory().getOwnerId())
                 .collect(Collectors.toSet());
         Set<String> ownersWithStory = allStories.stream()
                 .map(s -> s.getOwnerKind() + ":" + s.getOwnerId())
                 .collect(Collectors.toSet());
 
-        // À ce stade, story_slide n'a pas encore story_id (task 3 ne s'est pas exécutée).
-        // Le test vérifie juste qu'il y a au moins 1 story par owner ayant des slides.
         assertThat(ownersWithStory).containsAll(ownersWithSlides);
     }
 

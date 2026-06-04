@@ -1,6 +1,8 @@
 package com.atelier.portfolio.controller;
 
 import com.atelier.portfolio.model.Slide;
+import com.atelier.portfolio.model.Story;
+import com.atelier.portfolio.model.StoryInput;
 import com.atelier.portfolio.service.StoryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -8,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,32 +23,96 @@ class AdminStoriesControllerTest {
     @InjectMocks private AdminStoriesController controller;
 
     @Test
-    void get_returnsSlidesForOwner() {
-        Slide.ImageSlide image = new Slide.ImageSlide("s1", 0, "img.jpg", "Détail");
-        when(service.findByOwner("furniture", "f-001")).thenReturn(List.of(image));
+    void list_returnsStoriesForOwner() {
+        Story story = new Story("st-1", "furniture", "f-001", "Principale",
+                "https://example.com/c.jpg", "tabouret-principale", 0, Instant.now());
+        when(service.findByOwner("furniture", "f-001")).thenReturn(List.of(story));
 
-        List<Slide> result = controller.get("furniture", "f-001");
+        List<Story> result = controller.list("furniture", "f-001");
+
+        assertEquals(1, result.size());
+        assertSame(story, result.get(0));
+    }
+
+    @Test
+    void create_delegatesToServiceAndReturnsCreatedStory() {
+        StoryInput input = new StoryInput("furniture", "f-001", "Test", "https://example.com/c.jpg");
+        Story created = new Story("st-new", "furniture", "f-001", "Test",
+                "https://example.com/c.jpg", "f-001-abc", 1, Instant.now());
+        when(service.create(input)).thenReturn(created);
+
+        var response = controller.create(input);
+
+        verify(service).create(input);
+        assertEquals(200, response.getStatusCode().value());
+        assertSame(created, response.getBody());
+    }
+
+    @Test
+    void update_delegatesToServiceWithIdAndInput() {
+        StoryInput input = new StoryInput("furniture", "f-001", "Renomme", "https://example.com/c.jpg");
+        Story updated = new Story("st-1", "furniture", "f-001", "Renomme",
+                "https://example.com/c.jpg", "tabouret-principale", 0, Instant.now());
+        when(service.update("st-1", input)).thenReturn(updated);
+
+        var response = controller.update("st-1", input);
+
+        verify(service).update("st-1", input);
+        assertEquals(200, response.getStatusCode().value());
+        assertSame(updated, response.getBody());
+    }
+
+    @Test
+    void updatePosition_delegatesAndReturnsNoContent() {
+        var response = controller.updatePosition("st-1", 3);
+
+        verify(service).updatePosition("st-1", 3);
+        assertEquals(204, response.getStatusCode().value());
+    }
+
+    @Test
+    void delete_delegatesAndReturnsNoContent() {
+        var response = controller.delete("st-1");
+
+        verify(service).delete("st-1");
+        assertEquals(204, response.getStatusCode().value());
+    }
+
+    @Test
+    void getSlides_returnsSlidesForStory() {
+        Slide.ImageSlide image = new Slide.ImageSlide("s1", 0, "img.jpg", "Detail");
+        when(service.findSlidesByStoryId("st-1")).thenReturn(List.of(image));
+
+        List<Slide> result = controller.getSlides("st-1");
 
         assertEquals(1, result.size());
         assertSame(image, result.get(0));
     }
 
     @Test
-    void replace_callsServiceAndReturnsUpdatedSlides() {
-        List<Slide> input = List.of(new Slide.ImageSlide(null, 0, "new.jpg", "Aperçu"));
-        Slide.ImageSlide saved = new Slide.ImageSlide("s2", 0, "new.jpg", "Aperçu");
-        when(service.findByOwner("furniture", "f-001")).thenReturn(List.of(saved));
+    void replaceSlides_delegatesToServiceAndReturnsUpdatedSlides() {
+        List<Slide> input = List.of(new Slide.ImageSlide(null, 0, "new.jpg", "Apercu"));
+        Slide.ImageSlide saved = new Slide.ImageSlide("s2", 0, "new.jpg", "Apercu");
+        when(service.replaceSlides("st-1", input)).thenReturn(List.of(saved));
 
-        var response = controller.replace("furniture", "f-001", input);
+        var response = controller.replaceSlides("st-1", input);
 
-        verify(service).replaceSlides("furniture", "f-001", input);
+        verify(service).replaceSlides("st-1", input);
         assertEquals(200, response.getStatusCode().value());
         assertEquals(1, response.getBody().size());
+        assertSame(saved, response.getBody().get(0));
     }
 
     @Test
-    void invalidKind_throwsIllegalArgument() {
+    void list_invalidKindThrowsIllegalArgument() {
         assertThrows(IllegalArgumentException.class,
-                () -> controller.get("invalid", "x"));
+                () -> controller.list("invalid", "x"));
+    }
+
+    @Test
+    void create_invalidKindThrowsIllegalArgument() {
+        StoryInput input = new StoryInput("invalid", "f-001", "Test", "https://example.com/c.jpg");
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.create(input));
     }
 }

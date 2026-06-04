@@ -53,7 +53,7 @@ public class FurnitureService {
                     base.description(), base.dimensions(), base.designer(), base.featured(),
                     base.showStoryLink(),
                     base.showStoryButton(),
-                    storyService.findByOwner("furniture", entity.getId())
+                    storyService.findSlidesForOwner("furniture", entity.getId())
             );
         });
     }
