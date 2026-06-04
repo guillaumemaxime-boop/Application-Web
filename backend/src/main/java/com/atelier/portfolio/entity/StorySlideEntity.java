@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 
@@ -21,11 +22,9 @@ public class StorySlideEntity {
     @Column(length = 50)
     private String id;
 
-    @Column(name = "owner_kind", nullable = false, length = 20)
-    private String ownerKind;
-
-    @Column(name = "owner_id", nullable = false, length = 50)
-    private String ownerId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "story_id", nullable = false)
+    private StoryEntity story;
 
     @Column(nullable = false)
     private int position;
@@ -62,11 +61,8 @@ public class StorySlideEntity {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
-    public String getOwnerKind() { return ownerKind; }
-    public void setOwnerKind(String ownerKind) { this.ownerKind = ownerKind; }
-
-    public String getOwnerId() { return ownerId; }
-    public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
+    public StoryEntity getStory() { return story; }
+    public void setStory(StoryEntity story) { this.story = story; }
 
     public int getPosition() { return position; }
     public void setPosition(int position) { this.position = position; }

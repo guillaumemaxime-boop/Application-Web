@@ -68,3 +68,6 @@ databaseChangeLog:
   - include:
       file: changes/023-seed-default-stories.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/024-refactor-story-slide.yaml
+      relativeToChangelogFile: true

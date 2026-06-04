@@ -1,0 +1,68 @@
+databaseChangeLog:
+  - changeSet:
+      id: 024-add-story-id-column
+      author: atelier-lumen
+      changes:
+        - addColumn:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: story_id
+                  type: varchar(50)
+
+  - changeSet:
+      id: 024-backfill-story-id
+      author: atelier-lumen
+      changes:
+        - sql:
+            comment: Backfill story_id en joignant story sur (owner_kind, owner_id)
+            sql: |
+              UPDATE story_slide ss
+              SET story_id = (
+                  SELECT s.id FROM story s
+                  WHERE s.owner_kind = ss.owner_kind AND s.owner_id = ss.owner_id
+              )
+
+  - changeSet:
+      id: 024-add-story-id-not-null
+      author: atelier-lumen
+      changes:
+        - addNotNullConstraint:
+            tableName: story_slide
+            columnName: story_id
+            columnDataType: varchar(50)
+
+  - changeSet:
+      id: 024-add-story-id-fk
+      author: atelier-lumen
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: story_slide
+            baseColumnNames: story_id
+            referencedTableName: story
+            referencedColumnNames: id
+            constraintName: fk_story_slide_story
+            onDelete: CASCADE
+
+  - changeSet:
+      id: 024-drop-old-owner-columns-and-index
+      author: atelier-lumen
+      changes:
+        - dropIndex:
+            indexName: idx_story_slide_owner_pos
+            tableName: story_slide
+        - dropColumn:
+            tableName: story_slide
+            columns:
+              - column:
+                  name: owner_kind
+              - column:
+                  name: owner_id
+        - createIndex:
+            indexName: idx_story_slide_story_pos
+            tableName: story_slide
+            columns:
+              - column:
+                  name: story_id
+              - column:
+                  name: position
