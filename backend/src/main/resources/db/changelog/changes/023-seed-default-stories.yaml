@@ -13,7 +13,7 @@ databaseChangeLog:
                   ss.owner_id,
                   f.title,
                   f.cover_image,
-                  ss.owner_id || '-principale',
+                  f.slug || '-principale',
                   0,
                   CURRENT_TIMESTAMP
               FROM (SELECT DISTINCT owner_kind, owner_id FROM story_slide WHERE owner_kind = 'furniture') ss
@@ -33,7 +33,7 @@ databaseChangeLog:
                   ss.owner_id,
                   e.title,
                   e.cover_image,
-                  ss.owner_id || '-principale',
+                  e.slug || '-principale',
                   0,
                   CURRENT_TIMESTAMP
               FROM (SELECT DISTINCT owner_kind, owner_id FROM story_slide WHERE owner_kind = 'exhibition') ss

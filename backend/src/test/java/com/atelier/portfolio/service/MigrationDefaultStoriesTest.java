@@ -49,4 +49,14 @@ class MigrationDefaultStoriesTest {
             assertThat(s.getSlug()).endsWith("-principale");
         }
     }
+
+    @Test
+    void seededSlugsAreReadableHumanSlugsNotTechnicalIds() {
+        List<StoryEntity> stories = storyRepo.findAll();
+        for (StoryEntity s : stories) {
+            assertThat(s.getSlug())
+                .as("slug should be human-readable, not 'f-XXX-principale' or 'e-XXX-principale'")
+                .doesNotMatch("^[fe]-\\d+-principale$");
+        }
+    }
 }
