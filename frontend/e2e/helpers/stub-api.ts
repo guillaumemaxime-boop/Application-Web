@@ -5,9 +5,9 @@ import homeFixture from '../fixtures/home.json';
 import siteContentFixture from '../fixtures/site-content.json';
 import furnitureListFixture from '../fixtures/furniture-list.json';
 import furnitureDetailFixture from '../fixtures/furniture-detail.json';
+import exhibitionsListFixture from '../fixtures/exhibitions-list.json';
+import exhibitionDetailFixture from '../fixtures/exhibition-detail.json';
 // Au fil des tasks suivantes, ajouter ici les imports + un objet dans STUBS :
-//   import exhibitionsListFixture from '../fixtures/exhibitions-list.json';
-//   import exhibitionDetailFixture from '../fixtures/exhibition-detail.json';
 //   import profileFixture from '../fixtures/profile.json';
 
 /**
@@ -50,9 +50,9 @@ const STUBS: ReadonlyArray<{ readonly glob: string; readonly fixture: unknown }>
   { glob: '**/api/furniture/featured', fixture: furnitureListFixture },
   { glob: '**/api/furniture/categories', fixture: ['Tabourets', 'Tables'] },
   { glob: '**/api/furniture/tabouret-aurore', fixture: furnitureDetailFixture },
-  // { glob: '**/api/exhibitions', fixture: exhibitionsListFixture },
-  // { glob: '**/api/exhibitions/featured', fixture: exhibitionsListFixture },
-  // { glob: '**/api/exhibitions/lumen-2025', fixture: exhibitionDetailFixture },
+  { glob: '**/api/exhibitions', fixture: exhibitionsListFixture },
+  { glob: '**/api/exhibitions/featured', fixture: exhibitionsListFixture },
+  { glob: '**/api/exhibitions/lumen-2025', fixture: exhibitionDetailFixture },
   // { glob: '**/api/profile', fixture: profileFixture },
 ];
 
