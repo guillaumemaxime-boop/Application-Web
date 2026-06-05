@@ -4,6 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Exhibition } from '../../../models/exhibition.model';
+import { Story } from '../../../models/story.model';
 import { AdminExhibitionMetaView } from '../../../models/home.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { SlidesEditorComponent } from '../shared/slides-editor.component';
@@ -109,7 +110,29 @@ interface ExhibitionMetaRow {
         </label>
 
         @if (editingExhibitionId()) {
-          @if (currentStoryId(); as sid) {
+          <section class="stories-block">
+            <header class="stories-head">
+              <h3>Stories</h3>
+              <button type="button" class="btn-link" (click)="newStory()">+ Nouvelle story</button>
+            </header>
+            @if (currentStories().length === 0) {
+              <p class="empty">Aucune story pour cette exposition.</p>
+            }
+            @for (story of currentStories(); track story.id; let i = $index) {
+              <article class="story-item" [class.active]="editingStoryId() === story.id">
+                <img [src]="story.coverImage" alt="" class="story-cover" />
+                <span class="story-title">{{ story.title }}</span>
+                <div class="story-actions">
+                  <button type="button" class="reorder-btn" (click)="moveStoryUp(story)" [disabled]="i === 0" aria-label="Monter la story">↑</button>
+                  <button type="button" class="reorder-btn" (click)="moveStoryDown(story)" [disabled]="i === currentStories().length - 1" aria-label="Descendre la story">↓</button>
+                  <button type="button" class="btn-mini" (click)="editStory(story)">Éditer slides</button>
+                  <button type="button" class="btn-mini" (click)="renameStory(story)">Renommer</button>
+                  <button type="button" class="btn-mini danger" (click)="deleteStory(story)">Supprimer</button>
+                </div>
+              </article>
+            }
+          </section>
+          @if (editingStoryId(); as sid) {
             <app-slides-editor [storyId]="sid" [ownerSlug]="editingExhibitionSlug()" />
           }
         } @else {
@@ -179,6 +202,18 @@ interface ExhibitionMetaRow {
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-link { background: transparent; border: 0; color: var(--color-accent); cursor: pointer; font-size: 0.85rem; }
     .slides-hint { padding: 12px 16px; background: var(--color-bg-alt); border-left: 3px solid var(--color-mute); font-size: 0.85rem; color: var(--color-ink-soft); font-style: italic; }
+    .stories-block { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--color-line); background: var(--color-bg-alt); }
+    .stories-head { display: flex; align-items: center; justify-content: space-between; }
+    .stories-head h3 { margin: 0; font-size: 1rem; letter-spacing: 0.04em; }
+    .stories-block .empty { margin: 0; color: var(--color-mute); font-size: 0.85rem; font-style: italic; }
+    .story-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: var(--color-bg); border: 1px solid var(--color-line); }
+    .story-item.active { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent) inset; }
+    .story-cover { width: 40px; height: 40px; object-fit: cover; flex-shrink: 0; border-radius: 50%; background: var(--color-bg-alt); }
+    .story-title { flex: 1; font-size: 0.9rem; color: var(--color-ink); }
+    .story-actions { display: flex; align-items: center; gap: 6px; }
+    .btn-mini { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); padding: 4px 10px; font-size: 0.75rem; cursor: pointer; letter-spacing: 0.04em; text-transform: uppercase; }
+    .btn-mini:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .btn-mini.danger:hover { color: #b1532a; border-color: #b1532a; }
     .form label.checkbox { flex-direction: row; align-items: center; gap: 10px; }
     .form label.checkbox > span { text-transform: none; letter-spacing: normal; font-size: 0.9rem; color: var(--color-ink); }
 
@@ -224,7 +259,8 @@ export class ExpositionsComponent {
   protected readonly exhibitionTags = signal<string[]>([]);
   protected readonly newExhibitionTag = signal('');
   protected readonly exhibitionsMeta = signal<ExhibitionMetaRow[] | null>(null);
-  protected readonly currentStoryId = signal<string | null>(null);
+  protected readonly currentStories = signal<Story[]>([]);
+  protected readonly editingStoryId = signal<string | null>(null);
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -279,7 +315,8 @@ export class ExpositionsComponent {
   newExhibition(): void {
     this.editingExhibitionSlug.set(null);
     this.editingExhibitionId.set(null);
-    this.currentStoryId.set(null);
+    this.currentStories.set([]);
+    this.editingStoryId.set(null);
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
@@ -295,7 +332,8 @@ export class ExpositionsComponent {
   loadExhibition(item: Exhibition): void {
     this.editingExhibitionSlug.set(item.slug);
     this.editingExhibitionId.set(item.id ?? null);
-    this.currentStoryId.set(null);
+    this.currentStories.set([]);
+    this.editingStoryId.set(null);
     this.exhibitionForm.reset({
       title: item.title, slug: item.slug, venue: item.venue ?? '', city: item.city ?? '', country: item.country ?? '',
       startDate: item.startDate ?? '', endDate: item.endDate ?? '', curator: item.curator ?? '',
@@ -307,21 +345,102 @@ export class ExpositionsComponent {
     this.exhibitionTags.set([...(item.tags ?? [])]);
     this.newExhibitionTag.set('');
     if (item.id) {
-      this.loadCurrentStoryId(item.id, item.title, item.coverImage ?? '');
+      this.loadStoriesFor(item.id, item.title, item.coverImage ?? '');
     }
   }
 
-  private loadCurrentStoryId(exhibitionId: string, title: string, coverImage: string): void {
+  private loadStoriesFor(exhibitionId: string, fallbackTitle: string, fallbackCover: string): void {
     this.portfolio.getAdminStories('exhibition', exhibitionId).subscribe(stories => {
-      if (stories.length > 0) {
-        this.currentStoryId.set(stories[0].id);
-      } else {
-        // Cas rare : owner sans story → créer une story par défaut
+      this.currentStories.set(stories);
+      if (stories.length === 0) {
+        // Cas rare : owner sans story → créer une story par défaut et l'ouvrir
         this.portfolio.createStory({
           ownerKind: 'exhibition', ownerId: exhibitionId,
-          title, coverImage,
-        }).subscribe(s => this.currentStoryId.set(s.id));
+          title: fallbackTitle, coverImage: fallbackCover,
+        }).subscribe(s => {
+          this.currentStories.set([s]);
+          this.editingStoryId.set(s.id);
+        });
       }
+      // Sinon, on ne pré-sélectionne rien : l'admin choisit explicitement.
+    });
+  }
+
+  editStory(story: Story): void {
+    this.editingStoryId.set(story.id);
+  }
+
+  newStory(): void {
+    const ownerId = this.editingExhibitionId();
+    if (!ownerId) return;
+    const slug = this.editingExhibitionSlug();
+    const owner = slug ? this.exhibitions().find(e => e.slug === slug) : null;
+    const defaultTitle = owner ? `${owner.title} — Story` : 'Nouvelle story';
+    const title = prompt('Titre de la nouvelle story ?', defaultTitle);
+    if (!title) return;
+    this.portfolio.createStory({
+      ownerKind: 'exhibition', ownerId,
+      title, coverImage: owner?.coverImage ?? '',
+    }).subscribe({
+      next: s => {
+        this.currentStories.update(arr => [...arr, s]);
+        this.editingStoryId.set(s.id);
+        this.toast.success('Story créée.');
+      },
+      error: () => this.toast.error('Erreur lors de la création de la story.'),
+    });
+  }
+
+  renameStory(story: Story): void {
+    const newTitle = prompt('Nouveau titre ?', story.title);
+    if (!newTitle || newTitle === story.title) return;
+    this.portfolio.updateStory(story.id, {
+      ownerKind: story.ownerKind, ownerId: story.ownerId,
+      title: newTitle, coverImage: story.coverImage,
+    }).subscribe({
+      next: updated => {
+        this.currentStories.update(arr => arr.map(s => s.id === updated.id ? updated : s));
+        this.toast.success('Story renommée.');
+      },
+      error: () => this.toast.error('Erreur lors du renommage.'),
+    });
+  }
+
+  deleteStory(story: Story): void {
+    if (!confirm(`Supprimer la story "${story.title}" et ses slides ?`)) return;
+    this.portfolio.deleteStory(story.id).subscribe({
+      next: () => {
+        this.currentStories.update(arr => arr.filter(s => s.id !== story.id));
+        if (this.editingStoryId() === story.id) this.editingStoryId.set(null);
+        this.toast.success('Story supprimée.');
+      },
+      error: () => this.toast.error('Erreur lors de la suppression.'),
+    });
+  }
+
+  moveStoryUp(story: Story): void {
+    const arr = this.currentStories();
+    const i = arr.findIndex(s => s.id === story.id);
+    if (i <= 0) return;
+    const above = arr[i - 1];
+    this.portfolio.updateStoryPosition(story.id, above.position).subscribe(() => {
+      this.portfolio.updateStoryPosition(above.id, story.position).subscribe(() => {
+        const ownerId = this.editingExhibitionId();
+        if (ownerId) this.loadStoriesFor(ownerId, '', '');
+      });
+    });
+  }
+
+  moveStoryDown(story: Story): void {
+    const arr = this.currentStories();
+    const i = arr.findIndex(s => s.id === story.id);
+    if (i < 0 || i >= arr.length - 1) return;
+    const below = arr[i + 1];
+    this.portfolio.updateStoryPosition(story.id, below.position).subscribe(() => {
+      this.portfolio.updateStoryPosition(below.id, story.position).subscribe(() => {
+        const ownerId = this.editingExhibitionId();
+        if (ownerId) this.loadStoriesFor(ownerId, '', '');
+      });
     });
   }
 
