@@ -38,6 +38,10 @@ public class StoryService {
                 .stream().map(StoryService::toDto).toList();
     }
 
+    public List<Story> findAll() {
+        return storyRepo.findAll().stream().map(StoryService::toDto).toList();
+    }
+
     /**
      * Aggrege les slides de toutes les stories d'un owner (ordre : stories par position, puis slides par position).
      * Utilise par FurnitureService/ExhibitionService pour exposer les slides dans la page detail.

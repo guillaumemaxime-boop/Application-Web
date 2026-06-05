@@ -115,4 +115,20 @@ class AdminStoriesControllerTest {
         assertThrows(IllegalArgumentException.class,
                 () -> controller.create(input));
     }
+
+    @Test
+    void all_delegatesToServiceAndReturnsAllStories() {
+        Story s1 = new Story("st-1", "furniture", "f-001", "Story 1",
+                "https://example.com/c.jpg", "f-001-abc", 0, Instant.now());
+        Story s2 = new Story("st-2", "exhibition", "e-001", "Story 2",
+                "https://example.com/c.jpg", "e-001-xyz", 0, Instant.now());
+        when(service.findAll()).thenReturn(List.of(s1, s2));
+
+        List<Story> result = controller.all();
+
+        verify(service).findAll();
+        assertEquals(2, result.size());
+        assertSame(s1, result.get(0));
+        assertSame(s2, result.get(1));
+    }
 }

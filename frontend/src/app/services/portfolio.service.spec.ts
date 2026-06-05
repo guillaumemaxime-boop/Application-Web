@@ -500,5 +500,12 @@ describe('PortfolioService', () => {
       expect(req.request.body).toEqual({ storyIds: ['st-a', 'st-b'] });
       req.flush({ id: 'sld-1', slug: '', title: '', zoneKey: null, storyIds: ['st-a', 'st-b'] });
     });
+
+    it('getAllAdminStories appelle GET /api/admin/stories/all', () => {
+      service.getAllAdminStories().subscribe();
+      const req = httpMock.expectOne('/api/admin/stories/all');
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
   });
 });

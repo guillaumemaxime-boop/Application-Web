@@ -220,6 +220,10 @@ export class PortfolioService {
     return this.http.put<Slide[]>(`${API}/admin/stories/${storyId}/slides`, slides);
   }
 
+  getAllAdminStories(): Observable<Story[]> {
+    return this.http.get<Story[]>(`${API}/admin/stories/all`);
+  }
+
   // --- Sliders ---
 
   getPublicSliders(): Observable<NewsSliderView[]> {

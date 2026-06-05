@@ -26,6 +26,11 @@ public class AdminStoriesController {
         return stories.findByOwner(ownerKind, ownerId);
     }
 
+    @GetMapping("/all")
+    public List<Story> all() {
+        return stories.findAll();
+    }
+
     @PostMapping
     public ResponseEntity<Story> create(@Valid @RequestBody StoryInput input) {
         validateKind(input.ownerKind());
