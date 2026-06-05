@@ -6,8 +6,13 @@ import com.atelier.portfolio.entity.StoryEntity;
 import com.atelier.portfolio.enums.SliderZone;
 import com.atelier.portfolio.model.NewsSlider;
 import com.atelier.portfolio.model.NewsSliderInput;
+import com.atelier.portfolio.model.NewsSliderView;
+import com.atelier.portfolio.model.SliderStoryRef;
+import com.atelier.portfolio.repository.ExhibitionRepository;
+import com.atelier.portfolio.repository.FurnitureRepository;
 import com.atelier.portfolio.repository.NewsSliderRepository;
 import com.atelier.portfolio.repository.StoryRepository;
+import com.atelier.portfolio.repository.StorySlideRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,10 +29,52 @@ public class NewsSliderService {
 
     private final NewsSliderRepository sliderRepo;
     private final StoryRepository storyRepo;
+    private final FurnitureRepository furnitureRepo;
+    private final ExhibitionRepository exhibitionRepo;
+    private final StorySlideRepository slideRepo;
 
-    public NewsSliderService(NewsSliderRepository sliderRepo, StoryRepository storyRepo) {
+    public NewsSliderService(NewsSliderRepository sliderRepo, StoryRepository storyRepo,
+                             FurnitureRepository furnitureRepo, ExhibitionRepository exhibitionRepo,
+                             StorySlideRepository slideRepo) {
         this.sliderRepo = sliderRepo;
         this.storyRepo = storyRepo;
+        this.furnitureRepo = furnitureRepo;
+        this.exhibitionRepo = exhibitionRepo;
+        this.slideRepo = slideRepo;
+    }
+
+    public List<NewsSliderView> findAllPublishedView() {
+        return sliderRepo.findAllByZoneKeyIsNotNull().stream()
+                .map(this::toView)
+                .toList();
+    }
+
+    private NewsSliderView toView(NewsSliderEntity e) {
+        List<SliderStoryRef> refs = new ArrayList<>();
+        for (NewsSliderStoryEntity link : e.getStories()) {
+            StoryEntity story = link.getStory();
+            // Filtre : story doit avoir au moins une slide pour apparaitre publiquement
+            if (slideRepo.findByStoryIdOrderByPosition(story.getId()).isEmpty()) continue;
+            refs.add(new SliderStoryRef(
+                    story.getId(), story.getSlug(), story.getTitle(), story.getCoverImage(),
+                    story.getOwnerKind(), story.getOwnerId(),
+                    ownerLabelFor(story.getOwnerKind(), story.getOwnerId())
+            ));
+        }
+        return new NewsSliderView(e.getId(), e.getSlug(), e.getTitle(), e.getZoneKey(), refs);
+    }
+
+    private String ownerLabelFor(String ownerKind, String ownerId) {
+        if ("furniture".equals(ownerKind)) {
+            return furnitureRepo.findById(ownerId)
+                    .map(f -> f.getTitle())
+                    .orElse(ownerId);
+        } else if ("exhibition".equals(ownerKind)) {
+            return exhibitionRepo.findById(ownerId)
+                    .map(ex -> ex.getTitle() + " - " + ex.getVenue())
+                    .orElse(ownerId);
+        }
+        return ownerId;
     }
 
     public List<NewsSlider> findAll() {
