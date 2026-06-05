@@ -1,10 +1,11 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { HomePageData, HomeFeedItem, HomeCategoryView, HomeExhibitionView } from '../../models/home.model';
 import { SiteContent } from '../../models/site-content.model';
+import { StoryWithSlides } from '../../models/story.model';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { NewsSliderComponent } from '../../components/news-slider/news-slider.component';
 import { NewsSliderView, SliderZone, SLIDER_ZONES, SliderStoryRef } from '../../models/news-slider.model';
@@ -210,37 +211,67 @@ export class HomeComponent implements OnInit {
 
   openCategory(cat: HomeCategoryView) {
     if (cat.itemSlugs.length === 0) return;
-    const requests = cat.itemSlugs.map(slug => this.portfolio.getFurniture(slug));
-    forkJoin(requests).subscribe(furnitureList => {
-      const queue: StoryItem[] = furnitureList.map(f => ({
-        title: f.title,
-        subtitle: `${f.category} · ${f.year}`,
-        slides: enrichSlides({
-          slug: f.slug,
-          coverImage: f.coverImage,
-          slides: f.slides ?? [],
-          showStoryLink: f.showStoryLink,
-        }, 'furniture'),
-        kind: 'furniture',
-        slug: f.slug,
-      }));
+    // Pour chaque slug d'item : charger l'owner (pour son id technique), puis ses stories,
+    // puis charger les slides de la PREMIERE story (typiquement la story principale auto-creee).
+    const requests = cat.itemSlugs.map(slug =>
+      this.portfolio.getFurniture(slug).pipe(
+        switchMap(f =>
+          this.portfolio.getStories('furniture', f.id).pipe(
+            switchMap(stories => {
+              if (stories.length === 0) {
+                return of(null as { category: string; year: number; sws: StoryWithSlides } | null);
+              }
+              return this.portfolio.getStoryBySlug(stories[0].slug).pipe(
+                switchMap(sws => of({ category: f.category, year: f.year, sws }))
+              );
+            })
+          )
+        )
+      )
+    );
+    forkJoin(requests).subscribe(results => {
+      const queue: StoryItem[] = results
+        .filter((r): r is { category: string; year: number; sws: StoryWithSlides } => r !== null)
+        .map(({ category, year, sws: { story, slides } }) => ({
+          title: story.title,
+          subtitle: `${category} · ${year}`,
+          slides: enrichSlides({
+            slug: story.slug,
+            coverImage: story.coverImage,
+            slides: slides ?? [],
+            showStoryLink: false,
+          }, 'furniture'),
+          kind: 'furniture' as const,
+          slug: story.slug,
+        }));
       this.viewerQueue.set(queue);
     });
   }
 
   openExhibition(exh: HomeExhibitionView) {
-    this.portfolio.getExhibition(exh.slug).subscribe(e => {
+    this.portfolio.getExhibition(exh.slug).pipe(
+      switchMap(e =>
+        this.portfolio.getStories('exhibition', e.id).pipe(
+          switchMap(stories => {
+            if (stories.length === 0) return of(null);
+            return this.portfolio.getStoryBySlug(stories[0].slug);
+          })
+        )
+      )
+    ).subscribe(result => {
+      if (result === null) return;
+      const { story, slides } = result;
       this.viewerQueue.set([{
-        title: e.title,
-        subtitle: `${e.venue} · ${exh.period}`,
+        title: story.title,
+        subtitle: `${exh.venue} · ${exh.period}`,
         slides: enrichSlides({
-          slug: e.slug,
-          coverImage: e.coverImage,
-          slides: e.slides ?? [],
-          showStoryLink: e.showStoryLink,
+          slug: story.slug,
+          coverImage: story.coverImage,
+          slides: slides ?? [],
+          showStoryLink: false,
         }, 'exhibition'),
         kind: 'exhibition',
-        slug: e.slug,
+        slug: story.slug,
       }]);
     });
   }

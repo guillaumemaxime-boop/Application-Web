@@ -8,6 +8,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
 import { HomePageData } from '../../models/home.model';
+import { Story, StoryWithSlides } from '../../models/story.model';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
@@ -45,15 +46,54 @@ describe('HomeComponent', () => {
     showStoryLink: true, showStoryButton: true, slides: [{ type: 'cover', id: 's2', position: 0, src: 'cover2.jpg' }] as any,
   };
 
+  const mockFurnitureStory: Story = {
+    id: 'st-f-001',
+    ownerKind: 'furniture',
+    ownerId: 'f-001',
+    title: 'Onde',
+    coverImage: 'f.jpg',
+    slug: 'onde-fauteuil-sculpte-principale',
+    position: 0,
+    createdAt: '2025-01-01T00:00:00Z',
+  };
+
+  const mockExhibitionStory: Story = {
+    id: 'st-e-001',
+    ownerKind: 'exhibition',
+    ownerId: 'e-001',
+    title: 'Matières',
+    coverImage: 'e.jpg',
+    slug: 'matieres-silencieuses-principale',
+    position: 0,
+    createdAt: '2025-01-01T00:00:00Z',
+  };
+
+  const mockFurnitureStoryWithSlides: StoryWithSlides = {
+    story: mockFurnitureStory,
+    slides: [{ type: 'cover', id: 's1', position: 0, src: 'cover.jpg' }] as any,
+  };
+
+  const mockExhibitionStoryWithSlides: StoryWithSlides = {
+    story: mockExhibitionStory,
+    slides: [{ type: 'cover', id: 's2', position: 0, src: 'cover2.jpg' }] as any,
+  };
+
   beforeEach(async () => {
     const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', [
-      'getHome', 'getFurniture', 'getExhibition', 'getContent', 'getPublicSliders', 'getStoryBySlug',
+      'getHome', 'getFurniture', 'getExhibition', 'getContent', 'getPublicSliders',
+      'getStoryBySlug', 'getStories',
     ]);
     spy.getHome.and.returnValue(of(mockHome));
     spy.getFurniture.and.returnValue(of(mockFurniture));
     spy.getExhibition.and.returnValue(of(mockExhibition));
     spy.getContent.and.returnValue(of({}));
     spy.getPublicSliders.and.returnValue(of([]));
+    spy.getStories.and.callFake((kind, _ownerId) =>
+      of(kind === 'furniture' ? [mockFurnitureStory] : [mockExhibitionStory])
+    );
+    spy.getStoryBySlug.and.callFake((slug) =>
+      of(slug === mockFurnitureStory.slug ? mockFurnitureStoryWithSlides : mockExhibitionStoryWithSlides)
+    );
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
@@ -83,9 +123,12 @@ describe('HomeComponent', () => {
   it('openCategory loads each piece and fills the viewer queue', () => {
     (component as any).openCategory(mockHome.categories[0]);
     expect(portfolioServiceSpy.getFurniture).toHaveBeenCalledWith('onde-fauteuil-sculpte');
+    expect(portfolioServiceSpy.getStories).toHaveBeenCalledWith('furniture', 'f-001');
+    expect(portfolioServiceSpy.getStoryBySlug).toHaveBeenCalledWith(mockFurnitureStory.slug);
     const queue = (component as any).viewerQueue();
     expect(queue.length).toBe(1);
     expect(queue[0].title).toBe('Onde');
+    expect(queue[0].slug).toBe(mockFurnitureStory.slug);
   });
 
   it('openCategory ignores categories with no items', () => {
@@ -94,10 +137,26 @@ describe('HomeComponent', () => {
     expect(portfolioServiceSpy.getFurniture).not.toHaveBeenCalled();
   });
 
+  it('openCategory skips owners that have no stories', () => {
+    portfolioServiceSpy.getStories.and.returnValue(of([]));
+    (component as any).openCategory(mockHome.categories[0]);
+    expect((component as any).viewerQueue().length).toBe(0);
+  });
+
   it('openExhibition loads the exhibition into the queue', () => {
     (component as any).openExhibition(mockHome.exhibitions[0]);
     expect(portfolioServiceSpy.getExhibition).toHaveBeenCalledWith('matieres-silencieuses');
-    expect((component as any).viewerQueue().length).toBe(1);
+    expect(portfolioServiceSpy.getStories).toHaveBeenCalledWith('exhibition', 'e-001');
+    expect(portfolioServiceSpy.getStoryBySlug).toHaveBeenCalledWith(mockExhibitionStory.slug);
+    const queue = (component as any).viewerQueue();
+    expect(queue.length).toBe(1);
+    expect(queue[0].slug).toBe(mockExhibitionStory.slug);
+  });
+
+  it('openExhibition does nothing when the owner has no story', () => {
+    portfolioServiceSpy.getStories.and.returnValue(of([]));
+    (component as any).openExhibition(mockHome.exhibitions[0]);
+    expect((component as any).viewerQueue().length).toBe(0);
   });
 
   it('cardLink returns furniture detail route', () => {
