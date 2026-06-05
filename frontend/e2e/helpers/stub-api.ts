@@ -7,6 +7,7 @@ import furnitureListFixture from '../fixtures/furniture-list.json';
 import furnitureDetailFixture from '../fixtures/furniture-detail.json';
 import exhibitionsListFixture from '../fixtures/exhibitions-list.json';
 import exhibitionDetailFixture from '../fixtures/exhibition-detail.json';
+import slidersFixture from '../fixtures/sliders.json';
 // Au fil des tasks suivantes, ajouter ici les imports + un objet dans STUBS :
 //   import profileFixture from '../fixtures/profile.json';
 
@@ -46,6 +47,7 @@ function fulfillJson(body: unknown) {
 const STUBS: ReadonlyArray<{ readonly glob: string; readonly fixture: unknown }> = [
   { glob: '**/api/home', fixture: homeFixture },
   { glob: '**/api/content', fixture: siteContentFixture },
+  { glob: '**/api/sliders', fixture: slidersFixture },
   { glob: '**/api/furniture', fixture: furnitureListFixture },
   { glob: '**/api/furniture/featured', fixture: furnitureListFixture },
   { glob: '**/api/furniture/categories', fixture: ['Tabourets', 'Tables'] },
