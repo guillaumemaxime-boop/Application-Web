@@ -125,6 +125,7 @@ describe('ExpositionsComponent', () => {
       shortDescription: 's', description: 'd',
     };
     cmp.loadExhibition(item);
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
     expect(cmp.editingExhibitionSlug()).toBe('salon');
     expect(cmp.editingExhibitionId()).toBe('e1');
     expect(cmp.exhibitionTags()).toEqual(['art', 'design']);
@@ -169,6 +170,7 @@ describe('ExpositionsComponent', () => {
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as ExpoInternals;
     cmp.loadExhibition({ id: '1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01' });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
     cmp.exhibitionForm.patchValue({ title: 'Salon 2' });
     cmp.saveExhibition();
     httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/exhibitions/salon').flush({});
@@ -232,6 +234,7 @@ describe('ExpositionsComponent', () => {
     spyOn(window, 'confirm').and.returnValue(true);
     const cmp = fixture.componentInstance as unknown as ExpoInternals;
     cmp.loadExhibition({ id: '1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01' });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
     expect(cmp.editingExhibitionSlug()).toBe('salon');
     cmp.removeExhibition({ slug: 'salon', title: 'Salon' });
     httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/exhibitions/salon').flush({});

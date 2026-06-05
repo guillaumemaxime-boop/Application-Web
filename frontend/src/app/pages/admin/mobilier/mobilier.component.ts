@@ -124,8 +124,10 @@ import { ToastService } from '../shared/toast.service';
           <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
         </label>
 
-        @if (editingFurnitureId(); as ownerId) {
-          <app-slides-editor kind="furniture" [ownerId]="ownerId" [ownerSlug]="editingFurnitureSlug()" />
+        @if (editingFurnitureId()) {
+          @if (currentStoryId(); as sid) {
+            <app-slides-editor [storyId]="sid" [ownerSlug]="editingFurnitureSlug()" />
+          }
         } @else {
           <p class="slides-hint">Enregistre la pièce une première fois pour pouvoir éditer ses slides.</p>
         }
@@ -257,6 +259,7 @@ export class MobilierComponent {
   protected readonly editingFurnitureId = signal<string | null>(null);
   protected readonly furnitureGallery = signal<string[]>([]);
   protected readonly categoryMeta = signal<AdminCategoryView[] | null>(null);
+  protected readonly currentStoryId = signal<string | null>(null);
 
   protected readonly furnitureForm = this.fb.group({
     title: ['', Validators.required],
@@ -295,6 +298,7 @@ export class MobilierComponent {
   newFurniture(): void {
     this.editingFurnitureSlug.set(null);
     this.editingFurnitureId.set(null);
+    this.currentStoryId.set(null);
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
       material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
@@ -309,6 +313,7 @@ export class MobilierComponent {
   loadFurniture(item: Furniture): void {
     this.editingFurnitureSlug.set(item.slug);
     this.editingFurnitureId.set(item.id ?? null);
+    this.currentStoryId.set(null);
     const dims = this.parseDimensions(item.dimensions ?? []);
     this.furnitureForm.reset({
       title: item.title, slug: item.slug, category: item.category, year: item.year,
@@ -319,6 +324,23 @@ export class MobilierComponent {
       showStoryButton: item.showStoryButton ?? true,
     });
     this.furnitureGallery.set([...(item.gallery ?? [])]);
+    if (item.id) {
+      this.loadCurrentStoryId(item.id, item.title, item.coverImage ?? '');
+    }
+  }
+
+  private loadCurrentStoryId(furnitureId: string, title: string, coverImage: string): void {
+    this.portfolio.getAdminStories('furniture', furnitureId).subscribe(stories => {
+      if (stories.length > 0) {
+        this.currentStoryId.set(stories[0].id);
+      } else {
+        // Cas rare : owner sans story → créer une story par défaut
+        this.portfolio.createStory({
+          ownerKind: 'furniture', ownerId: furnitureId,
+          title, coverImage,
+        }).subscribe(s => this.currentStoryId.set(s.id));
+      }
+    });
   }
 
   private parseDimensions(list: string[]): { w: number | null; d: number | null; h: number | null; notes: string } {

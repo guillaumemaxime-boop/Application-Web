@@ -110,6 +110,7 @@ describe('MobilierComponent', () => {
       shortDescription: 'short', description: 'long', featured: false,
     };
     cmp.loadFurniture(item);
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
     expect(cmp.editingFurnitureSlug()).toBe('tabouret');
     expect(cmp.editingFurnitureId()).toBe('id-1');
     const v = cmp.furnitureForm.getRawValue();
@@ -206,6 +207,7 @@ describe('MobilierComponent', () => {
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as MobilierInternals;
     cmp.loadFurniture({ id: '1', slug: 'existing', title: 'E', category: 'C', year: 2024 });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
     cmp.furnitureForm.patchValue({ title: 'E2' });
     cmp.saveFurniture();
     httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/furniture/existing').flush({});
@@ -268,6 +270,7 @@ describe('MobilierComponent', () => {
     spyOn(window, 'confirm').and.returnValue(true);
     const cmp = fixture.componentInstance as unknown as MobilierInternals;
     cmp.loadFurniture({ id: '1', slug: 'chair', title: 'Chair', category: 'C', year: 2024 });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
     expect(cmp.editingFurnitureSlug()).toBe('chair');
     cmp.removeFurniture({ slug: 'chair', title: 'Chair' });
     httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/furniture/chair').flush({});
@@ -468,6 +471,7 @@ describe('MobilierComponent', () => {
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as MobilierInternals;
     cmp.loadFurniture({ id: '1', slug: 'x', title: 'X', category: 'C', year: 2024, gallery: ['/a.jpg'] });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
     expect(cmp.furnitureGallery().length).toBe(1);
     cmp.newFurniture();
     expect(cmp.editingFurnitureSlug()).toBeNull();

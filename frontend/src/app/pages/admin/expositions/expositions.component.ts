@@ -108,8 +108,10 @@ interface ExhibitionMetaRow {
           <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
         </label>
 
-        @if (editingExhibitionId(); as ownerId) {
-          <app-slides-editor kind="exhibition" [ownerId]="ownerId" [ownerSlug]="editingExhibitionSlug()" />
+        @if (editingExhibitionId()) {
+          @if (currentStoryId(); as sid) {
+            <app-slides-editor [storyId]="sid" [ownerSlug]="editingExhibitionSlug()" />
+          }
         } @else {
           <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir éditer ses slides.</p>
         }
@@ -222,6 +224,7 @@ export class ExpositionsComponent {
   protected readonly exhibitionTags = signal<string[]>([]);
   protected readonly newExhibitionTag = signal('');
   protected readonly exhibitionsMeta = signal<ExhibitionMetaRow[] | null>(null);
+  protected readonly currentStoryId = signal<string | null>(null);
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -276,6 +279,7 @@ export class ExpositionsComponent {
   newExhibition(): void {
     this.editingExhibitionSlug.set(null);
     this.editingExhibitionId.set(null);
+    this.currentStoryId.set(null);
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
@@ -291,6 +295,7 @@ export class ExpositionsComponent {
   loadExhibition(item: Exhibition): void {
     this.editingExhibitionSlug.set(item.slug);
     this.editingExhibitionId.set(item.id ?? null);
+    this.currentStoryId.set(null);
     this.exhibitionForm.reset({
       title: item.title, slug: item.slug, venue: item.venue ?? '', city: item.city ?? '', country: item.country ?? '',
       startDate: item.startDate ?? '', endDate: item.endDate ?? '', curator: item.curator ?? '',
@@ -301,6 +306,23 @@ export class ExpositionsComponent {
     this.exhibitionGallery.set([...(item.gallery ?? [])]);
     this.exhibitionTags.set([...(item.tags ?? [])]);
     this.newExhibitionTag.set('');
+    if (item.id) {
+      this.loadCurrentStoryId(item.id, item.title, item.coverImage ?? '');
+    }
+  }
+
+  private loadCurrentStoryId(exhibitionId: string, title: string, coverImage: string): void {
+    this.portfolio.getAdminStories('exhibition', exhibitionId).subscribe(stories => {
+      if (stories.length > 0) {
+        this.currentStoryId.set(stories[0].id);
+      } else {
+        // Cas rare : owner sans story → créer une story par défaut
+        this.portfolio.createStory({
+          ownerKind: 'exhibition', ownerId: exhibitionId,
+          title, coverImage,
+        }).subscribe(s => this.currentStoryId.set(s.id));
+      }
+    });
   }
 
   addExhibitionTag(event: Event): void {
