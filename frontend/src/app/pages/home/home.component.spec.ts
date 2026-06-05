@@ -47,12 +47,13 @@ describe('HomeComponent', () => {
 
   beforeEach(async () => {
     const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', [
-      'getHome', 'getFurniture', 'getExhibition', 'getContent',
+      'getHome', 'getFurniture', 'getExhibition', 'getContent', 'getPublicSliders', 'getStoryBySlug',
     ]);
     spy.getHome.and.returnValue(of(mockHome));
     spy.getFurniture.and.returnValue(of(mockFurniture));
     spy.getExhibition.and.returnValue(of(mockExhibition));
     spy.getContent.and.returnValue(of({}));
+    spy.getPublicSliders.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],

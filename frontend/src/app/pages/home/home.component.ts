@@ -6,6 +6,8 @@ import { PortfolioService } from '../../services/portfolio.service';
 import { HomePageData, HomeFeedItem, HomeCategoryView, HomeExhibitionView } from '../../models/home.model';
 import { SiteContent } from '../../models/site-content.model';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
+import { NewsSliderComponent } from '../../components/news-slider/news-slider.component';
+import { NewsSliderView, SliderZone, SLIDER_ZONES, SliderStoryRef } from '../../models/news-slider.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 import { enrichSlides } from '../../utils/display-slides';
@@ -13,7 +15,7 @@ import { enrichSlides } from '../../utils/display-slides';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, StoryViewerComponent],
+  imports: [CommonModule, RouterLink, StoryViewerComponent, NewsSliderComponent],
   template: `
     <section class="hero">
       <div class="container">
@@ -22,6 +24,10 @@ import { enrichSlides } from '../../utils/display-slides';
         <p class="lead">{{ heroLead() }}</p>
       </div>
     </section>
+
+    @if (sliderByZone()['home-top']; as s) {
+      <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
+    }
 
     @if (data(); as d) {
       @if (d.categories.length > 0 || d.exhibitions.length > 0) {
@@ -49,6 +55,10 @@ import { enrichSlides } from '../../utils/display-slides';
       }
     }
 
+    @if (sliderByZone()['home-middle']; as s) {
+      <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
+    }
+
     <section class="feed">
       <div class="container">
         @if (data(); as d) {
@@ -73,6 +83,10 @@ import { enrichSlides } from '../../utils/display-slides';
         }
       </div>
     </section>
+
+    @if (sliderByZone()['home-bottom']; as s) {
+      <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
+    }
 
     @if (viewerQueue().length > 0) {
       <app-story-viewer [queue]="viewerQueue()" (closed)="closeViewer()"></app-story-viewer>
@@ -128,6 +142,16 @@ export class HomeComponent implements OnInit {
   protected data = signal<HomePageData | null>(null);
   protected viewerQueue = signal<StoryItem[]>([]);
   protected content = signal<SiteContent>({});
+  protected sliders = signal<NewsSliderView[]>([]);
+  protected sliderByZone = computed(() => {
+    const map: Partial<Record<SliderZone, NewsSliderView>> = {};
+    for (const s of this.sliders()) {
+      if (SLIDER_ZONES.includes(s.zoneKey)) {
+        map[s.zoneKey] = s;
+      }
+    }
+    return map;
+  });
 
   protected heroEyebrow = computed(() => {
     if (this.data() === null) return '';
@@ -151,10 +175,12 @@ export class HomeComponent implements OnInit {
     forkJoin({
       home: this.portfolio.getHome(),
       content: this.portfolio.getContent(),
+      sliders: this.portfolio.getPublicSliders(),
     }).subscribe({
-      next: ({ home, content }) => {
+      next: ({ home, content, sliders }) => {
         this.data.set(home);
         this.content.set(content);
+        this.sliders.set(sliders);
         this.loadingSvc.stop('page');
         this.loadingSvc.stop('nav');
       },
@@ -162,6 +188,23 @@ export class HomeComponent implements OnInit {
         this.loadingSvc.stop('page');
         this.loadingSvc.stop('nav');
       },
+    });
+  }
+
+  openStoryFromSlider(story: SliderStoryRef): void {
+    this.portfolio.getStoryBySlug(story.slug).subscribe(({ story: s, slides }) => {
+      this.viewerQueue.set([{
+        title: s.title,
+        subtitle: story.ownerLabel,
+        slides: enrichSlides({
+          slug: s.slug,
+          coverImage: s.coverImage,
+          slides: slides ?? [],
+          showStoryLink: false,
+        }, s.ownerKind),
+        kind: s.ownerKind,
+        slug: s.slug,
+      }]);
     });
   }
 
