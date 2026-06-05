@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -65,5 +66,13 @@ class AdminSlidersControllerTest {
         when(service.replaceStories("sld-1", List.of())).thenReturn(expected);
         controller.replaceStories("sld-1", body);
         verify(service).replaceStories("sld-1", List.of());
+    }
+
+    @Test
+    void handleInvalidReturns400WithErrorMessage() {
+        IllegalArgumentException ex = new IllegalArgumentException("Unknown zone key: bad");
+        ResponseEntity<Map<String, String>> response = controller.handleInvalid(ex);
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody()).containsEntry("error", "Unknown zone key: bad");
     }
 }

@@ -44,4 +44,13 @@ public class AdminSlidersController {
         List<String> storyIds = body.getOrDefault("storyIds", List.of());
         return ResponseEntity.ok(service.replaceStories(id, storyIds));
     }
+
+    /**
+     * NewsSliderService / SliderZone.fromKey() levent IllegalArgumentException
+     * pour zone key invalide — on traduit en 400 plutot que de laisser remonter en 500.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleInvalid(IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
 }
