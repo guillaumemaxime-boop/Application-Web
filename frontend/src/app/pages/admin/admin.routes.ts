@@ -56,6 +56,11 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./navigation/navigation.component').then(m => m.NavigationComponent),
         title: 'Navigation — Administration',
       },
+      {
+        path: 'sliders',
+        loadComponent: () => import('./sliders/sliders.component').then(m => m.SlidersComponent),
+        title: 'Sliders — Administration',
+      },
     ],
   },
 ];
