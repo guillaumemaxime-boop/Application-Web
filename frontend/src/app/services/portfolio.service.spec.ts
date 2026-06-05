@@ -476,12 +476,29 @@ describe('PortfolioService', () => {
       req.flush(mock);
     });
 
-    it('should replace slides via PUT', () => {
-      service.replaceSlides('furniture', 'f-001', []).subscribe();
+  });
 
-      const req = httpMock.expectOne('/api/admin/slides/furniture/f-001');
-      expect(req.request.method).toBe('PUT');
+  describe('Stories & Sliders API', () => {
+    it('getStories appelle GET /api/stories avec query params', () => {
+      service.getStories('furniture', 'f-001').subscribe();
+      const req = httpMock.expectOne(r => r.url === '/api/stories' && r.params.get('ownerKind') === 'furniture' && r.params.get('ownerId') === 'f-001');
+      expect(req.request.method).toBe('GET');
       req.flush([]);
+    });
+
+    it('createSlider appelle POST /api/admin/sliders', () => {
+      service.createSlider({ title: 'Test', zoneKey: 'home-top' }).subscribe();
+      const req = httpMock.expectOne('/api/admin/sliders');
+      expect(req.request.method).toBe('POST');
+      req.flush({ id: 'sld-x', slug: 'test', title: 'Test', zoneKey: 'home-top', storyIds: [] });
+    });
+
+    it('replaceSliderStories appelle PUT /api/admin/sliders/:id/stories avec body', () => {
+      service.replaceSliderStories('sld-1', ['st-a', 'st-b']).subscribe();
+      const req = httpMock.expectOne('/api/admin/sliders/sld-1/stories');
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ storyIds: ['st-a', 'st-b'] });
+      req.flush({ id: 'sld-1', slug: '', title: '', zoneKey: null, storyIds: ['st-a', 'st-b'] });
     });
   });
 });

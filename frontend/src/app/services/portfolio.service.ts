@@ -10,6 +10,8 @@ import { HomePageData, AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaVie
 import { Slide } from '../models/slide.model';
 import { ContactRequestInput, ContactRequestAck } from '../models/contact.model';
 import { MailSettingsView, MailSettingsInput, MailTestResult } from '../models/mail-settings.model';
+import { Story, StoryInput, StoryWithSlides } from '../models/story.model';
+import { NewsSlider, NewsSliderInput, NewsSliderView } from '../models/news-slider.model';
 
 const API = '/api';
 
@@ -134,14 +136,6 @@ export class PortfolioService {
     return this.home$;
   }
 
-  getSlides(kind: 'furniture' | 'exhibition', ownerId: string): Observable<Slide[]> {
-    return this.http.get<Slide[]>(`${API}/admin/slides/${kind}/${ownerId}`);
-  }
-
-  replaceSlides(kind: 'furniture' | 'exhibition', ownerId: string, slides: Slide[]): Observable<Slide[]> {
-    return this.http.put<Slide[]>(`${API}/admin/slides/${kind}/${ownerId}`, slides);
-  }
-
   getAdminFeed(): Observable<AdminFeedEntry[]> {
     return this.http.get<AdminFeedEntry[]>(`${API}/admin/home/feed`);
   }
@@ -186,5 +180,69 @@ export class PortfolioService {
 
   testMail(): Observable<MailTestResult> {
     return this.http.post<MailTestResult>(`${API}/admin/mail-settings/test`, {});
+  }
+
+  // --- Stories ---
+
+  getStories(ownerKind: 'furniture' | 'exhibition', ownerId: string): Observable<Story[]> {
+    return this.http.get<Story[]>(`${API}/stories`, { params: { ownerKind, ownerId } });
+  }
+
+  getStoryBySlug(slug: string): Observable<StoryWithSlides> {
+    return this.http.get<StoryWithSlides>(`${API}/stories/${slug}`);
+  }
+
+  getAdminStories(ownerKind: 'furniture' | 'exhibition', ownerId: string): Observable<Story[]> {
+    return this.http.get<Story[]>(`${API}/admin/stories`, { params: { ownerKind, ownerId } });
+  }
+
+  createStory(input: StoryInput): Observable<Story> {
+    return this.http.post<Story>(`${API}/admin/stories`, input);
+  }
+
+  updateStory(id: string, input: StoryInput): Observable<Story> {
+    return this.http.put<Story>(`${API}/admin/stories/${id}`, input);
+  }
+
+  updateStoryPosition(id: string, position: number): Observable<void> {
+    return this.http.put<void>(`${API}/admin/stories/${id}/position`, null, { params: { position: String(position) } });
+  }
+
+  deleteStory(id: string): Observable<void> {
+    return this.http.delete<void>(`${API}/admin/stories/${id}`);
+  }
+
+  getStorySlides(storyId: string): Observable<Slide[]> {
+    return this.http.get<Slide[]>(`${API}/admin/stories/${storyId}/slides`);
+  }
+
+  replaceStorySlides(storyId: string, slides: Slide[]): Observable<Slide[]> {
+    return this.http.put<Slide[]>(`${API}/admin/stories/${storyId}/slides`, slides);
+  }
+
+  // --- Sliders ---
+
+  getPublicSliders(): Observable<NewsSliderView[]> {
+    return this.http.get<NewsSliderView[]>(`${API}/sliders`);
+  }
+
+  getAdminSliders(): Observable<NewsSlider[]> {
+    return this.http.get<NewsSlider[]>(`${API}/admin/sliders`);
+  }
+
+  createSlider(input: NewsSliderInput): Observable<NewsSlider> {
+    return this.http.post<NewsSlider>(`${API}/admin/sliders`, input);
+  }
+
+  updateSlider(id: string, input: NewsSliderInput): Observable<NewsSlider> {
+    return this.http.put<NewsSlider>(`${API}/admin/sliders/${id}`, input);
+  }
+
+  deleteSlider(id: string): Observable<void> {
+    return this.http.delete<void>(`${API}/admin/sliders/${id}`);
+  }
+
+  replaceSliderStories(id: string, storyIds: string[]): Observable<NewsSlider> {
+    return this.http.put<NewsSlider>(`${API}/admin/sliders/${id}/stories`, { storyIds });
   }
 }
