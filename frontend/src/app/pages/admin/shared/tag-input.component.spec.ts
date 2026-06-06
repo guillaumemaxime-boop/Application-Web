@@ -129,6 +129,6 @@ describe('TagInputComponent', () => {
     const suggestion = fixture.nativeElement.querySelector('.suggestion') as HTMLButtonElement;
     suggestion.click();
     fixture.detectChanges();
-    expect(host.ctrl.value?.length).toBe(1);
+    expect(host.ctrl.value).toEqual(['bois']);
   });
 });

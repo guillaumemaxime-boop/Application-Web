@@ -1,11 +1,10 @@
 import { Component, Input, computed, forwardRef, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
   selector: 'app-tag-input',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => TagInputComponent),
@@ -80,12 +79,12 @@ export class TagInputComponent implements ControlValueAccessor {
   @Input() suggestions: string[] = [];
   @Input() placeholder = 'Ajouter un tag…';
 
-  protected tags = signal<string[]>([]);
-  protected inputValue = signal<string>('');
-  protected dropdownOpen = signal(false);
-  protected disabled = signal(false);
+  protected readonly tags = signal<string[]>([]);
+  protected readonly inputValue = signal<string>('');
+  protected readonly dropdownOpen = signal(false);
+  protected readonly disabled = signal(false);
 
-  protected filteredSuggestions = computed(() => {
+  protected readonly filteredSuggestions = computed(() => {
     const q = this.inputValue().trim().toLowerCase();
     const current = new Set(this.tags());
     return this.suggestions
@@ -127,6 +126,7 @@ export class TagInputComponent implements ControlValueAccessor {
   }
 
   protected addTag(tag: string): void {
+    this.onTouchedFn();
     const v = tag.trim();
     if (!v) return;
     if (this.tags().includes(v)) return;
@@ -137,6 +137,7 @@ export class TagInputComponent implements ControlValueAccessor {
   }
 
   protected removeTag(tag: string): void {
+    this.onTouchedFn();
     const next = this.tags().filter(t => t !== tag);
     this.tags.set(next);
     this.onChangeFn(next);
