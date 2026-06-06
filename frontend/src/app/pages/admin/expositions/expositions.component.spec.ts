@@ -20,7 +20,6 @@ type ExpoInternals = {
   exhibitionGallery: { (): string[]; set: (v: string[]) => void };
   exhibitionTags: () => string[];
   newExhibitionTag: { (): string; set: (v: string) => void };
-  exhibitionsMeta: { (): unknown[] | null; set: (v: unknown[]) => void };
   currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
   editingStoryId: { (): string | null; set: (v: string | null) => void };
   saving: () => boolean;
@@ -31,11 +30,6 @@ type ExpoInternals = {
   addExhibitionTag: (e: Event) => void;
   removeExhibitionTag: (tag: string) => void;
   onTagBackspace: (e: Event) => void;
-  onExhibitionMetaReorder: (order: number[]) => void;
-  toggleExhibitionVisibility: (row: unknown, event: Event) => void;
-  persistExhibitionsMeta: () => void;
-  moveExhibitionUp: (i: number) => void;
-  moveExhibitionDown: (i: number) => void;
   editStory: (s: unknown) => void;
   newStory: () => void;
   renameStory: (s: unknown) => void;
@@ -61,7 +55,6 @@ describe('ExpositionsComponent', () => {
   function flushInitial(items: unknown[] = [], metas: unknown[] = []) {
     // shareReplay(1) -> un seul GET /api/exhibitions
     httpMock.expectOne('/api/exhibitions').flush(items);
-    httpMock.expectOne('/api/admin/exhibitions-meta').flush(metas);
   }
 
   afterEach(() => httpMock?.verify());
@@ -88,7 +81,6 @@ describe('ExpositionsComponent', () => {
     cmp.saveExhibition();
     httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/exhibitions').flush({});
     httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/admin/exhibitions-meta').flush([]);
     expect(toast.success).toHaveBeenCalled();
   });
 
@@ -181,7 +173,6 @@ describe('ExpositionsComponent', () => {
     cmp.saveExhibition();
     httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/exhibitions/salon').flush({});
     httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/admin/exhibitions-meta').flush([]);
     expect(toast.success).toHaveBeenCalled();
   });
 
@@ -227,7 +218,6 @@ describe('ExpositionsComponent', () => {
     cmp.removeExhibition({ slug: 'salon', title: 'Salon' });
     httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/exhibitions/salon').flush({});
     httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/admin/exhibitions-meta').flush([]);
     expect(toast.success).toHaveBeenCalled();
   });
 
@@ -245,7 +235,6 @@ describe('ExpositionsComponent', () => {
     cmp.removeExhibition({ slug: 'salon', title: 'Salon' });
     httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/exhibitions/salon').flush({});
     httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/admin/exhibitions-meta').flush([]);
     expect(cmp.editingExhibitionSlug()).toBeNull();
   });
 
@@ -322,177 +311,6 @@ describe('ExpositionsComponent', () => {
     cmp.newExhibitionTag.set('');
     cmp.onTagBackspace({ preventDefault: () => {} } as Event);
     expect(cmp.exhibitionTags()).toEqual(['art']);
-  });
-
-  it('onExhibitionMetaReorder() met à jour positions et persiste', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    const toast = TestBed.inject(ToastService);
-    spyOn(toast, 'success');
-    fixture.detectChanges();
-    flushInitial(
-      [
-        { id: '1', slug: 'a', title: 'A', coverImage: '/a.jpg' },
-        { id: '2', slug: 'b', title: 'B', coverImage: '/b.jpg' },
-      ],
-      [
-        { slug: 'a', position: 0, visible: true },
-        { slug: 'b', position: 1, visible: true },
-      ],
-    );
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.onExhibitionMetaReorder([1, 0]);
-    const rows = cmp.exhibitionsMeta() as Array<{ slug: string; position: number }>;
-    expect(rows[0].slug).toBe('b');
-    expect(rows[0].position).toBe(0);
-    expect(rows[1].position).toBe(1);
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/exhibitions-meta/b').flush({});
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/exhibitions-meta/a').flush({});
-    expect(toast.success).toHaveBeenCalled();
-  });
-
-  it('onExhibitionMetaReorder() ne fait rien quand meta est null', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    // Ne pas flush -> garder l'état null sur exhibitionsMeta
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.onExhibitionMetaReorder([0]);
-    expect(cmp.exhibitionsMeta()).toBeNull();
-    // Cleanup HTTP
-    httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/admin/exhibitions-meta').flush([]);
-  });
-
-  it('moveExhibitionUp() echange avec la precedente (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial(
-      [
-        { id: '1', slug: 'a', title: 'A', coverImage: '/a.jpg' },
-        { id: '2', slug: 'b', title: 'B', coverImage: '/b.jpg' },
-      ],
-      [
-        { slug: 'a', position: 0, visible: true },
-        { slug: 'b', position: 1, visible: true },
-      ],
-    );
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.moveExhibitionUp(1);
-    const rows = cmp.exhibitionsMeta() as Array<{ slug: string }>;
-    expect(rows[0].slug).toBe('b');
-    expect(rows[1].slug).toBe('a');
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/exhibitions-meta/b').flush({});
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/exhibitions-meta/a').flush({});
-  });
-
-  it('moveExhibitionUp(0) ne fait rien (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial(
-      [{ id: '1', slug: 'a', title: 'A', coverImage: '/a.jpg' }],
-      [{ slug: 'a', position: 0, visible: true }],
-    );
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.moveExhibitionUp(0);
-    // pas de PUT
-  });
-
-  it('moveExhibitionUp() ne fait rien quand meta null (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.moveExhibitionUp(1);
-    expect(cmp.exhibitionsMeta()).toBeNull();
-    httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/admin/exhibitions-meta').flush([]);
-  });
-
-  it('moveExhibitionDown() echange avec la suivante (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial(
-      [
-        { id: '1', slug: 'a', title: 'A', coverImage: '/a.jpg' },
-        { id: '2', slug: 'b', title: 'B', coverImage: '/b.jpg' },
-      ],
-      [
-        { slug: 'a', position: 0, visible: true },
-        { slug: 'b', position: 1, visible: true },
-      ],
-    );
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.moveExhibitionDown(0);
-    const rows = cmp.exhibitionsMeta() as Array<{ slug: string }>;
-    expect(rows[0].slug).toBe('b');
-    expect(rows[1].slug).toBe('a');
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/exhibitions-meta/b').flush({});
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/exhibitions-meta/a').flush({});
-  });
-
-  it('moveExhibitionDown(last) ne fait rien (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial(
-      [{ id: '1', slug: 'a', title: 'A', coverImage: '/a.jpg' }],
-      [{ slug: 'a', position: 0, visible: true }],
-    );
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.moveExhibitionDown(0);
-    // pas de PUT
-  });
-
-  it('moveExhibitionDown() ne fait rien quand meta null (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.moveExhibitionDown(0);
-    expect(cmp.exhibitionsMeta()).toBeNull();
-    httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/admin/exhibitions-meta').flush([]);
-  });
-
-  it('toggleExhibitionVisibility() change visible et persiste', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    const toast = TestBed.inject(ToastService);
-    spyOn(toast, 'success');
-    fixture.detectChanges();
-    flushInitial(
-      [{ id: '1', slug: 'a', title: 'A', coverImage: '/a.jpg' }],
-      [{ slug: 'a', position: 0, visible: true }],
-    );
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    const row = { slug: 'a', title: 'A', cover: '/a.jpg', position: 0, visible: true };
-    cmp.toggleExhibitionVisibility(row, { target: { checked: false } } as unknown as Event);
-    const rows = cmp.exhibitionsMeta() as Array<{ visible: boolean }>;
-    expect(rows[0].visible).toBe(false);
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/exhibitions-meta/a').flush({});
-    expect(toast.success).toHaveBeenCalled();
-  });
-
-  it('persistExhibitionsMeta() ne fait rien quand rows vide', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.persistExhibitionsMeta();
-    // verify() à la fin garantit aucun appel HTTP supplémentaire
-    expect(cmp.exhibitionsMeta()).toEqual([]);
   });
 
   it('loadExhibition() peuple currentStories avec la liste retournée (Task 10)', () => {
@@ -580,24 +398,6 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/admin/stories/st-1').flush({});
     expect(cmp.currentStories().length).toBe(1);
     expect(cmp.currentStories()[0].id).toBe('st-2');
-  });
-
-  it('persistExhibitionsMeta() error -> toast error', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    const toast = TestBed.inject(ToastService);
-    spyOn(toast, 'error');
-    fixture.detectChanges();
-    flushInitial(
-      [{ id: '1', slug: 'a', title: 'A', coverImage: '/a.jpg' }],
-      [{ slug: 'a', position: 0, visible: true }],
-    );
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    const row = { slug: 'a', title: 'A', cover: '/a.jpg', position: 0, visible: true };
-    cmp.toggleExhibitionVisibility(row, { target: { checked: false } } as unknown as Event);
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/exhibitions-meta/a').error(new ProgressEvent('err'));
-    expect(toast.error).toHaveBeenCalled();
   });
 
 });

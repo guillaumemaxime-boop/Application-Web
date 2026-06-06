@@ -19,7 +19,6 @@ type MobilierInternals = {
   editingFurnitureSlug: () => string | null;
   editingFurnitureId: () => string | null;
   furnitureGallery: { (): string[]; set: (v: string[]) => void };
-  categoryMeta: { (): unknown[] | null; set: (v: unknown[]) => void };
   currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
   editingStoryId: { (): string | null; set: (v: string | null) => void };
   saving: () => boolean;
@@ -27,13 +26,8 @@ type MobilierInternals = {
   newFurniture: () => void;
   saveFurniture: () => void;
   removeFurniture: (item: unknown) => void;
-  onCategoryReorder: (order: number[]) => void;
-  toggleCategoryVisibility: (c: unknown, event: Event) => void;
-  moveCategoryUp: (i: number) => void;
-  moveCategoryDown: (i: number) => void;
   parseDimensions: (list: string[]) => { w: number | null; d: number | null; h: number | null; notes: string };
   serializeDimensions: (w: number | null, d: number | null, h: number | null, notesText: string) => string[];
-  persistCategories: () => void;
   editStory: (s: unknown) => void;
   newStory: () => void;
   renameStory: (s: unknown) => void;
@@ -58,19 +52,17 @@ describe('MobilierComponent', () => {
 
   function flushInitial(items: unknown[] = [], cats: unknown[] = []) {
     httpMock.expectOne('/api/furniture').flush(items);
-    httpMock.expectOne('/api/admin/categories').flush(cats);
   }
 
   afterEach(() => httpMock?.verify());
 
-  it('charge la liste des pièces et les catégories', () => {
+  it('charge la liste des pièces', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);
     fixture.detectChanges();
     httpMock.expectOne('/api/furniture').flush([
       { id: '1', slug: 'chaise', title: 'Chaise', category: 'Sièges', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false },
     ]);
-    httpMock.expectOne('/api/admin/categories').flush([]);
     fixture.detectChanges();
     expect(fixture.debugElement.queryAll(By.css('.list li')).length).toBe(1);
   });
@@ -299,176 +291,6 @@ describe('MobilierComponent', () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it('onCategoryReorder() met à jour positions et persiste', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    const toast = TestBed.inject(ToastService);
-    spyOn(toast, 'success');
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    httpMock.expectOne('/api/admin/categories').flush([
-      { category: 'A', coverImage: '', position: 0, visible: true },
-      { category: 'B', coverImage: '', position: 1, visible: true },
-    ]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.onCategoryReorder([1, 0]);
-    const cats = cmp.categoryMeta() as Array<{ category: string; position: number }>;
-    expect(cats[0].category).toBe('B');
-    expect(cats[0].position).toBe(0);
-    expect(cats[1].position).toBe(1);
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/B').flush({});
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/A').flush({});
-    expect(toast.success).toHaveBeenCalled();
-  });
-
-  it('onCategoryReorder() ne fait rien si categoryMeta est null', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    // Ne pas flush /api/admin/categories pour garder categoryMeta() === null
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.onCategoryReorder([0]);
-    expect(cmp.categoryMeta()).toBeNull();
-    // Aucun PUT attendu — cleanup HTTP
-    httpMock.expectOne('/api/admin/categories').flush([]);
-  });
-
-  it('moveCategoryUp() echange avec la precedente (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    const toast = TestBed.inject(ToastService);
-    spyOn(toast, 'success');
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    httpMock.expectOne('/api/admin/categories').flush([
-      { category: 'A', coverImage: '', position: 0, visible: true },
-      { category: 'B', coverImage: '', position: 1, visible: true },
-    ]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.moveCategoryUp(1);
-    const cats = cmp.categoryMeta() as Array<{ category: string }>;
-    expect(cats[0].category).toBe('B');
-    expect(cats[1].category).toBe('A');
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/B').flush({});
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/A').flush({});
-  });
-
-  it('moveCategoryUp(0) ne fait rien (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    httpMock.expectOne('/api/admin/categories').flush([{ category: 'A', coverImage: '', position: 0, visible: true }]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.moveCategoryUp(0);
-    // pas de PUT
-  });
-
-  it('moveCategoryUp() ne fait rien quand categoryMeta null (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.moveCategoryUp(1);
-    expect(cmp.categoryMeta()).toBeNull();
-    httpMock.expectOne('/api/admin/categories').flush([]);
-  });
-
-  it('moveCategoryDown() echange avec la suivante (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    httpMock.expectOne('/api/admin/categories').flush([
-      { category: 'A', coverImage: '', position: 0, visible: true },
-      { category: 'B', coverImage: '', position: 1, visible: true },
-    ]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.moveCategoryDown(0);
-    const cats = cmp.categoryMeta() as Array<{ category: string }>;
-    expect(cats[0].category).toBe('B');
-    expect(cats[1].category).toBe('A');
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/B').flush({});
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/A').flush({});
-  });
-
-  it('moveCategoryDown(last) ne fait rien (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    httpMock.expectOne('/api/admin/categories').flush([{ category: 'A', coverImage: '', position: 0, visible: true }]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.moveCategoryDown(0);
-    // pas de PUT
-  });
-
-  it('moveCategoryDown() ne fait rien quand categoryMeta null (A-04)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.moveCategoryDown(0);
-    expect(cmp.categoryMeta()).toBeNull();
-    httpMock.expectOne('/api/admin/categories').flush([]);
-  });
-
-  it('toggleCategoryVisibility() change visible et persiste', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    const toast = TestBed.inject(ToastService);
-    spyOn(toast, 'success');
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    const cat = { category: 'A', coverImage: '', position: 0, visible: true };
-    httpMock.expectOne('/api/admin/categories').flush([cat]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.toggleCategoryVisibility(cat, { target: { checked: false } } as unknown as Event);
-    const cats = cmp.categoryMeta() as Array<{ visible: boolean }>;
-    expect(cats[0].visible).toBe(false);
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/A').flush({});
-    expect(toast.success).toHaveBeenCalled();
-  });
-
-  it('persistCategories() ne fait rien quand aucune catégorie', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    httpMock.expectOne('/api/admin/categories').flush([]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    // categoryMeta = [] -> persistCategories devrait return early
-    cmp.persistCategories();
-    // verify() à la fin garantit qu'il n'y a pas eu d'appel
-    expect(cmp.categoryMeta()).toEqual([]);
-  });
-
-  it('persistCategories() error -> toast error', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    const toast = TestBed.inject(ToastService);
-    spyOn(toast, 'error');
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    const cat = { category: 'A', coverImage: '', position: 0, visible: true };
-    httpMock.expectOne('/api/admin/categories').flush([cat]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.toggleCategoryVisibility(cat, { target: { checked: false } } as unknown as Event);
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/categories/A').error(new ProgressEvent('err'));
-    expect(toast.error).toHaveBeenCalled();
-  });
-
   it('newFurniture() reset form et galerie', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);
@@ -598,7 +420,6 @@ describe('MobilierComponent', () => {
     spyOn(toast, 'error');
     fixture.detectChanges();
     httpMock.expectOne('/api/furniture').error(new ProgressEvent('err'));
-    httpMock.expectOne('/api/admin/categories').flush([]);
     fixture.detectChanges();
     expect(toast.error).toHaveBeenCalled();
     const cmp = fixture.componentInstance as unknown as MobilierInternals;

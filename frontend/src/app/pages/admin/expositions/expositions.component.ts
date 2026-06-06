@@ -5,20 +5,11 @@ import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Exhibition } from '../../../models/exhibition.model';
 import { Story } from '../../../models/story.model';
-import { AdminExhibitionMetaView } from '../../../models/home.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
 import { ImageFieldComponent } from '../shared/image-field.component';
 import { ToastService } from '../shared/toast.service';
-
-interface ExhibitionMetaRow {
-  slug: string;
-  title: string;
-  cover: string;
-  position: number;
-  visible: boolean;
-}
 
 @Component({
   selector: 'app-expositions',
@@ -160,30 +151,6 @@ interface ExhibitionMetaRow {
       </form>
     </div>
 
-    <section class="meta-section">
-      <h2>Position sur la home</h2>
-      <p class="hint">Glisse pour réordonner. Décoche pour masquer une exposition du bandeau (la fiche reste accessible via son URL).</p>
-      @if (exhibitionsMeta(); as rows) {
-        <ul class="exh-list" appReorderable (reordered)="onExhibitionMetaReorder($event)">
-          @for (r of rows; track r.slug; let i = $index) {
-            <li class="home-row">
-              <span class="handle" aria-hidden="true">⠿</span>
-              <img [src]="r.cover" [alt]="r.title" class="thumb-round" />
-              <span class="title">{{ r.title }}</span>
-              <label class="incl">
-                <input type="checkbox" [checked]="r.visible" (change)="toggleExhibitionVisibility(r, $event)" /> Visible
-              </label>
-              <button type="button" class="reorder-btn" aria-label="Monter l'exposition"
-                      (click)="moveExhibitionUp(i)" [disabled]="i === 0">↑</button>
-              <button type="button" class="reorder-btn" aria-label="Descendre l'exposition"
-                      (click)="moveExhibitionDown(i)" [disabled]="i === rows.length - 1">↓</button>
-            </li>
-          }
-        </ul>
-      } @else {
-        <p class="status">Chargement…</p>
-      }
-    </section>
   `,
   styles: [`
     .grid-admin { display: grid; grid-template-columns: 320px 1fr; gap: 48px; align-items: start; }
@@ -237,15 +204,6 @@ interface ExhibitionMetaRow {
     .chip-input-field:focus { outline: none; }
     .chip-input-field:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 
-    .meta-section { margin-top: 64px; }
-    .meta-section h2 { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; margin: 0 0 8px; }
-    .hint { font-size: 0.85rem; color: var(--color-mute); margin-bottom: 16px; }
-    .exh-list { list-style: none; padding: 0; margin: 0; }
-    .home-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 6px; border: 1px solid var(--color-line); background: var(--color-bg); cursor: grab; }
-    .home-row .handle { color: var(--color-mute); font-size: 1.1rem; }
-    .home-row .thumb-round { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; flex-shrink: 0; }
-    .home-row .title { flex: 1; font-size: 0.9rem; }
-    .home-row .incl { font-size: 0.78rem; color: var(--color-ink-soft); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
     .reorder-btn { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); width: 28px; height: 28px; padding: 0; cursor: pointer; font-size: 0.9rem; line-height: 1; }
     .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -271,7 +229,6 @@ export class ExpositionsComponent {
   protected readonly exhibitionGallery = signal<string[]>([]);
   protected readonly exhibitionTags = signal<string[]>([]);
   protected readonly newExhibitionTag = signal('');
-  protected readonly exhibitionsMeta = signal<ExhibitionMetaRow[] | null>(null);
   protected readonly currentStories = signal<Story[]>([]);
   protected readonly editingStoryId = signal<string | null>(null);
   protected readonly editingCoverStoryId = signal<string | null>(null);
@@ -295,7 +252,6 @@ export class ExpositionsComponent {
 
   constructor() {
     this.refreshExhibitions();
-    this.refreshExhibitionsMeta();
     this.route.queryParamMap.subscribe(params => {
       if (params.get('new') === '1') this.newExhibition();
     });
@@ -306,24 +262,6 @@ export class ExpositionsComponent {
     this.portfolio.getAllExhibitions().subscribe({
       next: data => { this.exhibitions.set(data); this.loadingExhibitions.set(false); },
       error: () => { this.loadingExhibitions.set(false); this.toast.error('Impossible de charger les expositions.'); }
-    });
-  }
-
-  private refreshExhibitionsMeta(): void {
-    forkJoin([
-      this.portfolio.getAllExhibitions(),
-      this.portfolio.getAdminExhibitionsMeta(),
-    ]).subscribe(([expos, metas]) => {
-      const byMeta = new Map(metas.map(m => [m.slug, m]));
-      const rows: ExhibitionMetaRow[] = expos
-        .map(e => {
-          const m = byMeta.get(e.slug);
-          if (!m) return null;
-          return { slug: e.slug, title: e.title, cover: e.coverImage, position: m.position, visible: m.visible };
-        })
-        .filter((r): r is ExhibitionMetaRow => r !== null)
-        .sort((a, b) => a.position - b.position);
-      this.exhibitionsMeta.set(rows);
     });
   }
 
@@ -534,7 +472,6 @@ export class ExpositionsComponent {
         this.saving.set(false);
         this.toast.success(slug ? 'Exposition mise à jour.' : 'Exposition créée.');
         this.refreshExhibitions();
-        this.refreshExhibitionsMeta();
         this.newExhibition();
       },
       error: () => {
@@ -551,51 +488,8 @@ export class ExpositionsComponent {
         this.toast.success('Exposition supprimée.');
         if (this.editingExhibitionSlug() === item.slug) this.newExhibition();
         this.refreshExhibitions();
-        this.refreshExhibitionsMeta();
       },
       error: () => this.toast.error('Erreur lors de la suppression.')
-    });
-  }
-
-  onExhibitionMetaReorder(order: number[]): void {
-    const current = this.exhibitionsMeta();
-    if (!current) return;
-    this.exhibitionsMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
-    this.persistExhibitionsMeta();
-  }
-
-  moveExhibitionUp(index: number): void {
-    if (index <= 0) return;
-    const rows = this.exhibitionsMeta();
-    if (!rows) return;
-    const order = rows.map((_, i) => i);
-    [order[index - 1], order[index]] = [order[index], order[index - 1]];
-    this.onExhibitionMetaReorder(order);
-  }
-
-  moveExhibitionDown(index: number): void {
-    const rows = this.exhibitionsMeta();
-    if (!rows || index >= rows.length - 1) return;
-    const order = rows.map((_, i) => i);
-    [order[index], order[index + 1]] = [order[index + 1], order[index]];
-    this.onExhibitionMetaReorder(order);
-  }
-
-  toggleExhibitionVisibility(row: ExhibitionMetaRow, event: Event): void {
-    const visible = (event.target as HTMLInputElement).checked;
-    this.exhibitionsMeta.update(rows => rows?.map(x => x.slug === row.slug ? { ...x, visible } : x) ?? null);
-    this.persistExhibitionsMeta();
-  }
-
-  private persistExhibitionsMeta(): void {
-    const rows = this.exhibitionsMeta() ?? [];
-    const requests = rows.map(r => this.portfolio.updateAdminExhibitionMeta(r.slug, {
-      slug: r.slug, position: r.position, visible: r.visible,
-    } as AdminExhibitionMetaView));
-    if (requests.length === 0) return;
-    forkJoin(requests).subscribe({
-      next: () => this.toast.success('Expositions enregistrées.'),
-      error: () => this.toast.error('Impossible d\'enregistrer les expositions.'),
     });
   }
 }

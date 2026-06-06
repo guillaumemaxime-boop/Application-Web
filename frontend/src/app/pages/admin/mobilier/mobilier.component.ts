@@ -5,7 +5,6 @@ import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Furniture } from '../../../models/furniture.model';
 import { Story } from '../../../models/story.model';
-import { AdminCategoryView } from '../../../models/home.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
@@ -176,30 +175,6 @@ import { ToastService } from '../shared/toast.service';
       </form>
     </div>
 
-    <section class="categories-section">
-      <h2>Catégories de mobilier</h2>
-      <p class="hint">Glisse pour réordonner. Décoche pour masquer une catégorie de la home.</p>
-      @if (categoryMeta(); as cats) {
-        <ul class="cat-list" appReorderable (reordered)="onCategoryReorder($event)">
-          @for (c of cats; track c.category; let i = $index) {
-            <li class="home-row">
-              <span class="handle" aria-hidden="true">⠿</span>
-              <img [src]="c.coverImage" [alt]="c.category" class="thumb-round" />
-              <span class="title">{{ c.category }}</span>
-              <label class="incl">
-                <input type="checkbox" [checked]="c.visible" (change)="toggleCategoryVisibility(c, $event)" /> Visible
-              </label>
-              <button type="button" class="reorder-btn" aria-label="Monter la categorie"
-                      (click)="moveCategoryUp(i)" [disabled]="i === 0">↑</button>
-              <button type="button" class="reorder-btn" aria-label="Descendre la categorie"
-                      (click)="moveCategoryDown(i)" [disabled]="i === cats.length - 1">↓</button>
-            </li>
-          }
-        </ul>
-      } @else {
-        <p class="status">Chargement…</p>
-      }
-    </section>
   `,
   styles: [`
     .grid-admin { display: grid; grid-template-columns: 320px 1fr; gap: 48px; align-items: start; }
@@ -272,15 +247,6 @@ import { ToastService } from '../shared/toast.service';
     .form label.checkbox { flex-direction: row; align-items: center; gap: 10px; }
     .form label.checkbox > span { text-transform: none; letter-spacing: normal; font-size: 0.9rem; color: var(--color-ink); }
 
-    .categories-section { margin-top: 64px; }
-    .categories-section h2 { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; margin: 0 0 8px; }
-    .categories-section .hint { font-size: 0.85rem; color: var(--color-mute); margin-bottom: 16px; }
-    .cat-list { list-style: none; padding: 0; margin: 0; }
-    .home-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 6px; border: 1px solid var(--color-line); background: var(--color-bg); cursor: grab; }
-    .home-row .handle { color: var(--color-mute); font-size: 1.1rem; user-select: none; }
-    .home-row .thumb-round { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; flex-shrink: 0; }
-    .home-row .title { flex: 1; font-size: 0.9rem; color: var(--color-ink); }
-    .home-row .incl { font-size: 0.78rem; color: var(--color-ink-soft); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
     .reorder-btn { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); width: 28px; height: 28px; padding: 0; cursor: pointer; font-size: 0.9rem; line-height: 1; }
     .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -306,7 +272,6 @@ export class MobilierComponent {
   protected readonly editingFurnitureSlug = signal<string | null>(null);
   protected readonly editingFurnitureId = signal<string | null>(null);
   protected readonly furnitureGallery = signal<string[]>([]);
-  protected readonly categoryMeta = signal<AdminCategoryView[] | null>(null);
   protected readonly currentStories = signal<Story[]>([]);
   protected readonly editingStoryId = signal<string | null>(null);
   protected readonly editingCoverStoryId = signal<string | null>(null);
@@ -332,7 +297,6 @@ export class MobilierComponent {
 
   constructor() {
     this.refreshFurniture();
-    this.portfolio.getAdminCategories().subscribe(c => this.categoryMeta.set(c));
     this.route.queryParamMap.subscribe(params => {
       if (params.get('new') === '1') this.newFurniture();
     });
@@ -588,43 +552,4 @@ export class MobilierComponent {
     });
   }
 
-  onCategoryReorder(order: number[]): void {
-    const current = this.categoryMeta();
-    if (!current) return;
-    this.categoryMeta.set(order.map((i, newPos) => ({ ...current[i], position: newPos })));
-    this.persistCategories();
-  }
-
-  moveCategoryUp(index: number): void {
-    if (index <= 0) return;
-    const cats = this.categoryMeta();
-    if (!cats) return;
-    const order = cats.map((_, i) => i);
-    [order[index - 1], order[index]] = [order[index], order[index - 1]];
-    this.onCategoryReorder(order);
-  }
-
-  moveCategoryDown(index: number): void {
-    const cats = this.categoryMeta();
-    if (!cats || index >= cats.length - 1) return;
-    const order = cats.map((_, i) => i);
-    [order[index], order[index + 1]] = [order[index + 1], order[index]];
-    this.onCategoryReorder(order);
-  }
-
-  toggleCategoryVisibility(c: AdminCategoryView, event: Event): void {
-    const visible = (event.target as HTMLInputElement).checked;
-    this.categoryMeta.update(cats => cats?.map(x => x.category === c.category ? { ...x, visible } : x) ?? null);
-    this.persistCategories();
-  }
-
-  private persistCategories(): void {
-    const cats = this.categoryMeta() ?? [];
-    const requests = cats.map(c => this.portfolio.updateAdminCategory(c.category, c));
-    if (requests.length === 0) return;
-    forkJoin(requests).subscribe({
-      next: () => this.toast.success('Catégories enregistrées.'),
-      error: () => this.toast.error('Impossible d\'enregistrer les catégories.'),
-    });
-  }
 }
