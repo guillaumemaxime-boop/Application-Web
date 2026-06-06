@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Exhibition } from '../../../models/exhibition.model';
@@ -9,12 +9,13 @@ import { ReorderableDirective } from '../../../directives/reorderable.directive'
 import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
 import { ImageFieldComponent } from '../shared/image-field.component';
+import { TagInputComponent } from '../shared/tag-input.component';
 import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -72,20 +73,7 @@ import { ToastService } from '../shared/toast.service';
 
         <label>
           <span>Tags</span>
-          <div class="chips-input">
-            @for (t of exhibitionTags(); track t) {
-              <span class="chip">{{ t }}<button type="button" class="chip-remove" (click)="removeExhibitionTag(t)" aria-label="Retirer">×</button></span>
-            }
-            <input
-              type="text"
-              [ngModel]="newExhibitionTag()"
-              (ngModelChange)="newExhibitionTag.set($event)"
-              [ngModelOptions]="{ standalone: true }"
-              (keydown.enter)="addExhibitionTag($event)"
-              (keydown.backspace)="onTagBackspace($event)"
-              placeholder="Ajouter un tag puis Entrée"
-              class="chip-input-field" />
-          </div>
+          <app-tag-input formControlName="tags" [suggestions]="allTags()" />
         </label>
         <label><span>Description courte</span><textarea rows="2" formControlName="shortDescription"></textarea></label>
         <label><span>Description longue</span><textarea rows="5" formControlName="description"></textarea></label>
@@ -197,13 +185,6 @@ import { ToastService } from '../shared/toast.service';
     .form label.checkbox { flex-direction: row; align-items: center; gap: 10px; }
     .form label.checkbox > span { text-transform: none; letter-spacing: normal; font-size: 0.9rem; color: var(--color-ink); }
 
-    .chips-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border: 1px solid var(--color-line); background: var(--color-bg); }
-    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--color-bg-alt); font-size: 0.8rem; }
-    .chip-remove { background: transparent; border: 0; color: var(--color-mute); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; }
-    .chip-input-field { flex: 1; min-width: 120px; border: 0; padding: 4px; background: transparent; }
-    .chip-input-field:focus { outline: none; }
-    .chip-input-field:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
-
     .reorder-btn { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); width: 28px; height: 28px; padding: 0; cursor: pointer; font-size: 0.9rem; line-height: 1; }
     .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -227,8 +208,7 @@ export class ExpositionsComponent {
   protected readonly editingExhibitionSlug = signal<string | null>(null);
   protected readonly editingExhibitionId = signal<string | null>(null);
   protected readonly exhibitionGallery = signal<string[]>([]);
-  protected readonly exhibitionTags = signal<string[]>([]);
-  protected readonly newExhibitionTag = signal('');
+  protected readonly allTags = signal<string[]>([]);
   protected readonly currentStories = signal<Story[]>([]);
   protected readonly editingStoryId = signal<string | null>(null);
   protected readonly editingCoverStoryId = signal<string | null>(null);
@@ -248,10 +228,12 @@ export class ExpositionsComponent {
     description: [''],
     showStoryLink: [true],
     showStoryButton: [true],
+    tags: this.fb.control<string[]>([], { nonNullable: true }),
   });
 
   constructor() {
     this.refreshExhibitions();
+    this.portfolio.getAllTags().subscribe(t => this.allTags.set(t));
     this.route.queryParamMap.subscribe(params => {
       if (params.get('new') === '1') this.newExhibition();
     });
@@ -276,10 +258,9 @@ export class ExpositionsComponent {
       shortDescription: '', description: '',
       showStoryLink: true,
       showStoryButton: true,
+      tags: [],
     });
     this.exhibitionGallery.set([]);
-    this.exhibitionTags.set([]);
-    this.newExhibitionTag.set('');
   }
 
   loadExhibition(item: Exhibition): void {
@@ -293,10 +274,9 @@ export class ExpositionsComponent {
       coverImage: item.coverImage ?? '', shortDescription: item.shortDescription ?? '', description: item.description ?? '',
       showStoryLink: item.showStoryLink ?? true,
       showStoryButton: item.showStoryButton ?? true,
+      tags: item.tags ?? [],
     });
     this.exhibitionGallery.set([...(item.gallery ?? [])]);
-    this.exhibitionTags.set([...(item.tags ?? [])]);
-    this.newExhibitionTag.set('');
     if (item.id) {
       this.loadStoriesFor(item.id, item.title, item.coverImage ?? '');
     }
@@ -423,29 +403,6 @@ export class ExpositionsComponent {
     });
   }
 
-  addExhibitionTag(event: Event): void {
-    event.preventDefault();
-    const value = this.newExhibitionTag().trim();
-    if (!value) return;
-    const current = this.exhibitionTags();
-    if (current.includes(value)) {
-      this.newExhibitionTag.set('');
-      return;
-    }
-    this.exhibitionTags.set([...current, value]);
-    this.newExhibitionTag.set('');
-  }
-
-  removeExhibitionTag(tag: string): void {
-    this.exhibitionTags.update(tags => tags.filter(t => t !== tag));
-  }
-
-  onTagBackspace(event: Event): void {
-    if (this.newExhibitionTag() !== '') return;
-    event.preventDefault();
-    this.exhibitionTags.update(tags => tags.slice(0, -1));
-  }
-
   saveExhibition(): void {
     if (this.exhibitionForm.invalid) return;
     const v = this.exhibitionForm.getRawValue();
@@ -457,7 +414,7 @@ export class ExpositionsComponent {
       startDate: v.startDate!, endDate: v.endDate!,
       curator: v.curator ?? '', coverImage: v.coverImage ?? '',
       gallery: [...this.exhibitionGallery()],
-      tags: [...this.exhibitionTags()],
+      tags: v.tags ?? [],
       shortDescription: v.shortDescription ?? '', description: v.description ?? '',
       featured: existing?.featured ?? false,
       showStoryLink: v.showStoryLink ?? true,

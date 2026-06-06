@@ -18,8 +18,7 @@ type ExpoInternals = {
   editingExhibitionSlug: () => string | null;
   editingExhibitionId: () => string | null;
   exhibitionGallery: { (): string[]; set: (v: string[]) => void };
-  exhibitionTags: () => string[];
-  newExhibitionTag: { (): string; set: (v: string) => void };
+  allTags: () => string[];
   currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
   editingStoryId: { (): string | null; set: (v: string | null) => void };
   saving: () => boolean;
@@ -27,9 +26,6 @@ type ExpoInternals = {
   newExhibition: () => void;
   saveExhibition: () => void;
   removeExhibition: (item: unknown) => void;
-  addExhibitionTag: (e: Event) => void;
-  removeExhibitionTag: (tag: string) => void;
-  onTagBackspace: (e: Event) => void;
   editStory: (s: unknown) => void;
   newStory: () => void;
   renameStory: (s: unknown) => void;
@@ -52,9 +48,9 @@ describe('ExpositionsComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   }
 
-  function flushInitial(items: unknown[] = [], metas: unknown[] = []) {
-    // shareReplay(1) -> un seul GET /api/exhibitions
+  function flushInitial(items: unknown[] = []) {
     httpMock.expectOne('/api/exhibitions').flush(items);
+    httpMock.expectOne('/api/tags').flush([]);
   }
 
   afterEach(() => httpMock?.verify());
@@ -84,21 +80,6 @@ describe('ExpositionsComponent', () => {
     expect(toast.success).toHaveBeenCalled();
   });
 
-  it('ajoute et retire un tag', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.newExhibitionTag.set('moderne');
-    const fakeEvent = { preventDefault: () => {} } as Event;
-    cmp.addExhibitionTag(fakeEvent);
-    expect(cmp.exhibitionTags()).toEqual(['moderne']);
-    cmp.removeExhibitionTag('moderne');
-    expect(cmp.exhibitionTags()).toEqual([]);
-  });
-
   it('ouvre formulaire vierge si ?new=1', () => {
     configure({ new: '1' });
     const fixture = TestBed.createComponent(ExpositionsComponent);
@@ -126,7 +107,7 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
     expect(cmp.editingExhibitionSlug()).toBe('salon');
     expect(cmp.editingExhibitionId()).toBe('e1');
-    expect(cmp.exhibitionTags()).toEqual(['art', 'design']);
+    expect(cmp.exhibitionForm.getRawValue()['tags']).toEqual(['art', 'design']);
     expect(cmp.exhibitionGallery()).toEqual(['/g.jpg']);
     const v = cmp.exhibitionForm.getRawValue();
     expect(v['title']).toBe('Salon');
@@ -141,7 +122,7 @@ describe('ExpositionsComponent', () => {
     const cmp = fixture.componentInstance as unknown as ExpoInternals;
     cmp.loadExhibition({ id: undefined, slug: 'x', title: 'X' });
     expect(cmp.editingExhibitionId()).toBeNull();
-    expect(cmp.exhibitionTags()).toEqual([]);
+    expect(cmp.exhibitionForm.getRawValue()['tags']).toEqual([]);
     expect(cmp.exhibitionGallery()).toEqual([]);
   });
 
@@ -253,66 +234,6 @@ describe('ExpositionsComponent', () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it('addExhibitionTag() ignore valeur vide', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.newExhibitionTag.set('   ');
-    cmp.addExhibitionTag({ preventDefault: () => {} } as Event);
-    expect(cmp.exhibitionTags()).toEqual([]);
-  });
-
-  it('addExhibitionTag() ignore doublons', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.newExhibitionTag.set('art');
-    cmp.addExhibitionTag({ preventDefault: () => {} } as Event);
-    cmp.newExhibitionTag.set('art');
-    cmp.addExhibitionTag({ preventDefault: () => {} } as Event);
-    expect(cmp.exhibitionTags()).toEqual(['art']);
-    expect(cmp.newExhibitionTag()).toBe('');
-  });
-
-  it('onTagBackspace() ne fait rien si input non vide', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.newExhibitionTag.set('art');
-    cmp.addExhibitionTag({ preventDefault: () => {} } as Event);
-    cmp.newExhibitionTag.set('design'); // input non vide
-    let prevented = false;
-    cmp.onTagBackspace({ preventDefault: () => { prevented = true; } } as Event);
-    expect(prevented).toBe(false);
-    expect(cmp.exhibitionTags()).toEqual(['art']);
-  });
-
-  it('onTagBackspace() retire dernier tag si input vide', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.newExhibitionTag.set('art');
-    cmp.addExhibitionTag({ preventDefault: () => {} } as Event);
-    cmp.newExhibitionTag.set('design');
-    cmp.addExhibitionTag({ preventDefault: () => {} } as Event);
-    expect(cmp.exhibitionTags()).toEqual(['art', 'design']);
-    cmp.newExhibitionTag.set('');
-    cmp.onTagBackspace({ preventDefault: () => {} } as Event);
-    expect(cmp.exhibitionTags()).toEqual(['art']);
-  });
-
   it('loadExhibition() peuple currentStories avec la liste retournée (Task 10)', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);
@@ -364,7 +285,7 @@ describe('ExpositionsComponent', () => {
     fixture.detectChanges();
     flushInitial([
       { id: 'e1', slug: 'salon', title: 'Salon', venue: '', city: '', country: '', startDate: '2024-01-01', endDate: '2024-02-01', curator: '', coverImage: '/c.jpg', gallery: [], tags: [], featured: false, shortDescription: '', description: '' },
-    ], [{ slug: 'salon', position: 0, visible: true }]);
+    ]);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as ExpoInternals;
     cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon', coverImage: '/c.jpg', startDate: '2024-01-01', endDate: '2024-02-01' });
@@ -398,6 +319,33 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/admin/stories/st-1').flush({});
     expect(cmp.currentStories().length).toBe(1);
     expect(cmp.currentStories()[0].id).toBe('st-2');
+  });
+
+  it('charge les tags via getAllTags au constructeur', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush(['bois', 'sculpture']);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    expect(cmp.allTags()).toEqual(['bois', 'sculpture']);
+  });
+
+  it('saveExhibition envoie tags dans le payload', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.exhibitionForm.patchValue({ title: 'T', startDate: '2024-01-01', endDate: '2024-02-01', tags: ['art'] });
+    cmp.saveExhibition();
+    const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/exhibitions');
+    expect(req.request.body['tags']).toEqual(['art']);
+    req.flush({});
+    httpMock.expectOne('/api/exhibitions').flush([]);
   });
 
 });
