@@ -9,7 +9,6 @@ import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
   template: `
     <section class="news-slider">
       <header>
-        <span class="eyebrow">ACTUALITÉS</span>
         <h2 class="title">{{ slider.title }}</h2>
       </header>
       <div class="track">
@@ -32,8 +31,7 @@ import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
   styles: [`
     .news-slider { padding: 48px 0; }
     .news-slider > header { padding: 0 24px 24px; max-width: 1200px; margin: 0 auto; }
-    .eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-mute); }
-    h2.title { font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin-top: 8px; }
+    h2.title { font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin: 0; }
 
     .track {
       display: flex;
