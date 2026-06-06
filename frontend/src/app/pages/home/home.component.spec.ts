@@ -120,62 +120,12 @@ describe('HomeComponent', () => {
     expect((component as any).data()).toEqual(mockHome);
   });
 
-  it('openCategory loads each piece and fills the viewer queue', () => {
-    (component as any).openCategory(mockHome.categories[0]);
-    expect(portfolioServiceSpy.getFurniture).toHaveBeenCalledWith('onde-fauteuil-sculpte');
-    expect(portfolioServiceSpy.getStories).toHaveBeenCalledWith('furniture', 'f-001');
-    expect(portfolioServiceSpy.getStoryBySlug).toHaveBeenCalledWith(mockFurnitureStory.slug);
-    const queue = (component as any).viewerQueue();
-    expect(queue.length).toBe(1);
-    expect(queue[0].title).toBe('Onde');
-    expect(queue[0].slug).toBe(mockFurnitureStory.slug);
-  });
-
-  it('openCategory ignores categories with no items', () => {
-    portfolioServiceSpy.getFurniture.calls.reset();
-    (component as any).openCategory({ category: 'Vide', slug: 'vide', cover: '', itemSlugs: [] });
-    expect(portfolioServiceSpy.getFurniture).not.toHaveBeenCalled();
-  });
-
-  it('openCategory skips owners that have no stories', () => {
-    portfolioServiceSpy.getStories.and.returnValue(of([]));
-    (component as any).openCategory(mockHome.categories[0]);
-    expect((component as any).viewerQueue().length).toBe(0);
-  });
-
-  it('openExhibition loads the exhibition into the queue', () => {
-    (component as any).openExhibition(mockHome.exhibitions[0]);
-    expect(portfolioServiceSpy.getExhibition).toHaveBeenCalledWith('matieres-silencieuses');
-    expect(portfolioServiceSpy.getStories).toHaveBeenCalledWith('exhibition', 'e-001');
-    expect(portfolioServiceSpy.getStoryBySlug).toHaveBeenCalledWith(mockExhibitionStory.slug);
-    const queue = (component as any).viewerQueue();
-    expect(queue.length).toBe(1);
-    expect(queue[0].slug).toBe(mockExhibitionStory.slug);
-  });
-
-  it('openExhibition does nothing when the owner has no story', () => {
-    portfolioServiceSpy.getStories.and.returnValue(of([]));
-    (component as any).openExhibition(mockHome.exhibitions[0]);
-    expect((component as any).viewerQueue().length).toBe(0);
-  });
-
   it('cardLink returns furniture detail route', () => {
     expect((component as any).cardLink(mockHome.feed[0])).toBe('/mobilier/onde-fauteuil-sculpte');
   });
 
   it('cardLink returns exhibition detail route', () => {
     expect((component as any).cardLink(mockHome.feed[1])).toBe('/expositions/matieres-silencieuses');
-  });
-
-  it('hides the stories section when no categories and no exhibitions are visible', () => {
-    portfolioServiceSpy.getHome.and.returnValue(of({ categories: [], exhibitions: [], feed: mockHome.feed }));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    expect(f.nativeElement.querySelector('.stories')).toBeNull();
-  });
-
-  it('shows the stories section when at least one slider is visible', () => {
-    expect(fixture.nativeElement.querySelector('.stories')).not.toBeNull();
   });
 
   it('renders feed card excerpt when description is provided', () => {

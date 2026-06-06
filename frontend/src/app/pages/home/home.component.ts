@@ -1,11 +1,10 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { forkJoin, of, switchMap } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
-import { HomePageData, HomeFeedItem, HomeCategoryView, HomeExhibitionView } from '../../models/home.model';
+import { HomePageData, HomeFeedItem } from '../../models/home.model';
 import { SiteContent } from '../../models/site-content.model';
-import { StoryWithSlides } from '../../models/story.model';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { NewsSliderComponent } from '../../components/news-slider/news-slider.component';
 import { NewsSliderView, SliderZone, SLIDER_ZONES, SliderStoryRef } from '../../models/news-slider.model';
@@ -28,32 +27,6 @@ import { enrichSlides } from '../../utils/display-slides';
 
     @if (sliderByZone()['home-top']; as s) {
       <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
-    }
-
-    @if (data(); as d) {
-      @if (d.categories.length > 0 || d.exhibitions.length > 0) {
-        <section class="stories">
-          <div class="container">
-            <div class="stories-row">
-              @for (cat of d.categories; track cat.slug) {
-                <button class="story" (click)="openCategory(cat)">
-                  <div class="ring"><img [src]="cat.cover" [alt]="cat.category" /></div>
-                  <span class="label">{{ cat.category }}</span>
-                </button>
-              }
-              @if (d.categories.length > 0 && d.exhibitions.length > 0) {
-                <div class="sep" aria-hidden="true">·</div>
-              }
-              @for (exh of d.exhibitions; track exh.slug) {
-                <button class="story expo" (click)="openExhibition(exh)">
-                  <div class="ring expo-ring"><img [src]="exh.cover" [alt]="exh.title" /></div>
-                  <span class="label">{{ exh.title }}</span>
-                </button>
-              }
-            </div>
-          </div>
-        </section>
-      }
     }
 
     @if (sliderByZone()['home-middle']; as s) {
@@ -102,15 +75,6 @@ import { enrichSlides } from '../../utils/display-slides';
     .hero h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.05; margin-top: 20px; max-width: 820px; }
     .hero .hero-title { white-space: pre-line; }
     .hero .lead { max-width: 540px; margin-top: 28px; font-size: 1.05rem; color: var(--color-ink-soft); }
-
-    .stories { position: sticky; top: 72px; z-index: 30; background: var(--color-bg); border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); padding: 24px 0; }
-    .stories-row { display: flex; gap: 32px; overflow-x: auto; align-items: flex-start; }
-    .story { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 88px; background: none; border: none; cursor: pointer; padding: 0; }
-    .ring { width: 84px; height: 84px; border-radius: 50%; padding: 3px; background: var(--color-bg); border: 1px solid var(--color-ink); }
-    .ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-    .expo-ring { padding: 4px; border: none; box-shadow: inset 0 0 0 1px var(--color-bg), inset 0 0 0 2px var(--color-ink); }
-    .label { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-soft); }
-    .sep { align-self: stretch; display: flex; align-items: center; padding: 0 4px; color: var(--color-line); font-size: 1.4rem; }
 
     .feed { padding: 64px 0 140px; }
     .feed .feed-title { font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin: 0 0 24px; }
@@ -214,73 +178,6 @@ export class HomeComponent implements OnInit {
         }, s.ownerKind),
         kind: s.ownerKind,
         slug: s.slug,
-      }]);
-    });
-  }
-
-  openCategory(cat: HomeCategoryView) {
-    if (cat.itemSlugs.length === 0) return;
-    // Pour chaque slug d'item : charger l'owner (pour son id technique), puis ses stories,
-    // puis charger les slides de la PREMIERE story (typiquement la story principale auto-creee).
-    const requests = cat.itemSlugs.map(slug =>
-      this.portfolio.getFurniture(slug).pipe(
-        switchMap(f =>
-          this.portfolio.getStories('furniture', f.id).pipe(
-            switchMap(stories => {
-              if (stories.length === 0) {
-                return of(null as { category: string; year: number; sws: StoryWithSlides } | null);
-              }
-              return this.portfolio.getStoryBySlug(stories[0].slug).pipe(
-                switchMap(sws => of({ category: f.category, year: f.year, sws }))
-              );
-            })
-          )
-        )
-      )
-    );
-    forkJoin(requests).subscribe(results => {
-      const queue: StoryItem[] = results
-        .filter((r): r is { category: string; year: number; sws: StoryWithSlides } => r !== null)
-        .map(({ category, year, sws: { story, slides } }) => ({
-          title: story.title,
-          subtitle: `${category} · ${year}`,
-          slides: enrichSlides({
-            slug: story.slug,
-            coverImage: story.coverImage,
-            slides: slides ?? [],
-            showStoryLink: false,
-          }, 'furniture'),
-          kind: 'furniture' as const,
-          slug: story.slug,
-        }));
-      this.viewerQueue.set(queue);
-    });
-  }
-
-  openExhibition(exh: HomeExhibitionView) {
-    this.portfolio.getExhibition(exh.slug).pipe(
-      switchMap(e =>
-        this.portfolio.getStories('exhibition', e.id).pipe(
-          switchMap(stories => {
-            if (stories.length === 0) return of(null);
-            return this.portfolio.getStoryBySlug(stories[0].slug);
-          })
-        )
-      )
-    ).subscribe(result => {
-      if (result === null) return;
-      const { story, slides } = result;
-      this.viewerQueue.set([{
-        title: story.title,
-        subtitle: `${exh.venue} · ${exh.period}`,
-        slides: enrichSlides({
-          slug: story.slug,
-          coverImage: story.coverImage,
-          slides: slides ?? [],
-          showStoryLink: false,
-        }, 'exhibition'),
-        kind: 'exhibition',
-        slug: story.slug,
       }]);
     });
   }
