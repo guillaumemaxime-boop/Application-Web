@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
 
@@ -10,8 +10,16 @@ import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
     <section class="news-slider">
       <header>
         <h2 class="title">{{ slider.title }}</h2>
+        <div class="nav" role="group" aria-label="Navigation du slider">
+          <button type="button" class="arrow" aria-label="Précédent"
+                  [disabled]="atStart()"
+                  (click)="scrollPrev()">←</button>
+          <button type="button" class="arrow" aria-label="Suivant"
+                  [disabled]="atEnd()"
+                  (click)="scrollNext()">→</button>
+        </div>
       </header>
-      <div class="track">
+      <div #track class="track" (scroll)="onScroll()">
         @for (story of slider.stories; track story.id) {
           <button class="card" type="button"
                   [attr.aria-label]="story.ownerLabel + ' — ' + story.title"
@@ -30,8 +38,22 @@ import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
   `,
   styles: [`
     .news-slider { padding: 48px 0; }
-    .news-slider > header { padding: 0 32px 24px; max-width: 1280px; margin: 0 auto; }
+    .news-slider > header {
+      padding: 0 32px 24px; max-width: 1280px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    }
     h2.title { font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin: 0; }
+
+    .nav { display: flex; gap: 8px; }
+    .arrow {
+      width: 40px; height: 40px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--color-bg); border: 1px solid var(--color-ink);
+      color: var(--color-ink); font-size: 1rem; cursor: pointer;
+      transition: background 180ms ease, color 180ms ease, opacity 180ms ease;
+    }
+    .arrow:hover:not(:disabled) { background: var(--color-ink); color: var(--color-bg); }
+    .arrow:disabled { opacity: 0.25; cursor: not-allowed; }
 
     .track {
       display: flex;
@@ -39,9 +61,14 @@ import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
       padding: 0 32px;
       overflow-x: auto;
       scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
       max-width: 1280px;
       margin: 0 auto;
+      /* Masque la scrollbar — la navigation passe par les fleches */
+      scrollbar-width: none;
     }
+    .track::-webkit-scrollbar { display: none; }
+
     .card {
       flex: 0 0 calc((100% - 48px) / 3);
       scroll-snap-align: start;
@@ -69,7 +96,34 @@ export class NewsSliderComponent {
   @Input({ required: true }) slider!: NewsSliderView;
   @Output() storyOpen = new EventEmitter<SliderStoryRef>();
 
+  protected trackRef = viewChild<ElementRef<HTMLDivElement>>('track');
+  protected atStart = signal(true);
+  protected atEnd = signal(false);
+
   onCardClick(story: SliderStoryRef): void {
     this.storyOpen.emit(story);
+  }
+
+  scrollPrev(): void {
+    this.scrollByCard(-1);
+  }
+
+  scrollNext(): void {
+    this.scrollByCard(1);
+  }
+
+  onScroll(): void {
+    const el = this.trackRef()?.nativeElement;
+    if (!el) return;
+    this.atStart.set(el.scrollLeft <= 1);
+    this.atEnd.set(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
+  }
+
+  private scrollByCard(direction: 1 | -1): void {
+    const el = this.trackRef()?.nativeElement;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>('.card');
+    const step = card ? card.offsetWidth + 24 /* gap */ : el.clientWidth;
+    el.scrollBy({ left: step * direction, behavior: 'smooth' });
   }
 }
