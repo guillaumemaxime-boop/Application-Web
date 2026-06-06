@@ -1,5 +1,7 @@
 package com.atelier.portfolio.service;
 
+import com.atelier.portfolio.repository.ExhibitionRepository;
+import com.atelier.portfolio.repository.FurnitureRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +16,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TagServiceTest {
 
     @Autowired TagService tagService;
+    @Autowired FurnitureRepository furnitureRepo;
+    @Autowired ExhibitionRepository exhibitionRepo;
 
     @Test
     void findAllTagsReturnsUnionSortedDedup() {
@@ -26,7 +30,12 @@ class TagServiceTest {
 
     @Test
     void findAllTagsReturnsEmptyListWhenNoTagsExist() {
+        // Vide les tags sur toutes les entités (rollback en fin de test)
+        furnitureRepo.findAll().forEach(f -> { f.getTags().clear(); furnitureRepo.save(f); });
+        exhibitionRepo.findAll().forEach(e -> { e.getTags().clear(); exhibitionRepo.save(e); });
+
         List<String> tags = tagService.findAllTags();
-        assertThat(tags).isNotNull();
+
+        assertThat(tags).isEmpty();
     }
 }
