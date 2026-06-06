@@ -27,6 +27,7 @@ class FurnitureTest {
                 true,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
 
@@ -66,6 +67,7 @@ class FurnitureTest {
                 false,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
 
@@ -101,6 +103,7 @@ class FurnitureTest {
                 false,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
 
@@ -131,6 +134,7 @@ class FurnitureTest {
                 false,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
         assertNotNull(furniture);
@@ -157,6 +161,7 @@ class FurnitureTest {
                 true,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
 
@@ -176,6 +181,7 @@ class FurnitureTest {
                 true,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
 
@@ -202,6 +208,7 @@ class FurnitureTest {
                 false,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
 
@@ -234,6 +241,7 @@ class FurnitureTest {
                 false,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
 
@@ -253,6 +261,7 @@ class FurnitureTest {
                 false,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
 

@@ -23,6 +23,7 @@ public record Furniture(
         boolean featured,
         boolean showStoryLink,
         boolean showStoryButton,
-        List<Slide> slides
+        List<Slide> slides,
+        List<String> tags
 ) {
 }

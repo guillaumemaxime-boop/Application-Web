@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 026-add-tags-to-furniture
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: furniture_tag
+            columns:
+              - column:
+                  name: furniture_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_furniture_tag_furniture
+                    references: furniture(id)
+                    deleteCascade: true
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entry_value
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: furniture_tag
+            columnNames: furniture_id, position
+            constraintName: pk_furniture_tag
