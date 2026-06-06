@@ -62,6 +62,9 @@ import { enrichSlides } from '../../utils/display-slides';
 
     <section class="feed">
       <div class="container">
+        @if (feedTitle(); as t) {
+          <h2 class="feed-title" [ngStyle]="sectionTitleStyleVar()">{{ t }}</h2>
+        }
         @if (data(); as d) {
           <div class="grid">
             @for (item of d.feed; track item.slug) {
@@ -110,6 +113,7 @@ import { enrichSlides } from '../../utils/display-slides';
     .sep { align-self: stretch; display: flex; align-items: center; padding: 0 4px; color: var(--color-line); font-size: 1.4rem; }
 
     .feed { padding: 64px 0 140px; }
+    .feed .feed-title { font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin: 0 0 24px; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 24px; }
     .card { position: relative; display: flex; flex-direction: column; text-decoration: none; color: inherit; background: transparent; border: none; padding: 0; cursor: pointer; }
     .thumb { aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-bg-alt); }
@@ -167,9 +171,14 @@ export class HomeComponent implements OnInit {
     if (this.data() === null) return '';
     return this.content()['home.hero.lead'] || 'À feuilleter en stories, à explorer en profondeur.';
   });
+  protected feedTitle = computed(() => {
+    if (this.data() === null) return '';
+    return this.content()['home.feed.title'] || '';
+  });
   protected titleStyleVar = computed(() => roleStyle(this.content(), 'title'));
   protected eyebrowStyleVar = computed(() => roleStyle(this.content(), 'eyebrow'));
   protected cardTitleStyleVar = computed(() => roleStyle(this.content(), 'card-title'));
+  protected sectionTitleStyleVar = computed(() => roleStyle(this.content(), 'section-title'));
 
   ngOnInit() {
     this.loadingSvc.start('page');
