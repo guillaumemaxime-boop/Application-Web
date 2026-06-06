@@ -24,6 +24,6 @@ public record Furniture(
         boolean showStoryLink,
         boolean showStoryButton,
         List<Slide> slides,
-        List<String> tags
+        @Size(max = 30) List<String> tags
 ) {
 }

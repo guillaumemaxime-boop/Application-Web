@@ -107,6 +107,25 @@ class FurnitureServiceTest {
     }
 
     @Test
+    void testCreate_WithTags_PreservesTags() {
+        Furniture input = new Furniture(
+                null, "Solstice — Étagère en chêne", null,
+                "Rangements", "Chêne massif", 2026,
+                "https://example.com/solstice.jpg",
+                List.of(),
+                "Étagère minimaliste", "Description longue",
+                List.of("L 120 cm", "H 180 cm"),
+                "Milo GUILLAUME Design", false, true, true, List.of(),
+                List.of("bois", "sculpture")
+        );
+
+        Furniture created = furnitureService.create(input);
+
+        assertNotNull(created.tags());
+        assertEquals(List.of("bois", "sculpture"), created.tags());
+    }
+
+    @Test
     void testUpdate_ExistingFurniture_AppliesChanges() {
         String slug = "onde-fauteuil-sculpte";
         Furniture original = furnitureService.findBySlug(slug).orElseThrow();
@@ -116,7 +135,8 @@ class FurnitureServiceTest {
                 original.category(), original.material(), original.year(),
                 original.coverImage(), original.gallery(),
                 "Nouvelle description courte", original.description(),
-                original.dimensions(), original.designer(), false, true, true, List.of(), List.of()
+                original.dimensions(), original.designer(), false, true, true, List.of(),
+                List.of("métal", "édition limitée")
         );
 
         Optional<Furniture> updated = furnitureService.update(slug, changes);
@@ -125,6 +145,7 @@ class FurnitureServiceTest {
         assertEquals("Onde — Édition limitée", updated.get().title());
         assertEquals("Nouvelle description courte", updated.get().shortDescription());
         assertFalse(updated.get().featured());
+        assertEquals(List.of("métal", "édition limitée"), updated.get().tags());
     }
 
     @Test
