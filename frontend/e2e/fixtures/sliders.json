@@ -33,5 +33,31 @@
         "ownerLabel": "Tabouret Onyx"
       }
     ]
+  },
+  {
+    "id": "sld-coups-coeur",
+    "slug": "coups-de-coeur",
+    "title": "Coups de cœur",
+    "zoneKey": "home-bottom",
+    "stories": [
+      {
+        "id": "st-lumen-mof",
+        "slug": "lumen-2025-mof",
+        "title": "Genèse de Lumen",
+        "coverImage": "__PLACEHOLDER__",
+        "ownerKind": "exhibition",
+        "ownerId": "e-001",
+        "ownerLabel": "Lumen · Galerie Test"
+      },
+      {
+        "id": "st-aurore-interview",
+        "slug": "tabouret-aurore-interview",
+        "title": "Interview de l'artisan",
+        "coverImage": "__PLACEHOLDER__",
+        "ownerKind": "furniture",
+        "ownerId": "f-001",
+        "ownerLabel": "Tabouret Aurore"
+      }
+    ]
   }
 ]
