@@ -9,12 +9,13 @@ import { ReorderableDirective } from '../../../directives/reorderable.directive'
 import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
 import { ImageFieldComponent } from '../shared/image-field.component';
+import { TagInputComponent } from '../shared/tag-input.component';
 import { ToastService } from '../shared/toast.service';
 
 @Component({
   selector: 'app-mobilier',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -79,6 +80,11 @@ import { ToastService } from '../shared/toast.service';
         </label>
 
         <app-image-field formControlName="coverImage" label="Image principale (URL)" />
+
+        <label>
+          <span>Tags</span>
+          <app-tag-input formControlName="tags" [suggestions]="allTags()" />
+        </label>
 
         <app-gallery-editor
           [images]="furnitureGallery()"
@@ -276,6 +282,7 @@ export class MobilierComponent {
   protected readonly editingStoryId = signal<string | null>(null);
   protected readonly editingCoverStoryId = signal<string | null>(null);
   protected readonly coverEditCtrl = new FormControl('');
+  protected readonly allTags = signal<string[]>([]);
 
   protected readonly furnitureForm = this.fb.group({
     title: ['', Validators.required],
@@ -293,10 +300,12 @@ export class MobilierComponent {
     description: [''],
     showStoryLink: [true],
     showStoryButton: [true],
+    tags: this.fb.control<string[]>([], { nonNullable: true }),
   });
 
   constructor() {
     this.refreshFurniture();
+    this.portfolio.getAllTags().subscribe(t => this.allTags.set(t));
     this.route.queryParamMap.subscribe(params => {
       if (params.get('new') === '1') this.newFurniture();
     });
@@ -322,6 +331,7 @@ export class MobilierComponent {
       shortDescription: '', description: '',
       showStoryLink: true,
       showStoryButton: true,
+      tags: [],
     });
     this.furnitureGallery.set([]);
   }
@@ -339,6 +349,7 @@ export class MobilierComponent {
       shortDescription: item.shortDescription ?? '', description: item.description ?? '',
       showStoryLink: item.showStoryLink ?? true,
       showStoryButton: item.showStoryButton ?? true,
+      tags: item.tags ?? [],
     });
     this.furnitureGallery.set([...(item.gallery ?? [])]);
     if (item.id) {
@@ -521,6 +532,7 @@ export class MobilierComponent {
       featured: existing?.featured ?? false,
       showStoryLink: v.showStoryLink ?? true,
       showStoryButton: v.showStoryButton ?? true,
+      tags: v.tags ?? [],
     };
     this.saving.set(true);
     const op$ = slug

@@ -22,6 +22,7 @@ type MobilierInternals = {
   currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
   editingStoryId: { (): string | null; set: (v: string | null) => void };
   saving: () => boolean;
+  allTags: () => string[];
   loadFurniture: (item: unknown) => void;
   newFurniture: () => void;
   saveFurniture: () => void;
@@ -50,8 +51,9 @@ describe('MobilierComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   }
 
-  function flushInitial(items: unknown[] = [], cats: unknown[] = []) {
+  function flushInitial(items: unknown[] = []) {
     httpMock.expectOne('/api/furniture').flush(items);
+    httpMock.expectOne('/api/tags').flush([]);
   }
 
   afterEach(() => httpMock?.verify());
@@ -63,6 +65,7 @@ describe('MobilierComponent', () => {
     httpMock.expectOne('/api/furniture').flush([
       { id: '1', slug: 'chaise', title: 'Chaise', category: 'Sièges', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false },
     ]);
+    httpMock.expectOne('/api/tags').flush([]);
     fixture.detectChanges();
     expect(fixture.debugElement.queryAll(By.css('.list li')).length).toBe(1);
   });
@@ -413,6 +416,33 @@ describe('MobilierComponent', () => {
     expect(cmp.currentStories()[0].id).toBe('st-2');
   });
 
+  it('charge les tags via getAllTags au constructeur', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush(['bois', 'sculpture']);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    expect(cmp.allTags()).toEqual(['bois', 'sculpture']);
+  });
+
+  it('saveFurniture envoie tags dans le payload', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.furnitureForm.patchValue({ title: 'T', category: 'C', year: 2024, tags: ['bois'] });
+    cmp.saveFurniture();
+    const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/furniture');
+    expect(req.request.body['tags']).toEqual(['bois']);
+    req.flush({});
+    httpMock.expectOne('/api/furniture').flush([]);
+  });
+
   it('refreshFurniture() error -> toast error', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);
@@ -420,6 +450,7 @@ describe('MobilierComponent', () => {
     spyOn(toast, 'error');
     fixture.detectChanges();
     httpMock.expectOne('/api/furniture').error(new ProgressEvent('err'));
+    httpMock.expectOne('/api/tags').flush([]);
     fixture.detectChanges();
     expect(toast.error).toHaveBeenCalled();
     const cmp = fixture.componentInstance as unknown as MobilierInternals;
