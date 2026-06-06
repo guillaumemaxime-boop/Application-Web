@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Furniture } from '../../../models/furniture.model';
@@ -142,10 +142,20 @@ import { ToastService } from '../shared/toast.service';
                   <button type="button" class="reorder-btn" (click)="moveStoryUp(story)" [disabled]="i === 0" aria-label="Monter la story">↑</button>
                   <button type="button" class="reorder-btn" (click)="moveStoryDown(story)" [disabled]="i === currentStories().length - 1" aria-label="Descendre la story">↓</button>
                   <button type="button" class="btn-mini" (click)="editStory(story)">Éditer slides</button>
+                  <button type="button" class="btn-mini" (click)="openCoverEditor(story)">Cover</button>
                   <button type="button" class="btn-mini" (click)="renameStory(story)">Renommer</button>
                   <button type="button" class="btn-mini danger" (click)="deleteStory(story)">Supprimer</button>
                 </div>
               </article>
+              @if (editingCoverStoryId() === story.id) {
+                <div class="cover-editor">
+                  <app-image-field label="Image de couverture" [formControl]="coverEditCtrl" />
+                  <div class="cover-editor-actions">
+                    <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
+                    <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
+                  </div>
+                </div>
+              }
             }
           </section>
           @if (editingStoryId(); as sid) {
@@ -248,6 +258,9 @@ import { ToastService } from '../shared/toast.service';
     .stories-head { display: flex; align-items: center; justify-content: space-between; }
     .stories-head h3 { margin: 0; font-size: 1rem; letter-spacing: 0.04em; }
     .stories-block .empty { margin: 0; color: var(--color-mute); font-size: 0.85rem; font-style: italic; }
+    .cover-editor { padding: 12px; margin: 4px 0 12px 84px; background: var(--color-bg); border: 1px solid var(--color-line); display: flex; flex-direction: column; gap: 12px; }
+    .cover-editor-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn-mini.primary { background: var(--color-ink); color: var(--color-bg); border-color: var(--color-ink); }
     .story-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: var(--color-bg); border: 1px solid var(--color-line); }
     .story-item.active { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent) inset; }
     .story-cover { width: 40px; height: 40px; object-fit: cover; flex-shrink: 0; border-radius: 50%; background: var(--color-bg-alt); }
@@ -296,6 +309,8 @@ export class MobilierComponent {
   protected readonly categoryMeta = signal<AdminCategoryView[] | null>(null);
   protected readonly currentStories = signal<Story[]>([]);
   protected readonly editingStoryId = signal<string | null>(null);
+  protected readonly editingCoverStoryId = signal<string | null>(null);
+  protected readonly coverEditCtrl = new FormControl('');
 
   protected readonly furnitureForm = this.fb.group({
     title: ['', Validators.required],
@@ -406,6 +421,32 @@ export class MobilierComponent {
         this.toast.success('Story créée.');
       },
       error: () => this.toast.error('Erreur lors de la création de la story.'),
+    });
+  }
+
+  openCoverEditor(story: Story): void {
+    this.editingCoverStoryId.set(story.id);
+    this.coverEditCtrl.setValue(story.coverImage);
+  }
+
+  cancelCoverEdit(): void {
+    this.editingCoverStoryId.set(null);
+    this.coverEditCtrl.setValue('');
+  }
+
+  saveCover(story: Story): void {
+    const newCover = (this.coverEditCtrl.value ?? '').trim();
+    if (!newCover || newCover === story.coverImage) { this.cancelCoverEdit(); return; }
+    this.portfolio.updateStory(story.id, {
+      ownerKind: story.ownerKind, ownerId: story.ownerId,
+      title: story.title, coverImage: newCover,
+    }).subscribe({
+      next: updated => {
+        this.currentStories.update(arr => arr.map(s => s.id === updated.id ? updated : s));
+        this.cancelCoverEdit();
+        this.toast.success('Image de couverture mise à jour.');
+      },
+      error: () => this.toast.error('Erreur lors de la mise à jour de la cover.'),
     });
   }
 
