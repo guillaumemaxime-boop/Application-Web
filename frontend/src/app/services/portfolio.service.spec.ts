@@ -508,4 +508,15 @@ describe('PortfolioService', () => {
       req.flush([]);
     });
   });
+
+  describe('Tags API', () => {
+    it('getAllTags appelle GET /api/tags', () => {
+      service.getAllTags().subscribe(tags => {
+        expect(tags).toEqual(['bois', 'sculpture']);
+      });
+      const req = httpMock.expectOne('/api/tags');
+      expect(req.request.method).toBe('GET');
+      req.flush(['bois', 'sculpture']);
+    });
+  });
 });

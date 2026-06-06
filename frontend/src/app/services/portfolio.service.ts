@@ -224,6 +224,12 @@ export class PortfolioService {
     return this.http.get<Story[]>(`${API}/admin/stories/all`);
   }
 
+  // --- Tags ---
+
+  getAllTags(): Observable<string[]> {
+    return this.http.get<string[]>(`${API}/tags`);
+  }
+
   // --- Sliders ---
 
   getPublicSliders(): Observable<NewsSliderView[]> {
