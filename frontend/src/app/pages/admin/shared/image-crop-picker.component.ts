@@ -33,7 +33,7 @@ export const DEFAULT_ASPECT_RATIOS: AspectRatio[] = [
         <div class="crop-controls">
           <label>
             <span>Aspect :</span>
-            <select class="aspect-select" (change)="onAspectChange($event)">
+            <select class="aspect-select" [value]="selectedAspectLabel" (change)="onAspectChange($event)">
               @for (a of aspectRatios; track a.label) {
                 <option [value]="a.label">{{ a.label }}</option>
               }
@@ -100,6 +100,7 @@ export class ImageCropPickerComponent implements AfterViewInit, OnDestroy {
   @ViewChild('cropImage') cropImage!: ElementRef<HTMLImageElement>;
 
   protected currentCrop: Crop | null = null;
+  protected selectedAspectLabel = 'Libre';
   private cropper?: Cropper;
 
   ngAfterViewInit(): void {
@@ -110,10 +111,14 @@ export class ImageCropPickerComponent implements AfterViewInit, OnDestroy {
 
   private initCropper(img: HTMLImageElement): void {
     if (this.cropper) return;
+    // Si un crop existe deja, deduire l'aspect a partir de ses dimensions
+    // pour que le cropper s'initialise dans le bon mode (libre ou contraint).
+    const inferredAspect = this.inferAspectFromCrop(this.initialCrop);
+    this.selectedAspectLabel = inferredAspect.label;
     try {
       this.cropper = new Cropper(img, {
         viewMode: 1,
-        aspectRatio: this.aspectRatios[0].value,
+        aspectRatio: inferredAspect.value,
         autoCropArea: 1,
         background: false,
         crop: (event) => this.onCrop(event.detail),
@@ -127,6 +132,25 @@ export class ImageCropPickerComponent implements AfterViewInit, OnDestroy {
       // Cropper.js peut échouer dans un environnement headless (getBoundingClientRect non supporté).
       // On ignore l'erreur pour ne pas casser les tests qui ne testent pas Cropper directement.
     }
+  }
+
+  /**
+   * Detecte le preset aspect ratio le plus proche du crop sauvegarde
+   * (tolerance 5%) pour reinitialiser le select dans le bon mode lors de la
+   * reouverture. Renvoie le preset "Libre" (NaN) si aucun preset ne matche.
+   */
+  private inferAspectFromCrop(crop: Crop | null): { label: string; value: number } {
+    if (!crop || !crop.w || !crop.h) return this.aspectRatios[0];  // pas de crop : aspect par defaut
+    const ratio = crop.w / crop.h;
+    const tolerance = 0.05;  // 5% de tolerance
+    for (const ar of this.aspectRatios) {
+      if (isNaN(ar.value)) continue;
+      if (Math.abs(ratio - ar.value) / ar.value < tolerance) {
+        return ar;
+      }
+    }
+    // Aucun preset ne matche : on est en libre.
+    return this.aspectRatios.find(a => isNaN(a.value)) ?? this.aspectRatios[0];
   }
 
   private applyInitialCrop(crop: Crop): void {
@@ -158,6 +182,7 @@ export class ImageCropPickerComponent implements AfterViewInit, OnDestroy {
     const label = (event.target as HTMLSelectElement).value;
     const ar = this.aspectRatios.find(a => a.label === label);
     if (!ar || !this.cropper) return;
+    this.selectedAspectLabel = ar.label;
     // Approche radicale : detruire et recreer le cropper avec le nouvel aspect.
     // Garantit un etat propre (setAspectRatio + reset() ne suffisent pas dans
     // tous les cas, notamment pour passer de Libre a contraint et inversement).
