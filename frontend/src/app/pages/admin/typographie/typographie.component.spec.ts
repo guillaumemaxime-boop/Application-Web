@@ -61,4 +61,23 @@ describe('TypographieComponent', () => {
     httpMock.expectOne('/api/admin/content').flush({}, { status: 500, statusText: 'fail' });
     expect(toast.error).toHaveBeenCalled();
   });
+
+  it('hydrate puis persiste la taille (size) pour chaque rôle', () => {
+    const fixture = TestBed.createComponent(TypographieComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({
+      'typo.section-title.size': 'grand',
+      'typo.card-title.size': 'moyen',
+    });
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.typoForm.value['section-title_size']).toBe('grand');
+    expect(cmp.typoForm.value['card-title_size']).toBe('moyen');
+    cmp.typoForm.patchValue({ 'title_size': 'hero' });
+    cmp.saveTypo();
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
+    expect(put.request.body['typo.title.size']).toBe('hero');
+    expect(put.request.body['typo.section-title.size']).toBe('grand');
+    put.flush({});
+  });
 });

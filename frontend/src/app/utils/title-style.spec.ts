@@ -69,4 +69,36 @@ describe('titleStyle', () => {
     expect(roleStyle(content, 'eyebrow')['font-family']).toContain('Inter');
     expect(roleStyle(content, 'subtitle')).toEqual({});
   });
+
+  it('maps size=petit to font-size 0.9rem', () => {
+    expect(titleStyle({ 'k.size': 'petit' }, 'k')['font-size']).toBe('0.9rem');
+  });
+
+  it('maps size=normal to font-size 1.05rem', () => {
+    expect(titleStyle({ 'k.size': 'normal' }, 'k')['font-size']).toBe('1.05rem');
+  });
+
+  it('maps size=moyen to font-size 1.3rem', () => {
+    expect(titleStyle({ 'k.size': 'moyen' }, 'k')['font-size']).toBe('1.3rem');
+  });
+
+  it('maps size=grand to font-size 1.6rem', () => {
+    expect(titleStyle({ 'k.size': 'grand' }, 'k')['font-size']).toBe('1.6rem');
+  });
+
+  it('maps size=tres-grand to font-size 2.2rem', () => {
+    expect(titleStyle({ 'k.size': 'tres-grand' }, 'k')['font-size']).toBe('2.2rem');
+  });
+
+  it('maps size=hero to a responsive clamp', () => {
+    expect(titleStyle({ 'k.size': 'hero' }, 'k')['font-size']).toContain('clamp');
+  });
+
+  it('ignores an unknown size value', () => {
+    expect(titleStyle({ 'k.size': 'enorme' }, 'k')['font-size']).toBeUndefined();
+  });
+
+  it('roleStyle reads typo.<role>.size', () => {
+    expect(roleStyle({ 'typo.title.size': 'grand' }, 'title')['font-size']).toBe('1.6rem');
+  });
 });
