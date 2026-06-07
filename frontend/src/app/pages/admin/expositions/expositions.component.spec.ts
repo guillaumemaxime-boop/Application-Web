@@ -348,4 +348,96 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne('/api/exhibitions').flush([]);
   });
 
+  it('newStory() ne fait rien si ownerId est null', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    // editingExhibitionId est null par défaut
+    cmp.newStory();
+    httpMock.expectNone(r => r.method === 'POST' && r.url === '/api/admin/stories');
+  });
+
+  it('newStory() ne fait rien si le prompt est annulé', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial([
+      { id: 'e1', slug: 'salon', title: 'Salon', venue: '', city: '', country: '', startDate: '2024-01-01', endDate: '2024-02-01', curator: '', coverImage: '/c.jpg', gallery: [], tags: [], featured: false, shortDescription: '', description: '' },
+    ]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01' });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([
+      { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '', slug: 's1', position: 0, createdAt: '' },
+    ]);
+    spyOn(window, 'prompt').and.returnValue(null);
+    cmp.newStory();
+    httpMock.expectNone(r => r.method === 'POST' && r.url === '/api/admin/stories');
+  });
+
+  it('renameStory() ne fait rien si le prompt est annulé', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    spyOn(window, 'prompt').and.returnValue(null);
+    cmp.renameStory({ id: 'st-1', title: 'S1', ownerKind: 'exhibition', ownerId: 'e1', coverImage: '', position: 0 });
+    httpMock.expectNone(r => r.method === 'PUT');
+  });
+
+  it('renameStory() ne fait rien si le titre est inchangé', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    spyOn(window, 'prompt').and.returnValue('S1');
+    cmp.renameStory({ id: 'st-1', title: 'S1', ownerKind: 'exhibition', ownerId: 'e1', coverImage: '', position: 0 });
+    httpMock.expectNone(r => r.method === 'PUT');
+  });
+
+  it('deleteStory() ne fait rien si confirm est annulé', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    spyOn(window, 'confirm').and.returnValue(false);
+    cmp.deleteStory({ id: 'st-1', title: 'S1' });
+    httpMock.expectNone(r => r.method === 'DELETE');
+  });
+
+  it('deleteStory() remet editingStoryId à null si c\'est la story en cours d\'édition', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.editingStoryId.set('st-1');
+    spyOn(window, 'confirm').and.returnValue(true);
+    cmp.deleteStory({ id: 'st-1', title: 'S1' });
+    httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/admin/stories/st-1').flush({});
+    expect(cmp.editingStoryId()).toBeNull();
+  });
+
+  it('refreshExhibitions() error -> toast error (branche erreur du réseau)', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'error');
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').error(new ProgressEvent('network'));
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    expect(toast.error).toHaveBeenCalled();
+  });
+
 });

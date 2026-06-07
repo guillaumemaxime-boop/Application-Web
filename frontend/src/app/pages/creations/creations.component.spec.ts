@@ -160,4 +160,113 @@ describe('CreationsComponent', () => {
     const cmp = fixture.componentInstance as unknown as Internals;
     expect(cmp.allItems()[0].year).toBe(2025);
   });
+
+  it('deep-link initial peuple selectedYears', () => {
+    setup({ years: '2024,2025' });
+    flushApi([], []);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    expect(cmp.selectedYears()).toEqual(new Set([2024, 2025]));
+  });
+
+  it('deep-link kind invalide est ignoré', () => {
+    setup({ kind: 'invalid' });
+    flushApi([], []);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    expect(cmp.selectedKind()).toBe('all');
+  });
+
+  it('yearCount filtre par kind quand kind !== all', () => {
+    setup();
+    flushApi(
+      [
+        { slug: 'f1', title: 'F', coverImage: '', category: 'C', year: 2024, tags: [] },
+      ],
+      [
+        { slug: 'e1', title: 'E', coverImage: '', venue: 'V', startDate: '2024-01-01', tags: [] },
+      ],
+    );
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    cmp.setKind('furniture');
+    // yearCount(2024) ne doit compter que les meubles, pas les expositions
+    expect((fixture.componentInstance as any).yearCount(2024)).toBe(1);
+  });
+
+  it('yearCount tient compte des tags sélectionnés', () => {
+    setup();
+    flushApi(
+      [
+        { slug: 'f1', title: 'F1', coverImage: '', category: 'C', year: 2024, tags: ['bois'] },
+        { slug: 'f2', title: 'F2', coverImage: '', category: 'C', year: 2024, tags: ['metal'] },
+      ],
+      [],
+    );
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    cmp.toggleTag('bois');
+    expect((fixture.componentInstance as any).yearCount(2024)).toBe(1);
+  });
+
+  it('tagCount filtre par years sélectionnées', () => {
+    setup();
+    flushApi(
+      [
+        { slug: 'f1', title: 'F1', coverImage: '', category: 'C', year: 2024, tags: ['bois'] },
+        { slug: 'f2', title: 'F2', coverImage: '', category: 'C', year: 2025, tags: ['bois'] },
+      ],
+      [],
+    );
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    cmp.toggleYear(2024);
+    expect((fixture.componentInstance as any).tagCount('bois')).toBe(1);
+  });
+
+  it('tagCount filtre par kind quand kind !== all', () => {
+    setup();
+    flushApi(
+      [
+        { slug: 'f1', title: 'F1', coverImage: '', category: 'C', year: 2024, tags: ['bois'] },
+      ],
+      [
+        { slug: 'e1', title: 'E1', coverImage: '', venue: 'V', startDate: '2024-01-01', tags: ['bois'] },
+      ],
+    );
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    cmp.setKind('furniture');
+    expect((fixture.componentInstance as any).tagCount('bois')).toBe(1);
+  });
+
+  it('toggleTag désélectionne un tag déjà actif', () => {
+    setup();
+    flushApi([{ slug: 'a', title: 'A', coverImage: '', category: 'C', year: 2024, tags: ['bois'] }], []);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    cmp.toggleTag('bois');
+    expect(cmp.selectedTags().has('bois')).toBeTrue();
+    cmp.toggleTag('bois');
+    expect(cmp.selectedTags().has('bois')).toBeFalse();
+  });
+
+  it('toggleYear désélectionne une année déjà active', () => {
+    setup();
+    flushApi([{ slug: 'a', title: 'A', coverImage: '', category: 'C', year: 2024, tags: [] }], []);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    cmp.toggleYear(2024);
+    expect(cmp.selectedYears().has(2024)).toBeTrue();
+    cmp.toggleYear(2024);
+    expect(cmp.selectedYears().has(2024)).toBeFalse();
+  });
+
+  it('deep-link kind=all est accepté', () => {
+    setup({ kind: 'all' });
+    flushApi([], []);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    expect(cmp.selectedKind()).toBe('all');
+  });
 });

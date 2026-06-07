@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { Component } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { TagInputComponent } from './tag-input.component';
 
 @Component({
@@ -182,5 +183,51 @@ describe('TagInputComponent', () => {
     expect(activeDescendant).not.toBeNull();
     const activeOption = fixture.nativeElement.querySelector(`#${activeDescendant}`);
     expect(activeOption).not.toBeNull();
+  });
+
+  it('ArrowUp sur la première option reste à l\'index 0', () => {
+    input().value = 'bo';
+    input().dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    // Descend à l'index 0
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    fixture.detectChanges();
+    // Tente de remonter alors qu'on est déjà à 0
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    fixture.detectChanges();
+    const items = Array.from(fixture.nativeElement.querySelectorAll('li[role="option"]')) as HTMLElement[];
+    // Le premier item doit toujours être selected (index 0 clampé)
+    expect(items[0]?.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('ArrowDown en bout de liste reste sur le dernier index', () => {
+    input().value = 'bo';
+    input().dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    // 'bo' filtre bois + boheme → 2 items (indices 0, 1)
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    // Troisième ArrowDown : déjà au dernier, reste en place
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    fixture.detectChanges();
+    const items = Array.from(fixture.nativeElement.querySelectorAll('li[role="option"]')) as HTMLElement[];
+    expect(items[items.length - 1]?.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('activeOptionId est null quand aucune suggestion n\'est visible (index hors bornes)', () => {
+    // Aucune suggestion correspondante → filteredSuggestions().length === 0, activeIndex = -1 → null
+    input().value = 'XXXXXXXXX';
+    input().dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    // aria-activedescendant doit être absent ou vide
+    const val = input().getAttribute('aria-activedescendant');
+    expect(val === null || val === '').toBeTrue();
+  });
+
+  it('writeValue(null) initialise les tags à un tableau vide', () => {
+    const tagInput = fixture.debugElement.query(By.directive(TagInputComponent))?.componentInstance as TagInputComponent;
+    (tagInput as any).writeValue(null);
+    fixture.detectChanges();
+    expect((tagInput as any).tags()).toEqual([]);
   });
 });

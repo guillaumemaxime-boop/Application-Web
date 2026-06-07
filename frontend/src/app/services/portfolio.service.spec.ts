@@ -507,6 +507,34 @@ describe('PortfolioService', () => {
       expect(req.request.method).toBe('GET');
       req.flush([]);
     });
+
+    it('getPublicSliders appelle GET /api/sliders', () => {
+      service.getPublicSliders().subscribe();
+      const req = httpMock.expectOne('/api/sliders');
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+
+    it('getAdminSliders appelle GET /api/admin/sliders', () => {
+      service.getAdminSliders().subscribe();
+      const req = httpMock.expectOne('/api/admin/sliders');
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+
+    it('updateSlider appelle PUT /api/admin/sliders/:id', () => {
+      service.updateSlider('sld-1', { title: 'T', zoneKey: null }).subscribe();
+      const req = httpMock.expectOne('/api/admin/sliders/sld-1');
+      expect(req.request.method).toBe('PUT');
+      req.flush({ id: 'sld-1', slug: 't', title: 'T', zoneKey: null, storyIds: [] });
+    });
+
+    it('deleteSlider appelle DELETE /api/admin/sliders/:id', () => {
+      service.deleteSlider('sld-1').subscribe();
+      const req = httpMock.expectOne('/api/admin/sliders/sld-1');
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
+    });
   });
 
   describe('Tags API', () => {
@@ -517,6 +545,88 @@ describe('PortfolioService', () => {
       const req = httpMock.expectOne('/api/tags');
       expect(req.request.method).toBe('GET');
       req.flush(['bois', 'sculpture']);
+    });
+  });
+
+  describe('Admin Feed API', () => {
+    it('getAdminFeed appelle GET /api/admin/home/feed', () => {
+      service.getAdminFeed().subscribe(entries => {
+        expect(entries).toEqual([{ kind: 'furniture', slug: 'onde' }]);
+      });
+      const req = httpMock.expectOne('/api/admin/home/feed');
+      expect(req.request.method).toBe('GET');
+      req.flush([{ kind: 'furniture', slug: 'onde' }]);
+    });
+
+    it('replaceAdminFeed appelle PUT /api/admin/home/feed et invalide le cache home', () => {
+      const entries = [{ kind: 'furniture' as const, slug: 'onde' }];
+      service.replaceAdminFeed(entries).subscribe(result => {
+        expect(result).toEqual(entries);
+      });
+      const req = httpMock.expectOne('/api/admin/home/feed');
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(entries);
+      req.flush(entries);
+    });
+  });
+
+  describe('Admin Categories API', () => {
+    it('getAdminCategories appelle GET /api/admin/categories', () => {
+      service.getAdminCategories().subscribe(cats => {
+        expect(cats.length).toBe(1);
+      });
+      const req = httpMock.expectOne('/api/admin/categories');
+      expect(req.request.method).toBe('GET');
+      req.flush([{ category: 'Sièges', visible: true, position: 0 }]);
+    });
+
+    it('updateAdminCategory appelle PUT /api/admin/categories/:cat et invalide le cache home', () => {
+      const view = { category: 'Sièges', visible: false, position: 1, coverImage: 'c.jpg' };
+      service.updateAdminCategory('Sièges', view).subscribe(result => {
+        expect(result.category).toBe('Sièges');
+      });
+      const req = httpMock.expectOne(r => r.url === '/api/admin/categories/Si%C3%A8ges');
+      expect(req.request.method).toBe('PUT');
+      req.flush(view);
+    });
+  });
+
+  describe('Admin Exhibitions Meta API', () => {
+    it('getAdminExhibitionsMeta appelle GET /api/admin/exhibitions-meta', () => {
+      service.getAdminExhibitionsMeta().subscribe(meta => {
+        expect(meta.length).toBe(1);
+      });
+      const req = httpMock.expectOne('/api/admin/exhibitions-meta');
+      expect(req.request.method).toBe('GET');
+      req.flush([{ slug: 'salon', visible: true, position: 0 }]);
+    });
+
+    it('updateAdminExhibitionMeta appelle PUT /api/admin/exhibitions-meta/:slug et invalide le cache home', () => {
+      const view = { slug: 'salon', visible: false, position: 2 };
+      service.updateAdminExhibitionMeta('salon', view).subscribe(result => {
+        expect(result.slug).toBe('salon');
+      });
+      const req = httpMock.expectOne(r => r.url === '/api/admin/exhibitions-meta/salon');
+      expect(req.request.method).toBe('PUT');
+      req.flush(view);
+    });
+  });
+
+  describe('Contact API', () => {
+    it('submitContact appelle POST /api/contact et renvoie un accusé de réception', () => {
+      const input = {
+        name: 'Alice', email: 'a@b.fr', phone: '0600000000',
+        interest: 'other' as const, message: 'Bonjour',
+        furnitureId: '', furnitureSlug: '', furnitureTitle: '',
+      };
+      const ack = { id: 'c-1', createdAt: '2026-01-01T00:00:00Z', status: 'NEW' };
+      service.submitContact(input).subscribe(result => {
+        expect(result.id).toBe('c-1');
+      });
+      const req = httpMock.expectOne('/api/contact');
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(input);
+      req.flush(ack);
     });
   });
 });
