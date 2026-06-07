@@ -65,9 +65,9 @@ describe('HeaderComponent', () => {
   it('shows all nav links by default (empty content map)', () => {
     setup();
     const navLinks = fixture.nativeElement.querySelectorAll('nav a');
-    expect(navLinks.length).toBe(5);
+    expect(navLinks.length).toBe(6);
     const labels = Array.from(navLinks).map((a: any) => a.textContent.trim());
-    expect(labels).toEqual(['Accueil', 'Mobilier', 'Expositions', 'Studio', 'Contact']);
+    expect(labels).toEqual(['Accueil', 'Mobilier', 'Expositions', 'Créations', 'Studio', 'Contact']);
   });
 
   it('hides nav entries whose visibility flag is false', () => {
@@ -78,7 +78,7 @@ describe('HeaderComponent', () => {
     });
     const navLinks = fixture.nativeElement.querySelectorAll('nav a');
     const labels = Array.from(navLinks).map((a: any) => a.textContent.trim());
-    expect(labels).toEqual(['Accueil', 'Contact']);
+    expect(labels).toEqual(['Accueil', 'Créations', 'Contact']);
   });
 
   it('should not have an admin link', () => {

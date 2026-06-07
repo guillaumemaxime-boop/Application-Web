@@ -31,6 +31,7 @@ import { PortfolioService } from '../../services/portfolio.service';
           @if (expositionsVisible()) {
             <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
           }
+          <a routerLink="/creations" routerLinkActive="active" (click)="closeMenu()">Créations</a>
           @if (studioVisible()) {
             <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
           }
