@@ -32,4 +32,20 @@ public class GalleryEntry {
 
     public Double getCropH() { return cropH; }
     public void setCropH(Double cropH) { this.cropH = cropH; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof GalleryEntry that)) return false;
+        return java.util.Objects.equals(url, that.url)
+            && java.util.Objects.equals(cropX, that.cropX)
+            && java.util.Objects.equals(cropY, that.cropY)
+            && java.util.Objects.equals(cropW, that.cropW)
+            && java.util.Objects.equals(cropH, that.cropH);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(url, cropX, cropY, cropW, cropH);
+    }
 }
