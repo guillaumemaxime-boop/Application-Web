@@ -26,6 +26,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/exhibition-detail/exhibition-detail.component').then(m => m.ExhibitionDetailComponent),
   },
   {
+    path: 'creations',
+    loadComponent: () => import('./pages/creations/creations.component').then(m => m.CreationsComponent),
+    title: 'Créations — Milo GUILLAUME Design',
+  },
+  {
     path: 'studio',
     loadComponent: () => import('./pages/studio/studio.component').then(m => m.StudioComponent),
     title: 'Studio — Milo GUILLAUME Design',

@@ -10,12 +10,11 @@ describe('SlidesEditorComponent', () => {
   let component: SlidesEditorComponent;
   let httpMock: HttpTestingController;
 
-  function build(kind: 'furniture' | 'exhibition' = 'furniture', ownerId: string | null = 'f-001', ownerSlug: string | null = null) {
+  function build(storyId: string | null = 'st-001', ownerSlug: string | null = null) {
     fixture = TestBed.createComponent(SlidesEditorComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
-    fixture.componentRef.setInput('kind', kind);
-    if (ownerId !== null) fixture.componentRef.setInput('ownerId', ownerId);
+    if (storyId !== null) fixture.componentRef.setInput('storyId', storyId);
     if (ownerSlug !== null) fixture.componentRef.setInput('ownerSlug', ownerSlug);
     fixture.detectChanges();
   }
@@ -27,8 +26,8 @@ describe('SlidesEditorComponent', () => {
     }).compileComponents();
   });
 
-  function flushSlides(slides: Slide[], kind: string = 'furniture', ownerId: string = 'f-001') {
-    const req = httpMock.expectOne(`/api/admin/slides/${kind}/${ownerId}`);
+  function flushSlides(slides: Slide[], storyId: string = 'st-001') {
+    const req = httpMock.expectOne(`/api/admin/stories/${storyId}/slides`);
     expect(req.request.method).toBe('GET');
     req.flush(slides);
   }
@@ -159,7 +158,7 @@ describe('SlidesEditorComponent', () => {
 
   it('reload() filtre les rows legacy cover/link', () => {
     build();
-    httpMock.expectOne('/api/admin/slides/furniture/f-001').flush([
+    httpMock.expectOne('/api/admin/stories/st-001/slides').flush([
       { type: 'cover', id: 'c', position: 0, src: 'x.jpg' },
       { type: 'image', id: 'i', position: 1, src: 'y.jpg', caption: null },
       { type: 'link', id: 'l', position: 2, label: null, description: null, href: null },
@@ -173,7 +172,7 @@ describe('SlidesEditorComponent', () => {
     build();
     flushSlides([{ type: 'image', id: 'a', position: 0, src: 'x.jpg', caption: null } as Slide]);
     (component as any).save();
-    const put = httpMock.expectOne('/api/admin/slides/furniture/f-001');
+    const put = httpMock.expectOne('/api/admin/stories/st-001/slides');
     expect(put.request.method).toBe('PUT');
     put.flush([
       { type: 'cover', id: 'c', position: 0, src: 'x.jpg' },
@@ -185,12 +184,11 @@ describe('SlidesEditorComponent', () => {
     expect(slides[0].type).toBe('image');
   });
 
-  it('reload() is a no-op when ownerId is empty', () => {
+  it('reload() is a no-op when storyId is empty', () => {
     fixture = TestBed.createComponent(SlidesEditorComponent);
     component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
-    fixture.componentRef.setInput('kind', 'furniture');
-    fixture.componentRef.setInput('ownerId', '');
+    fixture.componentRef.setInput('storyId', '');
     fixture.detectChanges();
     httpMock.expectNone(() => true);
   });

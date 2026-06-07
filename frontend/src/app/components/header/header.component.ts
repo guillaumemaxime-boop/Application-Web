@@ -31,6 +31,9 @@ import { PortfolioService } from '../../services/portfolio.service';
           @if (expositionsVisible()) {
             <a routerLink="/expositions" routerLinkActive="active" (click)="closeMenu()">Expositions</a>
           }
+          @if (creationsVisible()) {
+            <a routerLink="/creations" routerLinkActive="active" (click)="closeMenu()">Créations</a>
+          }
           @if (studioVisible()) {
             <a routerLink="/studio" routerLinkActive="active" (click)="closeMenu()">Studio</a>
           }
@@ -122,6 +125,7 @@ export class HeaderComponent {
   protected readonly mobilierVisible = signal(true);
   protected readonly expositionsVisible = signal(true);
   protected readonly studioVisible = signal(true);
+  protected readonly creationsVisible = signal(true);
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -132,6 +136,7 @@ export class HeaderComponent {
     this.portfolio.getContent().subscribe(content => {
       this.mobilierVisible.set(content['nav.mobilier.visible'] !== 'false');
       this.expositionsVisible.set(content['nav.expositions.visible'] !== 'false');
+      this.creationsVisible.set(content['nav.creations.visible'] !== 'false');
       this.studioVisible.set(content['nav.studio.visible'] !== 'false');
     });
   }

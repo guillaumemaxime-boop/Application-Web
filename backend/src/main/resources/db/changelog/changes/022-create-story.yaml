@@ -1,0 +1,62 @@
+databaseChangeLog:
+  - changeSet:
+      id: 022-create-story
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: story
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: owner_kind
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: owner_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cover_image
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slug
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: position
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_story_owner_pos
+            tableName: story
+            columns:
+              - column:
+                  name: owner_kind
+              - column:
+                  name: owner_id
+              - column:
+                  name: position

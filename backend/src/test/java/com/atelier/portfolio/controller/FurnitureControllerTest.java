@@ -47,6 +47,7 @@ class FurnitureControllerTest {
                 true,
                 true,
                 true,
+                List.of(),
                 List.of()
         );
 

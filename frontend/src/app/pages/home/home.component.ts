@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
-import { HomePageData, HomeFeedItem, HomeCategoryView, HomeExhibitionView } from '../../models/home.model';
+import { HomePageData, HomeFeedItem } from '../../models/home.model';
 import { SiteContent } from '../../models/site-content.model';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
+import { NewsSliderComponent } from '../../components/news-slider/news-slider.component';
+import { NewsSliderView, SliderZone, SLIDER_ZONES, SliderStoryRef } from '../../models/news-slider.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 import { enrichSlides } from '../../utils/display-slides';
@@ -13,7 +15,7 @@ import { enrichSlides } from '../../utils/display-slides';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, StoryViewerComponent],
+  imports: [CommonModule, RouterLink, StoryViewerComponent, NewsSliderComponent],
   template: `
     <section class="hero">
       <div class="container">
@@ -23,34 +25,19 @@ import { enrichSlides } from '../../utils/display-slides';
       </div>
     </section>
 
-    @if (data(); as d) {
-      @if (d.categories.length > 0 || d.exhibitions.length > 0) {
-        <section class="stories">
-          <div class="container">
-            <div class="stories-row">
-              @for (cat of d.categories; track cat.slug) {
-                <button class="story" (click)="openCategory(cat)">
-                  <div class="ring"><img [src]="cat.cover" [alt]="cat.category" /></div>
-                  <span class="label">{{ cat.category }}</span>
-                </button>
-              }
-              @if (d.categories.length > 0 && d.exhibitions.length > 0) {
-                <div class="sep" aria-hidden="true">·</div>
-              }
-              @for (exh of d.exhibitions; track exh.slug) {
-                <button class="story expo" (click)="openExhibition(exh)">
-                  <div class="ring expo-ring"><img [src]="exh.cover" [alt]="exh.title" /></div>
-                  <span class="label">{{ exh.title }}</span>
-                </button>
-              }
-            </div>
-          </div>
-        </section>
-      }
+    @if (sliderByZone()['home-top']; as s) {
+      <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
+    }
+
+    @if (sliderByZone()['home-middle']; as s) {
+      <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
     }
 
     <section class="feed">
       <div class="container">
+        @if (feedTitle(); as t) {
+          <h2 class="feed-title" [ngStyle]="sectionTitleStyleVar()">{{ t }}</h2>
+        }
         @if (data(); as d) {
           <div class="grid">
             @for (item of d.feed; track item.slug) {
@@ -74,6 +61,10 @@ import { enrichSlides } from '../../utils/display-slides';
       </div>
     </section>
 
+    @if (sliderByZone()['home-bottom']; as s) {
+      <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
+    }
+
     @if (viewerQueue().length > 0) {
       <app-story-viewer [queue]="viewerQueue()" (closed)="closeViewer()"></app-story-viewer>
     }
@@ -85,16 +76,8 @@ import { enrichSlides } from '../../utils/display-slides';
     .hero .hero-title { white-space: pre-line; }
     .hero .lead { max-width: 540px; margin-top: 28px; font-size: 1.05rem; color: var(--color-ink-soft); }
 
-    .stories { position: sticky; top: 72px; z-index: 30; background: var(--color-bg); border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); padding: 24px 0; }
-    .stories-row { display: flex; gap: 32px; overflow-x: auto; align-items: flex-start; }
-    .story { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 88px; background: none; border: none; cursor: pointer; padding: 0; }
-    .ring { width: 84px; height: 84px; border-radius: 50%; padding: 3px; background: var(--color-bg); border: 1px solid var(--color-ink); }
-    .ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-    .expo-ring { padding: 4px; border: none; box-shadow: inset 0 0 0 1px var(--color-bg), inset 0 0 0 2px var(--color-ink); }
-    .label { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink-soft); }
-    .sep { align-self: stretch; display: flex; align-items: center; padding: 0 4px; color: var(--color-line); font-size: 1.4rem; }
-
     .feed { padding: 64px 0 140px; }
+    .feed .feed-title { font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin: 0 0 24px; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 24px; }
     .card { position: relative; display: flex; flex-direction: column; text-decoration: none; color: inherit; background: transparent; border: none; padding: 0; cursor: pointer; }
     .thumb { aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-bg-alt); }
@@ -128,6 +111,16 @@ export class HomeComponent implements OnInit {
   protected data = signal<HomePageData | null>(null);
   protected viewerQueue = signal<StoryItem[]>([]);
   protected content = signal<SiteContent>({});
+  protected sliders = signal<NewsSliderView[]>([]);
+  protected sliderByZone = computed(() => {
+    const map: Partial<Record<SliderZone, NewsSliderView>> = {};
+    for (const s of this.sliders()) {
+      if (SLIDER_ZONES.includes(s.zoneKey)) {
+        map[s.zoneKey] = s;
+      }
+    }
+    return map;
+  });
 
   protected heroEyebrow = computed(() => {
     if (this.data() === null) return '';
@@ -142,19 +135,26 @@ export class HomeComponent implements OnInit {
     if (this.data() === null) return '';
     return this.content()['home.hero.lead'] || 'À feuilleter en stories, à explorer en profondeur.';
   });
+  protected feedTitle = computed(() => {
+    if (this.data() === null) return '';
+    return this.content()['home.feed.title'] || '';
+  });
   protected titleStyleVar = computed(() => roleStyle(this.content(), 'title'));
   protected eyebrowStyleVar = computed(() => roleStyle(this.content(), 'eyebrow'));
   protected cardTitleStyleVar = computed(() => roleStyle(this.content(), 'card-title'));
+  protected sectionTitleStyleVar = computed(() => roleStyle(this.content(), 'section-title'));
 
   ngOnInit() {
     this.loadingSvc.start('page');
     forkJoin({
       home: this.portfolio.getHome(),
       content: this.portfolio.getContent(),
+      sliders: this.portfolio.getPublicSliders(),
     }).subscribe({
-      next: ({ home, content }) => {
+      next: ({ home, content, sliders }) => {
         this.data.set(home);
         this.content.set(content);
+        this.sliders.set(sliders);
         this.loadingSvc.stop('page');
         this.loadingSvc.stop('nav');
       },
@@ -165,39 +165,19 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  openCategory(cat: HomeCategoryView) {
-    if (cat.itemSlugs.length === 0) return;
-    const requests = cat.itemSlugs.map(slug => this.portfolio.getFurniture(slug));
-    forkJoin(requests).subscribe(furnitureList => {
-      const queue: StoryItem[] = furnitureList.map(f => ({
-        title: f.title,
-        subtitle: `${f.category} · ${f.year}`,
-        slides: enrichSlides({
-          slug: f.slug,
-          coverImage: f.coverImage,
-          slides: f.slides ?? [],
-          showStoryLink: f.showStoryLink,
-        }, 'furniture'),
-        kind: 'furniture',
-        slug: f.slug,
-      }));
-      this.viewerQueue.set(queue);
-    });
-  }
-
-  openExhibition(exh: HomeExhibitionView) {
-    this.portfolio.getExhibition(exh.slug).subscribe(e => {
+  openStoryFromSlider(story: SliderStoryRef): void {
+    this.portfolio.getStoryBySlug(story.slug).subscribe(({ story: s, slides, ownerShowStoryLink, ownerSlug }) => {
       this.viewerQueue.set([{
-        title: e.title,
-        subtitle: `${e.venue} · ${exh.period}`,
+        title: s.title,
+        subtitle: story.ownerLabel,
         slides: enrichSlides({
-          slug: e.slug,
-          coverImage: e.coverImage,
-          slides: e.slides ?? [],
-          showStoryLink: e.showStoryLink,
-        }, 'exhibition'),
-        kind: 'exhibition',
-        slug: e.slug,
+          slug: ownerSlug,
+          coverImage: s.coverImage,
+          slides: slides ?? [],
+          showStoryLink: ownerShowStoryLink,
+        }, s.ownerKind),
+        kind: s.ownerKind,
+        slug: ownerSlug,
       }]);
     });
   }

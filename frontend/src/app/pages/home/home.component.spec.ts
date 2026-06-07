@@ -1,13 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HomeComponent } from './home.component';
 import { PortfolioService } from '../../services/portfolio.service';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Furniture } from '../../models/furniture.model';
 import { Exhibition } from '../../models/exhibition.model';
 import { HomePageData } from '../../models/home.model';
+import { Story, StoryWithSlides } from '../../models/story.model';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
@@ -45,14 +46,58 @@ describe('HomeComponent', () => {
     showStoryLink: true, showStoryButton: true, slides: [{ type: 'cover', id: 's2', position: 0, src: 'cover2.jpg' }] as any,
   };
 
+  const mockFurnitureStory: Story = {
+    id: 'st-f-001',
+    ownerKind: 'furniture',
+    ownerId: 'f-001',
+    title: 'Onde',
+    coverImage: 'f.jpg',
+    slug: 'onde-fauteuil-sculpte-principale',
+    position: 0,
+    createdAt: '2025-01-01T00:00:00Z',
+  };
+
+  const mockExhibitionStory: Story = {
+    id: 'st-e-001',
+    ownerKind: 'exhibition',
+    ownerId: 'e-001',
+    title: 'Matières',
+    coverImage: 'e.jpg',
+    slug: 'matieres-silencieuses-principale',
+    position: 0,
+    createdAt: '2025-01-01T00:00:00Z',
+  };
+
+  const mockFurnitureStoryWithSlides: StoryWithSlides = {
+    story: mockFurnitureStory,
+    slides: [{ type: 'cover', id: 's1', position: 0, src: 'cover.jpg' }] as any,
+    ownerShowStoryLink: true,
+    ownerSlug: 'onde-fauteuil-sculpte',
+  };
+
+  const mockExhibitionStoryWithSlides: StoryWithSlides = {
+    story: mockExhibitionStory,
+    slides: [{ type: 'cover', id: 's2', position: 0, src: 'cover2.jpg' }] as any,
+    ownerShowStoryLink: true,
+    ownerSlug: 'matieres-silencieuses',
+  };
+
   beforeEach(async () => {
     const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', [
-      'getHome', 'getFurniture', 'getExhibition', 'getContent',
+      'getHome', 'getFurniture', 'getExhibition', 'getContent', 'getPublicSliders',
+      'getStoryBySlug', 'getStories',
     ]);
     spy.getHome.and.returnValue(of(mockHome));
     spy.getFurniture.and.returnValue(of(mockFurniture));
     spy.getExhibition.and.returnValue(of(mockExhibition));
     spy.getContent.and.returnValue(of({}));
+    spy.getPublicSliders.and.returnValue(of([]));
+    spy.getStories.and.callFake((kind, _ownerId) =>
+      of(kind === 'furniture' ? [mockFurnitureStory] : [mockExhibitionStory])
+    );
+    spy.getStoryBySlug.and.callFake((slug) =>
+      of(slug === mockFurnitureStory.slug ? mockFurnitureStoryWithSlides : mockExhibitionStoryWithSlides)
+    );
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
@@ -79,43 +124,12 @@ describe('HomeComponent', () => {
     expect((component as any).data()).toEqual(mockHome);
   });
 
-  it('openCategory loads each piece and fills the viewer queue', () => {
-    (component as any).openCategory(mockHome.categories[0]);
-    expect(portfolioServiceSpy.getFurniture).toHaveBeenCalledWith('onde-fauteuil-sculpte');
-    const queue = (component as any).viewerQueue();
-    expect(queue.length).toBe(1);
-    expect(queue[0].title).toBe('Onde');
-  });
-
-  it('openCategory ignores categories with no items', () => {
-    portfolioServiceSpy.getFurniture.calls.reset();
-    (component as any).openCategory({ category: 'Vide', slug: 'vide', cover: '', itemSlugs: [] });
-    expect(portfolioServiceSpy.getFurniture).not.toHaveBeenCalled();
-  });
-
-  it('openExhibition loads the exhibition into the queue', () => {
-    (component as any).openExhibition(mockHome.exhibitions[0]);
-    expect(portfolioServiceSpy.getExhibition).toHaveBeenCalledWith('matieres-silencieuses');
-    expect((component as any).viewerQueue().length).toBe(1);
-  });
-
   it('cardLink returns furniture detail route', () => {
     expect((component as any).cardLink(mockHome.feed[0])).toBe('/mobilier/onde-fauteuil-sculpte');
   });
 
   it('cardLink returns exhibition detail route', () => {
     expect((component as any).cardLink(mockHome.feed[1])).toBe('/expositions/matieres-silencieuses');
-  });
-
-  it('hides the stories section when no categories and no exhibitions are visible', () => {
-    portfolioServiceSpy.getHome.and.returnValue(of({ categories: [], exhibitions: [], feed: mockHome.feed }));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    expect(f.nativeElement.querySelector('.stories')).toBeNull();
-  });
-
-  it('shows the stories section when at least one slider is visible', () => {
-    expect(fixture.nativeElement.querySelector('.stories')).not.toBeNull();
   });
 
   it('renders feed card excerpt when description is provided', () => {
@@ -170,5 +184,122 @@ describe('HomeComponent', () => {
     (component as any).viewerQueue.set([{ title: 't', subtitle: 's', slides: [] }]);
     (component as any).closeViewer();
     expect((component as any).viewerQueue().length).toBe(0);
+  });
+
+  it('openStoryFromSlider ajoute une slide link quand ownerShowStoryLink est true', () => {
+    const storyRef = { slug: mockFurnitureStory.slug, ownerLabel: 'Tabouret Aurore' };
+    portfolioServiceSpy.getStoryBySlug.and.returnValue(of({
+      story: mockFurnitureStory,
+      slides: [],
+      ownerShowStoryLink: true,
+      ownerSlug: 'onde-fauteuil-sculpte',
+    }));
+    (component as any).openStoryFromSlider(storyRef);
+    const queue = (component as any).viewerQueue();
+    expect(queue.length).toBe(1);
+    const slides = queue[0].slides as Array<{ type: string }>;
+    expect(slides[slides.length - 1].type).toBe('link');
+  });
+
+  it('openStoryFromSlider n\'ajoute pas de slide link quand ownerShowStoryLink est false', () => {
+    const storyRef = { slug: mockFurnitureStory.slug, ownerLabel: 'Tabouret Aurore' };
+    portfolioServiceSpy.getStoryBySlug.and.returnValue(of({
+      story: mockFurnitureStory,
+      slides: [],
+      ownerShowStoryLink: false,
+      ownerSlug: 'onde-fauteuil-sculpte',
+    }));
+    (component as any).openStoryFromSlider(storyRef);
+    const queue = (component as any).viewerQueue();
+    expect(queue.length).toBe(1);
+    const slides = queue[0].slides as Array<{ type: string }>;
+    expect(slides.every(s => s.type !== 'link')).toBeTrue();
+  });
+
+  it('heroEyebrow retourne vide quand data est null (chargement)', () => {
+    portfolioServiceSpy.getHome.and.returnValue(of(mockHome));
+    const f = TestBed.createComponent(HomeComponent);
+    // Avant detectChanges, data() est null → heroEyebrow() = ''
+    expect((f.componentInstance as any).heroEyebrow()).toBe('');
+  });
+
+  it('heroEyebrow retourne la valeur configuree quand content la fournit', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.hero.eyebrow': 'Studio' }));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    expect((f.componentInstance as any).heroEyebrow()).toBe('Studio');
+  });
+
+  it('heroLead retourne vide quand data est null (chargement)', () => {
+    const f = TestBed.createComponent(HomeComponent);
+    expect((f.componentInstance as any).heroLead()).toBe('');
+  });
+
+  it('heroLead retourne la valeur configuree quand content la fournit', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.hero.lead': 'Lead personnalisé.' }));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    expect((f.componentInstance as any).heroLead()).toBe('Lead personnalisé.');
+  });
+
+  it('feedTitle retourne vide quand data est null (chargement)', () => {
+    const f = TestBed.createComponent(HomeComponent);
+    expect((f.componentInstance as any).feedTitle()).toBe('');
+  });
+
+  it('feedTitle retourne la valeur configuree quand content la fournit', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.feed.title': 'Sélection' }));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    expect((f.componentInstance as any).feedTitle()).toBe('Sélection');
+  });
+
+  it('sliderByZone place les sliders dans la bonne zone', () => {
+    const sliderHomeTop = {
+      id: 'sld-1', slug: 'top', title: 'Top', zoneKey: 'home-top' as const,
+      stories: [],
+    };
+    portfolioServiceSpy.getPublicSliders.and.returnValue(of([sliderHomeTop]));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    const byZone = (f.componentInstance as any).sliderByZone();
+    expect(byZone['home-top']).toBeTruthy();
+    expect(byZone['home-top'].id).toBe('sld-1');
+  });
+
+  it('sliderByZone ignore les zones inconnues', () => {
+    const invalidSlider = {
+      id: 'sld-x', slug: 'x', title: 'X', zoneKey: 'unknown-zone' as any,
+      stories: [],
+    };
+    portfolioServiceSpy.getPublicSliders.and.returnValue(of([invalidSlider]));
+    const f = TestBed.createComponent(HomeComponent);
+    f.detectChanges();
+    const byZone = (f.componentInstance as any).sliderByZone();
+    expect(Object.keys(byZone).length).toBe(0);
+  });
+
+  it('ngOnInit error callback stoppe le LoadingService sans planter', () => {
+    portfolioServiceSpy.getHome.and.returnValue(throwError(() => new Error('réseau')));
+    const f = TestBed.createComponent(HomeComponent);
+    expect(() => f.detectChanges()).not.toThrow();
+    // data reste null, pas de plantage
+    expect((f.componentInstance as any).data()).toBeNull();
+  });
+
+  it('openStoryFromSlider utilise un tableau vide quand slides est null', () => {
+    const storyRef = { slug: mockFurnitureStory.slug, ownerLabel: 'Tabouret Aurore' };
+    portfolioServiceSpy.getStoryBySlug.and.returnValue(of({
+      story: mockFurnitureStory,
+      slides: null as any,
+      ownerShowStoryLink: false,
+      ownerSlug: 'onde-fauteuil-sculpte',
+    }));
+    (component as any).openStoryFromSlider(storyRef);
+    const queue = (component as any).viewerQueue();
+    expect(queue.length).toBe(1);
+    // Pas de slide cover ni link (coverImage défini mais showStoryLink false)
+    // Vérifie juste que ça n'a pas planté et que la queue est remplie
+    expect(Array.isArray(queue[0].slides)).toBeTrue();
   });
 });

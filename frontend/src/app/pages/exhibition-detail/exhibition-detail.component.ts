@@ -43,9 +43,13 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
             <p class="lead">{{ e.shortDescription }}</p>
             <p class="body">{{ e.description }}</p>
 
-            <div class="tags">
-              @for (t of e.tags; track t) { <span class="tag">{{ t }}</span> }
-            </div>
+            @if (e.tags && e.tags.length > 0) {
+              <div class="tags-list">
+                @for (t of e.tags; track t) {
+                  <a class="tag-chip" [routerLink]="['/creations']" [queryParams]="{ tags: t }">{{ t }}</a>
+                }
+              </div>
+            }
           </div>
         </section>
 
@@ -144,15 +148,12 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
       white-space: pre-line;
     }
 
-    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 40px; }
-    .tag {
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 3px 10px;
-      border: 1px solid var(--color-line);
-      color: var(--color-mute);
+    .tags-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 40px; }
+    .tag-chip {
+      font-size: 0.78rem; padding: 4px 12px; background: var(--color-bg-alt);
+      border: 1px solid var(--color-line); color: var(--color-ink-soft); text-decoration: none;
     }
+    .tag-chip:hover { color: var(--color-ink); border-color: var(--color-ink); }
 
     .gallery .g-grid {
       display: grid;

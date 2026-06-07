@@ -53,7 +53,8 @@ public class FurnitureService {
                     base.description(), base.dimensions(), base.designer(), base.featured(),
                     base.showStoryLink(),
                     base.showStoryButton(),
-                    storyService.findByOwner("furniture", entity.getId())
+                    storyService.findSlidesForOwner("furniture", entity.getId()),
+                    base.tags()
             );
         });
     }
@@ -119,6 +120,10 @@ public class FurnitureService {
             entity.getDimensions().clear();
             entity.getDimensions().addAll(new ArrayList<>(input.dimensions()));
         }
+        if (input.tags() != null) {
+            entity.getTags().clear();
+            entity.getTags().addAll(new ArrayList<>(input.tags()));
+        }
     }
 
     private static String slugify(String input) {
@@ -148,7 +153,8 @@ public class FurnitureService {
                 entity.isFeatured(),
                 entity.isShowStoryLink(),
                 entity.isShowStoryButton(),
-                List.of()
+                List.of(),
+                List.copyOf(entity.getTags())
         );
     }
 }

@@ -13,6 +13,7 @@
     "dimensions": ["H 45 cm", "L 35 cm", "P 35 cm"],
     "designer": "Milo Guillaume",
     "featured": true,
+    "tags": ["Bois", "Sculpture"],
     "showStoryLink": false,
     "showStoryButton": false,
     "slides": []
@@ -31,6 +32,7 @@
     "dimensions": ["H 46 cm", "L 36 cm", "P 36 cm"],
     "designer": "Milo Guillaume",
     "featured": false,
+    "tags": ["Bois"],
     "showStoryLink": false,
     "showStoryButton": false,
     "slides": []

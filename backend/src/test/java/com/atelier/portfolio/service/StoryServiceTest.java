@@ -1,171 +1,125 @@
 package com.atelier.portfolio.service;
 
-import com.atelier.portfolio.entity.StorySlideEntity;
+import com.atelier.portfolio.entity.ExhibitionEntity;
+import com.atelier.portfolio.entity.FurnitureEntity;
 import com.atelier.portfolio.model.Slide;
-import com.atelier.portfolio.model.SpecEntry;
-import com.atelier.portfolio.repository.StorySlideRepository;
+import com.atelier.portfolio.model.Story;
+import com.atelier.portfolio.model.StoryInput;
+import com.atelier.portfolio.model.StoryWithSlides;
+import com.atelier.portfolio.repository.ExhibitionRepository;
+import com.atelier.portfolio.repository.FurnitureRepository;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Transactional
 class StoryServiceTest {
 
-    @Mock private StorySlideRepository repository;
-
-    @InjectMocks private StoryService service;
+    @Autowired StoryService service;
+    @Autowired FurnitureRepository furnitureRepo;
+    @Autowired ExhibitionRepository exhibitionRepo;
 
     @Test
-    void findByOwner_returnsMixedSlideTypes() {
-        StorySlideEntity video = entity("s1", "furniture", "f-001", 0, "video");
-        video.setSrc("https://www.youtube.com/watch?v=abc123");
-        video.setCaption("Teaser");
-
-        StorySlideEntity image = entity("s2", "furniture", "f-001", 1, "image");
-        image.setSrc("img.jpg"); image.setCaption("Détail");
-
-        StorySlideEntity quote = entity("s3", "furniture", "f-001", 2, "quote");
-        quote.setQuoteBody("Le bois parle"); quote.setQuoteCite("— Maître Asaba");
-
-        when(repository.findByOwnerKindAndOwnerIdOrderByPosition("furniture", "f-001"))
-                .thenReturn(List.of(video, image, quote));
-
-        List<Slide> result = service.findByOwner("furniture", "f-001");
-
-        assertEquals(3, result.size());
-        assertInstanceOf(Slide.VideoSlide.class, result.get(0));
-        assertInstanceOf(Slide.ImageSlide.class, result.get(1));
-        assertInstanceOf(Slide.QuoteSlide.class, result.get(2));
-        assertEquals("https://www.youtube.com/watch?v=abc123", ((Slide.VideoSlide) result.get(0)).src());
-        assertEquals("Teaser", ((Slide.VideoSlide) result.get(0)).caption());
-        assertEquals("Détail", ((Slide.ImageSlide) result.get(1)).caption());
-        assertEquals("Le bois parle", ((Slide.QuoteSlide) result.get(2)).body());
+    void createStoryAssignsIncrementalPosition() {
+        // Note : utiliser 'f-001' (id technique present dans le seed) au lieu d'un slug
+        Story s1 = service.create(new StoryInput("furniture", "f-001", "Story extra 1", "https://example.com/c.jpg"));
+        Story s2 = service.create(new StoryInput("furniture", "f-001", "Story extra 2", "https://example.com/c.jpg"));
+        assertThat(s2.position()).isGreaterThan(s1.position());
     }
 
     @Test
-    void findByOwner_mapsVideoEntityToDto() {
-        StorySlideEntity video = entity("v1", "furniture", "f-001", 0, "video");
-        video.setSrc("https://vimeo.com/12345");
-        video.setCaption("Présentation");
-
-        when(repository.findByOwnerKindAndOwnerIdOrderByPosition("furniture", "f-001"))
-                .thenReturn(List.of(video));
-
-        List<Slide> result = service.findByOwner("furniture", "f-001");
-
-        assertEquals(1, result.size());
-        assertInstanceOf(Slide.VideoSlide.class, result.get(0));
-        Slide.VideoSlide v = (Slide.VideoSlide) result.get(0);
-        assertEquals("v1", v.id());
-        assertEquals(0, v.position());
-        assertEquals("https://vimeo.com/12345", v.src());
-        assertEquals("Présentation", v.caption());
+    void createStoryGeneratesUniqueSlug() {
+        Story s1 = service.create(new StoryInput("furniture", "f-001", "Premiere", "https://example.com/c.jpg"));
+        Story s2 = service.create(new StoryInput("furniture", "f-001", "Deuxieme", "https://example.com/c.jpg"));
+        assertThat(s1.slug()).isNotEqualTo(s2.slug());
     }
 
     @Test
-    void findByOwner_throwsForLegacyCoverType() {
-        StorySlideEntity legacyCover = entity("s1", "furniture", "f-001", 0, "cover");
-        legacyCover.setSrc("old-cover.jpg");
-
-        when(repository.findByOwnerKindAndOwnerIdOrderByPosition("furniture", "f-001"))
-                .thenReturn(List.of(legacyCover));
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.findByOwner("furniture", "f-001"));
-        assertTrue(ex.getMessage().contains("cover"));
+    void findByOwnerReturnsStoriesInPositionOrder() {
+        // Apres seed 023, f-001 a au moins 1 story (« principale »)
+        List<Story> stories = service.findByOwner("furniture", "f-001");
+        assertThat(stories).isNotEmpty();
+        for (int i = 1; i < stories.size(); i++) {
+            assertThat(stories.get(i).position()).isGreaterThanOrEqualTo(stories.get(i - 1).position());
+        }
     }
 
     @Test
-    void findByOwner_throwsForLegacyLinkType() {
-        StorySlideEntity legacyLink = entity("s1", "furniture", "f-001", 0, "link");
-        legacyLink.setLinkLabel("Voir");
-        legacyLink.setLinkHref("/x");
-
-        when(repository.findByOwnerKindAndOwnerIdOrderByPosition("furniture", "f-001"))
-                .thenReturn(List.of(legacyLink));
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.findByOwner("furniture", "f-001"));
-        assertTrue(ex.getMessage().contains("link"));
+    void replaceSlidesAttachesSlidesToStory() {
+        Story s = service.create(new StoryInput("furniture", "f-001", "Test", "https://example.com/c.jpg"));
+        service.replaceSlides(s.id(), List.of(
+                new Slide.ImageSlide(null, 0, "https://example.com/1.jpg", "Caption 1"),
+                new Slide.ImageSlide(null, 1, "https://example.com/2.jpg", "Caption 2")
+        ));
+        StoryWithSlides loaded = service.findBySlugWithSlides(s.slug()).orElseThrow();
+        assertThat(loaded.slides()).hasSize(2);
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    void replaceSlides_deletesOldThenInsertsNewWithRecalculatedPositions() {
-        List<Slide> input = List.of(
-                new Slide.ImageSlide(null, 99, "new-image.jpg", "légende"),
-                new Slide.VideoSlide(null, 7, "https://vimeo.com/123", "demo")
-        );
-
-        service.replaceSlides("furniture", "f-001", input);
-
-        verify(repository).deleteByOwnerKindAndOwnerId("furniture", "f-001");
-        ArgumentCaptor<List<StorySlideEntity>> captor = ArgumentCaptor.forClass(List.class);
-        verify(repository).saveAll(captor.capture());
-
-        List<StorySlideEntity> saved = captor.getValue();
-        assertEquals(2, saved.size());
-        assertEquals(0, saved.get(0).getPosition());
-        assertEquals(1, saved.get(1).getPosition());
-        assertEquals("image", saved.get(0).getType());
-        assertEquals("video", saved.get(1).getType());
-        assertNotNull(saved.get(0).getId());
+    void deleteStoryRemovesItAndCascadesSlides() {
+        Story s = service.create(new StoryInput("furniture", "f-001", "Tmp", "https://example.com/c.jpg"));
+        service.replaceSlides(s.id(), List.of(new Slide.ImageSlide(null, 0, "https://example.com/x.jpg", null)));
+        service.delete(s.id());
+        assertThatThrownBy(() -> service.update(s.id(), new StoryInput("furniture", "f-001", "X", "https://example.com/c.jpg")))
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    void replaceSlides_persistsVideoDtoToEntity() {
-        List<Slide> input = List.of(
-                new Slide.VideoSlide(null, 0, "https://vimeo.com/123", "demo")
-        );
+    void findBySlugWithSlides_furnitureShowStoryLinkTrue_propagatesTrue() {
+        FurnitureEntity f = furnitureRepo.findById("f-001").orElseThrow();
+        f.setShowStoryLink(true);
+        furnitureRepo.save(f);
 
-        service.replaceSlides("furniture", "f-001", input);
+        Story s = service.create(new StoryInput("furniture", "f-001", "Test link true", "https://example.com/c.jpg"));
+        StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
 
-        ArgumentCaptor<List<StorySlideEntity>> captor = ArgumentCaptor.forClass(List.class);
-        verify(repository).saveAll(captor.capture());
-
-        StorySlideEntity saved = captor.getValue().get(0);
-        assertEquals("video", saved.getType());
-        assertEquals("https://vimeo.com/123", saved.getSrc());
-        assertEquals("demo", saved.getCaption());
-        assertEquals(0, saved.getPosition());
-        assertNotNull(saved.getId());
+        assertThat(result.ownerShowStoryLink()).isTrue();
+        assertThat(result.ownerSlug()).isEqualTo(f.getSlug());
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    void replaceSlides_specSlideSavesSpecEntries() {
-        List<Slide> input = List.of(
-                new Slide.SpecSlide(null, 0, List.of(
-                        new SpecEntry("Dimensions", "180 cm"),
-                        new SpecEntry("Matériau", "Frêne")
-                ))
-        );
+    void findBySlugWithSlides_furnitureShowStoryLinkFalse_propagatesFalse() {
+        FurnitureEntity f = furnitureRepo.findById("f-001").orElseThrow();
+        f.setShowStoryLink(false);
+        furnitureRepo.save(f);
 
-        service.replaceSlides("furniture", "f-001", input);
+        Story s = service.create(new StoryInput("furniture", "f-001", "Test link false", "https://example.com/c.jpg"));
+        StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
 
-        ArgumentCaptor<List<StorySlideEntity>> captor = ArgumentCaptor.forClass(List.class);
-        verify(repository).saveAll(captor.capture());
-
-        StorySlideEntity saved = captor.getValue().get(0);
-        assertEquals("spec", saved.getType());
-        assertEquals(2, saved.getSpecs().size());
-        assertEquals("Dimensions", saved.getSpecs().get(0).getLabel());
-        assertEquals("180 cm", saved.getSpecs().get(0).getValue());
+        assertThat(result.ownerShowStoryLink()).isFalse();
+        assertThat(result.ownerSlug()).isEqualTo(f.getSlug());
     }
 
-    private static StorySlideEntity entity(String id, String kind, String ownerId, int pos, String type) {
-        StorySlideEntity e = new StorySlideEntity();
-        e.setId(id); e.setOwnerKind(kind); e.setOwnerId(ownerId);
-        e.setPosition(pos); e.setType(type);
-        return e;
+    @Test
+    void findBySlugWithSlides_exhibitionShowStoryLinkTrue_propagatesTrue() {
+        ExhibitionEntity ex = exhibitionRepo.findById("e-001").orElseThrow();
+        ex.setShowStoryLink(true);
+        exhibitionRepo.save(ex);
+
+        Story s = service.create(new StoryInput("exhibition", "e-001", "Test exh link true", "https://example.com/c.jpg"));
+        StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
+
+        assertThat(result.ownerShowStoryLink()).isTrue();
+        assertThat(result.ownerSlug()).isEqualTo(ex.getSlug());
+    }
+
+    @Test
+    void findBySlugWithSlides_exhibitionShowStoryLinkFalse_propagatesFalse() {
+        ExhibitionEntity ex = exhibitionRepo.findById("e-001").orElseThrow();
+        ex.setShowStoryLink(false);
+        exhibitionRepo.save(ex);
+
+        Story s = service.create(new StoryInput("exhibition", "e-001", "Test exh link false", "https://example.com/c.jpg"));
+        StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
+
+        assertThat(result.ownerShowStoryLink()).isFalse();
+        assertThat(result.ownerSlug()).isEqualTo(ex.getSlug());
     }
 }

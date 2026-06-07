@@ -1,6 +1,8 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.model.Furniture;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -17,6 +21,9 @@ class FurnitureServiceTest {
 
     @Autowired
     private FurnitureService furnitureService;
+
+    @Autowired
+    private Validator validator;
 
     @Test
     void testFindAll_ReturnsAllFurnitureItems() {
@@ -79,7 +86,7 @@ class FurnitureServiceTest {
                 List.of("https://example.com/linea-1.jpg"),
                 "Banc épuré", "Description longue",
                 List.of("L 180 cm", "H 45 cm"),
-                "Milo GUILLAUME Design", false, true, true, List.of()
+                "Milo GUILLAUME Design", false, true, true, List.of(), List.of()
         );
 
         Furniture created = furnitureService.create(input);
@@ -97,13 +104,32 @@ class FurnitureServiceTest {
                 null, "Echo", "echo-custom-slug",
                 "Sièges", "Chêne", 2026,
                 null, List.of(), "court", "long",
-                List.of(), "Milo GUILLAUME Design", false, true, true, List.of()
+                List.of(), "Milo GUILLAUME Design", false, true, true, List.of(), List.of()
         );
 
         Furniture created = furnitureService.create(input);
 
         assertEquals("echo-custom-slug", created.slug());
         assertTrue(furnitureService.findBySlug("echo-custom-slug").isPresent());
+    }
+
+    @Test
+    void testCreate_WithTags_PreservesTags() {
+        Furniture input = new Furniture(
+                null, "Solstice — Étagère en chêne", null,
+                "Rangements", "Chêne massif", 2026,
+                "https://example.com/solstice.jpg",
+                List.of(),
+                "Étagère minimaliste", "Description longue",
+                List.of("L 120 cm", "H 180 cm"),
+                "Milo GUILLAUME Design", false, true, true, List.of(),
+                List.of("bois", "sculpture")
+        );
+
+        Furniture created = furnitureService.create(input);
+
+        assertNotNull(created.tags());
+        assertEquals(List.of("bois", "sculpture"), created.tags());
     }
 
     @Test
@@ -116,7 +142,8 @@ class FurnitureServiceTest {
                 original.category(), original.material(), original.year(),
                 original.coverImage(), original.gallery(),
                 "Nouvelle description courte", original.description(),
-                original.dimensions(), original.designer(), false, true, true, List.of()
+                original.dimensions(), original.designer(), false, true, true, List.of(),
+                List.of("métal", "édition limitée")
         );
 
         Optional<Furniture> updated = furnitureService.update(slug, changes);
@@ -125,13 +152,14 @@ class FurnitureServiceTest {
         assertEquals("Onde — Édition limitée", updated.get().title());
         assertEquals("Nouvelle description courte", updated.get().shortDescription());
         assertFalse(updated.get().featured());
+        assertEquals(List.of("métal", "édition limitée"), updated.get().tags());
     }
 
     @Test
     void testUpdate_NonExistingSlug_ReturnsEmpty() {
         Furniture changes = new Furniture(
                 null, "X", null, "Tables", null, 2026,
-                null, List.of(), "", "", List.of(), "", false, true, true, List.of()
+                null, List.of(), "", "", List.of(), "", false, true, true, List.of(), List.of()
         );
 
         Optional<Furniture> updated = furnitureService.update("non-existent", changes);
@@ -156,6 +184,37 @@ class FurnitureServiceTest {
 
         assertFalse(deleted);
         assertEquals(6, furnitureService.findAll().size());
+    }
+
+    @Test
+    void furniture_avec_tag_trop_long_est_invalide() {
+        Furniture f = new Furniture(
+                null, "Titre", null,
+                "Sièges", null, 2026,
+                null, List.of(), null, null,
+                List.of(), null, false, true, true, List.of(),
+                List.of("a".repeat(256))
+        );
+
+        Set<ConstraintViolation<Furniture>> violations = validator.validate(f);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().contains("tags"));
+    }
+
+    @Test
+    void furniture_avec_tag_de_255_chars_est_valide() {
+        Furniture f = new Furniture(
+                null, "Titre", null,
+                "Sièges", null, 2026,
+                null, List.of(), null, null,
+                List.of(), null, false, true, true, List.of(),
+                List.of("a".repeat(255))
+        );
+
+        Set<ConstraintViolation<Furniture>> violations = validator.validate(f);
+
+        assertThat(violations).isEmpty();
     }
 
     @Test

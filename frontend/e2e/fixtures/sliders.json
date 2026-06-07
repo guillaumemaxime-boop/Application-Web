@@ -1,0 +1,63 @@
+[
+  {
+    "id": "sld-actus",
+    "slug": "actualites",
+    "title": "Actualités",
+    "zoneKey": "home-middle",
+    "stories": [
+      {
+        "id": "st-aurore-mof",
+        "slug": "tabouret-aurore-mof",
+        "title": "Making-of du Tabouret Aurore",
+        "coverImage": "__PLACEHOLDER__",
+        "ownerKind": "furniture",
+        "ownerId": "f-001",
+        "ownerLabel": "Tabouret Aurore"
+      },
+      {
+        "id": "st-lumen-instal",
+        "slug": "lumen-2025-installation",
+        "title": "Installation à la Galerie Test",
+        "coverImage": "__PLACEHOLDER__",
+        "ownerKind": "exhibition",
+        "ownerId": "e-001",
+        "ownerLabel": "Lumen · Galerie Test"
+      },
+      {
+        "id": "st-onyx-mof",
+        "slug": "tabouret-onyx-mof",
+        "title": "Carbonisation du Onyx",
+        "coverImage": "__PLACEHOLDER__",
+        "ownerKind": "furniture",
+        "ownerId": "f-002",
+        "ownerLabel": "Tabouret Onyx"
+      }
+    ]
+  },
+  {
+    "id": "sld-coups-coeur",
+    "slug": "coups-de-coeur",
+    "title": "Coups de cœur",
+    "zoneKey": "home-bottom",
+    "stories": [
+      {
+        "id": "st-lumen-mof",
+        "slug": "lumen-2025-mof",
+        "title": "Genèse de Lumen",
+        "coverImage": "__PLACEHOLDER__",
+        "ownerKind": "exhibition",
+        "ownerId": "e-001",
+        "ownerLabel": "Lumen · Galerie Test"
+      },
+      {
+        "id": "st-aurore-interview",
+        "slug": "tabouret-aurore-interview",
+        "title": "Interview de l'artisan",
+        "coverImage": "__PLACEHOLDER__",
+        "ownerKind": "furniture",
+        "ownerId": "f-001",
+        "ownerLabel": "Tabouret Aurore"
+      }
+    ]
+  }
+]

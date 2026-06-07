@@ -70,6 +70,13 @@ public class FurnitureEntity {
     @BatchSize(size = 50)
     private List<String> dimensions = new ArrayList<>();
 
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "furniture_tag", joinColumns = @JoinColumn(name = "furniture_id"))
+    @OrderColumn(name = "position")
+    @Column(name = "entry_value", nullable = false)
+    @BatchSize(size = 50)
+    private List<String> tags = new ArrayList<>();
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -114,4 +121,7 @@ public class FurnitureEntity {
 
     public List<String> getDimensions() { return dimensions; }
     public void setDimensions(List<String> dimensions) { this.dimensions = dimensions; }
+
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
 }

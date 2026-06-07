@@ -62,3 +62,18 @@ databaseChangeLog:
   - include:
       file: changes/021-add-tags-to-photo.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/022-create-story.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/023-seed-default-stories.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/024-refactor-story-slide.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/025-create-news-slider.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/026-add-tags-to-furniture.yaml
+      relativeToChangelogFile: true

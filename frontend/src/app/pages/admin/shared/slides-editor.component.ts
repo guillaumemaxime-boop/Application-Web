@@ -173,8 +173,7 @@ import { parseVideoUrl } from '../../../utils/video-url';
   `],
 })
 export class SlidesEditorComponent implements OnChanges {
-  @Input({ required: true }) kind!: 'furniture' | 'exhibition';
-  @Input({ required: true }) ownerId!: string;
+  @Input({ required: true }) storyId!: string;
   @Input() ownerSlug: string | null = null;
 
   private portfolio = inject(PortfolioService);
@@ -183,12 +182,12 @@ export class SlidesEditorComponent implements OnChanges {
   protected slides = signal<Slide[]>([]);
 
   ngOnChanges(c: SimpleChanges) {
-    if (c['ownerId'] || c['kind']) this.reload();
+    if (c['storyId']) this.reload();
   }
 
   reload() {
-    if (!this.ownerId) return;
-    this.portfolio.getSlides(this.kind, this.ownerId).subscribe(slides => {
+    if (!this.storyId) return;
+    this.portfolio.getStorySlides(this.storyId).subscribe(slides => {
       // Filtre défensif : ne pas afficher les rows legacy cover/link
       const filtered = slides.filter(s => s.type !== ('cover' as any) && s.type !== ('link' as any));
       this.slides.set(filtered as Slide[]);
@@ -266,7 +265,7 @@ export class SlidesEditorComponent implements OnChanges {
   }
 
   save() {
-    this.portfolio.replaceSlides(this.kind, this.ownerId, this.slides()).subscribe(updated => {
+    this.portfolio.replaceStorySlides(this.storyId, this.slides()).subscribe(updated => {
       const filtered = updated.filter(s => s.type !== ('cover' as any) && s.type !== ('link' as any));
       this.slides.set(filtered as Slide[]);
     });

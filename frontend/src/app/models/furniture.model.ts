@@ -13,6 +13,7 @@ export interface Furniture {
   description: string;
   dimensions: string[];
   designer: string;
+  tags?: string[];
   featured: boolean;
   showStoryLink: boolean;
   showStoryButton: boolean;

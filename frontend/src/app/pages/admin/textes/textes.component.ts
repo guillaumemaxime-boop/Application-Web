@@ -32,6 +32,14 @@ import { ToastService } from '../shared/toast.service';
               <textarea rows="3" formControlName="home_hero_lead"></textarea>
             </label>
           </div>
+
+          <div class="texts-group">
+            <h3 class="texts-group-label">Bloc « feed » (grille des mobiliers et expositions)</h3>
+            <label>
+              <span>Titre affiché au-dessus de la grille (laisser vide pour masquer)</span>
+              <input type="text" formControlName="home_feed_title" placeholder="Ex. À découvrir, À ne pas manquer…" />
+            </label>
+          </div>
         </div>
 
         <div class="texts-section">
@@ -165,6 +173,7 @@ export class TextesComponent {
     home_hero_eyebrow: [''],
     home_hero_title: [''],
     home_hero_lead: [''],
+    home_feed_title: [''],
     profile_tagline: [''],
     profile_bio: [''],
     profile_awards: [''],
@@ -193,6 +202,7 @@ export class TextesComponent {
           home_hero_eyebrow: content['home.hero.eyebrow'] ?? '',
           home_hero_title: content['home.hero.title'] ?? '',
           home_hero_lead: content['home.hero.lead'] ?? '',
+          home_feed_title: content['home.feed.title'] ?? '',
           profile_tagline: content['profile.tagline'] ?? '',
           profile_bio: content['profile.bio'] ?? '',
           profile_awards: content['profile.awards'] ?? '',
@@ -226,6 +236,7 @@ export class TextesComponent {
       'home.hero.eyebrow': v.home_hero_eyebrow ?? '',
       'home.hero.title': v.home_hero_title ?? '',
       'home.hero.lead': v.home_hero_lead ?? '',
+      'home.feed.title': v.home_feed_title ?? '',
       'profile.tagline': v.profile_tagline ?? '',
       'profile.bio': v.profile_bio ?? '',
       'profile.awards': v.profile_awards ?? '',

@@ -56,6 +56,7 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./navigation/navigation.component').then(m => m.NavigationComponent),
         title: 'Navigation — Administration',
       },
+      { path: 'sliders', redirectTo: 'accueil', pathMatch: 'full' },
     ],
   },
 ];

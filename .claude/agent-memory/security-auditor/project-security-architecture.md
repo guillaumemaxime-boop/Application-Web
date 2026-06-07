@@ -65,6 +65,30 @@ anyRequest           → authenticated (protège POST/PUT/DELETE hors /api/admin
 - `UMAMI_APP_SECRET` : dans `docker-compose.yml` avec fallback faible (à ne pas utiliser en prod)
 - `deploy/envs/local/.env` : **TRACÉ EN GIT** — contient le hash admin et des secrets locaux
 
+## Endpoints ajoutés dans feat/creations-tags (audit juin 2026)
+
+**Publics (GET /api/**)** — couverts par le matcher `GET /api/** → permitAll` :
+- `GET /api/tags` — liste les tags de toutes les entités furniture/exhibition, lecture pure
+- `GET /api/stories?ownerKind=&ownerId=` — liste les stories par owner
+- `GET /api/stories/{slug}` — détail story par slug
+- `GET /api/sliders` — sliders publics avec zone assignée uniquement
+
+**Admin (/api/admin/**)** — protégés par le matcher `/api/admin/** → authenticated` :
+- `GET|POST|PUT|DELETE /api/admin/stories/**`
+- `GET|POST|PUT|DELETE /api/admin/sliders/**`
+
+**Patterns de validation des inputs admin :**
+- `StoryInput` : `@NotBlank @Size(max=20)` ownerKind, `@Size(max=50)` ownerId, `@Size(max=200)` title, `@Size(max=500)` coverImage
+- `NewsSliderInput` : `@NotBlank @Size(max=200)` title, `@Size(max=50)` zoneKey
+- `Furniture` record : `@Size(max=30)` tags (liste), mais **pas de contrainte sur la longueur individuelle des chaînes tag**
+- `PUT /api/admin/sliders/{id}/stories` → body `Map<String, List<String>>` sans `@Valid`, pas de borne sur la taille de la liste — **finding connu, risque low**
+
+**Faux positifs à ne pas re-signaler pour cette branche :**
+- `SecurityConfig.java` inchangé — pas de nouvelle règle `permitAll` pour les paths admin
+- `authGuard` correctement posé sur `/admin` dans `app.routes.ts`
+- Pas d'usage de `[innerHTML]` dans les nouveaux composants Angular
+- `generateUniqueSlug()` dans NewsSliderService : boucle while non bornée mais la contrainte `UNIQUE` sur `slug` garantit la convergence — pas de vulnérabilité
+
 ## Dépendances notables
 
 - Spring Boot 4.0.0, Java 25

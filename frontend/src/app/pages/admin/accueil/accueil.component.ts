@@ -4,6 +4,7 @@ import { PortfolioService } from '../../../services/portfolio.service';
 import { AdminFeedEntry } from '../../../models/home.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { ToastService } from '../shared/toast.service';
+import { SlidersComponent } from '../sliders/sliders.component';
 
 interface HomeAdminItem {
   kind: 'furniture' | 'exhibition';
@@ -16,7 +17,7 @@ interface HomeAdminItem {
 @Component({
   selector: 'app-accueil',
   standalone: true,
-  imports: [ReorderableDirective],
+  imports: [ReorderableDirective, SlidersComponent],
   template: `
     <div class="home-editor">
       <h2>Ordre éditorial du masonry</h2>
@@ -43,6 +44,10 @@ interface HomeAdminItem {
         <p class="status">Chargement…</p>
       }
     </div>
+
+    <div class="home-editor sliders-section">
+      <app-admin-sliders />
+    </div>
   `,
   styles: [`
     .home-editor h2 { margin: 0 0 8px; font-family: var(--serif); font-weight: 400; font-size: 1.5rem; }
@@ -61,6 +66,7 @@ interface HomeAdminItem {
     .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .status { color: var(--color-mute); }
+    .sliders-section { margin-top: 48px; }
   `]
 })
 export class AccueilComponent {

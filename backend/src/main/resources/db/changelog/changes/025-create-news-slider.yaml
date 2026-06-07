@@ -1,0 +1,78 @@
+databaseChangeLog:
+  - changeSet:
+      id: 025-create-news-slider
+      author: atelier-lumen
+      changes:
+        - createTable:
+            tableName: news_slider
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: slug
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: title
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: zone_key
+                  type: varchar(50)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: slider_story
+            columns:
+              - column:
+                  name: slider_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: story_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: int
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: slider_story
+            columnNames: slider_id, story_id
+            constraintName: pk_slider_story
+        - addForeignKeyConstraint:
+            baseTableName: slider_story
+            baseColumnNames: slider_id
+            referencedTableName: news_slider
+            referencedColumnNames: id
+            constraintName: fk_slider_story_slider
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: slider_story
+            baseColumnNames: story_id
+            referencedTableName: story
+            referencedColumnNames: id
+            constraintName: fk_slider_story_story
+            onDelete: CASCADE
+        - createIndex:
+            indexName: idx_slider_story_position
+            tableName: slider_story
+            columns:
+              - column:
+                  name: slider_id
+              - column:
+                  name: position

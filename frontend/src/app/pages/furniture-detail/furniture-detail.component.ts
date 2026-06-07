@@ -55,6 +55,14 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
                 </dd>
               </div>
             </dl>
+
+            @if (f.tags && f.tags.length > 0) {
+              <div class="tags-list">
+                @for (t of f.tags; track t) {
+                  <a class="tag-chip" [routerLink]="['/creations']" [queryParams]="{ tags: t }">{{ t }}</a>
+                }
+              </div>
+            }
           </div>
         </section>
 
@@ -193,6 +201,13 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
     .specs dd { color: var(--color-ink); font-size: 0.95rem; }
     .specs ul { list-style: none; }
     .specs li { padding: 2px 0; }
+
+    .tags-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 24px; }
+    .tag-chip {
+      font-size: 0.78rem; padding: 4px 12px; background: var(--color-bg-alt);
+      border: 1px solid var(--color-line); color: var(--color-ink-soft); text-decoration: none;
+    }
+    .tag-chip:hover { color: var(--color-ink); border-color: var(--color-ink); }
 
     .viewer-link-wrap {
       display: flex;

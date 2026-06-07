@@ -57,9 +57,9 @@ describe('FooterComponent', () => {
     const navLinks = fixture.nativeElement.querySelectorAll('ul')[0].querySelectorAll('li');
     const contactItems = fixture.nativeElement.querySelectorAll('ul')[1].querySelectorAll('li');
     expect(contactItems.length).toBe(0);
-    expect(navLinks.length).toBe(5);
+    expect(navLinks.length).toBe(6);
     const labels = Array.from(navLinks).map((li: any) => li.textContent.trim());
-    expect(labels).toEqual(['Accueil', 'Mobilier', 'Expositions', 'Studio', 'Contact']);
+    expect(labels).toEqual(['Accueil', 'Mobilier', 'Expositions', 'Créations', 'Studio', 'Contact']);
   });
 
   it('renders Instagram and LinkedIn icons when their URLs are set', () => {
@@ -84,11 +84,21 @@ describe('FooterComponent', () => {
     setup({
       'nav.mobilier.visible': 'false',
       'nav.expositions.visible': 'false',
+      'nav.creations.visible': 'false',
       'nav.studio.visible': 'false',
     });
     const navLinks = fixture.nativeElement.querySelectorAll('ul')[0].querySelectorAll('li');
     const labels = Array.from(navLinks).map((li: any) => li.textContent.trim());
     expect(labels).toEqual(['Accueil', 'Contact']);
+  });
+
+  it('hides Créations when nav.creations.visible is false', () => {
+    setup({ 'nav.creations.visible': 'false' });
+    const navLinks = fixture.nativeElement.querySelectorAll('ul')[0].querySelectorAll('li');
+    const labels = Array.from(navLinks).map((li: any) => li.textContent.trim());
+    expect(labels).not.toContain('Créations');
+    expect(labels).toContain('Accueil');
+    expect(labels).toContain('Contact');
   });
 
   it('renders email as mailto:, phone as tel: and location as /contact link (A-20)', () => {
