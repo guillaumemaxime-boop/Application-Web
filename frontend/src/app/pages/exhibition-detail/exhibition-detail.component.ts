@@ -30,7 +30,6 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
             <img [src]="e.coverImage" [alt]="e.title" />
           </div>
           <div class="container hero-content">
-            <a class="back" routerLink="/expositions">← Retour aux expositions</a>
             <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ e.venue }} · {{ e.city }}, {{ e.country }}</span>
             <h1 [ngStyle]="titleStyle()">{{ e.title }}</h1>
             <p class="dates">{{ formatRange(e.startDate, e.endDate) }}</p>
@@ -118,16 +117,6 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
       margin: 16px 0 24px;
       max-width: 880px;
     }
-    .back {
-      display: inline-block;
-      margin-bottom: 32px;
-      font-size: 0.8rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.6);
-      transition: color var(--transition);
-    }
-    .back:hover { color: #ffffff; }
     .dates {
       font-size: 0.85rem;
       letter-spacing: 0.08em;
