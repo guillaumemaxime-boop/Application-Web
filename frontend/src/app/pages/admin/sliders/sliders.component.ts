@@ -1,6 +1,7 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { NewsSlider, SliderZone, SLIDER_ZONES } from '../../../models/news-slider.model';
 import { Story } from '../../../models/story.model';
@@ -8,7 +9,7 @@ import { Story } from '../../../models/story.model';
 @Component({
   selector: 'app-admin-sliders',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, A11yModule],
   template: `
     <h2>Sliders d'actualités</h2>
 
@@ -49,7 +50,8 @@ import { Story } from '../../../models/story.model';
     </section>
 
     @if (compositionOpen() && editingSlider(); as s) {
-      <div class="composition-modal" role="dialog" aria-modal="true" aria-labelledby="composition-title">
+      <div class="composition-modal" role="dialog" aria-modal="true" aria-labelledby="composition-title"
+           cdkTrapFocus cdkTrapFocusAutoCapture>
         <header>
           <h3 id="composition-title">Composition de "{{ s.title }}"</h3>
           <button type="button" (click)="closeComposition()" aria-label="Fermer">Fermer</button>
@@ -118,6 +120,7 @@ import { Story } from '../../../models/story.model';
 })
 export class SlidersComponent implements OnInit {
   private portfolio = inject(PortfolioService);
+  private triggerElement: HTMLElement | null = null;
 
   protected sliders = signal<NewsSlider[]>([]);
   protected allStories = signal<Story[]>([]);
@@ -127,6 +130,11 @@ export class SlidersComponent implements OnInit {
   protected selectedToAdd = signal<string[]>([]);
   protected storyFilter = '';
   protected zones: SliderZone[] = SLIDER_ZONES;
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.compositionOpen()) this.closeComposition();
+  }
 
   protected sliderByZone = computed(() => {
     const map: Partial<Record<SliderZone, NewsSlider>> = {};
@@ -158,6 +166,7 @@ export class SlidersComponent implements OnInit {
   }
 
   openComposition(s: NewsSlider): void {
+    this.triggerElement = document.activeElement as HTMLElement;
     this.editingSlider.set(s);
     this.pendingStoryIds.set([...s.storyIds]);
     this.selectedToAdd.set([]);
@@ -167,6 +176,7 @@ export class SlidersComponent implements OnInit {
   closeComposition(): void {
     this.compositionOpen.set(false);
     this.editingSlider.set(null);
+    setTimeout(() => this.triggerElement?.focus(), 0);
   }
 
   toggleSelect(id: string): void {
