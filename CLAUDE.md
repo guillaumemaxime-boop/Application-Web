@@ -95,3 +95,4 @@ CI orchestration: [build-and-deploy.yml](.github/workflows/build-and-deploy.yml)
 - Java: prefer records for DTOs (project is on Java 25); entities are mutable classes with JPA annotations.
 - Don't introduce frontend state-management libraries (NgRx etc.) — signals + services is the established pattern.
 - Don't add `*ngIf`/`*ngFor` or NgModules to new components — codebase is fully on the new APIs.
+- **Playwright (régression visuelle)** : ne JAMAIS créer ni régénérer des baselines Playwright avant validation visuelle manuelle de la page concernée par un humain. Le workflow est : (1) implémenter la page/feature, (2) la lancer en local (`npm start`) et valider visuellement le rendu, (3) seulement ensuite écrire ou mettre à jour le spec Playwright et régénérer les baselines. Les baselines générées avant validation gravent dans le marbre un look qui n'a pas été validé.
