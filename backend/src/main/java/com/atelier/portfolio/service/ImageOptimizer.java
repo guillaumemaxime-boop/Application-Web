@@ -3,10 +3,13 @@ package com.atelier.portfolio.service;
 import net.coobird.thumbnailator.Thumbnails;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
 
@@ -16,10 +19,19 @@ import java.util.Set;
  * (preservation de l'alpha). GIF/WebP/AVIF passent inchanges car ImageIO/Thumbnailator
  * standard ne les supporte pas (GIF animes seraient casses, WebP/AVIF non encodables).
  *
- * Aucun upscale : si l'image source est deja plus petite que MAX_DIMENSION,
- * elle est juste recompressee (JPEG) ou laissee telle quelle (PNG).
+ * <p><b>EXIF orientation preservee :</b> les photos prises en portrait (orientation
+ * EXIF 6 / 8 / 3 / etc.) sont automatiquement pivotees aux pixels avant l'optim via
+ * {@code useExifOrientation(true)}. Sans ca, le decode JPEG ignorait l'EXIF et
+ * l'image ressortait pivotee de travers.
  *
- * Sur erreur de decoding (image corrompue, format inconnu), les bytes originaux
+ * <p>Aucun upscale : les dimensions sont lues d'abord ; si la source est deja plus
+ * petite que MAX_DIMENSION, on passe par {@code scale(1.0)} pour preserver la taille
+ * (Thumbnailator's {@code size()} agrandit par defaut).
+ *
+ * <p>Si l'optim aboutit a un fichier plus gros que l'original (image deja optimale),
+ * l'original est conserve.
+ *
+ * <p>Sur erreur de decoding (image corrompue, format inconnu), les bytes originaux
  * sont retournes : la conformite (l'image arrive a destination) prime sur l'optim.
  */
 public final class ImageOptimizer {
@@ -41,37 +53,47 @@ public final class ImageOptimizer {
         String normalized = extension == null ? "" : extension.toLowerCase(Locale.ROOT);
         if (!OPTIMIZABLE_EXTENSIONS.contains(normalized)) return input;
 
+        boolean isJpeg = normalized.equals(".jpg") || normalized.equals(".jpeg");
+        String outputFormat = isJpeg ? "jpg" : "png";
+
         try {
-            BufferedImage source = ImageIO.read(new ByteArrayInputStream(input));
-            if (source == null) return input;
-
-            int maxSide = Math.max(source.getWidth(), source.getHeight());
+            int maxSide = readMaxDimension(input);
+            if (maxSide <= 0) return input;
             boolean needsResize = maxSide > MAX_DIMENSION;
-            boolean isJpeg = normalized.equals(".jpg") || normalized.equals(".jpeg");
-
-            // PNG deja plus petit que MAX_DIMENSION : aucune compression utile, sortie identique
-            if (!needsResize && !isJpeg) return input;
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            Thumbnails.Builder<BufferedImage> builder = Thumbnails.of(source);
+            Thumbnails.Builder<? extends InputStream> builder = Thumbnails.of(new ByteArrayInputStream(input))
+                    .useExifOrientation(true)
+                    .outputFormat(outputFormat);
             if (needsResize) {
-                builder = builder.size(MAX_DIMENSION, MAX_DIMENSION);
+                builder = builder.size(MAX_DIMENSION, MAX_DIMENSION).keepAspectRatio(true);
             } else {
                 builder = builder.scale(1.0);
             }
             if (isJpeg) {
-                builder = builder.outputFormat("jpg").outputQuality(JPEG_QUALITY);
-            } else {
-                builder = builder.outputFormat("png");
+                builder = builder.outputQuality(JPEG_QUALITY);
             }
             builder.toOutputStream(out);
 
             byte[] optimized = out.toByteArray();
-            // Securite : si l'optim a paradoxalement augmente la taille (petites images
-            // PNG, deja optimisees), garde l'original.
             return optimized.length < input.length ? optimized : input;
-        } catch (IOException e) {
+        } catch (Exception e) {
             return input;
+        }
+    }
+
+    private static int readMaxDimension(byte[] input) throws IOException {
+        try (ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(input))) {
+            if (iis == null) return 0;
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
+            if (!readers.hasNext()) return 0;
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(iis);
+                return Math.max(reader.getWidth(0), reader.getHeight(0));
+            } finally {
+                reader.dispose();
+            }
         }
     }
 }
