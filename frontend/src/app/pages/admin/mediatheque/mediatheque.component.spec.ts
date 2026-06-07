@@ -58,6 +58,36 @@ describe('MediathequeComponent', () => {
     expect(fixture.debugElement.query(By.css('.photos-empty'))).toBeTruthy();
   });
 
+  it('optimizeAll() POST /api/admin/photos/optimize et affiche un toast succes avec le bilan', () => {
+    configure();
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'success');
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([]);
+    fixture.detectChanges();
+    (fixture.componentInstance as any).optimizeAll();
+    const req = httpMock.expectOne('/api/admin/photos/optimize');
+    expect(req.request.method).toBe('POST');
+    req.flush({ count: 10, optimized: 7, bytesSaved: 5 * 1024 * 1024 });
+    expect(toast.success).toHaveBeenCalledWith(jasmine.stringContaining('7 / 10'));
+    expect((fixture.componentInstance as any).optimizing()).toBeFalse();
+  });
+
+  it('optimizeAll() affiche un toast erreur si l\'API echoue', () => {
+    configure();
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'error');
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([]);
+    fixture.detectChanges();
+    (fixture.componentInstance as any).optimizeAll();
+    httpMock.expectOne('/api/admin/photos/optimize').flush({}, { status: 500, statusText: 'err' });
+    expect(toast.error).toHaveBeenCalled();
+    expect((fixture.componentInstance as any).optimizing()).toBeFalse();
+  });
+
   it('supprime une photo et notifie via toast', () => {
     configure();
     const fixture = TestBed.createComponent(MediathequeComponent);

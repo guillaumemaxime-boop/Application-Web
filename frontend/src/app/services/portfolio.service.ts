@@ -131,6 +131,10 @@ export class PortfolioService {
     return this.http.put<Photo>(`${API}/admin/photos/${id}/tags`, { tags });
   }
 
+  optimizeAllPhotos(): Observable<{ count: number; optimized: number; bytesSaved: number }> {
+    return this.http.post<{ count: number; optimized: number; bytesSaved: number }>(`${API}/admin/photos/optimize`, {});
+  }
+
   getHome(): Observable<HomePageData> {
     this.home$ ??= this.http.get<HomePageData>(`${API}/home`).pipe(shareReplay(1));
     return this.home$;

@@ -14,6 +14,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -162,6 +165,79 @@ class PhotoServiceTest {
         Photo result = service.store(file);
 
         assertTrue(result.filename().endsWith(".JPG"));
+    }
+
+    @Test
+    void store_optimise_un_grand_jpeg_a_l_upload() throws IOException {
+        byte[] big = makeJpegNoisy(3000, 2000);
+        MockMultipartFile file = new MockMultipartFile("file", "photo.jpg", "image/jpeg", big);
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Photo result = service.store(file);
+
+        Path stored = tempDir.resolve(result.filename());
+        assertTrue(Files.exists(stored));
+        BufferedImage decoded = ImageIO.read(stored.toFile());
+        assertEquals(1920, decoded.getWidth(), "redimensionne au max 1920px");
+        assertTrue(Files.size(stored) < big.length, "fichier plus petit que la source");
+    }
+
+    @Test
+    void optimizeAll_compresse_un_jpeg_existant_et_retourne_un_resume() throws IOException {
+        byte[] big = makeJpegNoisy(3000, 2000);
+        Path existing = tempDir.resolve("old-photo.jpg");
+        Files.write(existing, big);
+
+        PhotoEntity entity = entity("ph-old01", "old-photo.jpg", "old.jpg", "2026-05-10T00:00:00Z");
+        when(repository.findAll()).thenReturn(List.of(entity));
+
+        PhotoService.OptimizeReport report = service.optimizeAll();
+
+        assertEquals(1, report.count());
+        assertEquals(1, report.optimized());
+        assertTrue(report.bytesSaved() > 0);
+        assertTrue(Files.size(existing) < big.length);
+    }
+
+    @Test
+    void optimizeAll_skippe_un_fichier_manquant_sur_disque() throws IOException {
+        PhotoEntity entity = entity("ph-ghost01", "ghost.jpg", "ghost.jpg", "2026-05-10T00:00:00Z");
+        when(repository.findAll()).thenReturn(List.of(entity));
+
+        PhotoService.OptimizeReport report = service.optimizeAll();
+
+        assertEquals(1, report.count());
+        assertEquals(0, report.optimized());
+        assertEquals(0, report.bytesSaved());
+    }
+
+    @Test
+    void optimizeAll_laisse_un_gif_inchange() throws IOException {
+        Path gif = tempDir.resolve("anim.gif");
+        Files.write(gif, new byte[]{1, 2, 3, 4});
+
+        PhotoEntity entity = entity("ph-gif01", "anim.gif", "anim.gif", "2026-05-10T00:00:00Z");
+        when(repository.findAll()).thenReturn(List.of(entity));
+
+        PhotoService.OptimizeReport report = service.optimizeAll();
+
+        assertEquals(1, report.count());
+        assertEquals(0, report.optimized());
+        assertEquals(4, Files.size(gif));
+    }
+
+    private static byte[] makeJpegNoisy(int w, int h) throws IOException {
+        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        long seed = 42;
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                seed = (seed * 1103515245L + 12345L) & 0x7fffffffL;
+                img.setRGB(x, y, (int) (seed & 0xffffff));
+            }
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(img, "jpg", out);
+        return out.toByteArray();
     }
 
     // --- loadAsResource ---

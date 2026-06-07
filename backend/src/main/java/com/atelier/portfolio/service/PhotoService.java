@@ -68,7 +68,8 @@ public class PhotoService {
         Path dir = Paths.get(uploadDir);
         Files.createDirectories(dir);
         Path target = dir.resolve(filename);
-        file.transferTo(target);
+        byte[] optimized = ImageOptimizer.optimize(file.getBytes(), normalizedExt);
+        Files.write(target, optimized);
 
         String url = baseUrl + "/" + filename;
 
@@ -111,6 +112,48 @@ public class PhotoService {
             return true;
         }).orElse(false);
     }
+
+    /**
+     * Optimisation batch des fichiers deja uploades (migration one-shot).
+     * Idempotent : un appel repete sur des fichiers deja optimises laisse les
+     * fichiers tels quels grace au garde-fou de {@link ImageOptimizer}.
+     *
+     * @return resume : count = nombre traites, optimized = nombre reecrits,
+     *                  bytesSaved = octets economises au total
+     */
+    public OptimizeReport optimizeAll() {
+        int count = 0;
+        int optimized = 0;
+        long bytesSaved = 0;
+        Path dir = Paths.get(uploadDir);
+        for (PhotoEntity entity : repository.findAll()) {
+            count++;
+            Path file = dir.resolve(entity.getFilename()).normalize();
+            if (!file.startsWith(dir.toAbsolutePath().normalize()) && !file.startsWith(dir.normalize())) continue;
+            if (!Files.exists(file)) continue;
+            try {
+                byte[] original = Files.readAllBytes(file);
+                String ext = extractExtension(entity.getFilename());
+                byte[] result = ImageOptimizer.optimize(original, ext);
+                if (result != original && result.length < original.length) {
+                    Files.write(file, result);
+                    optimized++;
+                    bytesSaved += (original.length - result.length);
+                }
+            } catch (IOException ignored) {
+                // Fichier illisible → skip, on continue le batch
+            }
+        }
+        return new OptimizeReport(count, optimized, bytesSaved);
+    }
+
+    private static String extractExtension(String filename) {
+        if (filename == null) return "";
+        int dot = filename.lastIndexOf('.');
+        return dot >= 0 ? filename.substring(dot).toLowerCase(Locale.ROOT) : "";
+    }
+
+    public record OptimizeReport(int count, int optimized, long bytesSaved) {}
 
     @Transactional
     public Optional<Photo> updateTags(String id, List<String> tags) {
