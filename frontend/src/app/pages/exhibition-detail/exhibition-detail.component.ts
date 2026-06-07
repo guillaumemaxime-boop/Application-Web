@@ -9,6 +9,8 @@ import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 import { enrichSlides } from '../../utils/display-slides';
+import { cropTransform, CropStyle } from '../../utils/crop-transform';
+import { GalleryItem } from '../../models/gallery-item.model';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 
 @Component({
@@ -27,7 +29,9 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
       <article class="fade-in">
         <header class="hero">
           <div class="hero-bg">
-            <img [src]="e.coverImage" [alt]="e.title" />
+            <img [src]="e.coverImage" [alt]="e.title"
+                 [style.transform]="coverCropStyle().transform"
+                 [style.transform-origin]="coverCropStyle().transformOrigin" />
           </div>
           <div class="container hero-content">
             <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ e.venue }} · {{ e.city }}, {{ e.country }}</span>
@@ -57,7 +61,11 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
             <div class="g-grid">
               @for (img of e.gallery; track img.url; let i = $index) {
                 <figure [class.wide]="i === 0">
-                  <img [src]="img.url" [alt]="e.title + ' — vue ' + (i + 1)" loading="lazy" />
+                  <div class="gallery-img-wrap">
+                    <img [src]="img.url" [alt]="e.title + ' — vue ' + (i + 1)" loading="lazy"
+                         [style.transform]="galleryItemStyle(img).transform"
+                         [style.transform-origin]="galleryItemStyle(img).transformOrigin" />
+                  </div>
                 </figure>
               }
             </div>
@@ -91,6 +99,7 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
       position: absolute;
       inset: 0;
       z-index: 0;
+      overflow: hidden;
     }
     .hero-bg img {
       width: 100%;
@@ -159,6 +168,18 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
       aspect-ratio: 16 / 9;
     }
     figure img { width: 100%; height: 100%; object-fit: cover; }
+    .gallery-img-wrap {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+    .gallery-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
 
     .status { color: var(--color-mute); }
 
@@ -202,6 +223,12 @@ export class ExhibitionDetailComponent {
 
   protected readonly titleStyle   = computed(() => roleStyle(this.content(), 'title'));
   protected readonly eyebrowStyle = computed(() => roleStyle(this.content(), 'eyebrow'));
+
+  protected readonly coverCropStyle = computed<CropStyle>(() => cropTransform(this.item()?.coverCrop));
+
+  protected galleryItemStyle(item: GalleryItem): CropStyle {
+    return cropTransform(item.crop);
+  }
 
   protected readonly hasSlides = computed(() => {
     const e = this.item();
