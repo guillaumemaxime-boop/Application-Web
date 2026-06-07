@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
 import { SiteContent } from '../../models/site-content.model';
 import { roleStyle } from '../../utils/title-style';
+import { cropTransform, CropStyle } from '../../utils/crop-transform';
 
 @Component({
   selector: 'app-news-slider',
@@ -27,7 +28,9 @@ import { roleStyle } from '../../utils/title-style';
                   [attr.aria-label]="story.ownerLabel + ' — ' + story.title"
                   (click)="onCardClick(story)">
             <div class="thumb">
-              <img [src]="story.coverImage" [alt]="story.title" loading="lazy" />
+              <img [src]="story.coverImage" [alt]="story.title" loading="lazy"
+                   [style.transform]="storyCoverStyle(story).transform"
+                   [style.transform-origin]="storyCoverStyle(story).transformOrigin" />
             </div>
             <div class="meta">
               <span class="cat">{{ story.ownerLabel }}</span>
@@ -104,6 +107,10 @@ export class NewsSliderComponent {
   protected trackRef = viewChild<ElementRef<HTMLDivElement>>('track');
   protected atStart = signal(true);
   protected atEnd = signal(false);
+
+  protected storyCoverStyle(story: SliderStoryRef): CropStyle {
+    return cropTransform(story.coverCrop);
+  }
 
   onCardClick(story: SliderStoryRef): void {
     this.storyOpen.emit(story);

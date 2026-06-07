@@ -1,3 +1,5 @@
+import { Crop } from './crop.model';
+
 export type SliderZone = 'home-top' | 'home-middle' | 'home-bottom';
 
 export const SLIDER_ZONES: SliderZone[] = ['home-top', 'home-middle', 'home-bottom'];
@@ -20,6 +22,7 @@ export interface SliderStoryRef {
   slug: string;
   title: string;
   coverImage: string;
+  coverCrop?: Crop | null;
   ownerKind: 'furniture' | 'exhibition';
   ownerId: string;
   ownerLabel: string;

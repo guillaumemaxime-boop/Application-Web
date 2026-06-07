@@ -1,5 +1,6 @@
 import { enrichSlides } from './display-slides';
 import { Slide } from '../models/slide.model';
+import { CoverDisplaySlide } from '../models/display-slide.model';
 
 describe('enrichSlides', () => {
   it('returns empty array when no coverImage, no slides, and showStoryLink is false', () => {
@@ -77,6 +78,26 @@ describe('enrichSlides', () => {
     expect(result[0].type).toBe('cover');
     expect(result[1].type).toBe('image');
     expect(result.find(s => s.type === 'link')).toBeUndefined();
+  });
+
+  it('propage coverCrop dans la slide cover synthetique', () => {
+    const crop = { x: 10, y: 20, w: 60, h: 50 };
+    const result = enrichSlides(
+      { slug: 'x', coverImage: 'cover.jpg', coverCrop: crop, slides: [], showStoryLink: false },
+      'furniture'
+    );
+    expect(result.length).toBe(1);
+    expect(result[0].type).toBe('cover');
+    expect((result[0] as CoverDisplaySlide).coverCrop).toEqual(crop);
+  });
+
+  it('coverCrop est undefined dans la slide cover quand non fourni', () => {
+    const result = enrichSlides(
+      { slug: 'x', coverImage: 'cover.jpg', slides: [], showStoryLink: false },
+      'furniture'
+    );
+    expect(result[0].type).toBe('cover');
+    expect((result[0] as CoverDisplaySlide).coverCrop).toBeUndefined();
   });
 
   it('produces cover + narrative + link in order when all elements present', () => {

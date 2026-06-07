@@ -5,6 +5,7 @@ public record SliderStoryRef(
         String slug,
         String title,
         String coverImage,
+        ImageCrop coverCrop,
         String ownerKind,
         String ownerId,
         String ownerLabel

@@ -1,4 +1,5 @@
 import { ImageSlide, VideoSlide, SpecSlide, QuoteSlide } from './slide.model';
+import { Crop } from './crop.model';
 
 /**
  * Slide affichée côté public. Inclut des types synthétiques (`cover`, `link`)
@@ -22,6 +23,7 @@ export interface CoverDisplaySlide {
   id: string;
   position: number;
   src: string;
+  coverCrop?: Crop | null;
 }
 
 export interface LinkDisplaySlide {

@@ -173,6 +173,7 @@ export class HomeComponent implements OnInit {
         slides: enrichSlides({
           slug: ownerSlug,
           coverImage: s.coverImage,
+          coverCrop: s.coverCrop,
           slides: slides ?? [],
           showStoryLink: ownerShowStoryLink,
         }, s.ownerKind),

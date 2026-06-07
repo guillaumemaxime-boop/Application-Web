@@ -299,6 +299,7 @@ export class FurnitureDetailComponent {
     return enrichSlides({
       slug: f.slug,
       coverImage: f.coverImage,
+      coverCrop: f.coverCrop,
       slides: f.slides ?? [],
       showStoryLink: f.showStoryLink,
     }, 'furniture');

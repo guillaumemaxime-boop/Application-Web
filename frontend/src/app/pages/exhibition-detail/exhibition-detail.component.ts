@@ -242,6 +242,7 @@ export class ExhibitionDetailComponent {
     return enrichSlides({
       slug: e.slug,
       coverImage: e.coverImage,
+      coverCrop: e.coverCrop,
       slides: e.slides ?? [],
       showStoryLink: e.showStoryLink,
     }, 'exhibition');
