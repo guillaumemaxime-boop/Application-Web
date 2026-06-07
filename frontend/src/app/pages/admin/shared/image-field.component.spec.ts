@@ -105,42 +105,22 @@ describe('ImageFieldComponent', () => {
     expect(emitted).toEqual({ x: 10, y: 20, w: 50, h: 40 } as Crop);
   });
 
-  it('affiche la vignette de preview cropEnabled + URL', () => {
+  it('affiche le canvas de preview cropEnabled + URL', () => {
     const fixture = TestBed.createComponent(ImageFieldComponent);
     const cmp = fixture.componentInstance;
     fixture.componentRef.setInput('cropEnabled', true);
     cmp.writeValue('https://example.com/preview.jpg');
     fixture.detectChanges();
-    const preview = fixture.nativeElement.querySelector('.crop-preview-thumb img');
-    expect(preview).toBeTruthy();
-    expect(preview.getAttribute('src')).toBe('https://example.com/preview.jpg');
+    const canvas = fixture.nativeElement.querySelector('canvas.crop-preview-canvas');
+    expect(canvas).toBeTruthy();
   });
 
-  it('cropPreviewStyle() applique le transform calculé depuis cropValue', () => {
-    const fixture = TestBed.createComponent(ImageFieldComponent);
-    const cmp = fixture.componentInstance;
-    fixture.componentRef.setInput('cropEnabled', true);
-    fixture.componentRef.setInput('cropValue', { x: 25, y: 25, w: 50, h: 50 });
-    cmp.writeValue('https://example.com/preview.jpg');
-    fixture.detectChanges();
-    expect((cmp as any).cropPreviewStyle().transform).toBe('translate(-50%, -50%) scale(2)');
-  });
-
-  it('cropPreviewStyle() retourne transform none sans cropValue', () => {
-    const fixture = TestBed.createComponent(ImageFieldComponent);
-    const cmp = fixture.componentInstance;
-    fixture.componentRef.setInput('cropEnabled', true);
-    cmp.writeValue('https://example.com/preview.jpg');
-    fixture.detectChanges();
-    expect((cmp as any).cropPreviewStyle().transform).toBe('none');
-  });
-
-  it('ne affiche pas la vignette preview quand cropEnabled=false', () => {
+  it('ne affiche pas le canvas preview quand cropEnabled=false', () => {
     const fixture = TestBed.createComponent(ImageFieldComponent);
     const cmp = fixture.componentInstance;
     fixture.componentRef.setInput('cropEnabled', false);
     cmp.writeValue('https://example.com/preview.jpg');
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.crop-preview-thumb')).toBeNull();
+    expect(fixture.nativeElement.querySelector('canvas.crop-preview-canvas')).toBeNull();
   });
 });
