@@ -82,7 +82,7 @@ export class ImageFieldComponent implements ControlValueAccessor {
 
   @Input() label = 'Image';
   @Input() cropEnabled = false;
-  @Input() cropValue: Crop | null = null;
+  @Input() cropValue: Crop | null | undefined = null;
   @Output() cropChange = new EventEmitter<Crop | null>();
 
   protected readonly value = signal('');
