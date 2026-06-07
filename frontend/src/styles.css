@@ -137,7 +137,8 @@ select:focus-visible,
 .story-viewer :focus-visible,
 .picker-backdrop :focus-visible,
 .viewer-backdrop :focus-visible,
-.backdrop :focus-visible {
+.backdrop :focus-visible,
+.crop-backdrop :focus-visible {
   outline-color: #fff;
 }
 

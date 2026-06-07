@@ -15,7 +15,7 @@ import { Crop } from '../../../models/crop.model';
 @Component({
   selector: 'app-cropped-image-canvas',
   standalone: true,
-  template: `<canvas #canvas class="cropped-image-canvas" [attr.aria-label]="alt"></canvas>`,
+  template: `<canvas #canvas class="cropped-image-canvas" role="img" [attr.aria-label]="alt"></canvas>`,
   styles: [`
     .cropped-image-canvas { display: block; width: 100%; height: 100%; }
   `]
@@ -67,6 +67,7 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
       return;
     }
     const img = new Image();
+    img.crossOrigin = 'anonymous';  // permet getImageData() ulterieur sans tainted canvas
     img.onload = () => {
       this.cachedImage = img;
       this.draw(ctx, canvas, img);

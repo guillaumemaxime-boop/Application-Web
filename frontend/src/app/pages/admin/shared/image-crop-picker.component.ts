@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
 import Cropper from 'cropperjs';
 import { Crop } from '../../../models/crop.model';
@@ -238,6 +238,11 @@ export class ImageCropPickerComponent implements AfterViewInit, OnDestroy {
 
   protected cancel(): void {
     this.cancelled.emit();
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    this.cancel();
   }
 
   ngOnDestroy(): void {
