@@ -1,5 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { Router, RouterOutlet, NavigationStart, NavigationCancel, NavigationError } from '@angular/router';
+import { Router, RouterOutlet, NavigationStart, NavigationEnd, NavigationCancel, NavigationError } from '@angular/router';
 import { HeaderComponent } from './components/header/header.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { SplashComponent } from './components/splash/splash.component';
@@ -58,7 +58,7 @@ export class AppComponent implements OnInit {
         if (!this.isSplashExcludedUrl(event.url)) {
           this.loading.start('nav');
         }
-      } else if (event instanceof NavigationCancel || event instanceof NavigationError) {
+      } else if (event instanceof NavigationEnd || event instanceof NavigationCancel || event instanceof NavigationError) {
         this.loading.stop('nav');
       }
     });

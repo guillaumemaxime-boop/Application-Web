@@ -8,6 +8,7 @@ import furnitureDetailFixture from '../fixtures/furniture-detail.json';
 import exhibitionsListFixture from '../fixtures/exhibitions-list.json';
 import exhibitionDetailFixture from '../fixtures/exhibition-detail.json';
 import slidersFixture from '../fixtures/sliders.json';
+import tagsFixture from '../fixtures/tags.json';
 // Au fil des tasks suivantes, ajouter ici les imports + un objet dans STUBS :
 //   import profileFixture from '../fixtures/profile.json';
 
@@ -55,6 +56,7 @@ const STUBS: ReadonlyArray<{ readonly glob: string; readonly fixture: unknown }>
   { glob: '**/api/exhibitions', fixture: exhibitionsListFixture },
   { glob: '**/api/exhibitions/featured', fixture: exhibitionsListFixture },
   { glob: '**/api/exhibitions/lumen-2025', fixture: exhibitionDetailFixture },
+  { glob: '**/api/tags', fixture: tagsFixture },
   // { glob: '**/api/profile', fixture: profileFixture },
 ];
 
