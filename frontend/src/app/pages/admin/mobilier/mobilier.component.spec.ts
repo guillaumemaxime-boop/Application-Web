@@ -494,6 +494,56 @@ describe('MobilierComponent', () => {
     httpMock.expectOne('/api/furniture').flush([]);
   });
 
+  it('saveCover sort tot quand url+crop inchanges', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    const story = { id: 'st-1', ownerKind: 'furniture', ownerId: 'f1', title: 'S1', coverImage: '/same.jpg', coverCrop: null, slug: 's1', position: 0, createdAt: '' } as any;
+    cmp.openCoverEditor(story);
+    // url et crop identiques
+    cmp.coverEditCtrl.setValue('/same.jpg');
+    cmp.editingStoryCoverCrop.set(null);
+    cmp.saveCover(story);
+    httpMock.expectNone(r => r.method === 'PUT' && r.url.includes('/stories'));
+  });
+
+  it('saveCover declenche PUT quand seul le crop change (url stable)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    const story = { id: 'st-1', ownerKind: 'furniture', ownerId: 'f1', title: 'S1', coverImage: '/same.jpg', coverCrop: null, slug: 's1', position: 0, createdAt: '' } as any;
+    cmp.openCoverEditor(story);
+    cmp.coverEditCtrl.setValue('/same.jpg');  // url inchangee
+    cmp.editingStoryCoverCrop.set({ x: 20, y: 20, w: 60, h: 60 });  // crop nouveau
+    cmp.saveCover(story);
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url.includes('/stories/st-1'));
+    expect(req.request.body['coverCrop']).toEqual({ x: 20, y: 20, w: 60, h: 60 });
+    req.flush({});
+  });
+
+  it('saveCover sort tot quand url vide', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    const story = { id: 'st-1', ownerKind: 'furniture', ownerId: 'f1', title: 'S1', coverImage: '/old.jpg', coverCrop: null, slug: 's1', position: 0, createdAt: '' } as any;
+    cmp.openCoverEditor(story);
+    cmp.coverEditCtrl.setValue('   ');  // empty after trim
+    cmp.saveCover(story);
+    httpMock.expectNone(r => r.method === 'PUT' && r.url.includes('/stories'));
+  });
+
   it('saveCover envoie coverCrop dans le payload PUT story (Task 13)', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);

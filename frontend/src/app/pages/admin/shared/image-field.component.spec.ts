@@ -123,4 +123,41 @@ describe('ImageFieldComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-cropped-image-canvas')).toBeNull();
   });
+
+  it('Cadrer est disabled quand URL absente', () => {
+    const fixture = TestBed.createComponent(ImageFieldComponent);
+    const cmp = fixture.componentInstance;
+    fixture.componentRef.setInput('cropEnabled', true);
+    cmp.writeValue('');
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+    const cropBtn = buttons.find(b => b.textContent?.trim() === 'Cadrer');
+    expect(cropBtn!.disabled).toBeTrue();
+  });
+
+  it('openCrop set cropOpen a true', () => {
+    const fixture = TestBed.createComponent(ImageFieldComponent);
+    const cmp = fixture.componentInstance as any;
+    cmp.openCrop();
+    expect(cmp.cropOpen()).toBeTrue();
+  });
+
+  it('onCropValidated ferme la modale de crop', () => {
+    const fixture = TestBed.createComponent(ImageFieldComponent);
+    const cmp = fixture.componentInstance as any;
+    cmp.cropOpen.set(true);
+    cmp.onCropValidated({ x: 0, y: 0, w: 50, h: 50 });
+    expect(cmp.cropOpen()).toBeFalse();
+  });
+
+  it('le canvas de preview prend l\'URL et le crop courants', () => {
+    const fixture = TestBed.createComponent(ImageFieldComponent);
+    const cmp = fixture.componentInstance;
+    fixture.componentRef.setInput('cropEnabled', true);
+    fixture.componentRef.setInput('cropValue', { x: 10, y: 10, w: 80, h: 80 } as Crop);
+    cmp.writeValue('https://example.com/preview.jpg');
+    fixture.detectChanges();
+    const host = fixture.nativeElement.querySelector('app-cropped-image-canvas.crop-preview-canvas');
+    expect(host).toBeTruthy();
+  });
 });
