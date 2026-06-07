@@ -359,11 +359,15 @@ export class ExpositionsComponent {
 
   saveCover(story: Story): void {
     const newCover = (this.coverEditCtrl.value ?? '').trim();
-    if (!newCover || newCover === story.coverImage) { this.cancelCoverEdit(); return; }
+    if (!newCover) { this.cancelCoverEdit(); return; }
+    const newCrop = this.editingStoryCoverCrop();
+    const urlUnchanged = newCover === story.coverImage;
+    const cropUnchanged = JSON.stringify(newCrop ?? null) === JSON.stringify(story.coverCrop ?? null);
+    if (urlUnchanged && cropUnchanged) { this.cancelCoverEdit(); return; }
     this.portfolio.updateStory(story.id, {
       ownerKind: story.ownerKind, ownerId: story.ownerId,
       title: story.title, coverImage: newCover,
-      coverCrop: this.editingStoryCoverCrop(),
+      coverCrop: newCrop,
     }).subscribe({
       next: updated => {
         this.currentStories.update(arr => arr.map(s => s.id === updated.id ? updated : s));
