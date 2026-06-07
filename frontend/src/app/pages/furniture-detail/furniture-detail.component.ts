@@ -10,6 +10,7 @@ import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 import { enrichSlides } from '../../utils/display-slides';
 import { cropTransform, CropStyle } from '../../utils/crop-transform';
+import { CroppedImageCanvasComponent } from '../admin/shared/cropped-image-canvas.component';
 import { GalleryItem } from '../../models/gallery-item.model';
 import { StoryInlineComponent } from '../../components/story-inline/story-inline.component';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
@@ -18,7 +19,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
 @Component({
   selector: 'app-furniture-detail',
   standalone: true,
-  imports: [NgStyle, RouterLink, StoryInlineComponent, StoryViewerComponent, ContactFormComponent],
+  imports: [NgStyle, RouterLink, StoryInlineComponent, StoryViewerComponent, ContactFormComponent, CroppedImageCanvasComponent],
   template: `
     @if (loading()) {
       <div class="container section"><p class="status">Chargement…</p></div>
@@ -31,9 +32,11 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       <article class="fade-in">
         <header class="hero">
           <div class="hero-bg">
-            <img [src]="f.coverImage" [alt]="f.title"
-                 [style.transform]="coverCropStyle().transform"
-                 [style.transform-origin]="coverCropStyle().transformOrigin" />
+            <app-cropped-image-canvas
+              [imageUrl]="f.coverImage"
+              [crop]="f.coverCrop ?? null"
+              [alt]="f.title"
+              mode="cover" />
           </div>
           <div class="container hero-content">
             <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ f.category }} · {{ f.year }}</span>
@@ -140,6 +143,11 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .hero-bg app-cropped-image-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
     .hero-bg::after {
       content: '';

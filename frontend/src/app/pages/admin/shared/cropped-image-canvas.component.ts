@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, Input, OnChanges, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, ViewChild } from '@angular/core';
 import { Crop } from '../../../models/crop.model';
 
 /**
@@ -20,7 +20,7 @@ import { Crop } from '../../../models/crop.model';
     .cropped-image-canvas { display: block; width: 100%; height: 100%; }
   `]
 })
-export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges {
+export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, OnDestroy {
   @ViewChild('canvas') canvasRef?: ElementRef<HTMLCanvasElement>;
 
   @Input({ required: true }) imageUrl!: string;
@@ -33,12 +33,26 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges {
   /** Pour mode 'adaptive' : largeur max en pixels (clamp si crop tres large). */
   @Input() maxWidth = 240;
 
+  private resizeObserver?: ResizeObserver;
+  private cachedImage?: HTMLImageElement;
+
   ngAfterViewInit(): void {
     this.render();
+    // En mode cover, le canvas doit se redessiner quand son conteneur change
+    // de taille (resize fenetre, etc.). Pas necessaire en mode adaptive ou la
+    // taille du canvas est pilotee par le code, pas par le CSS du parent.
+    if (this.mode === 'cover' && this.canvasRef && typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.render());
+      this.resizeObserver.observe(this.canvasRef.nativeElement);
+    }
   }
 
   ngOnChanges(): void {
     queueMicrotask(() => this.render());
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
   }
 
   private render(): void {
@@ -46,18 +60,29 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges {
     if (!canvas || !this.imageUrl) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    // Reutilise l'image cachee si elle correspond a l'URL courante (evite un
+    // re-fetch + re-decodage a chaque resize).
+    if (this.cachedImage && this.cachedImage.src === this.imageUrl && this.cachedImage.complete) {
+      this.draw(ctx, canvas, this.cachedImage);
+      return;
+    }
     const img = new Image();
     img.onload = () => {
-      if (this.mode === 'adaptive') {
-        this.renderAdaptive(ctx, canvas, img);
-      } else {
-        this.renderCoverFit(ctx, canvas, img);
-      }
+      this.cachedImage = img;
+      this.draw(ctx, canvas, img);
     };
     img.onerror = () => {
       canvas.width = canvas.width;  // clears the canvas
     };
     img.src = this.imageUrl;
+  }
+
+  private draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, img: HTMLImageElement): void {
+    if (this.mode === 'adaptive') {
+      this.renderAdaptive(ctx, canvas, img);
+    } else {
+      this.renderCoverFit(ctx, canvas, img);
+    }
   }
 
   private renderAdaptive(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, img: HTMLImageElement): void {
