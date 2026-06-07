@@ -6,10 +6,10 @@ import { Crop } from '../../../models/crop.model';
 export interface AspectRatio { label: string; value: number; }
 
 export const DEFAULT_ASPECT_RATIOS: AspectRatio[] = [
+  { label: 'Libre', value: NaN },
   { label: '16:9', value: 16 / 9 },
   { label: '4:5', value: 4 / 5 },
   { label: '1:1', value: 1 },
-  { label: 'Libre', value: NaN },
 ];
 
 @Component({
@@ -39,6 +39,9 @@ export const DEFAULT_ASPECT_RATIOS: AspectRatio[] = [
               }
             </select>
           </label>
+          <span class="mode-badge">
+            Mode actif : <strong>{{ selectedAspectLabel }}</strong>
+          </span>
           <button type="button" class="btn-reset" (click)="resetCrop()">Réinitialiser</button>
         </div>
 
@@ -49,7 +52,7 @@ export const DEFAULT_ASPECT_RATIOS: AspectRatio[] = [
         <footer class="crop-foot">
           @if (currentCrop) {
             <span class="crop-coords">
-              X {{ currentCrop.x.toFixed(0) }}% · Y {{ currentCrop.y.toFixed(0) }}% · L {{ currentCrop.w.toFixed(0) }}% · H {{ currentCrop.h.toFixed(0) }}%
+              X {{ currentCrop.x.toFixed(0) }}% · Y {{ currentCrop.y.toFixed(0) }}% · L {{ currentCrop.w.toFixed(0) }}% · H {{ currentCrop.h.toFixed(0) }}% · ratio {{ (currentCrop.w / currentCrop.h).toFixed(2) }}
             </span>
           }
           <div class="actions">
@@ -75,6 +78,10 @@ export const DEFAULT_ASPECT_RATIOS: AspectRatio[] = [
                      color: var(--color-ink); font: inherit; }
     .btn-reset { padding: 6px 14px; background: var(--color-bg); border: 1px solid var(--color-line);
                  font-size: 0.78rem; cursor: pointer; color: var(--color-ink-soft); }
+    .mode-badge { font-size: 0.82rem; color: var(--color-ink-soft); margin-left: auto;
+                  padding: 4px 12px; background: var(--color-bg-alt);
+                  border: 1px solid var(--color-line); }
+    .mode-badge strong { color: var(--color-ink); font-weight: 600; }
     .crop-stage { flex: 1; padding: 16px 24px; overflow: hidden; min-height: 400px; }
     .crop-stage img { display: block; max-width: 100%; }
     .crop-foot { padding: 16px 24px; border-top: 1px solid var(--color-line);
