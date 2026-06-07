@@ -3,7 +3,7 @@ import { NgStyle } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { SiteContent } from '../../../models/site-content.model';
-import { TITLE_FONTS, TITLE_STYLES, titleStyle, TypoRole, TYPO_ROLES } from '../../../utils/title-style';
+import { TITLE_FONTS, TITLE_SIZES, TITLE_STYLES, titleStyle, TypoRole, TYPO_ROLES } from '../../../utils/title-style';
 import { ToastService } from '../shared/toast.service';
 
 @Component({
@@ -38,6 +38,15 @@ import { ToastService } from '../shared/toast.service';
                     <option value="">— par défaut —</option>
                     @for (s of titleStyles; track s.value) {
                       <option [value]="s.value">{{ s.label }}</option>
+                    }
+                  </select>
+                </label>
+                <label>
+                  <span>Taille</span>
+                  <select [formControlName]="role.value + '_size'">
+                    <option value="">— par défaut —</option>
+                    @for (sz of titleSizes; track sz.value) {
+                      <option [value]="sz.value">{{ sz.label }}</option>
                     }
                   </select>
                 </label>
@@ -76,7 +85,7 @@ import { ToastService } from '../shared/toast.service';
     .typo-card header { display: flex; flex-direction: column; gap: 6px; }
     .typo-card header h3 { font-family: var(--serif); font-weight: 400; font-size: 1.3rem; line-height: 1.2; margin: 0; color: var(--color-ink); }
     .typo-card .role-key { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-mute); }
-    .typo-controls { grid-column: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .typo-controls { grid-column: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 12px; }
     .typo-controls label { display: flex; flex-direction: column; gap: 6px; }
     .typo-controls label > span { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-mute); }
     .typo-controls select { font: inherit; padding: 8px 10px; border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink); }
@@ -100,19 +109,25 @@ export class TypographieComponent {
   protected readonly savingTypo = signal(false);
   protected readonly titleFonts = TITLE_FONTS;
   protected readonly titleStyles = TITLE_STYLES;
+  protected readonly titleSizes = TITLE_SIZES;
   protected readonly typoRoles = TYPO_ROLES;
 
   protected readonly typoForm = this.fb.group({
     'title_font': [''],
     'title_style': [''],
+    'title_size': [''],
     'section-title_font': [''],
     'section-title_style': [''],
+    'section-title_size': [''],
     'subtitle_font': [''],
     'subtitle_style': [''],
+    'subtitle_size': [''],
     'card-title_font': [''],
     'card-title_style': [''],
+    'card-title_size': [''],
     'eyebrow_font': [''],
     'eyebrow_style': [''],
+    'eyebrow_size': [''],
   });
 
   constructor() {
@@ -126,14 +141,19 @@ export class TypographieComponent {
     this.typoForm.reset({
       'title_font': content['typo.title.font'] ?? '',
       'title_style': content['typo.title.style'] ?? '',
+      'title_size': content['typo.title.size'] ?? '',
       'section-title_font': content['typo.section-title.font'] ?? '',
       'section-title_style': content['typo.section-title.style'] ?? '',
+      'section-title_size': content['typo.section-title.size'] ?? '',
       'subtitle_font': content['typo.subtitle.font'] ?? '',
       'subtitle_style': content['typo.subtitle.style'] ?? '',
+      'subtitle_size': content['typo.subtitle.size'] ?? '',
       'card-title_font': content['typo.card-title.font'] ?? '',
       'card-title_style': content['typo.card-title.style'] ?? '',
+      'card-title_size': content['typo.card-title.size'] ?? '',
       'eyebrow_font': content['typo.eyebrow.font'] ?? '',
       'eyebrow_style': content['typo.eyebrow.style'] ?? '',
+      'eyebrow_size': content['typo.eyebrow.size'] ?? '',
     });
   }
 
@@ -142,6 +162,7 @@ export class TypographieComponent {
     const synthetic: SiteContent = {
       [`typo.${role}.font`]: (v[`${role}_font` as keyof typeof v] as string) ?? '',
       [`typo.${role}.style`]: (v[`${role}_style` as keyof typeof v] as string) ?? '',
+      [`typo.${role}.size`]: (v[`${role}_size` as keyof typeof v] as string) ?? '',
     };
     return titleStyle(synthetic, `typo.${role}`);
   }
@@ -151,14 +172,19 @@ export class TypographieComponent {
     const payload: SiteContent = {
       'typo.title.font': v['title_font'] ?? '',
       'typo.title.style': v['title_style'] ?? '',
+      'typo.title.size': v['title_size'] ?? '',
       'typo.section-title.font': v['section-title_font'] ?? '',
       'typo.section-title.style': v['section-title_style'] ?? '',
+      'typo.section-title.size': v['section-title_size'] ?? '',
       'typo.subtitle.font': v['subtitle_font'] ?? '',
       'typo.subtitle.style': v['subtitle_style'] ?? '',
+      'typo.subtitle.size': v['subtitle_size'] ?? '',
       'typo.card-title.font': v['card-title_font'] ?? '',
       'typo.card-title.style': v['card-title_style'] ?? '',
+      'typo.card-title.size': v['card-title_size'] ?? '',
       'typo.eyebrow.font': v['eyebrow_font'] ?? '',
       'typo.eyebrow.style': v['eyebrow_style'] ?? '',
+      'typo.eyebrow.size': v['eyebrow_size'] ?? '',
     };
     this.savingTypo.set(true);
     this.portfolio.updateContent(payload).subscribe({

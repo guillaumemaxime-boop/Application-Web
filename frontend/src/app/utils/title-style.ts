@@ -2,6 +2,7 @@ import { SiteContent } from '../models/site-content.model';
 
 export type TitleFont = 'serif' | 'sans' | 'helvetica';
 export type TitleStyle = 'normal' | 'bold' | 'extra-bold' | 'italic';
+export type TitleSize = 'petit' | 'normal' | 'moyen' | 'grand' | 'tres-grand' | 'hero';
 
 export const TITLE_FONTS: { value: TitleFont; label: string }[] = [
   { value: 'serif', label: 'Cormorant Garamond (serif)' },
@@ -16,15 +17,34 @@ export const TITLE_STYLES: { value: TitleStyle; label: string }[] = [
   { value: 'italic', label: 'Italique' },
 ];
 
+export const TITLE_SIZES: { value: TitleSize; label: string }[] = [
+  { value: 'petit', label: 'Petit' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'moyen', label: 'Moyen' },
+  { value: 'grand', label: 'Grand' },
+  { value: 'tres-grand', label: 'Très grand' },
+  { value: 'hero', label: 'Hero (responsive)' },
+];
+
 const FONT_STACKS: Record<TitleFont, string> = {
   serif: "'Cormorant Garamond', Georgia, serif",
   sans: "'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
   helvetica: "Helvetica, 'Helvetica Neue', Arial, sans-serif",
 };
 
+const FONT_SIZES: Record<TitleSize, string> = {
+  petit: '0.9rem',
+  normal: '1.05rem',
+  moyen: '1.3rem',
+  grand: '1.6rem',
+  'tres-grand': '2.2rem',
+  hero: 'clamp(2.5rem, 6vw, 4.5rem)',
+};
+
 export function titleStyle(content: SiteContent, key: string): { [prop: string]: string } {
   const font = content[`${key}.font`] as TitleFont | undefined;
   const style = content[`${key}.style`] as TitleStyle | undefined;
+  const size = content[`${key}.size`] as TitleSize | undefined;
   const result: { [prop: string]: string } = {};
   if (font && FONT_STACKS[font]) result['font-family'] = FONT_STACKS[font];
   switch (style) {
@@ -33,6 +53,7 @@ export function titleStyle(content: SiteContent, key: string): { [prop: string]:
     case 'italic': result['font-style'] = 'italic'; result['font-weight'] = '400'; break;
     case 'normal': result['font-weight'] = '400'; result['font-style'] = 'normal'; break;
   }
+  if (size && FONT_SIZES[size]) result['font-size'] = FONT_SIZES[size];
   return result;
 }
 
