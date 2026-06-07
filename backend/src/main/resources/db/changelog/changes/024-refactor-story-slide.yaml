@@ -26,9 +26,14 @@ databaseChangeLog:
   - changeSet:
       id: 024-cleanup-orphan-slides-without-owner
       author: atelier-lumen
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: story_slide
+            columnName: owner_kind
       changes:
         - sql:
-            comment: Supprime les story_slide dont owner_kind ou owner_id est NULL/vide — slides irrécupérables (cas legacy data corrompue en prod/staging)
+            comment: Supprime les story_slide dont owner_kind ou owner_id est NULL/vide — slides irrécupérables (cas legacy data corrompue en prod/staging). Skippé si owner_kind a déjà été dropped (migration réussie au 1er coup).
             sql: |
               DELETE FROM story_slide
               WHERE story_id IS NULL
@@ -37,10 +42,15 @@ databaseChangeLog:
   - changeSet:
       id: 024-seed-orphan-stories
       author: atelier-lumen
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: story_slide
+            columnName: owner_kind
       changes:
         - sql:
             comment: |
-              Crée une story de récupération pour tout (owner_kind, owner_id) avec slides orphelins (cas où le seed 023 n'a pas créé de story — par exemple owner supprimé, FK non enforcée historiquement, owner_kind inconnu).
+              Crée une story de récupération pour tout (owner_kind, owner_id) avec slides orphelins (cas où le seed 023 n'a pas créé de story — par exemple owner supprimé, FK non enforcée historiquement, owner_kind inconnu). Skippé si owner_kind dropped.
             sql: |
               INSERT INTO story (id, owner_kind, owner_id, title, cover_image, slug, position, created_at)
               SELECT DISTINCT
@@ -62,9 +72,14 @@ databaseChangeLog:
   - changeSet:
       id: 024-rebackfill-story-id
       author: atelier-lumen
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: story_slide
+            columnName: owner_kind
       changes:
         - sql:
-            comment: Re-backfill story_id pour les slides encore NULL après le seed de récupération
+            comment: Re-backfill story_id pour les slides encore NULL après le seed de récupération. Skippé si owner_kind dropped.
             sql: |
               UPDATE story_slide ss
               SET story_id = (
