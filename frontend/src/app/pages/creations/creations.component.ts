@@ -145,6 +145,10 @@ export class CreationsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
+  constructor() {
+    document.title = 'Créations — Milo GUILLAUME Design';
+  }
+
   protected readonly allItems = signal<CreationItem[]>([]);
   protected readonly availableTags = signal<string[]>([]);
   protected readonly availableYears = signal<number[]>([]);
@@ -221,9 +225,9 @@ export class CreationsComponent implements OnInit {
           href: `/expositions/${e.slug}`,
         })),
       ];
-      items.sort((a, b) => b.year - a.year || a.title.localeCompare(b.title));
+      items.sort((a, b) => b.year - a.year || a.title.localeCompare(b.title, 'fr'));
       this.allItems.set(items);
-      this.availableTags.set([...new Set(items.flatMap(i => i.tags))].sort());
+      this.availableTags.set([...new Set(items.flatMap(i => i.tags))].sort((a, b) => a.localeCompare(b, 'fr')));
       this.availableYears.set([...new Set(items.map(i => i.year))].sort((a, b) => b - a));
     });
   }
