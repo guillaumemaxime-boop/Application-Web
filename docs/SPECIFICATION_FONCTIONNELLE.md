@@ -1,7 +1,7 @@
 # Spécification Fonctionnelle — Milo GUILLAUME Design
 
-**Version** : 2.2.0
-**Date** : 07/06/2026
+**Version** : 2.3.0
+**Date** : 08/06/2026
 **Auteur** : Maxime Guillaume
 **Statut** : En cours de validation
 
@@ -117,11 +117,11 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 
 #### Fiche Pièce (`/mobilier/:slug`)
 
-- **Hero** : image de couverture + bloc de spécifications (matière, designer, dimensions).
+- **Hero** : image de couverture + bloc de spécifications (matière, designer, dimensions). Si un crop est défini, seule la zone cadrée est affichée (rendu CSS transform pixel-perfect) ; sinon, rendu natif `object-fit: cover`.
 - **Description longue** : texte éditorial de la pièce.
 - **Tags** : mots-clés thématiques associés à la pièce (cliquables → `/creations?tags=...`).
-- **Stories** : si la pièce possède des stories éditoriaux, un bouton "Voir la story" ouvre le viewer plein écran.
-- **Galerie** : mosaïque d'images complémentaires (3 colonnes, alternance portrait/paysage).
+- **Stories** : si la pièce possède des stories éditoriaux, un bouton "Voir la story" ouvre le viewer plein écran. Le crop du cover de story est appliqué dans le viewer et dans les cards de news-slider.
+- **Galerie** : mosaïque d'images complémentaires (3 colonnes, alternance portrait/paysage). Chaque item affiche son crop si défini.
 - **CTA** : lien de contact par e-mail.
 - Gestion 404 si le slug n'existe pas.
 
@@ -131,10 +131,10 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 
 #### Fiche Exposition (`/expositions/:slug`)
 
-- **Bannière** : image principale.
+- **Bannière** : image principale. Si un crop est défini, seule la zone cadrée est affichée (rendu CSS transform pixel-perfect) ; sinon, rendu natif `object-fit: cover`.
 - **Détails** : titre, lieu, ville, pays, dates, commissaire.
 - **Description** : texte éditorial.
-- **Galerie** d'images.
+- **Galerie** d'images. Chaque item affiche son crop si défini.
 - **Tags** associés à l'exposition.
 - Gestion 404 si le slug n'existe pas.
 
@@ -162,18 +162,24 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 
 - CRUD mobilier avec formulaire complet (titre, catégorie, images, dimensions, description, `featured`).
 - **Champ Tags** : composant `<app-tag-input>` avec autocomplétion depuis `GET /api/tags`, chips + navigation clavier (WAI-ARIA combobox/listbox).
-- **Bloc Stories** : liste des stories de la pièce, CRUD stories, éditeur de slides par story.
+- **Outil de cadrage de la cover** : bouton « Cadrer » à côté du sélecteur d'image. Ouvre une modale avec Cropper.js (sélecteur d'aspect ratio : Libre / 16:9 / 4:5 / 1:1, coordonnées live en %, boutons Réinitialiser / Annuler / Valider). Une vignette de prévisualisation affiche le rendu pixel-perfect du crop sous le champ.
+- **Galerie** : chaque vignette dispose d'un bouton ✂ ouvrant la même modale de cadrage. Un badge `✂ LxH` sur la vignette indique qu'un crop est défini.
+- **Bloc Stories** : liste des stories de la pièce, CRUD stories, éditeur de slides par story. Le cover de chaque story dispose également d'un bouton « Cadrer ».
 
 **Page Expositions (`/admin/expositions`)** :
 
 - CRUD expositions avec formulaire complet.
 - **Champ Tags** : même composant `<app-tag-input>`.
-- **Bloc Stories** : idem mobilier.
+- **Outil de cadrage de la cover** : identique à la page Mobilier.
+- **Galerie** : même comportement que Mobilier (bouton ✂ par vignette, badge crop).
+- **Bloc Stories** : idem mobilier, avec cadrage du cover de story.
 
 **Page Navigation (`/admin/navigation`)** :
 
 - Toggle CMS pour chaque entrée de menu (visible / masqué).
 - L'entrée **Créations** est configurable depuis cette page.
+
+> **Hors portée — sous-projets 2–4 (à venir)** : preview WYSIWYG du rendu page sur fiche mobilier / exposition / accueil ; modification du crop directement depuis la preview (drag sur le rendu page) ; items composés home autres que le masonry. Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
 
 #### Header
 
@@ -222,7 +228,8 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 | `material` | `String` | Matériau principal | `"Chêne massif"` |
 | `year` | `Integer` | Année de création | `2025` |
 | `coverImage` | `String` | URL de l'image principale | `"https://..."` |
-| `gallery` | `String[]` | URLs des images galerie | `["https://...", "..."]` |
+| `coverCrop` | `ImageCrop` | Zone de cadrage de la cover (nullable — `null` = rendu natif `cover-fit`) | `{"x":10,"y":5,"w":80,"h":60}` |
+| `gallery` | `GalleryImage[]` | Images galerie avec crop optionnel par item | `[{"url":"https://...","crop":null}]` |
 | `shortDescription` | `String` | Description courte (max 1000 car.) | `"Siège sculpté..."` |
 | `description` | `String` | Description longue (max 4000 car.) | `"Chaque courbe..."` |
 | `dimensions` | `String[]` | Dimensions libres | `["L 52 × P 55 × H 82 cm"]` |
@@ -242,7 +249,8 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 | `startDate` | `Date` | Date de début | `"2025-05-15"` |
 | `endDate` | `Date` | Date de fin | `"2025-06-30"` |
 | `coverImage` | `String` | URL de l'image principale | `"https://..."` |
-| `gallery` | `String[]` | URLs des images galerie | `["https://..."]` |
+| `coverCrop` | `ImageCrop` | Zone de cadrage de la cover (nullable) | `{"x":0,"y":10,"w":100,"h":75}` |
+| `gallery` | `GalleryImage[]` | Images galerie avec crop optionnel par item | `[{"url":"https://...","crop":null}]` |
 | `curator` | `String` | Commissaire de l'exposition | `"Sophie Martin"` |
 | `shortDescription` | `String` | Description courte (max 1000 car.) | `"Exposition collective..."` |
 | `description` | `String` | Description longue (max 4000 car.) | `"Autour du thème..."` |
@@ -260,6 +268,36 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 | `location` | `String` | Localisation (`"Paris, France"`) |
 | `press` | `{title, year}[]` | Mentions presse |
 | `awards` | `String[]` | Prix et distinctions |
+
+##### ImageCrop (Zone de cadrage)
+
+Objet partagé porté par l'entité qui utilise l'image (cover ou item de galerie). Toutes les valeurs sont des pourcentages (0–100) de l'image source.
+
+| Champ | Type     | Description                                     | Exemple |
+|-------|----------|-------------------------------------------------|---------|
+| `x`   | `Double` | Abscisse du coin supérieur gauche du crop (%)   | `10.0`  |
+| `y`   | `Double` | Ordonnée du coin supérieur gauche du crop (%)   | `5.0`   |
+| `w`   | `Double` | Largeur du rectangle de crop (%)                | `80.0`  |
+| `h`   | `Double` | Hauteur du rectangle de crop (%)                | `60.0`  |
+
+`null` partout = pas de crop = rendu natif `object-fit: cover` (comportement par défaut).
+
+##### GalleryImage (Item de galerie avec crop optionnel)
+
+| Champ  | Type        | Description                            | Exemple         |
+|--------|-------------|----------------------------------------|-----------------|
+| `url`  | `String`    | URL de l'image (max 500 car.)          | `"https://..."` |
+| `crop` | `ImageCrop` | Zone de cadrage de cet item (nullable) | `null`          |
+
+##### Story (Cover de story avec crop)
+
+| Champ         | Type        | Description                            |
+|---------------|-------------|----------------------------------------|
+| `id`          | `Long`      | Identifiant                            |
+| `title`       | `String`    | Titre de la story                      |
+| `coverImage`  | `String`    | URL du visuel de couverture            |
+| `coverCrop`   | `ImageCrop` | Zone de cadrage de la cover (nullable) |
+| `slides`      | `Slide[]`   | Slides de la story                     |
 
 ---
 
@@ -307,6 +345,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 | **F036** | Stories multiples | Créer N stories par pièce ou exposition, gérer les slides par story. | ⭐⭐⭐ | ✅ Fait |
 | **F037** | Sliders d'actualités | Composer des sliders depuis des stories variées, assigner à une zone de la home. | ⭐⭐ | ✅ Fait |
 | **F038** | Navigation CMS | Activer / désactiver des entrées de menu (dont Créations) depuis l'admin. | ⭐⭐ | ✅ Fait |
+| **F039** | Outil de cadrage d'image | Cadrer précisément la zone affichée pour la cover et chaque item de galerie (mobilier, exposition, cover de story), via modale Cropper.js avec présets d'aspect ratio (Libre / 16:9 / 4:5 / 1:1). Remplace le focal point. | ⭐⭐⭐ | ✅ Fait |
 
 ### 5.5 Navigation et UX
 
@@ -318,6 +357,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 | **F043** | Gestion 404 | Page ou pièce introuvable → message d'erreur clair. | ⭐⭐ | ✅ Fait |
 | **F044** | Page Créations | Catalogue agrégé mobilier + expositions, filtres type/années/tags, deep-link URL. | ⭐⭐⭐ | ✅ Fait |
 | **F045** | Viewer story plein écran | Modale plein écran, navigation tactile/clavier, focus trap + Échap (RGAA). | ⭐⭐ | ✅ Fait |
+| **F046** | Rendu crop responsive | Le hero d'une fiche et les images cropées recalculent leur transformation CSS au redimensionnement de la fenêtre. Les images sans crop conservent le rendu `object-fit: cover` natif. | ⭐⭐⭐ | ✅ Fait |
 
 ### 5.6 Internationalisation
 
@@ -519,12 +559,13 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 ### 8.2 Frameworks et Librairies
 
 | Technologie | Version | Usage |
-|-------------|---------|-------|
+| ----------- | ------- | ----- |
 | Spring Boot | 4.0 | API REST, JPA, Actuator, Liquibase |
 | Angular | 21 | SPA frontend (standalone components, signals) |
 | PostgreSQL | 16 | Persistance des données |
 | Liquibase | — | Migrations de schéma BDD |
 | Nginx | 1.27-alpine | Serveur web + reverse proxy |
+| Cropper.js | 1.6 | Outil de cadrage d'image dans l'interface admin (première lib UI tierce du projet — cf. ADR-0017) |
 
 ### 8.3 Hébergement
 
@@ -563,6 +604,11 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 | **Tag** | Mot-clé thématique associé à une pièce ou une exposition. L'union des tags est accessible via `GET /api/tags`. |
 | **Création** | Terme générique regroupant une pièce de mobilier ou une exposition dans la page `/creations`. |
 | **ControlValueAccessor** | Interface Angular permettant à un composant custom (ex. `TagInputComponent`) de s'intégrer nativement dans `ReactiveFormsModule`. |
+| **ImageCrop** | Objet `{x, y, w, h}` en pourcentages (0–100) décrivant le rectangle à afficher sur une image. `null` = pas de crop, rendu natif `object-fit: cover`. |
+| **GalleryImage** | Item de galerie composé d'une URL et d'un `ImageCrop` optionnel, remplace l'ancienne liste de simples URLs. |
+| **Crop** | Synonyme de cadrage : délimitation d'une zone rectangulaire d'une image à afficher côté public. |
+| **Cropper.js** | Bibliothèque JavaScript de cadrage d'image (v1.6), première lib UI tierce du projet — utilisée dans `<app-image-crop-picker>` (cf. ADR-0017). |
+| **Focal point** | Ancien mécanisme de centrage (coordonnées X/Y simples) — remplacé par `ImageCrop` dans cette version. |
 
 ---
 
@@ -581,9 +627,10 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
   "material": "Chêne massif",
   "year": 2025,
   "coverImage": "https://example.com/images/chaise-eclat-cover.jpg",
+  "coverCrop": { "x": 10.0, "y": 5.0, "w": 80.0, "h": 90.0 },
   "gallery": [
-    "https://example.com/images/chaise-eclat-1.jpg",
-    "https://example.com/images/chaise-eclat-2.jpg"
+    { "url": "https://example.com/images/chaise-eclat-1.jpg", "crop": null },
+    { "url": "https://example.com/images/chaise-eclat-2.jpg", "crop": { "x": 0.0, "y": 0.0, "w": 100.0, "h": 75.0 } }
   ],
   "shortDescription": "Siège sculpté en chêne, formes organiques.",
   "description": "Chaque courbe de cette chaise naît d'un dialogue entre la main et le bois...",
@@ -606,7 +653,10 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
   "startDate": "2025-05-15",
   "endDate": "2025-06-30",
   "coverImage": "https://example.com/images/expo-cover.jpg",
-  "gallery": ["https://example.com/images/expo-1.jpg"],
+  "coverCrop": null,
+  "gallery": [
+    { "url": "https://example.com/images/expo-1.jpg", "crop": null }
+  ],
   "curator": "Sophie Martin",
   "shortDescription": "Exposition collective autour de la lumière et des matières brutes.",
   "description": "Autour du thème de la lumière filtrée par la matière...",
@@ -640,6 +690,8 @@ PostgreSQL 16 (:5432)
 | **Phase 4** | Protection de l'admin (authentification JWT) | ✅ Terminé |
 | **Phase 5** | Formulaire de contact (envoi d'e-mail via Resend) | ✅ Terminé |
 | **Phase 6** | Stories multiples + sliders d'actualités + page Créations + tags mobilier | ✅ Terminé |
+| **Phase 6bis** | Outil de cadrage d'image (crop) — sous-projet 1/4 : modale Cropper.js, crop cover + galerie mobilier/expo/story, rendu public CSS transform | ✅ Terminé |
+| **Phase 6ter** | Preview WYSIWYG du rendu page + modification du crop depuis la preview (sous-projets 2–4) | ⏳ À faire |
 | **Phase 7** | Recherche texte dans le catalogue | ⏳ À faire |
 | **Phase 8** | Internationalisation FR/EN | ⏳ À faire |
 | **Phase 9** | Optimisations SEO (balises méta, sitemap) | ⏳ À faire |
@@ -654,6 +706,7 @@ PostgreSQL 16 (:5432)
 | 2.0.0 | 04/05/2026 | Maxime Guillaume | Rebrand Milo GUILLAUME Design · Mise à jour du modèle de données réel · Routes corrigées · Roadmap synchronisée · Admin CRUD documenté · Hébergement Railway |
 | 2.1.0 | 11/05/2026 | Maxime Guillaume | Authentification admin JWT (F034 ✅) · Suppression du lien Admin du menu de navigation · Correction CORS (`127.0.0.1:4200`) · Roadmap Phase 4 terminée |
 | 2.2.0 | 07/06/2026 | Maxime Guillaume | Stories multiples + sliders d'actualités (F036, F037 ✅) · Page publique `/creations` + tags mobilier (F044, F035 ✅) · Navigation CMS (F038 ✅) · Viewer story plein écran (F045 ✅) · Page Accueil admin consolidant masonry + sliders · Roadmap Phase 5 et 6 terminées · Glossaire enrichi |
+| 2.3.0 | 08/06/2026 | Maxime Guillaume | Outil de cadrage d'image — sous-projet 1/4 (F039, F046 ✅) · Remplacement du focal point par `ImageCrop` · Modèle `GalleryImage[]` sur mobilier/exposition · Crop cover de story · Modale Cropper.js admin · Rendu public CSS transform · Cropper.js ajouté aux frameworks (ADR-0017) · Roadmap Phase 6bis terminée · Glossaire enrichi (ImageCrop, GalleryImage, Focal point, Cropper.js) |
 
 ---
 
