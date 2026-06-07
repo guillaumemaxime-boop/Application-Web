@@ -44,6 +44,7 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
         <div class="crop-preview">
           <div class="crop-preview-thumb" [style.aspect-ratio]="thumbAspectRatio()">
             <img [src]="value()" alt="Aperçu cadré"
+                 (load)="onPreviewImgLoad($event)"
                  [style.transform]="cropPreviewStyle().transform"
                  [style.transform-origin]="cropPreviewStyle().transformOrigin" />
           </div>
@@ -160,16 +161,28 @@ export class ImageFieldComponent implements ControlValueAccessor {
     return cropTransform(this.cropValue ?? null);
   }
 
+  protected readonly naturalDims = signal<{ w: number; h: number } | null>(null);
+
+  protected onPreviewImgLoad(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    this.naturalDims.set({ w: img.naturalWidth, h: img.naturalHeight });
+  }
+
   /**
-   * Aspect ratio du conteneur preview = celui du crop pour que <img object-fit:cover>
-   * + transform produise EXACTEMENT la zone croppée (sinon object-fit pre-cadre
-   * l'image avant le transform et le rendu est faux).
-   * Sans crop défini : fallback 16:10 pour un aperçu honnête.
+   * Aspect ratio du conteneur preview = aspect en PIXELS du crop, soit
+   * (c.w * sourceW) / (c.h * sourceH). Necessite les dimensions naturelles
+   * de l'image (chargees via load). Tant que naturalDims est null, fallback
+   * 16:10. Sans crop, idem.
+   *
+   * Avec ce ratio, object-fit:cover ne pre-cadre PAS l'image source, et le
+   * transform applique exactement la zone croppee.
    */
   protected thumbAspectRatio(): string {
     const c = this.cropValue;
+    const d = this.naturalDims();
     if (!c || !c.w || !c.h) return '16 / 10';
-    return `${c.w} / ${c.h}`;
+    if (!d || !d.w || !d.h) return `${c.w} / ${c.h}`;  // fallback temporaire avant load
+    return `${c.w * d.w} / ${c.h * d.h}`;
   }
 
   protected onCropValidated(crop: Crop): void {
