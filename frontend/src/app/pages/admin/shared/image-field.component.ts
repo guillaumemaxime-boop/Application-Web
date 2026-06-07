@@ -3,6 +3,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
 import { Crop } from '../../../models/crop.model';
+import { cropTransform, CropStyle } from '../../../utils/crop-transform';
 import { PhotoPickerComponent } from './photo-picker.component';
 import { ImageCropPickerComponent } from './image-crop-picker.component';
 
@@ -38,6 +39,23 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
           }
         </div>
       </label>
+
+      @if (cropEnabled && value()) {
+        <div class="crop-preview">
+          <div class="crop-preview-thumb">
+            <img [src]="value()" alt="Aperçu cadré"
+                 [style.transform]="cropPreviewStyle().transform"
+                 [style.transform-origin]="cropPreviewStyle().transformOrigin" />
+          </div>
+          <span class="crop-preview-label">
+            @if (cropValue) {
+              Cadrée — {{ cropValue.w.toFixed(0) }}% × {{ cropValue.h.toFixed(0) }}%
+            } @else {
+              Image entière — aucun cadrage défini
+            }
+          </span>
+        </div>
+      }
     </div>
 
     @if (pickerOpen()) {
@@ -72,6 +90,18 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
     }
     .btn-pick:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .btn-pick:disabled { opacity: 0.5; cursor: not-allowed; }
+    .crop-preview { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+    .crop-preview-thumb {
+      width: 160px; height: 100px; overflow: hidden; position: relative;
+      border: 1px solid var(--color-line); background: var(--color-bg-alt); flex-shrink: 0;
+    }
+    .crop-preview-thumb img {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .crop-preview-label {
+      font-size: 0.78rem; color: var(--color-mute); line-height: 1.4;
+    }
     @media (max-width: 600px) {
       .image-field-row { flex-direction: column; }
     }
@@ -123,6 +153,10 @@ export class ImageFieldComponent implements ControlValueAccessor {
 
   protected openCrop(): void {
     this.cropOpen.set(true);
+  }
+
+  protected cropPreviewStyle(): CropStyle {
+    return cropTransform(this.cropValue ?? null);
   }
 
   protected onCropValidated(crop: Crop): void {
