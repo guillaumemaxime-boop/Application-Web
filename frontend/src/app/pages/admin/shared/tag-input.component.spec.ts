@@ -131,4 +131,56 @@ describe('TagInputComponent', () => {
     fixture.detectChanges();
     expect(host.ctrl.value).toEqual(['bois']);
   });
+
+  it('input a role combobox + aria-controls + aria-expanded + aria-haspopup="listbox"', () => {
+    const el = input();
+    expect(el.getAttribute('role')).toBe('combobox');
+    expect(el.getAttribute('aria-haspopup')).toBe('listbox');
+    expect(el.hasAttribute('aria-controls')).toBeTrue();
+    expect(el.hasAttribute('aria-expanded')).toBeTrue();
+  });
+
+  it('ArrowDown active la premiere suggestion', () => {
+    input().value = 'bo';
+    input().dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    fixture.detectChanges();
+    const items = Array.from(fixture.nativeElement.querySelectorAll('li[role="option"]')) as HTMLElement[];
+    expect(items[0].getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('ArrowDown puis Enter ajoute la suggestion active', () => {
+    input().value = 'bo';
+    input().dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    fixture.detectChanges();
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.detectChanges();
+    expect(host.ctrl.value).toContain('bois');
+  });
+
+  it('Escape ferme le dropdown sans ajouter de tag', () => {
+    input().value = 'bo';
+    input().dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.dropdown')).not.toBeNull();
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.dropdown')).toBeNull();
+    expect(host.ctrl.value).toEqual([]);
+  });
+
+  it('aria-activedescendant pointe sur l\'id de l\'option active', () => {
+    input().value = 'bo';
+    input().dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    fixture.detectChanges();
+    const activeDescendant = input().getAttribute('aria-activedescendant');
+    expect(activeDescendant).not.toBeNull();
+    const activeOption = fixture.nativeElement.querySelector(`#${activeDescendant}`);
+    expect(activeOption).not.toBeNull();
+  });
 });
