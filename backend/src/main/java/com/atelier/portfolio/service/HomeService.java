@@ -80,6 +80,7 @@ public class HomeService {
                         if (f == null) return null;
                         return new HomeFeedItem("furniture", f.getSlug(), f.getTitle(),
                                 f.getCoverImage(),
+                                ImageCrop.ofNullable(f.getCoverCropX(), f.getCoverCropY(), f.getCoverCropW(), f.getCoverCropH()),
                                 f.getCategory() + " · " + f.getYear(),
                                 f.getShortDescription());
                     } else if ("exhibition".equals(entry.getKind())) {
@@ -87,6 +88,7 @@ public class HomeService {
                         if (e == null) return null;
                         return new HomeFeedItem("exhibition", e.getSlug(), e.getTitle(),
                                 e.getCoverImage(),
+                                ImageCrop.ofNullable(e.getCoverCropX(), e.getCoverCropY(), e.getCoverCropW(), e.getCoverCropH()),
                                 e.getVenue() + " · " + formatPeriod(e),
                                 e.getShortDescription());
                     }

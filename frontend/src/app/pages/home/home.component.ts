@@ -11,11 +11,12 @@ import { NewsSliderView, SliderZone, SLIDER_ZONES, SliderStoryRef } from '../../
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 import { enrichSlides } from '../../utils/display-slides';
+import { CroppedImageCanvasComponent } from '../admin/shared/cropped-image-canvas.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, StoryViewerComponent, NewsSliderComponent],
+  imports: [CommonModule, RouterLink, StoryViewerComponent, NewsSliderComponent, CroppedImageCanvasComponent],
   template: `
     <section class="hero">
       <div class="container">
@@ -44,7 +45,11 @@ import { enrichSlides } from '../../utils/display-slides';
               <a class="card" [routerLink]="cardLink(item)">
                 @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
                 <div class="thumb">
-                  <img [src]="item.cover" [alt]="item.title" loading="lazy" />
+                  <app-cropped-image-canvas
+                    [imageUrl]="item.cover"
+                    [crop]="item.coverCrop ?? null"
+                    [alt]="item.title"
+                    mode="cover" />
                 </div>
                 <div class="meta">
                   <span class="cat" [ngStyle]="eyebrowStyleVar()">{{ item.subtitle }}</span>
@@ -81,6 +86,8 @@ import { enrichSlides } from '../../utils/display-slides';
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 24px; }
     .card { position: relative; display: flex; flex-direction: column; text-decoration: none; color: inherit; background: transparent; border: none; padding: 0; cursor: pointer; }
     .thumb { aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-bg-alt); }
+    .thumb app-cropped-image-canvas { width: 100%; height: 100%; display: block; transition: transform 480ms ease; }
+    .card:hover .thumb app-cropped-image-canvas { transform: scale(1.03); }
     .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 480ms ease; }
     .card:hover .thumb img { transform: scale(1.03); }
 
