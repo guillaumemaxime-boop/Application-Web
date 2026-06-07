@@ -50,6 +50,7 @@ public class ExhibitionService {
             return new Exhibition(
                     base.id(), base.title(), base.slug(), base.venue(), base.city(),
                     base.country(), base.startDate(), base.endDate(), base.coverImage(),
+                    base.coverFocalX(), base.coverFocalY(),
                     base.gallery(), base.curator(), base.shortDescription(), base.description(),
                     base.tags(), base.featured(),
                     base.showStoryLink(),
@@ -105,6 +106,8 @@ public class ExhibitionService {
         if (input.startDate() != null) entity.setStartDate(input.startDate());
         if (input.endDate() != null) entity.setEndDate(input.endDate());
         if (input.coverImage() != null) entity.setCoverImage(input.coverImage());
+        entity.setCoverFocalX(input.coverFocalX());
+        entity.setCoverFocalY(input.coverFocalY());
         if (input.curator() != null) entity.setCurator(input.curator());
         if (input.shortDescription() != null) entity.setShortDescription(input.shortDescription());
         if (input.description() != null) entity.setDescription(input.description());
@@ -142,6 +145,8 @@ public class ExhibitionService {
                 entity.getStartDate(),
                 entity.getEndDate(),
                 entity.getCoverImage(),
+                entity.getCoverFocalX(),
+                entity.getCoverFocalY(),
                 List.copyOf(entity.getGallery()),
                 entity.getCurator(),
                 entity.getShortDescription(),

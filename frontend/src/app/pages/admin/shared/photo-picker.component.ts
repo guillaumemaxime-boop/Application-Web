@@ -91,7 +91,7 @@ import { Photo } from '../../../models/photo.model';
       cursor: pointer; aspect-ratio: 1; overflow: hidden;
     }
     .picker-item:hover { border-color: var(--color-accent); }
-    .picker-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .picker-item img { width: 100%; height: 100%; object-fit: contain; display: block; }
   `]
 })
 export class PhotoPickerComponent implements OnInit, OnDestroy {

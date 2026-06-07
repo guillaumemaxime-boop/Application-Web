@@ -29,7 +29,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       <article class="fade-in">
         <header class="hero">
           <div class="hero-bg">
-            <img [src]="f.coverImage" [alt]="f.title" />
+            <img [src]="f.coverImage" [alt]="f.title" [style.object-position]="coverPosition()" />
           </div>
           <div class="container hero-content">
             <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ f.category }} · {{ f.year }}</span>
@@ -310,6 +310,14 @@ export class FurnitureDetailComponent {
         this.loadingSvc.stop('nav');
       },
     });
+  }
+
+  protected coverPosition(): string {
+    const f = this.item();
+    if (!f) return '50% 50%';
+    const x = f.coverFocalX ?? 50;
+    const y = f.coverFocalY ?? 50;
+    return `${x}% ${y}%`;
   }
 
   protected openViewer() {

@@ -49,7 +49,8 @@ public class FurnitureService {
             Furniture base = toDto(entity);
             return new Furniture(
                     base.id(), base.title(), base.slug(), base.category(), base.material(),
-                    base.year(), base.coverImage(), base.gallery(), base.shortDescription(),
+                    base.year(), base.coverImage(), base.coverFocalX(), base.coverFocalY(),
+                    base.gallery(), base.shortDescription(),
                     base.description(), base.dimensions(), base.designer(), base.featured(),
                     base.showStoryLink(),
                     base.showStoryButton(),
@@ -106,6 +107,9 @@ public class FurnitureService {
         if (input.material() != null) entity.setMaterial(input.material());
         if (input.year() != null) entity.setYear(input.year());
         if (input.coverImage() != null) entity.setCoverImage(input.coverImage());
+        // coverFocalX/Y : null = reset (centrer par defaut cote affichage)
+        entity.setCoverFocalX(input.coverFocalX());
+        entity.setCoverFocalY(input.coverFocalY());
         if (input.shortDescription() != null) entity.setShortDescription(input.shortDescription());
         if (input.description() != null) entity.setDescription(input.description());
         if (input.designer() != null) entity.setDesigner(input.designer());
@@ -145,6 +149,8 @@ public class FurnitureService {
                 entity.getMaterial(),
                 entity.getYear(),
                 entity.getCoverImage(),
+                entity.getCoverFocalX(),
+                entity.getCoverFocalY(),
                 List.copyOf(entity.getGallery()),
                 entity.getShortDescription(),
                 entity.getDescription(),

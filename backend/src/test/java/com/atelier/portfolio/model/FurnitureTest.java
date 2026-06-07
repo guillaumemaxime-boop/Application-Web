@@ -19,6 +19,7 @@ class FurnitureTest {
                 "Chêne massif & cuir tanné",
                 2024,
                 "https://picsum.photos/seed/onde-cover/1200/800",
+                null, null,
                 List.of("https://picsum.photos/seed/onde-1/1200/800"),
                 "Une silhouette inspirée du mouvement de la mer",
                 "Description détaillée",
@@ -59,6 +60,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
+                null, null,
                 List.of(), // Empty gallery
                 "Short description",
                 "Full description",
@@ -95,6 +97,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
+                null, null,
                 galleryImages,
                 "Short description",
                 "Full description",
@@ -126,6 +129,7 @@ class FurnitureTest {
                 "", // Empty material
                 0,   // Year 0
                 "", // Empty coverImage
+                null, null,
                 List.of(),
                 "", // Empty shortDescription
                 "", // Empty description
@@ -153,6 +157,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
+                null, null,
                 List.of("https://example.com/image1.jpg"),
                 "Short description",
                 "Full description",
@@ -173,6 +178,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
+                null, null,
                 List.of("https://example.com/image1.jpg"),
                 "Short description",
                 "Full description",
@@ -200,6 +206,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
+                null, null,
                 List.of(),
                 "Short description",
                 "Full description",
@@ -233,6 +240,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
+                null, null,
                 List.of(),
                 "Short description",
                 "Full description",
@@ -253,6 +261,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
+                null, null,
                 List.of(),
                 "Short description",
                 "Full description",

@@ -30,6 +30,7 @@ type ExpoInternals = {
   newStory: () => void;
   renameStory: (s: unknown) => void;
   deleteStory: (s: unknown) => void;
+  onExhibitionFocalChange: (value: { x: number; y: number } | null) => void;
 };
 
 describe('ExpositionsComponent', () => {
@@ -438,6 +439,33 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne('/api/tags').flush([]);
     fixture.detectChanges();
     expect(toast.error).toHaveBeenCalled();
+  });
+
+  it('onExhibitionFocalChange() met à jour coverFocalX et coverFocalY', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.onExhibitionFocalChange({ x: 25, y: 60 });
+    const v = cmp.exhibitionForm.getRawValue();
+    expect(v['coverFocalX']).toBe(25);
+    expect(v['coverFocalY']).toBe(60);
+  });
+
+  it('onExhibitionFocalChange(null) remet coverFocalX et coverFocalY à null', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.onExhibitionFocalChange({ x: 25, y: 60 });
+    cmp.onExhibitionFocalChange(null);
+    const v = cmp.exhibitionForm.getRawValue();
+    expect(v['coverFocalX']).toBeNull();
+    expect(v['coverFocalY']).toBeNull();
   });
 
 });

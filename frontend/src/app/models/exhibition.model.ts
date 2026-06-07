@@ -10,6 +10,8 @@ export interface Exhibition {
   startDate: string;
   endDate: string;
   coverImage: string;
+  coverFocalX?: number | null;
+  coverFocalY?: number | null;
   gallery: string[];
   curator: string;
   shortDescription: string;

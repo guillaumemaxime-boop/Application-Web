@@ -39,6 +39,7 @@ class FurnitureControllerTest {
                 "Chêne massif & cuir tanné",
                 2024,
                 "https://picsum.photos/seed/onde-cover/1200/800",
+                null, null,
                 List.of("https://picsum.photos/seed/onde-1/1200/800"),
                 "Une silhouette inspirée du mouvement de la mer",
                 "Description détaillée",

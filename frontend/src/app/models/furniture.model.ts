@@ -8,6 +8,8 @@ export interface Furniture {
   material: string;
   year: number;
   coverImage: string;
+  coverFocalX?: number | null;
+  coverFocalY?: number | null;
   gallery: string[];
   shortDescription: string;
   description: string;

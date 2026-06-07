@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: 027-add-cover-focal-furniture
+      author: atelier-lumen
+      changes:
+        - addColumn:
+            tableName: furniture
+            columns:
+              - column:
+                  name: cover_focal_x
+                  type: double precision
+                  remarks: "Point focal X en pourcentage (0-100), 50 = centre"
+              - column:
+                  name: cover_focal_y
+                  type: double precision
+
+  - changeSet:
+      id: 027-add-cover-focal-exhibition
+      author: atelier-lumen
+      changes:
+        - addColumn:
+            tableName: exhibition
+            columns:
+              - column:
+                  name: cover_focal_x
+                  type: double precision
+              - column:
+                  name: cover_focal_y
+                  type: double precision

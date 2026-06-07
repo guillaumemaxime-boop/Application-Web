@@ -46,6 +46,12 @@ public class ExhibitionEntity {
     @Column(name = "cover_image", length = 500)
     private String coverImage;
 
+    @Column(name = "cover_focal_x")
+    private Double coverFocalX;
+
+    @Column(name = "cover_focal_y")
+    private Double coverFocalY;
+
     private String curator;
 
     @Column(name = "short_description", length = 1000)
@@ -103,6 +109,12 @@ public class ExhibitionEntity {
 
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
+
+    public Double getCoverFocalX() { return coverFocalX; }
+    public void setCoverFocalX(Double coverFocalX) { this.coverFocalX = coverFocalX; }
+
+    public Double getCoverFocalY() { return coverFocalY; }
+    public void setCoverFocalY(Double coverFocalY) { this.coverFocalY = coverFocalY; }
 
     public String getCurator() { return curator; }
     public void setCurator(String curator) { this.curator = curator; }

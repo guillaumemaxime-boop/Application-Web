@@ -11,11 +11,12 @@ import { GalleryEditorComponent } from '../shared/gallery-editor.component';
 import { ImageFieldComponent } from '../shared/image-field.component';
 import { TagInputComponent } from '../shared/tag-input.component';
 import { ToastService } from '../shared/toast.service';
+import { FocalPointPickerComponent, FocalPoint } from '../shared/focal-point-picker.component';
 
 @Component({
   selector: 'app-mobilier',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FocalPointPickerComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -80,6 +81,15 @@ import { ToastService } from '../shared/toast.service';
         </label>
 
         <app-image-field formControlName="coverImage" label="Image principale (URL)" />
+
+        <label>
+          <span>Point focal du bandeau</span>
+          <app-focal-point-picker
+            [imageUrl]="furnitureForm.get('coverImage')?.value ?? null"
+            [focalX]="furnitureForm.get('coverFocalX')?.value ?? null"
+            [focalY]="furnitureForm.get('coverFocalY')?.value ?? null"
+            (focalChange)="onFurnitureFocalChange($event)" />
+        </label>
 
         <label>
           <span>Tags</span>
@@ -292,6 +302,8 @@ export class MobilierComponent {
     material: [''],
     designer: ['Milo GUILLAUME Design'],
     coverImage: [''],
+    coverFocalX: this.fb.control<number | null>(null),
+    coverFocalY: this.fb.control<number | null>(null),
     dimW: [null as number | null],
     dimD: [null as number | null],
     dimH: [null as number | null],
@@ -327,6 +339,7 @@ export class MobilierComponent {
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
       material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
+      coverFocalX: null, coverFocalY: null,
       dimW: null, dimD: null, dimH: null, dimNotes: '',
       shortDescription: '', description: '',
       showStoryLink: true,
@@ -345,6 +358,7 @@ export class MobilierComponent {
     this.furnitureForm.reset({
       title: item.title, slug: item.slug, category: item.category, year: item.year,
       material: item.material ?? '', designer: item.designer ?? '', coverImage: item.coverImage ?? '',
+      coverFocalX: item.coverFocalX ?? null, coverFocalY: item.coverFocalY ?? null,
       dimW: dims.w, dimD: dims.d, dimH: dims.h, dimNotes: dims.notes,
       shortDescription: item.shortDescription ?? '', description: item.description ?? '',
       showStoryLink: item.showStoryLink ?? true,
@@ -525,6 +539,8 @@ export class MobilierComponent {
       material: v.material ?? '',
       designer: v.designer ?? '',
       coverImage: v.coverImage ?? '',
+      coverFocalX: v.coverFocalX ?? null,
+      coverFocalY: v.coverFocalY ?? null,
       gallery: [...this.furnitureGallery()],
       dimensions: this.serializeDimensions(v.dimW ?? null, v.dimD ?? null, v.dimH ?? null, v.dimNotes ?? ''),
       shortDescription: v.shortDescription ?? '',
@@ -550,6 +566,14 @@ export class MobilierComponent {
         this.toast.error('Erreur lors de l\'enregistrement.');
       }
     });
+  }
+
+  protected onFurnitureFocalChange(value: FocalPoint | null): void {
+    if (value) {
+      this.furnitureForm.patchValue({ coverFocalX: value.x, coverFocalY: value.y });
+    } else {
+      this.furnitureForm.patchValue({ coverFocalX: null, coverFocalY: null });
+    }
   }
 
   removeFurniture(item: Furniture): void {

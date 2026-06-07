@@ -83,6 +83,7 @@ class FurnitureServiceTest {
                 null, "Linéa — Banc en frêne", null,
                 "Sièges", "Frêne huilé", 2026,
                 "https://example.com/linea.jpg",
+                null, null,
                 List.of("https://example.com/linea-1.jpg"),
                 "Banc épuré", "Description longue",
                 List.of("L 180 cm", "H 45 cm"),
@@ -103,7 +104,8 @@ class FurnitureServiceTest {
         Furniture input = new Furniture(
                 null, "Echo", "echo-custom-slug",
                 "Sièges", "Chêne", 2026,
-                null, List.of(), "court", "long",
+                null, null, null,
+                List.of(), "court", "long",
                 List.of(), "Milo GUILLAUME Design", false, true, true, List.of(), List.of()
         );
 
@@ -119,6 +121,7 @@ class FurnitureServiceTest {
                 null, "Solstice — Étagère en chêne", null,
                 "Rangements", "Chêne massif", 2026,
                 "https://example.com/solstice.jpg",
+                null, null,
                 List.of(),
                 "Étagère minimaliste", "Description longue",
                 List.of("L 120 cm", "H 180 cm"),
@@ -140,7 +143,8 @@ class FurnitureServiceTest {
         Furniture changes = new Furniture(
                 original.id(), "Onde — Édition limitée", original.slug(),
                 original.category(), original.material(), original.year(),
-                original.coverImage(), original.gallery(),
+                original.coverImage(), original.coverFocalX(), original.coverFocalY(),
+                original.gallery(),
                 "Nouvelle description courte", original.description(),
                 original.dimensions(), original.designer(), false, true, true, List.of(),
                 List.of("métal", "édition limitée")
@@ -159,7 +163,8 @@ class FurnitureServiceTest {
     void testUpdate_NonExistingSlug_ReturnsEmpty() {
         Furniture changes = new Furniture(
                 null, "X", null, "Tables", null, 2026,
-                null, List.of(), "", "", List.of(), "", false, true, true, List.of(), List.of()
+                null, null, null,
+                List.of(), "", "", List.of(), "", false, true, true, List.of(), List.of()
         );
 
         Optional<Furniture> updated = furnitureService.update("non-existent", changes);
@@ -191,7 +196,8 @@ class FurnitureServiceTest {
         Furniture f = new Furniture(
                 null, "Titre", null,
                 "Sièges", null, 2026,
-                null, List.of(), null, null,
+                null, null, null,
+                List.of(), null, null,
                 List.of(), null, false, true, true, List.of(),
                 List.of("a".repeat(256))
         );
@@ -207,7 +213,8 @@ class FurnitureServiceTest {
         Furniture f = new Furniture(
                 null, "Titre", null,
                 "Sièges", null, 2026,
-                null, List.of(), null, null,
+                null, null, null,
+                List.of(), null, null,
                 List.of(), null, false, true, true, List.of(),
                 List.of("a".repeat(255))
         );
