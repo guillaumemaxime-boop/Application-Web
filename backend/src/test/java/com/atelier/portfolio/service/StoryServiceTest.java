@@ -1,9 +1,13 @@
 package com.atelier.portfolio.service;
 
+import com.atelier.portfolio.entity.ExhibitionEntity;
+import com.atelier.portfolio.entity.FurnitureEntity;
 import com.atelier.portfolio.model.Slide;
 import com.atelier.portfolio.model.Story;
 import com.atelier.portfolio.model.StoryInput;
 import com.atelier.portfolio.model.StoryWithSlides;
+import com.atelier.portfolio.repository.ExhibitionRepository;
+import com.atelier.portfolio.repository.FurnitureRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +23,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class StoryServiceTest {
 
     @Autowired StoryService service;
+    @Autowired FurnitureRepository furnitureRepo;
+    @Autowired ExhibitionRepository exhibitionRepo;
 
     @Test
     void createStoryAssignsIncrementalPosition() {
@@ -63,5 +69,57 @@ class StoryServiceTest {
         service.delete(s.id());
         assertThatThrownBy(() -> service.update(s.id(), new StoryInput("furniture", "f-001", "X", "https://example.com/c.jpg")))
                 .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void findBySlugWithSlides_furnitureShowStoryLinkTrue_propagatesTrue() {
+        FurnitureEntity f = furnitureRepo.findById("f-001").orElseThrow();
+        f.setShowStoryLink(true);
+        furnitureRepo.save(f);
+
+        Story s = service.create(new StoryInput("furniture", "f-001", "Test link true", "https://example.com/c.jpg"));
+        StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
+
+        assertThat(result.ownerShowStoryLink()).isTrue();
+        assertThat(result.ownerSlug()).isEqualTo(f.getSlug());
+    }
+
+    @Test
+    void findBySlugWithSlides_furnitureShowStoryLinkFalse_propagatesFalse() {
+        FurnitureEntity f = furnitureRepo.findById("f-001").orElseThrow();
+        f.setShowStoryLink(false);
+        furnitureRepo.save(f);
+
+        Story s = service.create(new StoryInput("furniture", "f-001", "Test link false", "https://example.com/c.jpg"));
+        StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
+
+        assertThat(result.ownerShowStoryLink()).isFalse();
+        assertThat(result.ownerSlug()).isEqualTo(f.getSlug());
+    }
+
+    @Test
+    void findBySlugWithSlides_exhibitionShowStoryLinkTrue_propagatesTrue() {
+        ExhibitionEntity ex = exhibitionRepo.findById("e-001").orElseThrow();
+        ex.setShowStoryLink(true);
+        exhibitionRepo.save(ex);
+
+        Story s = service.create(new StoryInput("exhibition", "e-001", "Test exh link true", "https://example.com/c.jpg"));
+        StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
+
+        assertThat(result.ownerShowStoryLink()).isTrue();
+        assertThat(result.ownerSlug()).isEqualTo(ex.getSlug());
+    }
+
+    @Test
+    void findBySlugWithSlides_exhibitionShowStoryLinkFalse_propagatesFalse() {
+        ExhibitionEntity ex = exhibitionRepo.findById("e-001").orElseThrow();
+        ex.setShowStoryLink(false);
+        exhibitionRepo.save(ex);
+
+        Story s = service.create(new StoryInput("exhibition", "e-001", "Test exh link false", "https://example.com/c.jpg"));
+        StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
+
+        assertThat(result.ownerShowStoryLink()).isFalse();
+        assertThat(result.ownerSlug()).isEqualTo(ex.getSlug());
     }
 }

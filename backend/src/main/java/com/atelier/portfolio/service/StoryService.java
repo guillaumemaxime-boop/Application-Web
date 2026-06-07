@@ -1,5 +1,7 @@
 package com.atelier.portfolio.service;
 
+import com.atelier.portfolio.entity.ExhibitionEntity;
+import com.atelier.portfolio.entity.FurnitureEntity;
 import com.atelier.portfolio.entity.StoryEntity;
 import com.atelier.portfolio.entity.StorySlideEntity;
 import com.atelier.portfolio.entity.StorySlideSpecEntry;
@@ -8,6 +10,8 @@ import com.atelier.portfolio.model.SpecEntry;
 import com.atelier.portfolio.model.Story;
 import com.atelier.portfolio.model.StoryInput;
 import com.atelier.portfolio.model.StoryWithSlides;
+import com.atelier.portfolio.repository.ExhibitionRepository;
+import com.atelier.portfolio.repository.FurnitureRepository;
 import com.atelier.portfolio.repository.StoryRepository;
 import com.atelier.portfolio.repository.StorySlideRepository;
 import org.springframework.http.HttpStatus;
@@ -27,10 +31,15 @@ public class StoryService {
 
     private final StoryRepository storyRepo;
     private final StorySlideRepository slideRepo;
+    private final FurnitureRepository furnitureRepo;
+    private final ExhibitionRepository exhibitionRepo;
 
-    public StoryService(StoryRepository storyRepo, StorySlideRepository slideRepo) {
+    public StoryService(StoryRepository storyRepo, StorySlideRepository slideRepo,
+                        FurnitureRepository furnitureRepo, ExhibitionRepository exhibitionRepo) {
         this.storyRepo = storyRepo;
         this.slideRepo = slideRepo;
+        this.furnitureRepo = furnitureRepo;
+        this.exhibitionRepo = exhibitionRepo;
     }
 
     public List<Story> findByOwner(String ownerKind, String ownerId) {
@@ -53,8 +62,24 @@ public class StoryService {
     }
 
     public Optional<StoryWithSlides> findBySlugWithSlides(String slug) {
-        return storyRepo.findBySlug(slug)
-                .map(e -> new StoryWithSlides(toDto(e), loadSlides(e.getId())));
+        return storyRepo.findBySlug(slug).map(e -> {
+            List<Slide> slides = loadSlides(e.getId());
+            boolean showLink;
+            String ownerSlug;
+            if ("furniture".equals(e.getOwnerKind())) {
+                var f = furnitureRepo.findById(e.getOwnerId());
+                showLink = f.map(FurnitureEntity::isShowStoryLink).orElse(true);
+                ownerSlug = f.map(FurnitureEntity::getSlug).orElse("");
+            } else if ("exhibition".equals(e.getOwnerKind())) {
+                var ex = exhibitionRepo.findById(e.getOwnerId());
+                showLink = ex.map(ExhibitionEntity::isShowStoryLink).orElse(true);
+                ownerSlug = ex.map(ExhibitionEntity::getSlug).orElse("");
+            } else {
+                showLink = false;
+                ownerSlug = "";
+            }
+            return new StoryWithSlides(toDto(e), slides, showLink, ownerSlug);
+        });
     }
 
     public List<Slide> findSlidesByStoryId(String storyId) {

@@ -31,7 +31,7 @@ class StoryControllerTest {
     @Test
     void bySlugReturns200WhenFound() {
         Story s = new Story("st-1", "furniture", "f-001", "T", "c.jpg", "test-slug", 0, Instant.now());
-        when(stories.findBySlugWithSlides("test-slug")).thenReturn(Optional.of(new StoryWithSlides(s, List.of())));
+        when(stories.findBySlugWithSlides("test-slug")).thenReturn(Optional.of(new StoryWithSlides(s, List.of(), true, "test-slug")));
         assertThat(controller.bySlug("test-slug").getStatusCode().value()).isEqualTo(200);
     }
 

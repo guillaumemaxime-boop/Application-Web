@@ -71,11 +71,15 @@ describe('HomeComponent', () => {
   const mockFurnitureStoryWithSlides: StoryWithSlides = {
     story: mockFurnitureStory,
     slides: [{ type: 'cover', id: 's1', position: 0, src: 'cover.jpg' }] as any,
+    ownerShowStoryLink: true,
+    ownerSlug: 'onde-fauteuil-sculpte',
   };
 
   const mockExhibitionStoryWithSlides: StoryWithSlides = {
     story: mockExhibitionStory,
     slides: [{ type: 'cover', id: 's2', position: 0, src: 'cover2.jpg' }] as any,
+    ownerShowStoryLink: true,
+    ownerSlug: 'matieres-silencieuses',
   };
 
   beforeEach(async () => {
@@ -180,5 +184,35 @@ describe('HomeComponent', () => {
     (component as any).viewerQueue.set([{ title: 't', subtitle: 's', slides: [] }]);
     (component as any).closeViewer();
     expect((component as any).viewerQueue().length).toBe(0);
+  });
+
+  it('openStoryFromSlider ajoute une slide link quand ownerShowStoryLink est true', () => {
+    const storyRef = { slug: mockFurnitureStory.slug, ownerLabel: 'Tabouret Aurore' };
+    portfolioServiceSpy.getStoryBySlug.and.returnValue(of({
+      story: mockFurnitureStory,
+      slides: [],
+      ownerShowStoryLink: true,
+      ownerSlug: 'onde-fauteuil-sculpte',
+    }));
+    (component as any).openStoryFromSlider(storyRef);
+    const queue = (component as any).viewerQueue();
+    expect(queue.length).toBe(1);
+    const slides = queue[0].slides as Array<{ type: string }>;
+    expect(slides[slides.length - 1].type).toBe('link');
+  });
+
+  it('openStoryFromSlider n\'ajoute pas de slide link quand ownerShowStoryLink est false', () => {
+    const storyRef = { slug: mockFurnitureStory.slug, ownerLabel: 'Tabouret Aurore' };
+    portfolioServiceSpy.getStoryBySlug.and.returnValue(of({
+      story: mockFurnitureStory,
+      slides: [],
+      ownerShowStoryLink: false,
+      ownerSlug: 'onde-fauteuil-sculpte',
+    }));
+    (component as any).openStoryFromSlider(storyRef);
+    const queue = (component as any).viewerQueue();
+    expect(queue.length).toBe(1);
+    const slides = queue[0].slides as Array<{ type: string }>;
+    expect(slides.every(s => s.type !== 'link')).toBeTrue();
   });
 });

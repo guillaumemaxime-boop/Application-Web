@@ -166,18 +166,18 @@ export class HomeComponent implements OnInit {
   }
 
   openStoryFromSlider(story: SliderStoryRef): void {
-    this.portfolio.getStoryBySlug(story.slug).subscribe(({ story: s, slides }) => {
+    this.portfolio.getStoryBySlug(story.slug).subscribe(({ story: s, slides, ownerShowStoryLink, ownerSlug }) => {
       this.viewerQueue.set([{
         title: s.title,
         subtitle: story.ownerLabel,
         slides: enrichSlides({
-          slug: s.slug,
+          slug: ownerSlug,
           coverImage: s.coverImage,
           slides: slides ?? [],
-          showStoryLink: false,
+          showStoryLink: ownerShowStoryLink,
         }, s.ownerKind),
         kind: s.ownerKind,
-        slug: s.slug,
+        slug: ownerSlug,
       }]);
     });
   }

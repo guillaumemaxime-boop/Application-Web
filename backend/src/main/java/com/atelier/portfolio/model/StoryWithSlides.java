@@ -4,5 +4,7 @@ import java.util.List;
 
 public record StoryWithSlides(
         Story story,
-        List<Slide> slides
+        List<Slide> slides,
+        boolean ownerShowStoryLink,
+        String ownerSlug
 ) {}

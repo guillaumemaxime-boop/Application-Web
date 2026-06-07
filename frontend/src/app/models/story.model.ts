@@ -21,4 +21,6 @@ export interface StoryInput {
 export interface StoryWithSlides {
   story: Story;
   slides: Slide[];
+  ownerShowStoryLink: boolean;
+  ownerSlug: string;
 }
