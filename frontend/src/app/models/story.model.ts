@@ -1,4 +1,5 @@
 import { Slide } from './slide.model';
+import { Crop } from './crop.model';
 
 export interface Story {
   id: string;
@@ -6,6 +7,7 @@ export interface Story {
   ownerId: string;
   title: string;
   coverImage: string;
+  coverCrop?: Crop | null;
   slug: string;
   position: number;
   createdAt: string;
