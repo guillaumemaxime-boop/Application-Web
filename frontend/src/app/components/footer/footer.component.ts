@@ -16,6 +16,7 @@ import { PortfolioService } from '../../services/portfolio.service';
               <li><a routerLink="/">Accueil</a></li>
               @if (mobilierVisible()) { <li><a routerLink="/mobilier">Mobilier</a></li> }
               @if (expositionsVisible()) { <li><a routerLink="/expositions">Expositions</a></li> }
+              @if (creationsVisible()) { <li><a routerLink="/creations">Créations</a></li> }
               @if (studioVisible()) { <li><a routerLink="/studio">Studio</a></li> }
               <li><a routerLink="/contact">Contact</a></li>
             </ul>
@@ -122,6 +123,7 @@ export class FooterComponent {
   protected readonly location = signal('');
   protected readonly mobilierVisible = signal(true);
   protected readonly expositionsVisible = signal(true);
+  protected readonly creationsVisible = signal(true);
   protected readonly studioVisible = signal(true);
   protected readonly instagram = signal('');
   protected readonly linkedin = signal('');
@@ -133,6 +135,7 @@ export class FooterComponent {
       this.location.set(content['profile.location'] ?? '');
       this.mobilierVisible.set(content['nav.mobilier.visible'] !== 'false');
       this.expositionsVisible.set(content['nav.expositions.visible'] !== 'false');
+      this.creationsVisible.set(content['nav.creations.visible'] !== 'false');
       this.studioVisible.set(content['nav.studio.visible'] !== 'false');
       this.instagram.set(content['profile.instagram'] ?? '');
       this.linkedin.set(content['profile.linkedin'] ?? '');

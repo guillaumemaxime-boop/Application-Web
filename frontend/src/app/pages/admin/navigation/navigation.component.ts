@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { ToastService } from '../shared/toast.service';
 
-type NavSection = 'mobilier' | 'expositions' | 'studio';
+type NavSection = 'mobilier' | 'expositions' | 'studio' | 'creations';
 
 @Component({
   selector: 'app-navigation',
@@ -24,6 +24,13 @@ type NavSection = 'mobilier' | 'expositions' | 'studio';
           <span class="title">Expositions</span>
           <label class="incl">
             <input type="checkbox" [checked]="navExpositionsVisible()" (change)="toggleNavSection('expositions', $event)" /> Visible
+          </label>
+        </li>
+        <li class="home-row">
+          <span class="kind-badge">MENU</span>
+          <span class="title">Créations</span>
+          <label class="incl">
+            <input type="checkbox" [checked]="navCreationsVisible()" (change)="toggleNavSection('creations', $event)" /> Visible
           </label>
         </li>
         <li class="home-row">
@@ -52,6 +59,7 @@ export class NavigationComponent {
 
   protected readonly navMobilierVisible = signal(true);
   protected readonly navExpositionsVisible = signal(true);
+  protected readonly navCreationsVisible = signal(true);
   protected readonly navStudioVisible = signal(true);
 
   constructor() {
@@ -59,6 +67,7 @@ export class NavigationComponent {
       next: content => {
         this.navMobilierVisible.set(content['nav.mobilier.visible'] !== 'false');
         this.navExpositionsVisible.set(content['nav.expositions.visible'] !== 'false');
+        this.navCreationsVisible.set(content['nav.creations.visible'] !== 'false');
         this.navStudioVisible.set(content['nav.studio.visible'] !== 'false');
       },
       error: () => this.toast.error('Impossible de charger la navigation.'),
@@ -69,6 +78,7 @@ export class NavigationComponent {
     const visible = (event.target as HTMLInputElement).checked;
     if (section === 'mobilier') this.navMobilierVisible.set(visible);
     else if (section === 'expositions') this.navExpositionsVisible.set(visible);
+    else if (section === 'creations') this.navCreationsVisible.set(visible);
     else this.navStudioVisible.set(visible);
     this.portfolio.updateContent({ [`nav.${section}.visible`]: visible ? 'true' : 'false' }).subscribe({
       next: () => this.toast.success('Visibilité de la section enregistrée.'),

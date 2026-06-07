@@ -74,11 +74,21 @@ describe('HeaderComponent', () => {
     setup({
       'nav.mobilier.visible': 'false',
       'nav.expositions.visible': 'false',
+      'nav.creations.visible': 'false',
       'nav.studio.visible': 'false',
     });
     const navLinks = fixture.nativeElement.querySelectorAll('nav a');
     const labels = Array.from(navLinks).map((a: any) => a.textContent.trim());
-    expect(labels).toEqual(['Accueil', 'Créations', 'Contact']);
+    expect(labels).toEqual(['Accueil', 'Contact']);
+  });
+
+  it('hides Créations when nav.creations.visible is false', () => {
+    setup({ 'nav.creations.visible': 'false' });
+    const navLinks = fixture.nativeElement.querySelectorAll('nav a');
+    const labels = Array.from(navLinks).map((a: any) => a.textContent.trim());
+    expect(labels).not.toContain('Créations');
+    expect(labels).toContain('Accueil');
+    expect(labels).toContain('Contact');
   });
 
   it('should not have an admin link', () => {
