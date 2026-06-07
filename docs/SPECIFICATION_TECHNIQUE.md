@@ -1,7 +1,7 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.1.0
-**Date** : 11/05/2026
+**Version** : 2.2.0
+**Date** : 07/06/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
 
@@ -50,12 +50,15 @@
 
 - Catalogue mobilier : liste, filtrage par catégorie, fiche détaillée
 - Expositions : liste chronologique, fiche détaillée
+- **Page Créations** (`/creations`) : catalogue agrégé mobilier + expositions, filtres type / années / tags, deep-link via query params
 - Studio : profil, biographie, presse, distinctions
-- Administration : CRUD complet mobilier & expositions (interface web, authentification JWT)
+- **Stories éditoriales** : N stories par pièce/exposition, slides visuels, viewer plein écran
+- **Sliders d'actualités** : carrousels composés de stories assignés à 3 zones de la home (`news.primary/.secondary/.tertiary`)
+- Administration : CRUD complet mobilier & expositions, page Accueil (masonry + sliders), navigation CMS, tags
 - Authentification : login JWT via `POST /api/auth/login`, garde Angular (`authGuard`), intercepteur HTTP
 - Santé API : endpoint `/actuator/health` pour les healthchecks
 
-**Hors périmètre actuel :** formulaire de contact, paiement, internationalisation, SSR.
+**Hors périmètre actuel :** paiement, internationalisation, SSR.
 
 ---
 
@@ -191,16 +194,72 @@ exhibition_tag (N:1 → exhibition, cascade delete)
 exhibition_id FK
 tag           VARCHAR(100)
 position      INTEGER
+
+furniture_tag (N:1 → furniture, cascade delete)
+─────────────────────────────────────────────────────
+furniture_id  FK
+position      INTEGER     (PK composite avec furniture_id)
+entry_value   VARCHAR(255) NOT NULL
+
+story
+─────────────────────────────────────────────────────
+id            VARCHAR(50)  PK
+owner_kind    VARCHAR(20)  NOT NULL   "furniture" | "exhibition"
+owner_id      VARCHAR(50)  NOT NULL
+title         VARCHAR(200) NOT NULL
+cover_image   VARCHAR(500) NOT NULL
+slug          VARCHAR(200) NOT NULL UNIQUE
+position      INTEGER      NOT NULL DEFAULT 0
+created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+Index : idx_story_owner_pos(owner_kind, owner_id, position)
+
+story_slide (N:1 → story via story_id, cascade delete)
+─────────────────────────────────────────────────────
+id            VARCHAR(50)  PK
+story_id      FK → story(id) CASCADE
+type          VARCHAR(20)  NOT NULL   "image" | "video" | "quote" | ...
+position      INTEGER      NOT NULL
+(+ colonnes métadonnées selon type : image_url, caption, quote_text, etc.)
+Index : idx_story_slide_story_pos(story_id, position)
+
+news_slider
+─────────────────────────────────────────────────────
+id            VARCHAR(50)  PK
+slug          VARCHAR(100) NOT NULL UNIQUE
+title         VARCHAR(200) NOT NULL
+zone_key      VARCHAR(50)  nullable   "news.primary" | "news.secondary" | "news.tertiary"
+created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+
+slider_story (table de jointure news_slider ↔ story, cascade delete des deux côtés)
+─────────────────────────────────────────────────────
+slider_id     FK → news_slider(id) CASCADE   PK composite
+story_id      FK → story(id) CASCADE         PK composite
+position      INTEGER      NOT NULL
+Index : idx_slider_story_position(slider_id, position)
 ```
 
 ### 3.2 Fichiers de migration Liquibase
 
 | Fichier | Contenu |
 |---------|---------|
-| `001-create-schema.yaml` | Création de toutes les tables |
+| `001-create-schema.yaml` | Création des tables initiales |
 | `002-seed-furniture.yaml` | Données initiales mobilier |
 | `003-seed-exhibitions.yaml` | Données initiales expositions |
 | `004-rename-studio-brand.yaml` | Migration rebrand Atelier Lumen → Milo GUILLAUME Design |
+| `005-create-site-content.yaml` | Table `site_content` (blocs texte CMS) |
+| `006-create-photos.yaml` | Table `photo` (médiathèque) |
+| `007-create-story-slides.yaml` | Table `story_slide` (slides éditoriaux, premier modèle) |
+| `008-create-home-feed.yaml` | Tables `home_feed_entry` + métadonnées accueil |
+| `009-create-category-meta.yaml` | Table `furniture_category_meta` |
+| `013-create-exhibition-meta.yaml` | Table `exhibition_meta` |
+| `015-create-contact-requests.yaml` | Table `contact_request` |
+| `016-create-mail-settings.yaml` | Table `mail_settings` |
+| `021-add-tags-to-photo.yaml` | Tags sur photos |
+| `022-create-story.yaml` | Table `story` — entité éditoriale (1 owner → N stories) |
+| `023-seed-default-stories.yaml` | Backfill d'une story par owner existant |
+| `024-refactor-story-slide.yaml` | Ajout `story_id` sur `story_slide` (nullable → backfill → NOT NULL → FK → drop ancien index) |
+| `025-create-news-slider.yaml` | Tables `news_slider` + `slider_story` |
+| `026-add-tags-to-furniture.yaml` | Table `furniture_tag` (`@ElementCollection` sur mobilier) |
 
 ### 3.3 Records Java (DTOs)
 
@@ -230,6 +289,28 @@ record Profile(
     List<Map<String, String>> press,  // [{title, year}]
     List<String> awards
 ) {}
+
+// model/Story.java
+record Story(
+    String id, String ownerKind, String ownerId,
+    String title, String coverImage, String slug, int position
+) {}
+
+// model/StoryWithSlides.java
+record StoryWithSlides(
+    String id, String ownerKind, String ownerId,
+    String title, String coverImage, String slug, int position,
+    List<Slide> slides
+) {}
+
+// model/Slide.java
+record Slide(String id, String type, int position, /* champs métadonnées selon type */ ...) {}
+
+// model/NewsSlider.java
+record NewsSlider(String id, String slug, String title, String zoneKey, List<Story> stories) {}
+
+// model/NewsSliderView.java — projection allégée pour l'affichage public
+record NewsSliderView(String id, String slug, String title, String zoneKey, List<StoryWithSlides> stories) {}
 ```
 
 ### 3.4 Interfaces TypeScript (frontend)
@@ -259,6 +340,28 @@ interface Profile {
   contactEmail: string; location: string;
   press: { title: string; year: string }[];
   awards: string[];
+}
+
+// models/story.model.ts
+interface Story {
+  id: string; ownerKind: string; ownerId: string;
+  title: string; coverImage: string; slug: string; position: number;
+}
+interface StoryWithSlides extends Story { slides: Slide[]; }
+interface Slide { id: string; type: string; position: number; [key: string]: unknown; }
+
+// models/news-slider.model.ts
+interface NewsSliderView {
+  id: string; slug: string; title: string; zoneKey: string | null;
+  stories: StoryWithSlides[];
+}
+
+// models/creation.model.ts
+interface CreationItem {
+  kind: 'furniture' | 'exhibition';
+  slug: string; title: string; cover: string;
+  subtitle: string; year: number;
+  tags: string[]; href: string;
 }
 ```
 
@@ -336,7 +439,79 @@ Ex. `"Chaise Éclat"` → `"chaise-eclat"`
 
 > Données hardcodées dans `ProfileController`. Pour les modifier, éditer directement le contrôleur.
 
-### 4.5 Actuator
+### 4.5 Tags — `/api/tags`
+
+| Méthode | Endpoint | Description | Réponse | Auth |
+|---------|----------|-------------|---------|------|
+| GET | `/api/tags` | Union dédupliquée + triée (FR) des tags mobilier et expositions | `string[]` 200 | `permitAll` |
+
+### 4.6 Stories & Sliders d'actualités
+
+#### Stories publiques — `/api/stories`
+
+| Méthode | Endpoint | Description | Réponse | Auth |
+|---------|----------|-------------|---------|------|
+| GET | `/api/stories?ownerKind=&ownerId=` | Stories d'un owner (mobilier ou exposition) | `Story[]` 200 | `permitAll` |
+| GET | `/api/stories/{slug}` | Story avec ses slides, par slug | `StoryWithSlides` 200 / 404 | `permitAll` |
+
+**Shape `Story` :**
+```json
+{
+  "id": "s-abc123",
+  "ownerKind": "furniture",
+  "ownerId": "f-a3f9c12b",
+  "title": "En atelier",
+  "coverImage": "https://...",
+  "slug": "chaise-eclat-en-atelier",
+  "position": 0
+}
+```
+
+#### Sliders d'actualités publics — `/api/sliders`
+
+| Méthode | Endpoint | Description | Réponse | Auth |
+|---------|----------|-------------|---------|------|
+| GET | `/api/sliders` | Tous les sliders publiés avec leurs stories et slides | `NewsSliderView[]` 200 | `permitAll` |
+
+**Shape `NewsSliderView` :**
+```json
+{
+  "id": "sl-xyz",
+  "slug": "actualites-printemps",
+  "title": "Actualités printemps 2026",
+  "zoneKey": "news.primary",
+  "stories": [{ "id": "...", "title": "...", "slides": [...] }]
+}
+```
+
+Zones reconnues : `news.primary`, `news.secondary`, `news.tertiary`. La `zoneKey` peut être `null` (slider non assigné à la home).
+
+#### Stories admin — `/api/admin/stories` (JWT requis)
+
+| Méthode | Endpoint | Description | Réponse |
+|---------|----------|-------------|---------|
+| GET | `/api/admin/stories?ownerKind=&ownerId=` | Stories d'un owner | `Story[]` 200 |
+| GET | `/api/admin/stories/all` | Toutes les stories (page Sliders) | `Story[]` 200 |
+| POST | `/api/admin/stories` | Créer une story | `Story` 200 |
+| PUT | `/api/admin/stories/{id}` | Modifier une story | `Story` 200 |
+| PUT | `/api/admin/stories/{id}/position` | Mettre à jour la position | 204 |
+| DELETE | `/api/admin/stories/{id}` | Supprimer une story | 204 |
+| GET | `/api/admin/stories/{id}/slides` | Slides d'une story | `Slide[]` 200 |
+| PUT | `/api/admin/stories/{id}/slides` | Remplacer les slides | `Slide[]` 200 |
+
+#### Sliders admin — `/api/admin/sliders` (JWT requis)
+
+| Méthode | Endpoint | Description | Réponse |
+|---------|----------|-------------|---------|
+| GET | `/api/admin/sliders` | Tous les sliders | `NewsSlider[]` 200 |
+| POST | `/api/admin/sliders` | Créer un slider | `NewsSlider` 200 |
+| PUT | `/api/admin/sliders/{id}` | Modifier un slider | `NewsSlider` 200 |
+| DELETE | `/api/admin/sliders/{id}` | Supprimer un slider | 204 |
+| PUT | `/api/admin/sliders/{id}/stories` | Remplacer la liste des stories (max 50) | `NewsSlider` 200 / 400 |
+
+**Validation :** `storyIds.size() > 50` → 400. `zoneKey` invalide → 400 (`IllegalArgumentException` traduit par `@ExceptionHandler`).
+
+### 4.7 Actuator
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
@@ -364,9 +539,15 @@ Ex. `"Chaise Éclat"` → `"chaise-eclat"`
 | `mobilier/:slug` | `FurnitureDetailComponent` | ✅ | — | (dynamique : titre du meuble) |
 | `expositions` | `ExhibitionsListComponent` | ✅ | — | "Expositions — Milo GUILLAUME Design" |
 | `expositions/:slug` | `ExhibitionDetailComponent` | ✅ | — | (dynamique : titre de l'exposition) |
+| `creations` | `CreationsComponent` | ✅ | — | "Créations — Milo GUILLAUME Design" |
 | `studio` | `StudioComponent` | ✅ | — | "Studio — Milo GUILLAUME Design" |
 | `login` | `LoginComponent` | ✅ | — | "Connexion — Milo GUILLAUME Design" |
-| `admin` | `AdminComponent` | ✅ | `authGuard` | "Administration — Milo GUILLAUME Design" |
+| `admin` | `AdminLayoutComponent` | ✅ | `authGuard` | — |
+| `admin/accueil` | `AccueilComponent` | ✅ | `authGuard` | "Accueil — Admin" |
+| `admin/mobilier` | `MobilierComponent` | ✅ | `authGuard` | "Mobilier — Admin" |
+| `admin/expositions` | `ExpositionsAdminComponent` | ✅ | `authGuard` | "Expositions — Admin" |
+| `admin/navigation` | `NavigationComponent` | ✅ | `authGuard` | "Navigation — Admin" |
+| `admin/sliders` | redirect → `admin/accueil` | — | — | (fusionné dans Accueil) |
 | `**` | redirect → `/` | — | — | — |
 
 ### 5.3 Services
@@ -391,6 +572,10 @@ Singleton (`providedIn: 'root'`). Base : `/api`. Utilise `HttpClient` injecté v
 | `updateExhibition(slug, input)` | PUT | `/api/exhibitions/{slug}` |
 | `deleteExhibition(slug)` | DELETE | `/api/exhibitions/{slug}` |
 | `getProfile()` | GET | `/api/profile` |
+| `getAllTags()` | GET | `/api/tags` |
+| `getSliders()` | GET | `/api/sliders` |
+| `getStoriesByOwner(ownerKind, ownerId)` | GET | `/api/stories?ownerKind=&ownerId=` |
+| `getStoryBySlug(slug)` | GET | `/api/stories/{slug}` |
 
 #### `AuthService`
 
@@ -438,12 +623,44 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - Appelle `AuthService.login()` → redirige vers `/admin` en cas de succès
 - Affiche un message d'erreur sur 401
 
-#### `AdminComponent` (`/admin`)
+#### `CreationsComponent` (`/creations`)
+- Charge mobilier + expositions en parallèle via `forkJoin`
+- Filtre type (Tout / Mobilier / Expositions), années, tags — union OR
+- Facettes calculées en `signal`/`computed`, compteurs dynamiques par facette
+- Synchronisation des filtres dans les query params (`?tags=&years=&kind=`) pour le deep-linking
+- Clic sur un tag dans une carte active directement le filtre correspondant
+
+#### `HomeComponent` (`/`)
+- Sections : hero, mobilier featured, sliders d'actualités (zones `news.primary/.secondary/.tertiary`), expositions featured, pull-quote
+- Consomme `GET /api/sliders` pour afficher les `NewsSliderComponent` de la home
+- Ouvre le viewer plein écran (`StoryViewerComponent`) au clic sur une story
+
+#### `AdminLayoutComponent` + sous-pages admin (`/admin/**`)
 - Protégé par `authGuard` — redirige vers `/login` si non authentifié
-- Onglets : Mobilier | Expositions | Textes du site | Médiathèque
-- Sidebar liste + panneau édition (ReactiveFormsModule)
-- CRUD complet avec messages flash (auto-dismiss 4s)
-- Signals : `tab`, `saving`, `message`, `messageType`, `editingFurnitureSlug`, `editingExhibitionSlug`
+- Navigation latérale : Accueil · Mobilier · Expositions · Navigation · Médiathèque · Textes · Typographie · Statistiques · Paramètres
+- `AccueilComponent` (`/admin/accueil`) : masonry home feed + composition des sliders d'actualités (drag & drop stories, assignation zone)
+- `/admin/sliders` redirige vers `/admin/accueil` (sliders fusionnés dans la page Accueil)
+
+### 5.5 Composants partagés
+
+#### `<app-tag-input>` (`TagInputComponent`)
+
+Chemin : `frontend/src/app/pages/admin/shared/tag-input.component.ts`
+
+- Implémente `ControlValueAccessor` — intégrable dans les formulaires `ReactiveFormsModule`.
+- Rendu en chips (tags actuels) + champ texte autocomplete.
+- WAI-ARIA combobox/listbox : `role="combobox"` sur l'input, `role="listbox"` sur la liste, `aria-activedescendant` sur l'option active.
+- Navigation clavier complète : flèches haut/bas pour parcourir les suggestions, Entrée pour valider, Échap pour fermer, virgule comme séparateur, Backspace sur champ vide pour retirer le dernier tag.
+- `@Input() suggestions: string[]` — liste d'autocomplétion injectée par le parent (ex. résultat de `GET /api/tags`).
+
+#### `<app-story-viewer>` (`StoryViewerComponent`)
+
+Chemin : `frontend/src/app/components/story-viewer/story-viewer.component.ts`
+
+- Modale plein écran pour visionner les slides d'une story.
+- Focus trap à l'ouverture (RGAA B-02) ; fermeture par touche Échap ou bouton Fermer ; restore focus sur l'élément déclencheur à la fermeture.
+- Navigation tactile (swipe) et clavier (flèches gauche/droite).
+- Réutilisable depuis `HomeComponent` (sliders d'actualités), fiches mobilier et fiches exposition.
 
 ---
 
@@ -760,6 +977,11 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 0009 | CORS en développement local |
 | 0010 | Supervision et monitoring |
 | 0011 | Authentification JWT admin |
+| 0012 | Mesure d'audience Umami |
+| 0013 | Configuration SMTP en base chiffrée (superseded) |
+| 0014 | Bascule vers Resend pour les mails transactionnels |
+| 0015 | Stories multiples par owner + sliders d'actualités |
+| 0016 | Tags partagés mobilier/exposition et page publique /creations |
 
 ---
 
@@ -770,3 +992,4 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 1.0.0 | 01/05/2026 | Spécification fonctionnelle initiale (Atelier Lumen) |
 | 2.0.0 | 04/05/2026 | Refonte complète — spécification technique synchronisée avec l'implémentation réelle (rebrand Milo GUILLAUME Design, stack Java 25 / Angular 21, pipeline CI/CD GitOps, infrastructure Railway + Rancher) |
 | 2.1.0 | 11/05/2026 | Authentification JWT (AuthController, SecurityConfig, authGuard, authInterceptor, LoginComponent) · Suppression lien Admin du menu · Correction CORS (`127.0.0.1:4200`) · ADR-0011 ajouté |
+| 2.2.0 | 07/06/2026 | Stories multiples par owner + sliders d'actualités (ADR-0015) · Tags sur mobilier + page `/creations` (ADR-0016) · Nouveaux endpoints `/api/tags`, `/api/sliders`, `/api/stories`, `/api/admin/sliders/**`, `/api/admin/stories/**` · Schéma BDD : tables `story`, `story_slide` refactorisé, `news_slider`, `slider_story`, `furniture_tag` · Composants partagés `TagInputComponent` et `StoryViewerComponent` · Route `/creations` · ADR-0012 à 0016 ajoutés à la table |

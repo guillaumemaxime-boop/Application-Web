@@ -1,9 +1,15 @@
-# Atelier Lumen — Portfolio
+# Milo GUILLAUME Design — Portfolio
 
 Application Web full-stack présentant un portfolio de **mobilier sculpté** et de **scénographies d'exposition artistiques**.
 
-- **Backend** : Java 25 + Spring Boot 4.0 (REST API)
+- **Backend** : Java 25 + Spring Boot 4.0 (REST API, PostgreSQL, Liquibase)
 - **Frontend** : Angular 21 (composants standalone, signaux, nouveau control flow `@if` / `@for`)
+
+## Fonctionnalités principales
+
+- **Catalogue Créations** (`/creations`) : page agrégée mobilier + expositions avec filtres type, années et tags en union, compteurs dynamiques et deep-linking via query params.
+- **Stories multiples + sliders d'actualités** : chaque pièce ou exposition peut porter N stories éditoriales (slides visuels). La home affiche jusqu'à 3 carrousels d'actualités composés par l'admin depuis des stories variées, avec viewer plein écran accessible (focus trap, navigation tactile et clavier).
+- **Admin consolidé** : la page Accueil admin regroupe le masonry home feed et la composition des sliders d'actualités (drag & drop). Les tags mobilier et expositions sont gérés via un composant `<app-tag-input>` avec autocomplétion WAI-ARIA.
 
 ## Structure
 

@@ -1,7 +1,7 @@
 # Spécification Fonctionnelle — Milo GUILLAUME Design
 
-**Version** : 2.0.0
-**Date** : 04/05/2026
+**Version** : 2.2.0
+**Date** : 07/06/2026
 **Auteur** : Maxime Guillaume
 **Statut** : En cours de validation
 
@@ -93,8 +93,21 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 
 - **Hero** : titre du studio, tagline, ambiance visuelle.
 - **Section Mobilier phare** : grille des pièces marquées `featured` (lien vers leur fiche).
+- **Sliders d'actualités** : jusqu'à 3 carrousels éditoriaux assignés aux zones `news.primary`, `news.secondary`, `news.tertiary`. Chaque slider affiche des stories sélectionnées par l'admin depuis des pièces ou expositions variées. Clic sur une story → viewer plein écran.
 - **Section Expositions phares** : liste des expositions marquées `featured`.
 - **Citation** : extrait éditorial du studio.
+
+#### Page Créations (`/creations`)
+
+Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'atelier sur une seule page.
+
+- **Filtre de type** : bascule Tout / Mobilier / Expositions.
+- **Facette Année** : boutons générés depuis les années présentes dans le catalogue, avec compteur dynamique par facette.
+- **Facette Tags** : boutons générés depuis l'union des tags mobilier et expositions, avec compteur dynamique.
+- **Logique de filtrage** : union OR (sélectionner plusieurs tags élargit les résultats ; un élément matche s'il possède au moins un des tags sélectionnés).
+- **Deep-linking** : l'état des filtres est encodé dans les query params de l'URL (`?tags=bois,sculpture&years=2024&kind=furniture`), permettant le partage et le bouton Retour navigateur.
+- **Grille responsive** : 3 colonnes desktop, 2 colonnes tablette, 1 colonne mobile. Badge "Exposition" sur les cartes exposition.
+- Clic sur un tag dans une carte active le filtre correspondant.
 
 #### Catalogue Mobilier (`/mobilier`)
 
@@ -106,6 +119,8 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 
 - **Hero** : image de couverture + bloc de spécifications (matière, designer, dimensions).
 - **Description longue** : texte éditorial de la pièce.
+- **Tags** : mots-clés thématiques associés à la pièce (cliquables → `/creations?tags=...`).
+- **Stories** : si la pièce possède des stories éditoriaux, un bouton "Voir la story" ouvre le viewer plein écran.
 - **Galerie** : mosaïque d'images complémentaires (3 colonnes, alternance portrait/paysage).
 - **CTA** : lien de contact par e-mail.
 - Gestion 404 si le slug n'existe pas.
@@ -130,23 +145,45 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 - **Presse** : mentions et publications.
 - **Contact** : e-mail du studio, localisation.
 
-#### Administration (`/admin`)
+#### Administration (`/admin/**`)
 
-- Interface CRUD complète pour le mobilier et les expositions.
-- Onglets : **Mobilier** | **Expositions**.
-- Sidebar : liste des éléments + sélection pour édition.
-- Formulaires de création / modification avec validation.
-- Retour visuel (messages de succès / erreur).
+- Interface CRUD complète pour le mobilier, les expositions, les stories et les sliders.
+- Navigation latérale : **Accueil · Mobilier · Expositions · Navigation · Médiathèque · Textes · Typographie · Statistiques · Paramètres**.
+- Formulaires de création / modification avec validation et retour visuel (toast auto-dismiss).
 - Suppression avec confirmation implicite.
+
+**Page Accueil (`/admin/accueil`)** :
+
+- Gestion du masonry home feed (visibilité, ordre des sections).
+- **Composition des sliders d'actualités** : création / modification / suppression de sliders, assignation à une zone (`news.primary/.secondary/.tertiary`), ajout/retrait de stories par drag & drop depuis la liste de toutes les stories disponibles.
+- `/admin/sliders` redirige vers `/admin/accueil` (les sliders sont désormais gérés dans la page Accueil).
+
+**Page Mobilier (`/admin/mobilier`)** :
+
+- CRUD mobilier avec formulaire complet (titre, catégorie, images, dimensions, description, `featured`).
+- **Champ Tags** : composant `<app-tag-input>` avec autocomplétion depuis `GET /api/tags`, chips + navigation clavier (WAI-ARIA combobox/listbox).
+- **Bloc Stories** : liste des stories de la pièce, CRUD stories, éditeur de slides par story.
+
+**Page Expositions (`/admin/expositions`)** :
+
+- CRUD expositions avec formulaire complet.
+- **Champ Tags** : même composant `<app-tag-input>`.
+- **Bloc Stories** : idem mobilier.
+
+**Page Navigation (`/admin/navigation`)** :
+
+- Toggle CMS pour chaque entrée de menu (visible / masqué).
+- L'entrée **Créations** est configurable depuis cette page.
 
 #### Header
 
 - Logo du studio (lien vers l'accueil).
-- Navigation : Mobilier · Expositions · Studio.
+- Navigation publique : **Mobilier · Expositions · Créations · Studio** (l'entrée Créations est entre Expositions et Studio, configurable depuis le CMS Navigation).
 
 #### Footer
 
 - Liens rapides, mentions légales, copyright.
+- Entrée **Créations** dans les liens rapides du footer.
 
 ---
 
@@ -266,6 +303,10 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 | **F032** | Validation des formulaires | Champs obligatoires validés avant envoi. | ⭐⭐ | ✅ Fait |
 | **F033** | Retour visuel | Message de succès / erreur après chaque opération. | ⭐⭐ | ✅ Fait |
 | **F034** | Protection de l'admin | Accès restreint par authentification JWT (authGuard Angular + Spring Security). | ⭐⭐⭐ | ✅ Fait |
+| **F035** | Tags mobilier | Taguer chaque pièce avec des mots-clés via `<app-tag-input>` (autocomplete + WAI-ARIA). | ⭐⭐ | ✅ Fait |
+| **F036** | Stories multiples | Créer N stories par pièce ou exposition, gérer les slides par story. | ⭐⭐⭐ | ✅ Fait |
+| **F037** | Sliders d'actualités | Composer des sliders depuis des stories variées, assigner à une zone de la home. | ⭐⭐ | ✅ Fait |
+| **F038** | Navigation CMS | Activer / désactiver des entrées de menu (dont Créations) depuis l'admin. | ⭐⭐ | ✅ Fait |
 
 ### 5.5 Navigation et UX
 
@@ -275,6 +316,8 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 | **F041** | Design responsive | Adaptation mobile, tablette, desktop. | ⭐⭐⭐ | ✅ Fait |
 | **F042** | Chargement performant | Lazy loading des composants et des images. | ⭐⭐ | ✅ Fait |
 | **F043** | Gestion 404 | Page ou pièce introuvable → message d'erreur clair. | ⭐⭐ | ✅ Fait |
+| **F044** | Page Créations | Catalogue agrégé mobilier + expositions, filtres type/années/tags, deep-link URL. | ⭐⭐⭐ | ✅ Fait |
+| **F045** | Viewer story plein écran | Modale plein écran, navigation tactile/clavier, focus trap + Échap (RGAA). | ⭐⭐ | ✅ Fait |
 
 ### 5.6 Internationalisation
 
@@ -514,6 +557,12 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 | **Liquibase** | Outil de migration de schéma de base de données (changesets versionnés). |
 | **Actuator** | Module Spring Boot exposant des endpoints de supervision (health, info…). |
 | **GHCR** | GitHub Container Registry — registre d'images Docker hébergé par GitHub. |
+| **Story** | Unité éditoriale composée de slides (images, citations…) attachée à une pièce ou exposition. Un owner peut avoir N stories. |
+| **Slider d'actualités** | Carrousel composé de stories issues de N owners différents, assigné à une zone de la home. |
+| **Zone (home)** | Emplacement nommé sur la home pour un slider : `news.primary`, `news.secondary`, `news.tertiary`. |
+| **Tag** | Mot-clé thématique associé à une pièce ou une exposition. L'union des tags est accessible via `GET /api/tags`. |
+| **Création** | Terme générique regroupant une pièce de mobilier ou une exposition dans la page `/creations`. |
+| **ControlValueAccessor** | Interface Angular permettant à un composant custom (ex. `TagInputComponent`) de s'intégrer nativement dans `ReactiveFormsModule`. |
 
 ---
 
@@ -589,10 +638,11 @@ PostgreSQL 16 (:5432)
 | **Phase 2** | Persistance PostgreSQL + migrations Liquibase | ✅ Terminé |
 | **Phase 3** | Interface d'administration CRUD | ✅ Terminé |
 | **Phase 4** | Protection de l'admin (authentification JWT) | ✅ Terminé |
-| **Phase 5** | Formulaire de contact (envoi d'e-mail) | ⏳ À faire |
-| **Phase 6** | Recherche texte dans le catalogue | ⏳ À faire |
-| **Phase 7** | Internationalisation FR/EN | ⏳ À faire |
-| **Phase 8** | Optimisations SEO (balises méta, sitemap) | ⏳ À faire |
+| **Phase 5** | Formulaire de contact (envoi d'e-mail via Resend) | ✅ Terminé |
+| **Phase 6** | Stories multiples + sliders d'actualités + page Créations + tags mobilier | ✅ Terminé |
+| **Phase 7** | Recherche texte dans le catalogue | ⏳ À faire |
+| **Phase 8** | Internationalisation FR/EN | ⏳ À faire |
+| **Phase 9** | Optimisations SEO (balises méta, sitemap) | ⏳ À faire |
 
 ---
 
@@ -603,6 +653,7 @@ PostgreSQL 16 (:5432)
 | 1.0.0 | 01/05/2026 | Équipe Atelier Lumen | Création initiale |
 | 2.0.0 | 04/05/2026 | Maxime Guillaume | Rebrand Milo GUILLAUME Design · Mise à jour du modèle de données réel · Routes corrigées · Roadmap synchronisée · Admin CRUD documenté · Hébergement Railway |
 | 2.1.0 | 11/05/2026 | Maxime Guillaume | Authentification admin JWT (F034 ✅) · Suppression du lien Admin du menu de navigation · Correction CORS (`127.0.0.1:4200`) · Roadmap Phase 4 terminée |
+| 2.2.0 | 07/06/2026 | Maxime Guillaume | Stories multiples + sliders d'actualités (F036, F037 ✅) · Page publique `/creations` + tags mobilier (F044, F035 ✅) · Navigation CMS (F038 ✅) · Viewer story plein écran (F045 ✅) · Page Accueil admin consolidant masonry + sliders · Roadmap Phase 5 et 6 terminées · Glossaire enrichi |
 
 ---
 
