@@ -32,7 +32,6 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
             <img [src]="f.coverImage" [alt]="f.title" />
           </div>
           <div class="container hero-content">
-            <a class="back" routerLink="/mobilier">← Retour au mobilier</a>
             <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ f.category }} · {{ f.year }}</span>
             <h1 [ngStyle]="titleStyle()">{{ f.title }}</h1>
             <p class="material">{{ f.material }}</p>
@@ -153,16 +152,6 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       margin: 16px 0 18px;
       max-width: 880px;
     }
-    .back {
-      display: inline-block;
-      margin-bottom: 32px;
-      font-size: 0.8rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.65);
-      transition: color var(--transition);
-    }
-    .back:hover { color: #ffffff; }
     .material {
       font-size: 0.85rem;
       letter-spacing: 0.08em;

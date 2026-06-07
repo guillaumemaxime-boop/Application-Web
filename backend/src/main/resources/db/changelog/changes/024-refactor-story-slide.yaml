@@ -24,6 +24,56 @@ databaseChangeLog:
               )
 
   - changeSet:
+      id: 024-cleanup-orphan-slides-without-owner
+      author: atelier-lumen
+      changes:
+        - sql:
+            comment: Supprime les story_slide dont owner_kind ou owner_id est NULL/vide — slides irrécupérables (cas legacy data corrompue en prod/staging)
+            sql: |
+              DELETE FROM story_slide
+              WHERE story_id IS NULL
+                AND (owner_kind IS NULL OR owner_kind = '' OR owner_id IS NULL OR owner_id = '')
+
+  - changeSet:
+      id: 024-seed-orphan-stories
+      author: atelier-lumen
+      changes:
+        - sql:
+            comment: |
+              Crée une story de récupération pour tout (owner_kind, owner_id) avec slides orphelins (cas où le seed 023 n'a pas créé de story — par exemple owner supprimé, FK non enforcée historiquement, owner_kind inconnu).
+            sql: |
+              INSERT INTO story (id, owner_kind, owner_id, title, cover_image, slug, position, created_at)
+              SELECT DISTINCT
+                  'st-recov-' || ss.owner_kind || '-' || ss.owner_id,
+                  ss.owner_kind,
+                  ss.owner_id,
+                  'Story (récupérée)',
+                  '',
+                  'story-recuperee-' || ss.owner_kind || '-' || ss.owner_id,
+                  0,
+                  CURRENT_TIMESTAMP
+              FROM story_slide ss
+              WHERE ss.story_id IS NULL
+                AND NOT EXISTS (
+                  SELECT 1 FROM story s
+                  WHERE s.owner_kind = ss.owner_kind AND s.owner_id = ss.owner_id
+                )
+
+  - changeSet:
+      id: 024-rebackfill-story-id
+      author: atelier-lumen
+      changes:
+        - sql:
+            comment: Re-backfill story_id pour les slides encore NULL après le seed de récupération
+            sql: |
+              UPDATE story_slide ss
+              SET story_id = (
+                  SELECT s.id FROM story s
+                  WHERE s.owner_kind = ss.owner_kind AND s.owner_id = ss.owner_id
+              )
+              WHERE ss.story_id IS NULL
+
+  - changeSet:
       id: 024-add-story-id-not-null
       author: atelier-lumen
       changes:
