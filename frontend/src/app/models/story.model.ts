@@ -18,6 +18,7 @@ export interface StoryInput {
   ownerId: string;
   title: string;
   coverImage: string;
+  coverCrop?: Crop | null;
 }
 
 export interface StoryWithSlides {

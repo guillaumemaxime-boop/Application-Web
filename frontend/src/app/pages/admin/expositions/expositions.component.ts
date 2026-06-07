@@ -119,7 +119,10 @@ import { Crop } from '../../../models/crop.model';
               </article>
               @if (editingCoverStoryId() === story.id) {
                 <div class="cover-editor">
-                  <app-image-field label="Image de couverture" [formControl]="coverEditCtrl" />
+                  <app-image-field label="Image de couverture" [formControl]="coverEditCtrl"
+                    [cropEnabled]="true"
+                    [cropValue]="editingStoryCoverCrop()"
+                    (cropChange)="onStoryCoverCropChange($event)" />
                   <div class="cover-editor-actions">
                     <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
                     <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
@@ -220,6 +223,7 @@ export class ExpositionsComponent {
   protected readonly editingStoryId = signal<string | null>(null);
   protected readonly editingCoverStoryId = signal<string | null>(null);
   protected readonly coverEditCtrl = new FormControl('');
+  protected readonly editingStoryCoverCrop = signal<Crop | null>(null);
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -340,11 +344,17 @@ export class ExpositionsComponent {
   openCoverEditor(story: Story): void {
     this.editingCoverStoryId.set(story.id);
     this.coverEditCtrl.setValue(story.coverImage);
+    this.editingStoryCoverCrop.set(story.coverCrop ?? null);
   }
 
   cancelCoverEdit(): void {
     this.editingCoverStoryId.set(null);
     this.coverEditCtrl.setValue('');
+    this.editingStoryCoverCrop.set(null);
+  }
+
+  protected onStoryCoverCropChange(crop: Crop | null): void {
+    this.editingStoryCoverCrop.set(crop);
   }
 
   saveCover(story: Story): void {
@@ -353,6 +363,7 @@ export class ExpositionsComponent {
     this.portfolio.updateStory(story.id, {
       ownerKind: story.ownerKind, ownerId: story.ownerId,
       title: story.title, coverImage: newCover,
+      coverCrop: this.editingStoryCoverCrop(),
     }).subscribe({
       next: updated => {
         this.currentStories.update(arr => arr.map(s => s.id === updated.id ? updated : s));
