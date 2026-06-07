@@ -18,7 +18,7 @@ type MobilierInternals = {
   loadingFurniture: () => boolean;
   editingFurnitureSlug: () => string | null;
   editingFurnitureId: () => string | null;
-  furnitureGallery: { (): string[]; set: (v: string[]) => void };
+  furnitureGallery: { (): Array<{ url: string; crop?: unknown }>; set: (v: Array<{ url: string; crop?: unknown }>) => void };
   currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
   editingStoryId: { (): string | null; set: (v: string | null) => void };
   saving: () => boolean;
@@ -33,7 +33,6 @@ type MobilierInternals = {
   newStory: () => void;
   renameStory: (s: unknown) => void;
   deleteStory: (s: unknown) => void;
-  onFurnitureFocalChange: (value: { x: number; y: number } | null) => void;
 };
 
 describe('MobilierComponent', () => {
@@ -107,7 +106,7 @@ describe('MobilierComponent', () => {
     const item = {
       id: 'id-1', slug: 'tabouret', title: 'Tabouret', category: 'Sièges', year: 2023,
       material: 'chêne', designer: 'Designer X', coverImage: '/c.jpg',
-      gallery: ['/g1.jpg', '/g2.jpg'],
+      gallery: [{ url: '/g1.jpg' }, { url: '/g2.jpg' }],
       dimensions: ['L 50 cm', 'H 80 cm', 'Note libre'],
       shortDescription: 'short', description: 'long', featured: false,
     };
@@ -121,7 +120,7 @@ describe('MobilierComponent', () => {
     expect(v['dimW']).toBe(50);
     expect(v['dimH']).toBe(80);
     expect(v['dimNotes']).toBe('Note libre');
-    expect(cmp.furnitureGallery()).toEqual(['/g1.jpg', '/g2.jpg']);
+    expect(cmp.furnitureGallery()).toEqual([{ url: '/g1.jpg' }, { url: '/g2.jpg' }]);
   });
 
   it('loadFurniture() supporte les champs optionnels manquants', () => {
@@ -302,7 +301,7 @@ describe('MobilierComponent', () => {
     flushInitial();
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.loadFurniture({ id: '1', slug: 'x', title: 'X', category: 'C', year: 2024, gallery: ['/a.jpg'] });
+    cmp.loadFurniture({ id: '1', slug: 'x', title: 'X', category: 'C', year: 2024, gallery: [{ url: '/a.jpg' }] });
     httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
     expect(cmp.furnitureGallery().length).toBe(1);
     cmp.newFurniture();
@@ -458,30 +457,4 @@ describe('MobilierComponent', () => {
     expect(cmp.loadingFurniture()).toBe(false);
   });
 
-  it('onFurnitureFocalChange() met à jour coverFocalX et coverFocalY', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.onFurnitureFocalChange({ x: 30, y: 70 });
-    const v = cmp.furnitureForm.getRawValue();
-    expect(v['coverFocalX']).toBe(30);
-    expect(v['coverFocalY']).toBe(70);
-  });
-
-  it('onFurnitureFocalChange(null) remet coverFocalX et coverFocalY à null', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as MobilierInternals;
-    cmp.onFurnitureFocalChange({ x: 30, y: 70 });
-    cmp.onFurnitureFocalChange(null);
-    const v = cmp.furnitureForm.getRawValue();
-    expect(v['coverFocalX']).toBeNull();
-    expect(v['coverFocalY']).toBeNull();
-  });
 });

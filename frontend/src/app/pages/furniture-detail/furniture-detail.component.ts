@@ -29,7 +29,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       <article class="fade-in">
         <header class="hero">
           <div class="hero-bg">
-            <img [src]="f.coverImage" [alt]="f.title" [style.object-position]="coverPosition()" />
+            <img [src]="f.coverImage" [alt]="f.title" />
           </div>
           <div class="container hero-content">
             <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ f.category }} · {{ f.year }}</span>
@@ -81,9 +81,9 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
           <section class="section gallery">
             <div class="container">
               <div class="g-grid">
-                @for (img of f.gallery; track img; let i = $index) {
+                @for (img of f.gallery; track img.url; let i = $index) {
                   <figure [class.tall]="i % 3 === 0">
-                    <img [src]="img" [alt]="f.title + ' — vue ' + (i + 1)" loading="lazy" />
+                    <img [src]="img.url" [alt]="f.title + ' — vue ' + (i + 1)" loading="lazy" />
                   </figure>
                 }
               </div>
@@ -310,14 +310,6 @@ export class FurnitureDetailComponent {
         this.loadingSvc.stop('nav');
       },
     });
-  }
-
-  protected coverPosition(): string {
-    const f = this.item();
-    if (!f) return '50% 50%';
-    const x = f.coverFocalX ?? 50;
-    const y = f.coverFocalY ?? 50;
-    return `${x}% ${y}%`;
   }
 
   protected openViewer() {

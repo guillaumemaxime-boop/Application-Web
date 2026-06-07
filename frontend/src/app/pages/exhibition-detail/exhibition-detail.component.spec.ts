@@ -19,7 +19,7 @@ describe('ExhibitionDetailComponent', () => {
     startDate: '2025-03-14',
     endDate: '2025-05-18',
     coverImage: 'https://example.com/m.jpg',
-    gallery: ['https://example.com/m-1.jpg'],
+    gallery: [{ url: 'https://example.com/m-1.jpg' }],
     curator: 'Léa Bornand',
     shortDescription: 's',
     description: 'd',
@@ -148,19 +148,4 @@ describe('ExhibitionDetailComponent', () => {
     expect((display[0] as any).src).toBe('/c.jpg');
   });
 
-  it('coverPosition() retourne les coordonnées en % quand coverFocalX/Y sont définis', () => {
-    setup('matieres-silencieuses', of({ ...mockExhibition, coverFocalX: 30, coverFocalY: 80 }));
-    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
-    fixture.detectChanges();
-    const c = fixture.componentInstance as any;
-    expect(c.coverPosition()).toBe('30% 80%');
-  });
-
-  it('coverPosition() retourne "50% 50%" quand coverFocalX/Y sont null', () => {
-    setup('matieres-silencieuses', of({ ...mockExhibition, coverFocalX: null, coverFocalY: null }));
-    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
-    fixture.detectChanges();
-    const c = fixture.componentInstance as any;
-    expect(c.coverPosition()).toBe('50% 50%');
-  });
 });

@@ -17,7 +17,7 @@ type ExpoInternals = {
   loadingExhibitions: () => boolean;
   editingExhibitionSlug: () => string | null;
   editingExhibitionId: () => string | null;
-  exhibitionGallery: { (): string[]; set: (v: string[]) => void };
+  exhibitionGallery: { (): Array<{ url: string; crop?: unknown }>; set: (v: Array<{ url: string; crop?: unknown }>) => void };
   allTags: () => string[];
   currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
   editingStoryId: { (): string | null; set: (v: string | null) => void };
@@ -30,7 +30,6 @@ type ExpoInternals = {
   newStory: () => void;
   renameStory: (s: unknown) => void;
   deleteStory: (s: unknown) => void;
-  onExhibitionFocalChange: (value: { x: number; y: number } | null) => void;
 };
 
 describe('ExpositionsComponent', () => {
@@ -101,7 +100,7 @@ describe('ExpositionsComponent', () => {
     const item = {
       id: 'e1', slug: 'salon', title: 'Salon', venue: 'Lieu', city: 'Paris', country: 'FR',
       startDate: '2024-05-01', endDate: '2024-05-30', curator: 'Cu', coverImage: '/c.jpg',
-      gallery: ['/g.jpg'], tags: ['art', 'design'],
+      gallery: [{ url: '/g.jpg' }], tags: ['art', 'design'],
       shortDescription: 's', description: 'd',
     };
     cmp.loadExhibition(item);
@@ -109,7 +108,7 @@ describe('ExpositionsComponent', () => {
     expect(cmp.editingExhibitionSlug()).toBe('salon');
     expect(cmp.editingExhibitionId()).toBe('e1');
     expect(cmp.exhibitionForm.getRawValue()['tags']).toEqual(['art', 'design']);
-    expect(cmp.exhibitionGallery()).toEqual(['/g.jpg']);
+    expect(cmp.exhibitionGallery()).toEqual([{ url: '/g.jpg' }]);
     const v = cmp.exhibitionForm.getRawValue();
     expect(v['title']).toBe('Salon');
   });
@@ -439,33 +438,6 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne('/api/tags').flush([]);
     fixture.detectChanges();
     expect(toast.error).toHaveBeenCalled();
-  });
-
-  it('onExhibitionFocalChange() met à jour coverFocalX et coverFocalY', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.onExhibitionFocalChange({ x: 25, y: 60 });
-    const v = cmp.exhibitionForm.getRawValue();
-    expect(v['coverFocalX']).toBe(25);
-    expect(v['coverFocalY']).toBe(60);
-  });
-
-  it('onExhibitionFocalChange(null) remet coverFocalX et coverFocalY à null', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.onExhibitionFocalChange({ x: 25, y: 60 });
-    cmp.onExhibitionFocalChange(null);
-    const v = cmp.exhibitionForm.getRawValue();
-    expect(v['coverFocalX']).toBeNull();
-    expect(v['coverFocalY']).toBeNull();
   });
 
 });

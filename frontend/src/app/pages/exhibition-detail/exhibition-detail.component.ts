@@ -27,7 +27,7 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
       <article class="fade-in">
         <header class="hero">
           <div class="hero-bg">
-            <img [src]="e.coverImage" [alt]="e.title" [style.object-position]="coverPosition()" />
+            <img [src]="e.coverImage" [alt]="e.title" />
           </div>
           <div class="container hero-content">
             <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ e.venue }} · {{ e.city }}, {{ e.country }}</span>
@@ -55,9 +55,9 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
         <section class="section gallery">
           <div class="container">
             <div class="g-grid">
-              @for (img of e.gallery; track img; let i = $index) {
+              @for (img of e.gallery; track img.url; let i = $index) {
                 <figure [class.wide]="i === 0">
-                  <img [src]="img" [alt]="e.title + ' — vue ' + (i + 1)" loading="lazy" />
+                  <img [src]="img.url" [alt]="e.title + ' — vue ' + (i + 1)" loading="lazy" />
                 </figure>
               }
             </div>
@@ -242,14 +242,6 @@ export class ExhibitionDetailComponent {
         this.loadingSvc.stop('nav');
       },
     });
-  }
-
-  protected coverPosition(): string {
-    const e = this.item();
-    if (!e) return '50% 50%';
-    const x = e.coverFocalX ?? 50;
-    const y = e.coverFocalY ?? 50;
-    return `${x}% ${y}%`;
   }
 
   protected openViewer() {

@@ -11,12 +11,12 @@ import { GalleryEditorComponent } from '../shared/gallery-editor.component';
 import { ImageFieldComponent } from '../shared/image-field.component';
 import { TagInputComponent } from '../shared/tag-input.component';
 import { ToastService } from '../shared/toast.service';
-import { FocalPointPickerComponent, FocalPoint } from '../shared/focal-point-picker.component';
+import { GalleryItem } from '../../../models/gallery-item.model';
 
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FocalPointPickerComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -67,15 +67,6 @@ import { FocalPointPickerComponent, FocalPoint } from '../shared/focal-point-pic
         <label><span>Commissaire</span><input type="text" formControlName="curator" /></label>
 
         <app-image-field formControlName="coverImage" label="Image principale (URL)" />
-
-        <label>
-          <span>Point focal du bandeau</span>
-          <app-focal-point-picker
-            [imageUrl]="exhibitionForm.get('coverImage')?.value ?? null"
-            [focalX]="exhibitionForm.get('coverFocalX')?.value ?? null"
-            [focalY]="exhibitionForm.get('coverFocalY')?.value ?? null"
-            (focalChange)="onExhibitionFocalChange($event)" />
-        </label>
 
         <app-gallery-editor
           [images]="exhibitionGallery()"
@@ -217,7 +208,7 @@ export class ExpositionsComponent {
   protected readonly saving = signal(false);
   protected readonly editingExhibitionSlug = signal<string | null>(null);
   protected readonly editingExhibitionId = signal<string | null>(null);
-  protected readonly exhibitionGallery = signal<string[]>([]);
+  protected readonly exhibitionGallery = signal<GalleryItem[]>([]);
   protected readonly allTags = signal<string[]>([]);
   protected readonly currentStories = signal<Story[]>([]);
   protected readonly editingStoryId = signal<string | null>(null);
@@ -234,8 +225,6 @@ export class ExpositionsComponent {
     endDate: ['', Validators.required],
     curator: [''],
     coverImage: [''],
-    coverFocalX: this.fb.control<number | null>(null),
-    coverFocalY: this.fb.control<number | null>(null),
     shortDescription: [''],
     description: [''],
     showStoryLink: [true],
@@ -267,7 +256,6 @@ export class ExpositionsComponent {
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '',
-      coverFocalX: null, coverFocalY: null,
       shortDescription: '', description: '',
       showStoryLink: true,
       showStoryButton: true,
@@ -284,7 +272,7 @@ export class ExpositionsComponent {
     this.exhibitionForm.reset({
       title: item.title, slug: item.slug, venue: item.venue ?? '', city: item.city ?? '', country: item.country ?? '',
       startDate: item.startDate ?? '', endDate: item.endDate ?? '', curator: item.curator ?? '',
-      coverImage: item.coverImage ?? '', coverFocalX: item.coverFocalX ?? null, coverFocalY: item.coverFocalY ?? null,
+      coverImage: item.coverImage ?? '',
       shortDescription: item.shortDescription ?? '', description: item.description ?? '',
       showStoryLink: item.showStoryLink ?? true,
       showStoryButton: item.showStoryButton ?? true,
@@ -427,8 +415,6 @@ export class ExpositionsComponent {
       venue: v.venue ?? '', city: v.city ?? '', country: v.country ?? '',
       startDate: v.startDate!, endDate: v.endDate!,
       curator: v.curator ?? '', coverImage: v.coverImage ?? '',
-      coverFocalX: v.coverFocalX ?? null,
-      coverFocalY: v.coverFocalY ?? null,
       gallery: [...this.exhibitionGallery()],
       tags: v.tags ?? [],
       shortDescription: v.shortDescription ?? '', description: v.description ?? '',
@@ -452,14 +438,6 @@ export class ExpositionsComponent {
         this.toast.error('Erreur lors de l\'enregistrement.');
       }
     });
-  }
-
-  protected onExhibitionFocalChange(value: FocalPoint | null): void {
-    if (value) {
-      this.exhibitionForm.patchValue({ coverFocalX: value.x, coverFocalY: value.y });
-    } else {
-      this.exhibitionForm.patchValue({ coverFocalX: null, coverFocalY: null });
-    }
   }
 
   removeExhibition(item: Exhibition): void {

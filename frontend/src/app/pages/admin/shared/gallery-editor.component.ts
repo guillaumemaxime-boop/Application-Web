@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
+import { GalleryItem } from '../../../models/gallery-item.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { PhotoPickerComponent } from './photo-picker.component';
 
@@ -20,10 +21,10 @@ import { PhotoPickerComponent } from './photo-picker.component';
         <p class="gallery-empty">Aucune image. Cliquez sur « Ajouter » pour insérer une photo depuis la médiathèque.</p>
       } @else {
         <ul class="gallery-thumbs" appReorderable (reordered)="onReorder($event)">
-          @for (url of images; track url) {
+          @for (item of images; track item.url) {
             <li class="gallery-thumb">
-              <img [src]="url" alt="" />
-              <button type="button" class="thumb-remove" (click)="removeImage(url)" aria-label="Retirer">×</button>
+              <img [src]="item.url" alt="" />
+              <button type="button" class="thumb-remove" (click)="removeImage(item.url)" aria-label="Retirer">×</button>
             </li>
           }
         </ul>
@@ -79,8 +80,8 @@ import { PhotoPickerComponent } from './photo-picker.component';
 export class GalleryEditorComponent {
   private readonly portfolio = inject(PortfolioService);
 
-  @Input() images: string[] = [];
-  @Output() imagesChange = new EventEmitter<string[]>();
+  @Input() images: GalleryItem[] = [];
+  @Output() imagesChange = new EventEmitter<GalleryItem[]>();
 
   protected readonly pickerOpen = signal(false);
   protected readonly photos = signal<Photo[]>([]);
@@ -95,13 +96,13 @@ export class GalleryEditorComponent {
   }
 
   onPhotoSelected(photo: Photo): void {
-    if (!this.images.includes(photo.url)) {
-      this.imagesChange.emit([...this.images, photo.url]);
+    if (!this.images.some(i => i.url === photo.url)) {
+      this.imagesChange.emit([...this.images, { url: photo.url, crop: null }]);
     }
   }
 
   removeImage(url: string): void {
-    this.imagesChange.emit(this.images.filter(u => u !== url));
+    this.imagesChange.emit(this.images.filter(i => i.url !== url));
   }
 
   onReorder(order: number[]): void {
