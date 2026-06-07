@@ -18,7 +18,7 @@ public record Exhibition(
         LocalDate endDate,
         @Size(max = 500) String coverImage,
         @Valid ImageCrop coverCrop,
-        @Size(max = 50) List<String> gallery,
+        @Size(max = 50) List<@Valid GalleryImage> gallery,
         @Size(max = 200) String curator,
         @Size(max = 1000) String shortDescription,
         @Size(max = 10000) String description,

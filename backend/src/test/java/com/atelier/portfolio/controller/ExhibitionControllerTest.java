@@ -1,6 +1,7 @@
 package com.atelier.portfolio.controller;
 
 import com.atelier.portfolio.model.Exhibition;
+import com.atelier.portfolio.model.GalleryImage;
 import com.atelier.portfolio.service.ExhibitionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class ExhibitionControllerTest {
                 LocalDate.of(2025, 5, 18),
                 "https://picsum.photos/seed/matieres-cover/1200/800",
                 null,
-                List.of("https://picsum.photos/seed/matieres-1/1200/800"),
+                List.of(new GalleryImage("https://picsum.photos/seed/matieres-1/1200/800", null)),
                 "Léa Bornand",
                 "Une exploration du silence comme matière première",
                 "Description détaillée",

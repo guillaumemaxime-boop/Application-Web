@@ -1,6 +1,8 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.model.Exhibition;
+import com.atelier.portfolio.model.GalleryImage;
+import com.atelier.portfolio.model.ImageCrop;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -121,7 +123,7 @@ class ExhibitionServiceTest {
                 LocalDate.of(2026, 6, 1), LocalDate.of(2026, 9, 30),
                 "https://example.com/souffles.jpg",
                 null,
-                List.of("https://example.com/souffles-1.jpg"),
+                List.of(new GalleryImage("https://example.com/souffles-1.jpg", null)),
                 "Camille Lévy", "court", "long",
                 List.of("Sculpture", "Lumière"), true, true, true, List.of()
         );
@@ -204,6 +206,22 @@ class ExhibitionServiceTest {
 
         assertFalse(deleted);
         assertEquals(5, exhibitionService.findAll().size());
+    }
+
+    @Test
+    void create_avec_gallery_items_persiste_crop_par_item() {
+        Exhibition input = new Exhibition(null, "T", null, "venue", "city", "country",
+                java.time.LocalDate.of(2024, 1, 1), java.time.LocalDate.of(2024, 12, 31),
+                "/c.jpg",
+                null,
+                List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0)),
+                        new GalleryImage("/g2.jpg", null)),
+                "curator", "s", "d", List.of(), false, true, true, List.of());
+        Exhibition created = exhibitionService.create(input);
+        Exhibition reloaded = exhibitionService.findBySlug(created.slug()).orElseThrow();
+        assertEquals(2, reloaded.gallery().size());
+        assertEquals(50.0, reloaded.gallery().get(0).crop().w());
+        assertNull(reloaded.gallery().get(1).crop());
     }
 
     @Test

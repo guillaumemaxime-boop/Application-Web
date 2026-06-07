@@ -1,7 +1,9 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.ExhibitionEntity;
+import com.atelier.portfolio.entity.GalleryEntry;
 import com.atelier.portfolio.model.Exhibition;
+import com.atelier.portfolio.model.GalleryImage;
 import com.atelier.portfolio.model.ImageCrop;
 import com.atelier.portfolio.repository.ExhibitionRepository;
 import org.springframework.cache.annotation.CacheEvict;
@@ -121,7 +123,16 @@ public class ExhibitionService {
         entity.setShowStoryButton(input.showStoryButton());
         if (input.gallery() != null) {
             entity.getGallery().clear();
-            entity.getGallery().addAll(new ArrayList<>(input.gallery()));
+            for (GalleryImage gi : input.gallery()) {
+                GalleryEntry ge = new GalleryEntry(gi.url());
+                if (gi.crop() != null) {
+                    ge.setCropX(gi.crop().x());
+                    ge.setCropY(gi.crop().y());
+                    ge.setCropW(gi.crop().w());
+                    ge.setCropH(gi.crop().h());
+                }
+                entity.getGallery().add(ge);
+            }
         }
         if (input.tags() != null) {
             entity.getTags().clear();
@@ -142,6 +153,9 @@ public class ExhibitionService {
     private static Exhibition toDto(ExhibitionEntity entity) {
         ImageCrop coverCrop = ImageCrop.ofNullable(entity.getCoverCropX(), entity.getCoverCropY(),
                                         entity.getCoverCropW(), entity.getCoverCropH());
+        List<GalleryImage> gallery = entity.getGallery().stream()
+                .map(e -> new GalleryImage(e.getUrl(), ImageCrop.ofNullable(e.getCropX(), e.getCropY(), e.getCropW(), e.getCropH())))
+                .toList();
         return new Exhibition(
                 entity.getId(),
                 entity.getTitle(),
@@ -153,7 +167,7 @@ public class ExhibitionService {
                 entity.getEndDate(),
                 entity.getCoverImage(),
                 coverCrop,
-                List.copyOf(entity.getGallery()),
+                gallery,
                 entity.getCurator(),
                 entity.getShortDescription(),
                 entity.getDescription(),

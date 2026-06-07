@@ -71,9 +71,8 @@ public class ExhibitionEntity {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "exhibition_gallery", joinColumns = @JoinColumn(name = "exhibition_id"))
     @OrderColumn(name = "position")
-    @Column(name = "url", length = 500, nullable = false)
     @BatchSize(size = 50)
-    private List<String> gallery = new ArrayList<>();
+    private List<GalleryEntry> gallery = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "exhibition_tag", joinColumns = @JoinColumn(name = "exhibition_id"))
@@ -139,8 +138,8 @@ public class ExhibitionEntity {
     public boolean isShowStoryButton() { return showStoryButton; }
     public void setShowStoryButton(boolean showStoryButton) { this.showStoryButton = showStoryButton; }
 
-    public List<String> getGallery() { return gallery; }
-    public void setGallery(List<String> gallery) { this.gallery = gallery; }
+    public List<GalleryEntry> getGallery() { return gallery; }
+    public void setGallery(List<GalleryEntry> gallery) { this.gallery = gallery; }
 
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
