@@ -111,8 +111,8 @@ describe('ImageFieldComponent', () => {
     fixture.componentRef.setInput('cropEnabled', true);
     cmp.writeValue('https://example.com/preview.jpg');
     fixture.detectChanges();
-    const canvas = fixture.nativeElement.querySelector('canvas.crop-preview-canvas');
-    expect(canvas).toBeTruthy();
+    const previewHost = fixture.nativeElement.querySelector('app-cropped-image-canvas.crop-preview-canvas');
+    expect(previewHost).toBeTruthy();
   });
 
   it('ne affiche pas le canvas preview quand cropEnabled=false', () => {
@@ -121,6 +121,6 @@ describe('ImageFieldComponent', () => {
     fixture.componentRef.setInput('cropEnabled', false);
     cmp.writeValue('https://example.com/preview.jpg');
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('canvas.crop-preview-canvas')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-cropped-image-canvas')).toBeNull();
   });
 });

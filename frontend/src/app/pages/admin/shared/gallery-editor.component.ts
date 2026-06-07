@@ -6,11 +6,12 @@ import { Crop } from '../../../models/crop.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { PhotoPickerComponent } from './photo-picker.component';
 import { ImageCropPickerComponent } from './image-crop-picker.component';
+import { CroppedImageCanvasComponent } from './cropped-image-canvas.component';
 
 @Component({
   selector: 'app-gallery-editor',
   standalone: true,
-  imports: [ReorderableDirective, PhotoPickerComponent, ImageCropPickerComponent],
+  imports: [ReorderableDirective, PhotoPickerComponent, ImageCropPickerComponent, CroppedImageCanvasComponent],
   template: `
     <div class="gallery-block">
       <div class="gallery-block-head">
@@ -25,7 +26,11 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
         <ul class="gallery-thumbs" appReorderable (reordered)="onReorder($event)">
           @for (item of images; track item.url; let i = $index) {
             <li class="gallery-thumb">
-              <img [src]="item.url" alt="" />
+              <app-cropped-image-canvas
+                [imageUrl]="item.url"
+                [crop]="item.crop ?? null"
+                mode="cover"
+                alt="" />
               @if (item.crop) {
                 <span class="crop-indicator" title="Crop défini">✂ {{ item.crop.w.toFixed(0) }}×{{ item.crop.h.toFixed(0) }}</span>
               }
@@ -80,6 +85,7 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
       position: relative; aspect-ratio: 4 / 3; overflow: hidden;
       border: 1px solid var(--color-line); background: var(--color-bg-alt); cursor: grab;
     }
+    .gallery-thumb app-cropped-image-canvas { width: 100%; height: 100%; display: block; }
     .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .thumb-remove {
       position: absolute; top: 4px; right: 4px; width: 24px; height: 24px;

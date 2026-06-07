@@ -1,15 +1,16 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, Output, ViewChild, forwardRef, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, forwardRef, inject, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
 import { Crop } from '../../../models/crop.model';
 import { PhotoPickerComponent } from './photo-picker.component';
 import { ImageCropPickerComponent } from './image-crop-picker.component';
+import { CroppedImageCanvasComponent } from './cropped-image-canvas.component';
 
 @Component({
   selector: 'app-image-field',
   standalone: true,
-  imports: [PhotoPickerComponent, ImageCropPickerComponent],
+  imports: [PhotoPickerComponent, ImageCropPickerComponent, CroppedImageCanvasComponent],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -41,7 +42,14 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
 
       @if (cropEnabled && value()) {
         <div class="crop-preview">
-          <canvas #previewCanvas class="crop-preview-canvas" aria-label="Aperçu de l'image cadrée"></canvas>
+          <app-cropped-image-canvas
+            class="crop-preview-canvas"
+            [imageUrl]="value()"
+            [crop]="cropValue ?? null"
+            mode="adaptive"
+            [targetHeight]="140"
+            [maxWidth]="240"
+            alt="Aperçu de l'image cadrée" />
           <span class="crop-preview-label">
             @if (cropValue) {
               Cadrée — {{ cropValue.w.toFixed(0) }}% × {{ cropValue.h.toFixed(0) }}%
@@ -89,7 +97,7 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
     .crop-preview-canvas {
       max-width: 240px; max-height: 160px;
       border: 1px solid var(--color-line); background: var(--color-bg-alt);
-      flex-shrink: 0; display: block;
+      flex-shrink: 0;
     }
     .crop-preview-label {
       font-size: 0.78rem; color: var(--color-mute); line-height: 1.4;
@@ -99,10 +107,8 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
     }
   `]
 })
-export class ImageFieldComponent implements ControlValueAccessor, AfterViewInit, OnChanges {
+export class ImageFieldComponent implements ControlValueAccessor {
   private readonly portfolio = inject(PortfolioService);
-
-  @ViewChild('previewCanvas') previewCanvas?: ElementRef<HTMLCanvasElement>;
 
   @Input() label = 'Image';
   @Input() cropEnabled = false;
@@ -149,62 +155,6 @@ export class ImageFieldComponent implements ControlValueAccessor, AfterViewInit,
     this.cropOpen.set(true);
   }
 
-  ngAfterViewInit(): void {
-    this.renderPreview();
-  }
-
-  ngOnChanges(): void {
-    queueMicrotask(() => this.renderPreview());
-  }
-
-  /**
-   * Rend la zone croppée dans un canvas pixel-perfect. drawImage() clippe
-   * exactement la région source (sx, sy, sw, sh) et la dessine à (0,0)
-   * dans le canvas à la taille (dw, dh).
-   *
-   * Aspect 100% fidèle au crop défini, indépendant du source aspect ratio
-   * et des shenanigans CSS object-fit.
-   */
-  private renderPreview(): void {
-    const canvas = this.previewCanvas?.nativeElement;
-    if (!canvas) return;
-    const url = this.value();
-    if (!url) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const img = new Image();
-    img.onload = () => {
-      const c = this.cropValue;
-      const TARGET_HEIGHT = 140;
-      const MAX_WIDTH = 220;
-      if (!c || !c.w || !c.h) {
-        // Pas de crop : image entière
-        const aspect = img.naturalWidth / img.naturalHeight || 1;
-        canvas.height = TARGET_HEIGHT;
-        canvas.width = Math.min(TARGET_HEIGHT * aspect, MAX_WIDTH);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        return;
-      }
-      // Crop défini : source rectangle (sx, sy, sw, sh) en pixels
-      const sx = (c.x / 100) * img.naturalWidth;
-      const sy = (c.y / 100) * img.naturalHeight;
-      const sw = (c.w / 100) * img.naturalWidth;
-      const sh = (c.h / 100) * img.naturalHeight;
-      const cropAspect = sw / sh || 1;
-      canvas.height = TARGET_HEIGHT;
-      canvas.width = Math.min(TARGET_HEIGHT * cropAspect, MAX_WIDTH);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-    };
-    img.onerror = () => {
-      // Image illisible (CORS, 404). Effacer le canvas pour signal visuel.
-      canvas.height = 80;
-      canvas.width = 160;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    };
-    img.src = url;
-  }
 
   protected onCropValidated(crop: Crop): void {
     this.cropChange.emit(crop);
