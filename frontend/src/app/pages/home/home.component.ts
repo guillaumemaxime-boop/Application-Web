@@ -26,11 +26,11 @@ import { enrichSlides } from '../../utils/display-slides';
     </section>
 
     @if (sliderByZone()['home-top']; as s) {
-      <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
+      <app-news-slider [slider]="s" [content]="content()" (storyOpen)="openStoryFromSlider($event)" />
     }
 
     @if (sliderByZone()['home-middle']; as s) {
-      <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
+      <app-news-slider [slider]="s" [content]="content()" (storyOpen)="openStoryFromSlider($event)" />
     }
 
     <section class="feed">
@@ -62,7 +62,7 @@ import { enrichSlides } from '../../utils/display-slides';
     </section>
 
     @if (sliderByZone()['home-bottom']; as s) {
-      <app-news-slider [slider]="s" (storyOpen)="openStoryFromSlider($event)" />
+      <app-news-slider [slider]="s" [content]="content()" (storyOpen)="openStoryFromSlider($event)" />
     }
 
     @if (viewerQueue().length > 0) {

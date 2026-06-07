@@ -1,6 +1,8 @@
-import { Component, ElementRef, EventEmitter, Input, Output, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, computed, input, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
+import { SiteContent } from '../../models/site-content.model';
+import { roleStyle } from '../../utils/title-style';
 
 @Component({
   selector: 'app-news-slider',
@@ -9,7 +11,7 @@ import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
   template: `
     <section class="news-slider">
       <header>
-        <h2 class="title">{{ slider.title }}</h2>
+        <h2 class="title" [ngStyle]="titleStyle()">{{ slider.title }}</h2>
         <div class="nav" role="group" aria-label="Navigation du slider">
           <button type="button" class="arrow" aria-label="Précédent"
                   [disabled]="atStart()"
@@ -94,7 +96,10 @@ import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
 })
 export class NewsSliderComponent {
   @Input({ required: true }) slider!: NewsSliderView;
+  readonly content = input<SiteContent>({});
   @Output() storyOpen = new EventEmitter<SliderStoryRef>();
+
+  protected readonly titleStyle = computed(() => roleStyle(this.content(), 'section-title'));
 
   protected trackRef = viewChild<ElementRef<HTMLDivElement>>('track');
   protected atStart = signal(true);

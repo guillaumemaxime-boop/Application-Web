@@ -91,4 +91,16 @@ describe('NewsSliderComponent', () => {
     cmp.onScroll();
     expect((cmp as any).atEnd()).toBeTrue();
   });
+
+  it('applique le style du role section-title sur le titre du slider', () => {
+    fixture.componentRef.setInput('content', {
+      'typo.section-title.font': 'helvetica',
+      'typo.section-title.style': 'bold',
+    });
+    fixture.detectChanges();
+    const h2 = fixture.nativeElement.querySelector('header .title') as HTMLElement;
+    expect(h2.style.fontFamily).toContain('Helvetica');
+    expect(h2.style.fontWeight).toBe('600');
+    expect(h2.style.fontStyle).toBe('normal');
+  });
 });
