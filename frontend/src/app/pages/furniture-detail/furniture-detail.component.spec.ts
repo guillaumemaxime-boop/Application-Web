@@ -136,6 +136,13 @@ describe('FurnitureDetailComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Voir en plein écran');
   });
 
+  it('hasSlides() retourne false quand item.slides est undefined (fallback ?? 0)', () => {
+    setup('onde', of({ ...mockFurniture, coverImage: '', slides: undefined as any }));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    expect((fixture.componentInstance as any).hasSlides()).toBeFalse();
+  });
+
   it('should open the viewer with a single furniture story when the link is clicked', () => {
     setup('onde', of({ ...mockFurniture, slides }));
     const fixture = TestBed.createComponent(FurnitureDetailComponent);
