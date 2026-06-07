@@ -1,6 +1,8 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.model.Furniture;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -17,6 +21,9 @@ class FurnitureServiceTest {
 
     @Autowired
     private FurnitureService furnitureService;
+
+    @Autowired
+    private Validator validator;
 
     @Test
     void testFindAll_ReturnsAllFurnitureItems() {
@@ -177,6 +184,37 @@ class FurnitureServiceTest {
 
         assertFalse(deleted);
         assertEquals(6, furnitureService.findAll().size());
+    }
+
+    @Test
+    void furniture_avec_tag_trop_long_est_invalide() {
+        Furniture f = new Furniture(
+                null, "Titre", null,
+                "Sièges", null, 2026,
+                null, List.of(), null, null,
+                List.of(), null, false, true, true, List.of(),
+                List.of("a".repeat(256))
+        );
+
+        Set<ConstraintViolation<Furniture>> violations = validator.validate(f);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().contains("tags"));
+    }
+
+    @Test
+    void furniture_avec_tag_de_255_chars_est_valide() {
+        Furniture f = new Furniture(
+                null, "Titre", null,
+                "Sièges", null, 2026,
+                null, List.of(), null, null,
+                List.of(), null, false, true, true, List.of(),
+                List.of("a".repeat(255))
+        );
+
+        Set<ConstraintViolation<Furniture>> violations = validator.validate(f);
+
+        assertThat(violations).isEmpty();
     }
 
     @Test
