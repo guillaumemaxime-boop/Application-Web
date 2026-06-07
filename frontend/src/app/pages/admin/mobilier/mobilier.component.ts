@@ -12,6 +12,7 @@ import { ImageFieldComponent } from '../shared/image-field.component';
 import { TagInputComponent } from '../shared/tag-input.component';
 import { ToastService } from '../shared/toast.service';
 import { GalleryItem } from '../../../models/gallery-item.model';
+import { Crop } from '../../../models/crop.model';
 
 @Component({
   selector: 'app-mobilier',
@@ -80,7 +81,12 @@ import { GalleryItem } from '../../../models/gallery-item.model';
           <input type="text" formControlName="designer" />
         </label>
 
-        <app-image-field formControlName="coverImage" label="Image principale (URL)" />
+        <app-image-field
+          formControlName="coverImage"
+          label="Image principale (URL)"
+          [cropEnabled]="true"
+          [cropValue]="furnitureForm.get('coverCrop')?.value"
+          (cropChange)="onCoverCropChange($event)" />
 
         <label>
           <span>Tags</span>
@@ -293,6 +299,7 @@ export class MobilierComponent {
     material: [''],
     designer: ['Milo GUILLAUME Design'],
     coverImage: [''],
+    coverCrop: this.fb.control<Crop | null>(null),
     dimW: [null as number | null],
     dimD: [null as number | null],
     dimH: [null as number | null],
@@ -327,7 +334,7 @@ export class MobilierComponent {
     this.editingStoryId.set(null);
     this.furnitureForm.reset({
       title: '', slug: '', category: '', year: new Date().getFullYear(),
-      material: '', designer: 'Milo GUILLAUME Design', coverImage: '',
+      material: '', designer: 'Milo GUILLAUME Design', coverImage: '', coverCrop: null,
       dimW: null, dimD: null, dimH: null, dimNotes: '',
       shortDescription: '', description: '',
       showStoryLink: true,
@@ -345,7 +352,7 @@ export class MobilierComponent {
     const dims = this.parseDimensions(item.dimensions ?? []);
     this.furnitureForm.reset({
       title: item.title, slug: item.slug, category: item.category, year: item.year,
-      material: item.material ?? '', designer: item.designer ?? '', coverImage: item.coverImage ?? '',
+      material: item.material ?? '', designer: item.designer ?? '', coverImage: item.coverImage ?? '', coverCrop: item.coverCrop ?? null,
       dimW: dims.w, dimD: dims.d, dimH: dims.h, dimNotes: dims.notes,
       shortDescription: item.shortDescription ?? '', description: item.description ?? '',
       showStoryLink: item.showStoryLink ?? true,
@@ -356,6 +363,10 @@ export class MobilierComponent {
     if (item.id) {
       this.loadStoriesFor(item.id, item.title, item.coverImage ?? '');
     }
+  }
+
+  protected onCoverCropChange(crop: Crop | null): void {
+    this.furnitureForm.patchValue({ coverCrop: crop });
   }
 
   private loadStoriesFor(furnitureId: string, fallbackTitle: string, fallbackCover: string): void {
@@ -526,6 +537,7 @@ export class MobilierComponent {
       material: v.material ?? '',
       designer: v.designer ?? '',
       coverImage: v.coverImage ?? '',
+      coverCrop: v.coverCrop ?? null,
       gallery: [...this.furnitureGallery()],
       dimensions: this.serializeDimensions(v.dimW ?? null, v.dimD ?? null, v.dimH ?? null, v.dimNotes ?? ''),
       shortDescription: v.shortDescription ?? '',

@@ -12,6 +12,7 @@ import { ImageFieldComponent } from '../shared/image-field.component';
 import { TagInputComponent } from '../shared/tag-input.component';
 import { ToastService } from '../shared/toast.service';
 import { GalleryItem } from '../../../models/gallery-item.model';
+import { Crop } from '../../../models/crop.model';
 
 @Component({
   selector: 'app-expositions',
@@ -66,7 +67,12 @@ import { GalleryItem } from '../../../models/gallery-item.model';
         </div>
         <label><span>Commissaire</span><input type="text" formControlName="curator" /></label>
 
-        <app-image-field formControlName="coverImage" label="Image principale (URL)" />
+        <app-image-field
+          formControlName="coverImage"
+          label="Image principale (URL)"
+          [cropEnabled]="true"
+          [cropValue]="exhibitionForm.get('coverCrop')?.value"
+          (cropChange)="onCoverCropChange($event)" />
 
         <app-gallery-editor
           [images]="exhibitionGallery()"
@@ -225,6 +231,7 @@ export class ExpositionsComponent {
     endDate: ['', Validators.required],
     curator: [''],
     coverImage: [''],
+    coverCrop: this.fb.control<Crop | null>(null),
     shortDescription: [''],
     description: [''],
     showStoryLink: [true],
@@ -255,7 +262,7 @@ export class ExpositionsComponent {
     this.editingStoryId.set(null);
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
-      startDate: '', endDate: '', curator: '', coverImage: '',
+      startDate: '', endDate: '', curator: '', coverImage: '', coverCrop: null,
       shortDescription: '', description: '',
       showStoryLink: true,
       showStoryButton: true,
@@ -272,7 +279,7 @@ export class ExpositionsComponent {
     this.exhibitionForm.reset({
       title: item.title, slug: item.slug, venue: item.venue ?? '', city: item.city ?? '', country: item.country ?? '',
       startDate: item.startDate ?? '', endDate: item.endDate ?? '', curator: item.curator ?? '',
-      coverImage: item.coverImage ?? '',
+      coverImage: item.coverImage ?? '', coverCrop: item.coverCrop ?? null,
       shortDescription: item.shortDescription ?? '', description: item.description ?? '',
       showStoryLink: item.showStoryLink ?? true,
       showStoryButton: item.showStoryButton ?? true,
@@ -282,6 +289,10 @@ export class ExpositionsComponent {
     if (item.id) {
       this.loadStoriesFor(item.id, item.title, item.coverImage ?? '');
     }
+  }
+
+  protected onCoverCropChange(crop: Crop | null): void {
+    this.exhibitionForm.patchValue({ coverCrop: crop });
   }
 
   private loadStoriesFor(exhibitionId: string, fallbackTitle: string, fallbackCover: string): void {
@@ -414,7 +425,7 @@ export class ExpositionsComponent {
       title: v.title!, slug: v.slug || undefined,
       venue: v.venue ?? '', city: v.city ?? '', country: v.country ?? '',
       startDate: v.startDate!, endDate: v.endDate!,
-      curator: v.curator ?? '', coverImage: v.coverImage ?? '',
+      curator: v.curator ?? '', coverImage: v.coverImage ?? '', coverCrop: v.coverCrop ?? null,
       gallery: [...this.exhibitionGallery()],
       tags: v.tags ?? [],
       shortDescription: v.shortDescription ?? '', description: v.description ?? '',

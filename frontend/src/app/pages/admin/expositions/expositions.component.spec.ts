@@ -30,6 +30,7 @@ type ExpoInternals = {
   newStory: () => void;
   renameStory: (s: unknown) => void;
   deleteStory: (s: unknown) => void;
+  onCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
 };
 
 describe('ExpositionsComponent', () => {
@@ -438,6 +439,37 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne('/api/tags').flush([]);
     fixture.detectChanges();
     expect(toast.error).toHaveBeenCalled();
+  });
+
+  it('onCoverCropChange patche coverCrop dans le form (exposition)', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.onCoverCropChange({ x: 10, y: 20, w: 50, h: 40 });
+    expect(cmp.exhibitionForm.getRawValue()['coverCrop']).toEqual({ x: 10, y: 20, w: 50, h: 40 });
+  });
+
+  it('saveExhibition envoie coverCrop dans le payload POST', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.exhibitionForm.patchValue({
+      title: 'T', startDate: '2024-01-01', endDate: '2024-02-01',
+      coverCrop: { x: 10, y: 20, w: 50, h: 40 },
+    });
+    cmp.saveExhibition();
+    const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/exhibitions');
+    expect(req.request.body['coverCrop']).toEqual({ x: 10, y: 20, w: 50, h: 40 });
+    req.flush({});
+    httpMock.expectOne('/api/exhibitions').flush([]);
   });
 
 });

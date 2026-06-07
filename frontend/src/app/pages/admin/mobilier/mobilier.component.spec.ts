@@ -33,6 +33,7 @@ type MobilierInternals = {
   newStory: () => void;
   renameStory: (s: unknown) => void;
   deleteStory: (s: unknown) => void;
+  onCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
 };
 
 describe('MobilierComponent', () => {
@@ -455,6 +456,37 @@ describe('MobilierComponent', () => {
     expect(toast.error).toHaveBeenCalled();
     const cmp = fixture.componentInstance as unknown as MobilierInternals;
     expect(cmp.loadingFurniture()).toBe(false);
+  });
+
+  it('onCoverCropChange patche coverCrop dans le form', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.onCoverCropChange({ x: 10, y: 20, w: 50, h: 40 });
+    expect(cmp.furnitureForm.getRawValue()['coverCrop']).toEqual({ x: 10, y: 20, w: 50, h: 40 });
+  });
+
+  it('saveFurniture envoie coverCrop dans le payload POST', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.furnitureForm.patchValue({
+      title: 'T', category: 'C', year: 2024,
+      coverCrop: { x: 10, y: 20, w: 50, h: 40 },
+    });
+    cmp.saveFurniture();
+    const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/furniture');
+    expect(req.request.body['coverCrop']).toEqual({ x: 10, y: 20, w: 50, h: 40 });
+    req.flush({});
+    httpMock.expectOne('/api/furniture').flush([]);
   });
 
 });
