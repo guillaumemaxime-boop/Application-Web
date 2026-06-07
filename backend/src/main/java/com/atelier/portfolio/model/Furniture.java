@@ -1,5 +1,6 @@
 package com.atelier.portfolio.model;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -15,8 +16,8 @@ public record Furniture(
     @Size(max = 100) String material,
     @Min(1900) @Max(2100) Integer year,
     @Size(max = 500) String coverImage,
-    ImageCrop coverCrop,
-    @Size(max = 50) List<GalleryImage> gallery,
+    @Valid ImageCrop coverCrop,
+    @Size(max = 50) List<@Valid GalleryImage> gallery,
     @Size(max = 1000) String shortDescription,
     @Size(max = 10000) String description,
     @Size(max = 20) List<String> dimensions,

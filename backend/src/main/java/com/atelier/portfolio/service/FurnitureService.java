@@ -155,16 +155,11 @@ public class FurnitureService {
         return normalized.replaceAll("-+", "-").replaceAll("^-|-$", "");
     }
 
-    private static ImageCrop buildCrop(Double x, Double y, Double w, Double h) {
-        if (x == null && y == null && w == null && h == null) return null;
-        return new ImageCrop(x, y, w, h);
-    }
-
     private static Furniture toDto(FurnitureEntity entity) {
-        ImageCrop coverCrop = buildCrop(entity.getCoverCropX(), entity.getCoverCropY(),
+        ImageCrop coverCrop = ImageCrop.ofNullable(entity.getCoverCropX(), entity.getCoverCropY(),
                                         entity.getCoverCropW(), entity.getCoverCropH());
         List<GalleryImage> gallery = entity.getGallery().stream()
-                .map(e -> new GalleryImage(e.getUrl(), buildCrop(e.getCropX(), e.getCropY(), e.getCropW(), e.getCropH())))
+                .map(e -> new GalleryImage(e.getUrl(), ImageCrop.ofNullable(e.getCropX(), e.getCropY(), e.getCropW(), e.getCropH())))
                 .toList();
         return new Furniture(
                 entity.getId(),

@@ -1,5 +1,6 @@
 package com.atelier.portfolio.model;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -16,7 +17,7 @@ public record Exhibition(
         LocalDate startDate,
         LocalDate endDate,
         @Size(max = 500) String coverImage,
-        ImageCrop coverCrop,
+        @Valid ImageCrop coverCrop,
         @Size(max = 50) List<String> gallery,
         @Size(max = 200) String curator,
         @Size(max = 1000) String shortDescription,

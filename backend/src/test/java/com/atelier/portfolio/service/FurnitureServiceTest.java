@@ -258,6 +258,29 @@ class FurnitureServiceTest {
     }
 
     @Test
+    void update_avec_coverCrop_null_reset_les_4_coords_en_db() {
+        // Cree d'abord un meuble avec crop defini
+        Furniture initial = new Furniture(null, "Reset Test", null, "Cat", "mat", 2024, "/c.jpg",
+            new ImageCrop(10.0, 20.0, 60.0, 40.0),
+            List.of(), "s", "d", List.of(), "des", false, true, true, List.of(), List.of());
+        Furniture created = furnitureService.create(initial);
+        assertThat(created.coverCrop()).isNotNull();
+
+        // Update avec coverCrop = null
+        Furniture cleared = new Furniture(created.id(), created.title(), created.slug(), created.category(),
+            created.material(), created.year(), created.coverImage(),
+            null,  // reset crop
+            created.gallery(), created.shortDescription(), created.description(), created.dimensions(),
+            created.designer(), created.featured(), created.showStoryLink(), created.showStoryButton(),
+            created.slides(), created.tags());
+        furnitureService.update(created.slug(), cleared).orElseThrow();
+
+        // Relit et verifie que le crop est bien null
+        Furniture reloaded = furnitureService.findBySlug(created.slug()).orElseThrow();
+        assertThat(reloaded.coverCrop()).isNull();
+    }
+
+    @Test
     void create_avec_gallery_items_persiste_crop_par_item() {
         Furniture input = new Furniture(null, "T2", null, "Cat", "mat", 2024, "/c.jpg",
             null,

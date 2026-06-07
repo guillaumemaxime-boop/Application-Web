@@ -139,13 +139,8 @@ public class ExhibitionService {
         return normalized.replaceAll("-+", "-").replaceAll("^-|-$", "");
     }
 
-    private static ImageCrop buildCrop(Double x, Double y, Double w, Double h) {
-        if (x == null && y == null && w == null && h == null) return null;
-        return new ImageCrop(x, y, w, h);
-    }
-
     private static Exhibition toDto(ExhibitionEntity entity) {
-        ImageCrop coverCrop = buildCrop(entity.getCoverCropX(), entity.getCoverCropY(),
+        ImageCrop coverCrop = ImageCrop.ofNullable(entity.getCoverCropX(), entity.getCoverCropY(),
                                         entity.getCoverCropW(), entity.getCoverCropH());
         return new Exhibition(
                 entity.getId(),
