@@ -3,6 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 import { GalleryEditorComponent } from './gallery-editor.component';
+import { GalleryItem } from '../../../models/gallery-item.model';
+import { WritableSignal } from '@angular/core';
 
 type GalleryInternals = {
   pickerOpen: () => boolean;
@@ -12,6 +14,9 @@ type GalleryInternals = {
   onPhotoSelected: (photo: { url: string }) => void;
   removeImage: (url: string) => void;
   onReorder: (order: number[]) => void;
+  cropOpenForIndex: WritableSignal<number | null>;
+  openCropFor: (i: number) => void;
+  onCropValidated: (crop: { x: number; y: number; w: number; h: number }) => void;
 };
 
 describe('GalleryEditorComponent', () => {
@@ -36,19 +41,19 @@ describe('GalleryEditorComponent', () => {
 
   it('affiche une vignette par image', () => {
     const fixture = TestBed.createComponent(GalleryEditorComponent);
-    fixture.componentRef.setInput('images', ['/a.jpg', '/b.jpg']);
+    fixture.componentRef.setInput('images', [{ url: '/a.jpg' }, { url: '/b.jpg' }] as GalleryItem[]);
     fixture.detectChanges();
     expect(fixture.debugElement.queryAll(By.css('.gallery-thumb')).length).toBe(2);
   });
 
   it('émet imagesChange quand on retire une image', () => {
     const fixture = TestBed.createComponent(GalleryEditorComponent);
-    fixture.componentRef.setInput('images', ['/a.jpg', '/b.jpg']);
-    const received: string[][] = [];
-    fixture.componentInstance.imagesChange.subscribe((v: string[]) => { received.push(v); });
+    fixture.componentRef.setInput('images', [{ url: '/a.jpg' }, { url: '/b.jpg' }] as GalleryItem[]);
+    const received: GalleryItem[][] = [];
+    fixture.componentInstance.imagesChange.subscribe((v: GalleryItem[]) => { received.push(v); });
     fixture.detectChanges();
     fixture.debugElement.queryAll(By.css('.thumb-remove'))[0].nativeElement.click();
-    expect(received[0]).toEqual(['/b.jpg']);
+    expect(received[0]).toEqual([{ url: '/b.jpg' }]);
   });
 
   it('ouvre le PhotoPicker au clic sur "+ Ajouter" et charge les photos', () => {
@@ -87,20 +92,20 @@ describe('GalleryEditorComponent', () => {
 
   it('onPhotoSelected() ajoute l\'URL si elle n\'existe pas déjà', () => {
     const fixture = TestBed.createComponent(GalleryEditorComponent);
-    fixture.componentRef.setInput('images', ['/existing.jpg']);
-    const received: string[][] = [];
-    fixture.componentInstance.imagesChange.subscribe((v: string[]) => { received.push(v); });
+    fixture.componentRef.setInput('images', [{ url: '/existing.jpg' }] as GalleryItem[]);
+    const received: GalleryItem[][] = [];
+    fixture.componentInstance.imagesChange.subscribe((v: GalleryItem[]) => { received.push(v); });
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as GalleryInternals;
     cmp.onPhotoSelected({ url: '/new.jpg' });
-    expect(received[0]).toEqual(['/existing.jpg', '/new.jpg']);
+    expect(received[0]).toEqual([{ url: '/existing.jpg' }, { url: '/new.jpg', crop: null }]);
   });
 
   it('onPhotoSelected() ignore si URL déjà présente', () => {
     const fixture = TestBed.createComponent(GalleryEditorComponent);
-    fixture.componentRef.setInput('images', ['/existing.jpg']);
-    const received: string[][] = [];
-    fixture.componentInstance.imagesChange.subscribe((v: string[]) => { received.push(v); });
+    fixture.componentRef.setInput('images', [{ url: '/existing.jpg' }] as GalleryItem[]);
+    const received: GalleryItem[][] = [];
+    fixture.componentInstance.imagesChange.subscribe((v: GalleryItem[]) => { received.push(v); });
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as GalleryInternals;
     cmp.onPhotoSelected({ url: '/existing.jpg' });
@@ -109,23 +114,46 @@ describe('GalleryEditorComponent', () => {
 
   it('removeImage() émet la liste sans l\'URL ciblée', () => {
     const fixture = TestBed.createComponent(GalleryEditorComponent);
-    fixture.componentRef.setInput('images', ['/a.jpg', '/b.jpg', '/c.jpg']);
-    const received: string[][] = [];
-    fixture.componentInstance.imagesChange.subscribe((v: string[]) => { received.push(v); });
+    fixture.componentRef.setInput('images', [{ url: '/a.jpg' }, { url: '/b.jpg' }, { url: '/c.jpg' }] as GalleryItem[]);
+    const received: GalleryItem[][] = [];
+    fixture.componentInstance.imagesChange.subscribe((v: GalleryItem[]) => { received.push(v); });
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as GalleryInternals;
     cmp.removeImage('/b.jpg');
-    expect(received[0]).toEqual(['/a.jpg', '/c.jpg']);
+    expect(received[0]).toEqual([{ url: '/a.jpg' }, { url: '/c.jpg' }]);
   });
 
   it('onReorder() émet la liste réordonnée selon l\'index', () => {
     const fixture = TestBed.createComponent(GalleryEditorComponent);
-    fixture.componentRef.setInput('images', ['/a.jpg', '/b.jpg', '/c.jpg']);
-    const received: string[][] = [];
-    fixture.componentInstance.imagesChange.subscribe((v: string[]) => { received.push(v); });
+    fixture.componentRef.setInput('images', [{ url: '/a.jpg' }, { url: '/b.jpg' }, { url: '/c.jpg' }] as GalleryItem[]);
+    const received: GalleryItem[][] = [];
+    fixture.componentInstance.imagesChange.subscribe((v: GalleryItem[]) => { received.push(v); });
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as GalleryInternals;
     cmp.onReorder([2, 0, 1]);
-    expect(received[0]).toEqual(['/c.jpg', '/a.jpg', '/b.jpg']);
+    expect(received[0]).toEqual([{ url: '/c.jpg' }, { url: '/a.jpg' }, { url: '/b.jpg' }]);
+  });
+
+  it('openCropFor(i) ouvre la modale crop pour l\'item i', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', [{ url: '/a.jpg' }, { url: '/b.jpg' }] as GalleryItem[]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.openCropFor(1);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-image-crop-picker')).toBeTruthy();
+  });
+
+  it('onCropValidated patche images[i].crop et émet imagesChange', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', [{ url: '/a.jpg' }, { url: '/b.jpg' }] as GalleryItem[]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.cropOpenForIndex.set(0);
+    let emitted: GalleryItem[] | undefined;
+    fixture.componentInstance.imagesChange.subscribe((v: GalleryItem[]) => { emitted = v; });
+    cmp.onCropValidated({ x: 5, y: 5, w: 90, h: 90 });
+    expect(emitted![0].crop).toEqual({ x: 5, y: 5, w: 90, h: 90 });
+    expect(emitted![1].crop).toBeUndefined();
   });
 });

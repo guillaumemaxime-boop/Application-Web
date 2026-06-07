@@ -185,6 +185,48 @@ class SecurityIntegrationTest {
     }
 
     // -----------------------------------------------------------------------
+    // Validation Bean (ImageCrop : @DecimalMin 0.0 / @DecimalMax 100.0)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void postFurniture_coverCropHorsBornes_retourne400() throws Exception {
+        String token = getValidToken();
+        String payload = """
+            {"title":"T","slug":"test-securite","category":"C","year":2024,
+             "featured":false,"showStoryLink":false,"showStoryButton":false,
+             "coverCrop":{"x":-50.0,"y":0.0,"w":80.0,"h":60.0},
+             "gallery":[]}
+            """;
+        var request = HttpRequest.newBuilder()
+                .uri(uri("/api/furniture"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .build();
+        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, response.statusCode());
+    }
+
+    @Test
+    void postFurniture_galleryItemCropHorsBornes_retourne400() throws Exception {
+        String token = getValidToken();
+        // w=200 viole @DecimalMax("100.0") sur GalleryImage.crop
+        String payload = """
+            {"title":"T","slug":"test-securite","category":"C","year":2024,
+             "featured":false,"showStoryLink":false,"showStoryButton":false,
+             "gallery":[{"url":"https://example.com/img.jpg","crop":{"x":0.0,"y":0.0,"w":200.0,"h":50.0}}]}
+            """;
+        var request = HttpRequest.newBuilder()
+                .uri(uri("/api/furniture"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .build();
+        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, response.statusCode());
+    }
+
+    // -----------------------------------------------------------------------
     // Headers de securite (F-12)
     // -----------------------------------------------------------------------
 

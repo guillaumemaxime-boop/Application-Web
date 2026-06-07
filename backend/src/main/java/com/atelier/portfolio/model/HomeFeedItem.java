@@ -4,6 +4,7 @@ public record HomeFeedItem(
         String slug,
         String title,
         String cover,
+        ImageCrop coverCrop,
         String subtitle,
         String description
 ) {}

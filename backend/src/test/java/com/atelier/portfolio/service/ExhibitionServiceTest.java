@@ -1,6 +1,8 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.model.Exhibition;
+import com.atelier.portfolio.model.GalleryImage;
+import com.atelier.portfolio.model.ImageCrop;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -120,8 +122,8 @@ class ExhibitionServiceTest {
                 "Palais de Tokyo", "Paris", "France",
                 LocalDate.of(2026, 6, 1), LocalDate.of(2026, 9, 30),
                 "https://example.com/souffles.jpg",
-                null, null,
-                List.of("https://example.com/souffles-1.jpg"),
+                null,
+                List.of(new GalleryImage("https://example.com/souffles-1.jpg", null)),
                 "Camille Lévy", "court", "long",
                 List.of("Sculpture", "Lumière"), true, true, true, List.of()
         );
@@ -141,7 +143,7 @@ class ExhibitionServiceTest {
                 null, "Test", "custom-expo-slug",
                 "Lieu", "Ville", "Pays",
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
-                null, null, null,
+                null, null,
                 List.of(), "", "", "", List.of(), false, true, true, List.of()
         );
 
@@ -159,7 +161,7 @@ class ExhibitionServiceTest {
                 original.id(), "Matières silencieuses — édition 2", original.slug(),
                 original.venue(), original.city(), original.country(),
                 original.startDate(), original.endDate(),
-                original.coverImage(), original.coverFocalX(), original.coverFocalY(),
+                original.coverImage(), original.coverCrop(),
                 original.gallery(), original.curator(),
                 "Description courte mise à jour", original.description(),
                 original.tags(), false, true, true, List.of()
@@ -178,7 +180,7 @@ class ExhibitionServiceTest {
         Exhibition changes = new Exhibition(
                 null, "X", null, "", "", "",
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
-                null, null, null,
+                null, null,
                 List.of(), "", "", "", List.of(), false, true, true, List.of()
         );
 
@@ -204,6 +206,22 @@ class ExhibitionServiceTest {
 
         assertFalse(deleted);
         assertEquals(5, exhibitionService.findAll().size());
+    }
+
+    @Test
+    void create_avec_gallery_items_persiste_crop_par_item() {
+        Exhibition input = new Exhibition(null, "T", null, "venue", "city", "country",
+                java.time.LocalDate.of(2024, 1, 1), java.time.LocalDate.of(2024, 12, 31),
+                "/c.jpg",
+                null,
+                List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0)),
+                        new GalleryImage("/g2.jpg", null)),
+                "curator", "s", "d", List.of(), false, true, true, List.of());
+        Exhibition created = exhibitionService.create(input);
+        Exhibition reloaded = exhibitionService.findBySlug(created.slug()).orElseThrow();
+        assertEquals(2, reloaded.gallery().size());
+        assertEquals(50.0, reloaded.gallery().get(0).crop().w());
+        assertNull(reloaded.gallery().get(1).crop());
     }
 
     @Test

@@ -287,6 +287,19 @@ describe('StoryViewerComponent', () => {
     expect(() => component.ngOnDestroy()).not.toThrow();
   });
 
+  it('coverCropStyle retourne le transform calcule pour une slide cover avec coverCrop', () => {
+    const coverSlide: DisplaySlide = { type: 'cover', id: 's1', position: 0, src: 'x.jpg', coverCrop: { x: 25, y: 25, w: 50, h: 50 } };
+    setQueue([{ title: 'T', subtitle: 's', slides: [coverSlide] }]);
+    const style = (component as any).coverCropStyle();
+    expect(style.transform).toBe('translate(-50%, -50%) scale(2)');
+  });
+
+  it('coverCropStyle retourne transform none pour une slide cover sans coverCrop', () => {
+    setQueue([{ title: 'T', subtitle: 's', slides: [cover()] }]);
+    const style = (component as any).coverCropStyle();
+    expect(style.transform).toBe('none');
+  });
+
   it('rend un iframe YouTube pour un slide video YouTube', () => {
     const slides: DisplaySlide[] = [
       { type: 'video', id: 'v1', position: 0, src: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', caption: null },

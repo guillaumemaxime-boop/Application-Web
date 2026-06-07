@@ -11,12 +11,13 @@ import { GalleryEditorComponent } from '../shared/gallery-editor.component';
 import { ImageFieldComponent } from '../shared/image-field.component';
 import { TagInputComponent } from '../shared/tag-input.component';
 import { ToastService } from '../shared/toast.service';
-import { FocalPointPickerComponent, FocalPoint } from '../shared/focal-point-picker.component';
+import { GalleryItem } from '../../../models/gallery-item.model';
+import { Crop } from '../../../models/crop.model';
 
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FocalPointPickerComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -66,16 +67,12 @@ import { FocalPointPickerComponent, FocalPoint } from '../shared/focal-point-pic
         </div>
         <label><span>Commissaire</span><input type="text" formControlName="curator" /></label>
 
-        <app-image-field formControlName="coverImage" label="Image principale (URL)" />
-
-        <label>
-          <span>Point focal du bandeau</span>
-          <app-focal-point-picker
-            [imageUrl]="exhibitionForm.get('coverImage')?.value ?? null"
-            [focalX]="exhibitionForm.get('coverFocalX')?.value ?? null"
-            [focalY]="exhibitionForm.get('coverFocalY')?.value ?? null"
-            (focalChange)="onExhibitionFocalChange($event)" />
-        </label>
+        <app-image-field
+          formControlName="coverImage"
+          label="Image principale (URL)"
+          [cropEnabled]="true"
+          [cropValue]="exhibitionForm.get('coverCrop')?.value"
+          (cropChange)="onCoverCropChange($event)" />
 
         <app-gallery-editor
           [images]="exhibitionGallery()"
@@ -122,7 +119,10 @@ import { FocalPointPickerComponent, FocalPoint } from '../shared/focal-point-pic
               </article>
               @if (editingCoverStoryId() === story.id) {
                 <div class="cover-editor">
-                  <app-image-field label="Image de couverture" [formControl]="coverEditCtrl" />
+                  <app-image-field label="Image de couverture" [formControl]="coverEditCtrl"
+                    [cropEnabled]="true"
+                    [cropValue]="editingStoryCoverCrop()"
+                    (cropChange)="onStoryCoverCropChange($event)" />
                   <div class="cover-editor-actions">
                     <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
                     <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
@@ -217,12 +217,13 @@ export class ExpositionsComponent {
   protected readonly saving = signal(false);
   protected readonly editingExhibitionSlug = signal<string | null>(null);
   protected readonly editingExhibitionId = signal<string | null>(null);
-  protected readonly exhibitionGallery = signal<string[]>([]);
+  protected readonly exhibitionGallery = signal<GalleryItem[]>([]);
   protected readonly allTags = signal<string[]>([]);
   protected readonly currentStories = signal<Story[]>([]);
   protected readonly editingStoryId = signal<string | null>(null);
   protected readonly editingCoverStoryId = signal<string | null>(null);
   protected readonly coverEditCtrl = new FormControl('');
+  protected readonly editingStoryCoverCrop = signal<Crop | null>(null);
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -234,8 +235,7 @@ export class ExpositionsComponent {
     endDate: ['', Validators.required],
     curator: [''],
     coverImage: [''],
-    coverFocalX: this.fb.control<number | null>(null),
-    coverFocalY: this.fb.control<number | null>(null),
+    coverCrop: this.fb.control<Crop | null>(null),
     shortDescription: [''],
     description: [''],
     showStoryLink: [true],
@@ -266,8 +266,7 @@ export class ExpositionsComponent {
     this.editingStoryId.set(null);
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
-      startDate: '', endDate: '', curator: '', coverImage: '',
-      coverFocalX: null, coverFocalY: null,
+      startDate: '', endDate: '', curator: '', coverImage: '', coverCrop: null,
       shortDescription: '', description: '',
       showStoryLink: true,
       showStoryButton: true,
@@ -284,7 +283,7 @@ export class ExpositionsComponent {
     this.exhibitionForm.reset({
       title: item.title, slug: item.slug, venue: item.venue ?? '', city: item.city ?? '', country: item.country ?? '',
       startDate: item.startDate ?? '', endDate: item.endDate ?? '', curator: item.curator ?? '',
-      coverImage: item.coverImage ?? '', coverFocalX: item.coverFocalX ?? null, coverFocalY: item.coverFocalY ?? null,
+      coverImage: item.coverImage ?? '', coverCrop: item.coverCrop ?? null,
       shortDescription: item.shortDescription ?? '', description: item.description ?? '',
       showStoryLink: item.showStoryLink ?? true,
       showStoryButton: item.showStoryButton ?? true,
@@ -294,6 +293,10 @@ export class ExpositionsComponent {
     if (item.id) {
       this.loadStoriesFor(item.id, item.title, item.coverImage ?? '');
     }
+  }
+
+  protected onCoverCropChange(crop: Crop | null): void {
+    this.exhibitionForm.patchValue({ coverCrop: crop });
   }
 
   private loadStoriesFor(exhibitionId: string, fallbackTitle: string, fallbackCover: string): void {
@@ -341,19 +344,30 @@ export class ExpositionsComponent {
   openCoverEditor(story: Story): void {
     this.editingCoverStoryId.set(story.id);
     this.coverEditCtrl.setValue(story.coverImage);
+    this.editingStoryCoverCrop.set(story.coverCrop ?? null);
   }
 
   cancelCoverEdit(): void {
     this.editingCoverStoryId.set(null);
     this.coverEditCtrl.setValue('');
+    this.editingStoryCoverCrop.set(null);
+  }
+
+  protected onStoryCoverCropChange(crop: Crop | null): void {
+    this.editingStoryCoverCrop.set(crop);
   }
 
   saveCover(story: Story): void {
     const newCover = (this.coverEditCtrl.value ?? '').trim();
-    if (!newCover || newCover === story.coverImage) { this.cancelCoverEdit(); return; }
+    if (!newCover) { this.cancelCoverEdit(); return; }
+    const newCrop = this.editingStoryCoverCrop();
+    const urlUnchanged = newCover === story.coverImage;
+    const cropUnchanged = JSON.stringify(newCrop ?? null) === JSON.stringify(story.coverCrop ?? null);
+    if (urlUnchanged && cropUnchanged) { this.cancelCoverEdit(); return; }
     this.portfolio.updateStory(story.id, {
       ownerKind: story.ownerKind, ownerId: story.ownerId,
       title: story.title, coverImage: newCover,
+      coverCrop: newCrop,
     }).subscribe({
       next: updated => {
         this.currentStories.update(arr => arr.map(s => s.id === updated.id ? updated : s));
@@ -426,9 +440,7 @@ export class ExpositionsComponent {
       title: v.title!, slug: v.slug || undefined,
       venue: v.venue ?? '', city: v.city ?? '', country: v.country ?? '',
       startDate: v.startDate!, endDate: v.endDate!,
-      curator: v.curator ?? '', coverImage: v.coverImage ?? '',
-      coverFocalX: v.coverFocalX ?? null,
-      coverFocalY: v.coverFocalY ?? null,
+      curator: v.curator ?? '', coverImage: v.coverImage ?? '', coverCrop: v.coverCrop ?? null,
       gallery: [...this.exhibitionGallery()],
       tags: v.tags ?? [],
       shortDescription: v.shortDescription ?? '', description: v.description ?? '',
@@ -452,14 +464,6 @@ export class ExpositionsComponent {
         this.toast.error('Erreur lors de l\'enregistrement.');
       }
     });
-  }
-
-  protected onExhibitionFocalChange(value: FocalPoint | null): void {
-    if (value) {
-      this.exhibitionForm.patchValue({ coverFocalX: value.x, coverFocalY: value.y });
-    } else {
-      this.exhibitionForm.patchValue({ coverFocalX: null, coverFocalY: null });
-    }
   }
 
   removeExhibition(item: Exhibition): void {

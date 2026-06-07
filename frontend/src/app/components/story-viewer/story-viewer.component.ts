@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { A11yModule } from '@angular/cdk/a11y';
-import { DisplaySlide } from '../../models/display-slide.model';
+import { CoverDisplaySlide, DisplaySlide } from '../../models/display-slide.model';
 import { parseVideoUrl } from '../../utils/video-url';
+import { cropTransform, CropStyle } from '../../utils/crop-transform';
 
 export interface StoryItem {
   title: string;
@@ -61,7 +62,11 @@ const SLIDE_DURATION_MS = 5000;
 
         <div class="body" [ngClass]="bodyClass()">
           @switch (currentSlide()?.type) {
-            @case ('cover')  { <img [src]="$any(currentSlide()).src" alt="" /> }
+            @case ('cover')  {
+              <img [src]="$any(currentSlide()).src" alt=""
+                   [style.transform]="coverCropStyle().transform"
+                   [style.transform-origin]="coverCropStyle().transformOrigin" />
+            }
             @case ('image')  {
               <img [src]="$any(currentSlide()).src" alt="" />
               @if ($any(currentSlide()).caption) {
@@ -208,6 +213,12 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
   protected isVideoSlide = computed(() => this.currentSlide()?.type === 'video');
 
   protected bodyClass = computed(() => this.isMediaSlide() ? '' : 'cream');
+
+  protected coverCropStyle = computed<CropStyle>(() => {
+    const slide = this.currentSlide();
+    if (!slide || slide.type !== 'cover') return { transform: 'none', transformOrigin: '0% 0%' };
+    return cropTransform((slide as CoverDisplaySlide).coverCrop);
+  });
 
   protected linkHref = computed<string | null>(() => {
     const slide = this.currentSlide();

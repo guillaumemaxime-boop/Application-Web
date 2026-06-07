@@ -5,6 +5,7 @@ import com.atelier.portfolio.entity.FurnitureEntity;
 import com.atelier.portfolio.entity.StoryEntity;
 import com.atelier.portfolio.entity.StorySlideEntity;
 import com.atelier.portfolio.entity.StorySlideSpecEntry;
+import com.atelier.portfolio.model.ImageCrop;
 import com.atelier.portfolio.model.Slide;
 import com.atelier.portfolio.model.SpecEntry;
 import com.atelier.portfolio.model.Story;
@@ -94,6 +95,12 @@ public class StoryService {
         e.setOwnerId(input.ownerId());
         e.setTitle(input.title());
         e.setCoverImage(input.coverImage());
+        // coverCrop : null = reset (centrer par defaut cote affichage)
+        ImageCrop c = input.coverCrop();
+        e.setCoverCropX(c != null ? c.x() : null);
+        e.setCoverCropY(c != null ? c.y() : null);
+        e.setCoverCropW(c != null ? c.w() : null);
+        e.setCoverCropH(c != null ? c.h() : null);
         e.setSlug(generateUniqueSlug(input.ownerId()));
         e.setPosition(nextPosition(input.ownerKind(), input.ownerId()));
         e.setCreatedAt(Instant.now());
@@ -106,6 +113,12 @@ public class StoryService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "story not found: " + id));
         e.setTitle(input.title());
         e.setCoverImage(input.coverImage());
+        // coverCrop : null = reset (centrer par defaut cote affichage)
+        ImageCrop c = input.coverCrop();
+        e.setCoverCropX(c != null ? c.x() : null);
+        e.setCoverCropY(c != null ? c.y() : null);
+        e.setCoverCropW(c != null ? c.w() : null);
+        e.setCoverCropH(c != null ? c.h() : null);
         return toDto(storyRepo.save(e));
     }
 
@@ -163,8 +176,10 @@ public class StoryService {
     }
 
     private static Story toDto(StoryEntity e) {
+        ImageCrop coverCrop = ImageCrop.ofNullable(e.getCoverCropX(), e.getCoverCropY(),
+                e.getCoverCropW(), e.getCoverCropH());
         return new Story(e.getId(), e.getOwnerKind(), e.getOwnerId(),
-                e.getTitle(), e.getCoverImage(), e.getSlug(), e.getPosition(), e.getCreatedAt());
+                e.getTitle(), e.getCoverImage(), coverCrop, e.getSlug(), e.getPosition(), e.getCreatedAt());
     }
 
     private static Slide toSlideDto(StorySlideEntity e) {

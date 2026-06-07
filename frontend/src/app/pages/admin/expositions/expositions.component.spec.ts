@@ -17,10 +17,12 @@ type ExpoInternals = {
   loadingExhibitions: () => boolean;
   editingExhibitionSlug: () => string | null;
   editingExhibitionId: () => string | null;
-  exhibitionGallery: { (): string[]; set: (v: string[]) => void };
+  exhibitionGallery: { (): Array<{ url: string; crop?: unknown }>; set: (v: Array<{ url: string; crop?: unknown }>) => void };
   allTags: () => string[];
   currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
   editingStoryId: { (): string | null; set: (v: string | null) => void };
+  editingStoryCoverCrop: { (): { x: number; y: number; w: number; h: number } | null; set: (v: { x: number; y: number; w: number; h: number } | null) => void };
+  coverEditCtrl: { value: string | null; setValue: (v: string) => void };
   saving: () => boolean;
   loadExhibition: (item: unknown) => void;
   newExhibition: () => void;
@@ -30,7 +32,10 @@ type ExpoInternals = {
   newStory: () => void;
   renameStory: (s: unknown) => void;
   deleteStory: (s: unknown) => void;
-  onExhibitionFocalChange: (value: { x: number; y: number } | null) => void;
+  openCoverEditor: (s: unknown) => void;
+  saveCover: (s: unknown) => void;
+  onCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
+  onStoryCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
 };
 
 describe('ExpositionsComponent', () => {
@@ -101,7 +106,7 @@ describe('ExpositionsComponent', () => {
     const item = {
       id: 'e1', slug: 'salon', title: 'Salon', venue: 'Lieu', city: 'Paris', country: 'FR',
       startDate: '2024-05-01', endDate: '2024-05-30', curator: 'Cu', coverImage: '/c.jpg',
-      gallery: ['/g.jpg'], tags: ['art', 'design'],
+      gallery: [{ url: '/g.jpg' }], tags: ['art', 'design'],
       shortDescription: 's', description: 'd',
     };
     cmp.loadExhibition(item);
@@ -109,7 +114,7 @@ describe('ExpositionsComponent', () => {
     expect(cmp.editingExhibitionSlug()).toBe('salon');
     expect(cmp.editingExhibitionId()).toBe('e1');
     expect(cmp.exhibitionForm.getRawValue()['tags']).toEqual(['art', 'design']);
-    expect(cmp.exhibitionGallery()).toEqual(['/g.jpg']);
+    expect(cmp.exhibitionGallery()).toEqual([{ url: '/g.jpg' }]);
     const v = cmp.exhibitionForm.getRawValue();
     expect(v['title']).toBe('Salon');
   });
@@ -441,31 +446,68 @@ describe('ExpositionsComponent', () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it('onExhibitionFocalChange() met à jour coverFocalX et coverFocalY', () => {
+  it('onCoverCropChange patche coverCrop dans le form (exposition)', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);
     fixture.detectChanges();
-    flushInitial();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.onExhibitionFocalChange({ x: 25, y: 60 });
-    const v = cmp.exhibitionForm.getRawValue();
-    expect(v['coverFocalX']).toBe(25);
-    expect(v['coverFocalY']).toBe(60);
+    cmp.onCoverCropChange({ x: 10, y: 20, w: 50, h: 40 });
+    expect(cmp.exhibitionForm.getRawValue()['coverCrop']).toEqual({ x: 10, y: 20, w: 50, h: 40 });
   });
 
-  it('onExhibitionFocalChange(null) remet coverFocalX et coverFocalY à null', () => {
+  it('saveExhibition envoie coverCrop dans le payload POST', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);
     fixture.detectChanges();
-    flushInitial();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.onExhibitionFocalChange({ x: 25, y: 60 });
-    cmp.onExhibitionFocalChange(null);
-    const v = cmp.exhibitionForm.getRawValue();
-    expect(v['coverFocalX']).toBeNull();
-    expect(v['coverFocalY']).toBeNull();
+    cmp.exhibitionForm.patchValue({
+      title: 'T', startDate: '2024-01-01', endDate: '2024-02-01',
+      coverCrop: { x: 10, y: 20, w: 50, h: 40 },
+    });
+    cmp.saveExhibition();
+    const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/exhibitions');
+    expect(req.request.body['coverCrop']).toEqual({ x: 10, y: 20, w: 50, h: 40 });
+    req.flush({});
+    httpMock.expectOne('/api/exhibitions').flush([]);
+  });
+
+  it('saveCover envoie coverCrop dans le payload PUT story (Task 13)', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    // Entrer en édition du cover d'une story existante
+    const story = { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '/old.jpg', coverCrop: null, slug: 's1', position: 0, createdAt: '' };
+    cmp.openCoverEditor(story);
+    cmp.editingStoryCoverCrop.set({ x: 10, y: 10, w: 80, h: 80 });
+    cmp.coverEditCtrl.setValue('/new-cover.jpg');
+    cmp.saveCover(story);
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url.includes('/api/admin/stories/st-1'));
+    expect(req.request.body['coverCrop']).toEqual({ x: 10, y: 10, w: 80, h: 80 });
+    expect(req.request.body['coverImage']).toBe('/new-cover.jpg');
+    req.flush({ ...story, coverImage: '/new-cover.jpg', coverCrop: { x: 10, y: 10, w: 80, h: 80 } });
+  });
+
+  it('openCoverEditor peuple editingStoryCoverCrop depuis story.coverCrop (Task 13)', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    const story = { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '/c.jpg', coverCrop: { x: 5, y: 5, w: 90, h: 90 }, slug: 's1', position: 0, createdAt: '' };
+    cmp.openCoverEditor(story);
+    expect(cmp.editingStoryCoverCrop()).toEqual({ x: 5, y: 5, w: 90, h: 90 });
   });
 
 });

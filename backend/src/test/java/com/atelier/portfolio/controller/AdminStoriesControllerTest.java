@@ -25,7 +25,7 @@ class AdminStoriesControllerTest {
     @Test
     void list_returnsStoriesForOwner() {
         Story story = new Story("st-1", "furniture", "f-001", "Principale",
-                "https://example.com/c.jpg", "tabouret-principale", 0, Instant.now());
+                "https://example.com/c.jpg", null, "tabouret-principale", 0, Instant.now());
         when(service.findByOwner("furniture", "f-001")).thenReturn(List.of(story));
 
         List<Story> result = controller.list("furniture", "f-001");
@@ -36,9 +36,9 @@ class AdminStoriesControllerTest {
 
     @Test
     void create_delegatesToServiceAndReturnsCreatedStory() {
-        StoryInput input = new StoryInput("furniture", "f-001", "Test", "https://example.com/c.jpg");
+        StoryInput input = new StoryInput("furniture", "f-001", "Test", "https://example.com/c.jpg", null);
         Story created = new Story("st-new", "furniture", "f-001", "Test",
-                "https://example.com/c.jpg", "f-001-abc", 1, Instant.now());
+                "https://example.com/c.jpg", null, "f-001-abc", 1, Instant.now());
         when(service.create(input)).thenReturn(created);
 
         var response = controller.create(input);
@@ -50,9 +50,9 @@ class AdminStoriesControllerTest {
 
     @Test
     void update_delegatesToServiceWithIdAndInput() {
-        StoryInput input = new StoryInput("furniture", "f-001", "Renomme", "https://example.com/c.jpg");
+        StoryInput input = new StoryInput("furniture", "f-001", "Renomme", "https://example.com/c.jpg", null);
         Story updated = new Story("st-1", "furniture", "f-001", "Renomme",
-                "https://example.com/c.jpg", "tabouret-principale", 0, Instant.now());
+                "https://example.com/c.jpg", null, "tabouret-principale", 0, Instant.now());
         when(service.update("st-1", input)).thenReturn(updated);
 
         var response = controller.update("st-1", input);
@@ -111,7 +111,7 @@ class AdminStoriesControllerTest {
 
     @Test
     void create_invalidKindThrowsIllegalArgument() {
-        StoryInput input = new StoryInput("invalid", "f-001", "Test", "https://example.com/c.jpg");
+        StoryInput input = new StoryInput("invalid", "f-001", "Test", "https://example.com/c.jpg", null);
         assertThrows(IllegalArgumentException.class,
                 () -> controller.create(input));
     }
@@ -119,9 +119,9 @@ class AdminStoriesControllerTest {
     @Test
     void all_delegatesToServiceAndReturnsAllStories() {
         Story s1 = new Story("st-1", "furniture", "f-001", "Story 1",
-                "https://example.com/c.jpg", "f-001-abc", 0, Instant.now());
+                "https://example.com/c.jpg", null, "f-001-abc", 0, Instant.now());
         Story s2 = new Story("st-2", "exhibition", "e-001", "Story 2",
-                "https://example.com/c.jpg", "e-001-xyz", 0, Instant.now());
+                "https://example.com/c.jpg", null, "e-001-xyz", 0, Instant.now());
         when(service.findAll()).thenReturn(List.of(s1, s2));
 
         List<Story> result = controller.all();

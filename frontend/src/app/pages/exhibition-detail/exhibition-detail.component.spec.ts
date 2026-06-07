@@ -19,7 +19,7 @@ describe('ExhibitionDetailComponent', () => {
     startDate: '2025-03-14',
     endDate: '2025-05-18',
     coverImage: 'https://example.com/m.jpg',
-    gallery: ['https://example.com/m-1.jpg'],
+    gallery: [{ url: 'https://example.com/m-1.jpg' }],
     curator: 'Léa Bornand',
     shortDescription: 's',
     description: 'd',
@@ -128,6 +128,33 @@ describe('ExhibitionDetailComponent', () => {
     expect((display[display.length - 1] as any).label).toBe('Voir l\'exposition');
   });
 
+  it('coverCropStyle() applique transform quand coverCrop est défini', () => {
+    setup('matieres-silencieuses', of({ ...mockExhibition, coverCrop: { x: 25, y: 25, w: 50, h: 50 } }));
+    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.coverCropStyle().transform).toBe('translate(-50%, -50%) scale(2)');
+  });
+
+  it('coverCropStyle() retourne "none" quand coverCrop est null', () => {
+    setup('matieres-silencieuses', of({ ...mockExhibition, coverCrop: null }));
+    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.coverCropStyle().transform).toBe('none');
+  });
+
+  it('galleryItemStyle() applique transform quand item.crop est defini', () => {
+    setup('matieres-silencieuses', of({ ...mockExhibition,
+      gallery: [{ url: '/g.jpg', crop: { x: 0, y: 0, w: 100, h: 100 } }]
+    }));
+    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const style = cmp.galleryItemStyle({ url: '/g.jpg', crop: { x: 0, y: 0, w: 100, h: 100 } });
+    expect(style.transform).toBe('translate(0%, 0%) scale(1)');
+  });
+
   it('filtre les slides legacy de type cover/link recues de l API', () => {
     const exhibition: Exhibition = {
       ...mockExhibition,
@@ -148,19 +175,4 @@ describe('ExhibitionDetailComponent', () => {
     expect((display[0] as any).src).toBe('/c.jpg');
   });
 
-  it('coverPosition() retourne les coordonnées en % quand coverFocalX/Y sont définis', () => {
-    setup('matieres-silencieuses', of({ ...mockExhibition, coverFocalX: 30, coverFocalY: 80 }));
-    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
-    fixture.detectChanges();
-    const c = fixture.componentInstance as any;
-    expect(c.coverPosition()).toBe('30% 80%');
-  });
-
-  it('coverPosition() retourne "50% 50%" quand coverFocalX/Y sont null', () => {
-    setup('matieres-silencieuses', of({ ...mockExhibition, coverFocalX: null, coverFocalY: null }));
-    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
-    fixture.detectChanges();
-    const c = fixture.componentInstance as any;
-    expect(c.coverPosition()).toBe('50% 50%');
-  });
 });

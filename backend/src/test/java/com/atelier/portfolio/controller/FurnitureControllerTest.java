@@ -1,6 +1,7 @@
 package com.atelier.portfolio.controller;
 
 import com.atelier.portfolio.model.Furniture;
+import com.atelier.portfolio.model.GalleryImage;
 import com.atelier.portfolio.service.FurnitureService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,8 +40,8 @@ class FurnitureControllerTest {
                 "Chêne massif & cuir tanné",
                 2024,
                 "https://picsum.photos/seed/onde-cover/1200/800",
-                null, null,
-                List.of("https://picsum.photos/seed/onde-1/1200/800"),
+                null,
+                List.of(new GalleryImage("https://picsum.photos/seed/onde-1/1200/800", null)),
                 "Une silhouette inspirée du mouvement de la mer",
                 "Description détaillée",
                 List.of("Hauteur 92 cm", "Largeur 78 cm"),

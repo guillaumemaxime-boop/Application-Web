@@ -80,3 +80,6 @@ databaseChangeLog:
   - include:
       file: changes/027-add-cover-focal-point.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/028-replace-focal-point-with-crop.yaml
+      relativeToChangelogFile: true

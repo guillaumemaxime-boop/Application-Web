@@ -4,6 +4,7 @@ import com.atelier.portfolio.entity.NewsSliderEntity;
 import com.atelier.portfolio.entity.NewsSliderStoryEntity;
 import com.atelier.portfolio.entity.StoryEntity;
 import com.atelier.portfolio.enums.SliderZone;
+import com.atelier.portfolio.model.ImageCrop;
 import com.atelier.portfolio.model.NewsSlider;
 import com.atelier.portfolio.model.NewsSliderInput;
 import com.atelier.portfolio.model.NewsSliderView;
@@ -57,6 +58,8 @@ public class NewsSliderService {
             if (slideRepo.findByStoryIdOrderByPosition(story.getId()).isEmpty()) continue;
             refs.add(new SliderStoryRef(
                     story.getId(), story.getSlug(), story.getTitle(), story.getCoverImage(),
+                    ImageCrop.ofNullable(story.getCoverCropX(), story.getCoverCropY(),
+                            story.getCoverCropW(), story.getCoverCropH()),
                     story.getOwnerKind(), story.getOwnerId(),
                     ownerLabelFor(story.getOwnerKind(), story.getOwnerId())
             ));

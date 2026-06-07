@@ -1,0 +1,54 @@
+databaseChangeLog:
+  - changeSet:
+      id: 028-replace-focal-point-with-crop
+      author: atelier-lumen
+      changes:
+        - dropColumn:
+            tableName: furniture
+            columns:
+              - column: { name: cover_focal_x }
+              - column: { name: cover_focal_y }
+        - addColumn:
+            tableName: furniture
+            columns:
+              - column: { name: cover_crop_x, type: double }
+              - column: { name: cover_crop_y, type: double }
+              - column: { name: cover_crop_w, type: double }
+              - column: { name: cover_crop_h, type: double }
+
+        - dropColumn:
+            tableName: exhibition
+            columns:
+              - column: { name: cover_focal_x }
+              - column: { name: cover_focal_y }
+        - addColumn:
+            tableName: exhibition
+            columns:
+              - column: { name: cover_crop_x, type: double }
+              - column: { name: cover_crop_y, type: double }
+              - column: { name: cover_crop_w, type: double }
+              - column: { name: cover_crop_h, type: double }
+
+        - addColumn:
+            tableName: story
+            columns:
+              - column: { name: cover_crop_x, type: double }
+              - column: { name: cover_crop_y, type: double }
+              - column: { name: cover_crop_w, type: double }
+              - column: { name: cover_crop_h, type: double }
+
+        - addColumn:
+            tableName: furniture_gallery
+            columns:
+              - column: { name: crop_x, type: double }
+              - column: { name: crop_y, type: double }
+              - column: { name: crop_w, type: double }
+              - column: { name: crop_h, type: double }
+
+        - addColumn:
+            tableName: exhibition_gallery
+            columns:
+              - column: { name: crop_x, type: double }
+              - column: { name: crop_y, type: double }
+              - column: { name: crop_w, type: double }
+              - column: { name: crop_h, type: double }

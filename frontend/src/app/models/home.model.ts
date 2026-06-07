@@ -19,11 +19,14 @@ export interface HomeExhibitionView {
   period: string;
 }
 
+import { Crop } from './crop.model';
+
 export interface HomeFeedItem {
   kind: 'furniture' | 'exhibition';
   slug: string;
   title: string;
   cover: string;
+  coverCrop?: Crop | null;
   subtitle: string;
   description?: string;
 }

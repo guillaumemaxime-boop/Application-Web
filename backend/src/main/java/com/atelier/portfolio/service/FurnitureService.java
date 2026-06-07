@@ -1,7 +1,10 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.FurnitureEntity;
+import com.atelier.portfolio.entity.GalleryEntry;
 import com.atelier.portfolio.model.Furniture;
+import com.atelier.portfolio.model.GalleryImage;
+import com.atelier.portfolio.model.ImageCrop;
 import com.atelier.portfolio.repository.FurnitureRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -49,7 +52,7 @@ public class FurnitureService {
             Furniture base = toDto(entity);
             return new Furniture(
                     base.id(), base.title(), base.slug(), base.category(), base.material(),
-                    base.year(), base.coverImage(), base.coverFocalX(), base.coverFocalY(),
+                    base.year(), base.coverImage(), base.coverCrop(),
                     base.gallery(), base.shortDescription(),
                     base.description(), base.dimensions(), base.designer(), base.featured(),
                     base.showStoryLink(),
@@ -107,9 +110,12 @@ public class FurnitureService {
         if (input.material() != null) entity.setMaterial(input.material());
         if (input.year() != null) entity.setYear(input.year());
         if (input.coverImage() != null) entity.setCoverImage(input.coverImage());
-        // coverFocalX/Y : null = reset (centrer par defaut cote affichage)
-        entity.setCoverFocalX(input.coverFocalX());
-        entity.setCoverFocalY(input.coverFocalY());
+        // coverCrop : null = reset (centrer par defaut cote affichage)
+        ImageCrop c = input.coverCrop();
+        entity.setCoverCropX(c != null ? c.x() : null);
+        entity.setCoverCropY(c != null ? c.y() : null);
+        entity.setCoverCropW(c != null ? c.w() : null);
+        entity.setCoverCropH(c != null ? c.h() : null);
         if (input.shortDescription() != null) entity.setShortDescription(input.shortDescription());
         if (input.description() != null) entity.setDescription(input.description());
         if (input.designer() != null) entity.setDesigner(input.designer());
@@ -118,7 +124,16 @@ public class FurnitureService {
         entity.setShowStoryButton(input.showStoryButton());
         if (input.gallery() != null) {
             entity.getGallery().clear();
-            entity.getGallery().addAll(new ArrayList<>(input.gallery()));
+            for (GalleryImage gi : input.gallery()) {
+                GalleryEntry ge = new GalleryEntry(gi.url());
+                if (gi.crop() != null) {
+                    ge.setCropX(gi.crop().x());
+                    ge.setCropY(gi.crop().y());
+                    ge.setCropW(gi.crop().w());
+                    ge.setCropH(gi.crop().h());
+                }
+                entity.getGallery().add(ge);
+            }
         }
         if (input.dimensions() != null) {
             entity.getDimensions().clear();
@@ -141,6 +156,11 @@ public class FurnitureService {
     }
 
     private static Furniture toDto(FurnitureEntity entity) {
+        ImageCrop coverCrop = ImageCrop.ofNullable(entity.getCoverCropX(), entity.getCoverCropY(),
+                                        entity.getCoverCropW(), entity.getCoverCropH());
+        List<GalleryImage> gallery = entity.getGallery().stream()
+                .map(e -> new GalleryImage(e.getUrl(), ImageCrop.ofNullable(e.getCropX(), e.getCropY(), e.getCropW(), e.getCropH())))
+                .toList();
         return new Furniture(
                 entity.getId(),
                 entity.getTitle(),
@@ -149,9 +169,8 @@ public class FurnitureService {
                 entity.getMaterial(),
                 entity.getYear(),
                 entity.getCoverImage(),
-                entity.getCoverFocalX(),
-                entity.getCoverFocalY(),
-                List.copyOf(entity.getGallery()),
+                coverCrop,
+                gallery,
                 entity.getShortDescription(),
                 entity.getDescription(),
                 List.copyOf(entity.getDimensions()),

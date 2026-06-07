@@ -1,7 +1,7 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.2.0
-**Date** : 07/06/2026
+**Version** : 2.3.0
+**Date** : 08/06/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
 
@@ -45,6 +45,7 @@
 | Registry images | GitHub Container Registry (GHCR) | — |
 | Hébergement cloud | Railway | — |
 | Environnement local | Rancher Desktop | — |
+| Lib UI crop admin | Cropper.js | 1.6.2 |
 
 ### 1.3 Périmètre fonctionnel
 
@@ -150,6 +151,10 @@ category      VARCHAR(100) NOT NULL
 material      VARCHAR(255)
 year_made     INTEGER
 cover_image   VARCHAR(500)
+cover_crop_x  DOUBLE       nullable  (% 0–100, cadrage cover)
+cover_crop_y  DOUBLE       nullable
+cover_crop_w  DOUBLE       nullable
+cover_crop_h  DOUBLE       nullable
 short_desc    VARCHAR(1000)
 description   VARCHAR(4000)
 designer      VARCHAR(255)
@@ -159,6 +164,10 @@ furniture_gallery (N:1 → furniture, cascade delete)
 ─────────────────────────────────────────────────────
 furniture_id  FK
 image_url     VARCHAR(500)
+crop_x        DOUBLE       nullable  (% 0–100, cadrage item galerie)
+crop_y        DOUBLE       nullable
+crop_w        DOUBLE       nullable
+crop_h        DOUBLE       nullable
 position      INTEGER      (ordre d'affichage)
 
 furniture_dimension (N:1 → furniture, cascade delete)
@@ -178,6 +187,10 @@ country       VARCHAR(100)
 start_date    DATE
 end_date      DATE
 cover_image   VARCHAR(500)
+cover_crop_x  DOUBLE       nullable  (% 0–100, cadrage cover)
+cover_crop_y  DOUBLE       nullable
+cover_crop_w  DOUBLE       nullable
+cover_crop_h  DOUBLE       nullable
 curator       VARCHAR(255)
 short_desc    VARCHAR(1000)
 description   VARCHAR(4000)
@@ -187,6 +200,10 @@ exhibition_gallery (N:1 → exhibition, cascade delete)
 ─────────────────────────────────────────────────────
 exhibition_id FK
 image_url     VARCHAR(500)
+crop_x        DOUBLE       nullable  (% 0–100, cadrage item galerie)
+crop_y        DOUBLE       nullable
+crop_w        DOUBLE       nullable
+crop_h        DOUBLE       nullable
 position      INTEGER
 
 exhibition_tag (N:1 → exhibition, cascade delete)
@@ -208,6 +225,10 @@ owner_kind    VARCHAR(20)  NOT NULL   "furniture" | "exhibition"
 owner_id      VARCHAR(50)  NOT NULL
 title         VARCHAR(200) NOT NULL
 cover_image   VARCHAR(500) NOT NULL
+cover_crop_x  DOUBLE       nullable  (% 0–100, cadrage cover story)
+cover_crop_y  DOUBLE       nullable
+cover_crop_w  DOUBLE       nullable
+cover_crop_h  DOUBLE       nullable
 slug          VARCHAR(200) NOT NULL UNIQUE
 position      INTEGER      NOT NULL DEFAULT 0
 created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -260,15 +281,36 @@ Index : idx_slider_story_position(slider_id, position)
 | `024-refactor-story-slide.yaml` | Ajout `story_id` sur `story_slide` (nullable → backfill → NOT NULL → FK → drop ancien index) |
 | `025-create-news-slider.yaml` | Tables `news_slider` + `slider_story` |
 | `026-add-tags-to-furniture.yaml` | Table `furniture_tag` (`@ElementCollection` sur mobilier) |
+| `027-add-cover-focal-point.yaml` | Colonnes `cover_focal_x/y` sur `furniture` et `exhibition` (supersédé par 028) |
+| `028-replace-focal-point-with-crop.yaml` | DROP `cover_focal_x/y` sur `furniture` + `exhibition` ; ADD `cover_crop_x/y/w/h` (DOUBLE nullable) sur `furniture`, `exhibition`, `story` ; ADD `crop_x/y/w/h` (DOUBLE nullable) sur `furniture_gallery` + `exhibition_gallery` |
 
 ### 3.3 Records Java (DTOs)
 
 ```java
+// model/ImageCrop.java — coordonnées de cadrage normalisées (% 0–100)
+record ImageCrop(
+    @DecimalMin("0.0") @DecimalMax("100.0") Double x,
+    @DecimalMin("0.0") @DecimalMax("100.0") Double y,
+    @DecimalMin("0.0") @DecimalMax("100.0") Double w,
+    @DecimalMin("0.0") @DecimalMax("100.0") Double h
+) {
+    // Factory : retourne null si tous les champs sont null
+    static ImageCrop ofNullable(Double x, Double y, Double w, Double h) { ... }
+}
+
+// model/GalleryImage.java — item de galerie avec cadrage optionnel
+record GalleryImage(
+    @Size(max = 500) String url,
+    @Valid ImageCrop crop   // nullable
+) {}
+
 // model/Furniture.java
 record Furniture(
     String id, String title, String slug, String category,
     String material, Integer year, String coverImage,
-    List<String> gallery, String shortDescription, String description,
+    ImageCrop coverCrop,                    // nullable — cadrage cover
+    @Valid List<GalleryImage> gallery,      // breaking : était List<String>
+    String shortDescription, String description,
     List<String> dimensions, String designer, boolean featured
 ) {}
 
@@ -277,7 +319,9 @@ record Exhibition(
     String id, String title, String slug,
     String venue, String city, String country,
     LocalDate startDate, LocalDate endDate,
-    String coverImage, List<String> gallery,
+    String coverImage,
+    ImageCrop coverCrop,                    // nullable — cadrage cover
+    @Valid List<GalleryImage> gallery,      // breaking : était List<String>
     String curator, String shortDescription, String description,
     List<String> tags, boolean featured
 ) {}
@@ -293,13 +337,17 @@ record Profile(
 // model/Story.java
 record Story(
     String id, String ownerKind, String ownerId,
-    String title, String coverImage, String slug, int position
+    String title, String coverImage,
+    ImageCrop coverCrop,    // nullable — cadrage cover story
+    String slug, int position
 ) {}
 
 // model/StoryWithSlides.java
 record StoryWithSlides(
     String id, String ownerKind, String ownerId,
-    String title, String coverImage, String slug, int position,
+    String title, String coverImage,
+    ImageCrop coverCrop,
+    String slug, int position,
     List<Slide> slides
 ) {}
 
@@ -311,16 +359,33 @@ record NewsSlider(String id, String slug, String title, String zoneKey, List<Sto
 
 // model/NewsSliderView.java — projection allégée pour l'affichage public
 record NewsSliderView(String id, String slug, String title, String zoneKey, List<StoryWithSlides> stories) {}
+
+// model/HomeFeedItem.java — item home feed (mobilier ou exposition)
+record HomeFeedItem(
+    String id, String kind, String slug, String title,
+    String coverImage, ImageCrop coverCrop,  // nullable
+    boolean featured, int position
+) {}
 ```
+
+> **Breaking change DTO (028) :** le champ `gallery` dans `Furniture` et `Exhibition` était `List<String>` (URLs brutes) ; il est maintenant `List<GalleryImage>`. Tout client consommant l'API doit adapter la désérialisation.
 
 ### 3.4 Interfaces TypeScript (frontend)
 
 ```typescript
+// models/crop.model.ts
+interface Crop { x: number; y: number; w: number; h: number; }
+
+// models/gallery-item.model.ts
+interface GalleryItem { url: string; crop?: Crop | null; }
+
 // models/furniture.model.ts
 interface Furniture {
   id: string; title: string; slug: string; category: string;
   material: string; year: number; coverImage: string;
-  gallery: string[]; shortDescription: string; description: string;
+  coverCrop?: Crop | null;          // cadrage cover (nullable)
+  gallery: GalleryItem[];           // breaking : était string[]
+  shortDescription: string; description: string;
   dimensions: string[]; designer: string; featured: boolean;
 }
 
@@ -329,7 +394,9 @@ interface Exhibition {
   id: string; title: string; slug: string;
   venue: string; city: string; country: string;
   startDate: string; endDate: string;   // ISO date string (yyyy-MM-dd)
-  coverImage: string; gallery: string[];
+  coverImage: string;
+  coverCrop?: Crop | null;          // cadrage cover (nullable)
+  gallery: GalleryItem[];           // breaking : était string[]
   curator: string; shortDescription: string; description: string;
   tags: string[]; featured: boolean;
 }
@@ -345,7 +412,9 @@ interface Profile {
 // models/story.model.ts
 interface Story {
   id: string; ownerKind: string; ownerId: string;
-  title: string; coverImage: string; slug: string; position: number;
+  title: string; coverImage: string;
+  coverCrop?: Crop | null;    // cadrage cover story (nullable)
+  slug: string; position: number;
 }
 interface StoryWithSlides extends Story { slides: Slide[]; }
 interface Slide { id: string; type: string; position: number; [key: string]: unknown; }
@@ -354,6 +423,14 @@ interface Slide { id: string; type: string; position: number; [key: string]: unk
 interface NewsSliderView {
   id: string; slug: string; title: string; zoneKey: string | null;
   stories: StoryWithSlides[];
+}
+
+// models/home-feed-item.model.ts
+interface HomeFeedItem {
+  id: string; kind: 'furniture' | 'exhibition';
+  slug: string; title: string; coverImage: string;
+  coverCrop?: Crop | null;    // cadrage cover home feed (nullable)
+  featured: boolean; position: number;
 }
 
 // models/creation.model.ts
@@ -399,7 +476,11 @@ Ex. `"Chaise Éclat"` → `"chaise-eclat"`
   "material": "Chêne massif",
   "year": 2025,
   "coverImage": "https://...",
-  "gallery": ["https://...", "https://..."],
+  "coverCrop": { "x": 10.5, "y": 5.0, "w": 80.0, "h": 70.0 },
+  "gallery": [
+    { "url": "https://...", "crop": { "x": 0.0, "y": 0.0, "w": 100.0, "h": 100.0 } },
+    { "url": "https://...", "crop": null }
+  ],
   "shortDescription": "Siège sculpté en chêne.",
   "description": "Description longue...",
   "dimensions": ["L 52 × P 55 × H 82 cm"],
@@ -407,6 +488,8 @@ Ex. `"Chaise Éclat"` → `"chaise-eclat"`
   "featured": true
 }
 ```
+
+**Validation crop :** les valeurs `x`, `y`, `w`, `h` doivent être dans `[0.0, 100.0]` — toute valeur hors bornes retourne **400** (`@DecimalMin`/`@DecimalMax` sur `ImageCrop`). La validation est en cascade (`@Valid`) depuis `Furniture`/`Exhibition`/`Story`.
 
 ### 4.2 Expositions — `/api/exhibitions`
 
@@ -653,6 +736,42 @@ Chemin : `frontend/src/app/pages/admin/shared/tag-input.component.ts`
 - Navigation clavier complète : flèches haut/bas pour parcourir les suggestions, Entrée pour valider, Échap pour fermer, virgule comme séparateur, Backspace sur champ vide pour retirer le dernier tag.
 - `@Input() suggestions: string[]` — liste d'autocomplétion injectée par le parent (ex. résultat de `GET /api/tags`).
 
+#### `<app-image-crop-picker>` (`ImageCropPickerComponent`)
+
+Chemin : `frontend/src/app/pages/admin/shared/image-crop-picker.component.ts`
+
+- Modale de cadrage d'image wrappant **Cropper.js 1.6.2** (voir ADR-0017).
+- Présets aspect ratio : **16:9 / 4:5 / 1:1 / Libre** (sélection par défaut : Libre).
+- Fermeture par touche Échap ; détection automatique de l'aspect du crop existant à la réouverture ; destroy + recreate du cropper à chaque changement de préset.
+- Retourne un objet `Crop { x, y, w, h }` en coordonnées normalisées (% 0–100).
+- CSS focus override dans le backdrop : `.crop-backdrop :focus-visible { outline-color: #fff }` pour lisibilité sur fond sombre.
+- Instanciation manuelle dans `ngAfterViewInit`, cleanup dans `ngOnDestroy` (pas de wrapper Angular maintenu pour Cropper.js).
+
+#### `<app-cropped-image-canvas>` (`CroppedImageCanvasComponent`)
+
+Chemin : `frontend/src/app/pages/admin/shared/cropped-image-canvas.component.ts`
+
+- Rendu pixel-perfect d'une image cadrée via `<canvas>` + `drawImage()`.
+- Deux modes :
+  - `adaptive` — le canvas adapte sa largeur à l'aspect du crop (preview unique).
+  - `cover` — canvas à taille fixe CSS avec cover-fit (grille de vignettes).
+- Utilise `ResizeObserver` (mode cover) et un cache d'image en mémoire.
+- `role="img"` + `aria-label` pour l'accessibilité ; `crossOrigin="anonymous"` pour éviter le canvas tainted.
+
+#### `<app-image-field>` (extension)
+
+Chemin : `frontend/src/app/pages/admin/shared/image-field.component.ts`
+
+- Étendu avec le flag `cropEnabled` : affiche un bouton **Cadrer** ouvrant `<app-image-crop-picker>`.
+- Prévisualisation du crop courant via `<app-cropped-image-canvas>`.
+
+#### `<app-gallery-editor>` (extension)
+
+Chemin : `frontend/src/app/pages/admin/shared/gallery-editor.component.ts`
+
+- Bouton ✂ par vignette pour ouvrir le cadrage individuel d'un item de galerie.
+- Indicateur visuel de crop présent ; preview canvas via `<app-cropped-image-canvas>`.
+
 #### `<app-story-viewer>` (`StoryViewerComponent`)
 
 Chemin : `frontend/src/app/components/story-viewer/story-viewer.component.ts`
@@ -661,6 +780,12 @@ Chemin : `frontend/src/app/components/story-viewer/story-viewer.component.ts`
 - Focus trap à l'ouverture (RGAA B-02) ; fermeture par touche Échap ou bouton Fermer ; restore focus sur l'élément déclencheur à la fermeture.
 - Navigation tactile (swipe) et clavier (flèches gauche/droite).
 - Réutilisable depuis `HomeComponent` (sliders d'actualités), fiches mobilier et fiches exposition.
+
+### 5.6 Utilitaires frontend
+
+#### `cropTransform()` (`frontend/src/app/utils/crop-transform.ts`)
+
+Calcule les propriétés CSS (`object-position`, `transform`) pour simuler un cadrage via une `<img>` + CSS. Utilisé sur les composants dont le conteneur a un aspect ratio proche du crop (`story-viewer` slides, `news-slider` thumbs). Les composants de rendu principal (hero `furniture-detail`, `exhibition-detail`, masonry `home`) utilisent désormais `<app-cropped-image-canvas>` (rendu canvas pixel-perfect).
 
 ---
 
@@ -942,6 +1067,11 @@ mvn clean verify                  # Idem + vérification seuils coverage
 - Objectif coverage : **≥ 80 %**
 - Tests : `controller/*ControllerTest.java`, `service/*ServiceTest.java`, `model/*Test.java`
 
+**Tests d'intégration crop (ajoutés en 028) :**
+
+- `SecurityIntegrationTest.postFurniture_coverCropHorsBornes_retourne400()` — vérifie qu'un `coverCrop` avec valeurs > 100.0 retourne 400.
+- `SecurityIntegrationTest.postFurniture_galleryItemCropHorsBornes_retourne400()` — vérifie qu'un crop de galerie hors bornes retourne 400.
+
 ### 9.2 Frontend (Jasmine + Karma)
 
 ```powershell
@@ -982,6 +1112,7 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 0014 | Bascule vers Resend pour les mails transactionnels |
 | 0015 | Stories multiples par owner + sliders d'actualités |
 | 0016 | Tags partagés mobilier/exposition et page publique /creations |
+| 0017 | Cropper.js pour l'outil de cadrage d'image admin |
 
 ---
 
@@ -993,3 +1124,4 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 2.0.0 | 04/05/2026 | Refonte complète — spécification technique synchronisée avec l'implémentation réelle (rebrand Milo GUILLAUME Design, stack Java 25 / Angular 21, pipeline CI/CD GitOps, infrastructure Railway + Rancher) |
 | 2.1.0 | 11/05/2026 | Authentification JWT (AuthController, SecurityConfig, authGuard, authInterceptor, LoginComponent) · Suppression lien Admin du menu · Correction CORS (`127.0.0.1:4200`) · ADR-0011 ajouté |
 | 2.2.0 | 07/06/2026 | Stories multiples par owner + sliders d'actualités (ADR-0015) · Tags sur mobilier + page `/creations` (ADR-0016) · Nouveaux endpoints `/api/tags`, `/api/sliders`, `/api/stories`, `/api/admin/sliders/**`, `/api/admin/stories/**` · Schéma BDD : tables `story`, `story_slide` refactorisé, `news_slider`, `slider_story`, `furniture_tag` · Composants partagés `TagInputComponent` et `StoryViewerComponent` · Route `/creations` · ADR-0012 à 0016 ajoutés à la table |
+| 2.3.0 | 08/06/2026 | Outil de cadrage d'image — sous-projet 1/4 (ADR-0017) · Changeset 028 : DROP `cover_focal_x/y`, ADD `cover_crop_x/y/w/h` sur `furniture`/`exhibition`/`story`, ADD `crop_x/y/w/h` sur `furniture_gallery`/`exhibition_gallery` · Breaking change DTO : `gallery` passe de `List<String>` à `List<GalleryImage>` · Nouveaux records `ImageCrop`, `GalleryImage` + `@Valid` cascade · Nouveaux composants admin `ImageCropPickerComponent` (Cropper.js 1.6.2), `CroppedImageCanvasComponent` ; extensions `ImageFieldComponent`, `GalleryEditorComponent` · Utilitaire `cropTransform()` · Interfaces TS `Crop`, `GalleryItem` · Stack : ajout Cropper.js 1.6.2 |

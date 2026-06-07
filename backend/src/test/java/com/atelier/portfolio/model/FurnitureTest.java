@@ -19,8 +19,8 @@ class FurnitureTest {
                 "Chêne massif & cuir tanné",
                 2024,
                 "https://picsum.photos/seed/onde-cover/1200/800",
-                null, null,
-                List.of("https://picsum.photos/seed/onde-1/1200/800"),
+                null,
+                List.of(new GalleryImage("https://picsum.photos/seed/onde-1/1200/800", null)),
                 "Une silhouette inspirée du mouvement de la mer",
                 "Description détaillée",
                 List.of("Hauteur 92 cm", "Largeur 78 cm"),
@@ -41,7 +41,8 @@ class FurnitureTest {
         assertEquals("Chêne massif & cuir tanné", furniture.material());
         assertEquals(2024, furniture.year());
         assertEquals("https://picsum.photos/seed/onde-cover/1200/800", furniture.coverImage());
-        assertEquals(List.of("https://picsum.photos/seed/onde-1/1200/800"), furniture.gallery());
+        assertEquals(1, furniture.gallery().size());
+        assertEquals("https://picsum.photos/seed/onde-1/1200/800", furniture.gallery().get(0).url());
         assertEquals("Une silhouette inspirée du mouvement de la mer", furniture.shortDescription());
         assertEquals("Description détaillée", furniture.description());
         assertEquals(List.of("Hauteur 92 cm", "Largeur 78 cm"), furniture.dimensions());
@@ -60,7 +61,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(), // Empty gallery
                 "Short description",
                 "Full description",
@@ -82,10 +83,10 @@ class FurnitureTest {
     @Test
     void testFurnitureRecord_WithMultipleGalleryImages() {
         // Arrange
-        List<String> galleryImages = List.of(
-                "https://example.com/image1.jpg",
-                "https://example.com/image2.jpg",
-                "https://example.com/image3.jpg"
+        List<GalleryImage> galleryImages = List.of(
+                new GalleryImage("https://example.com/image1.jpg", null),
+                new GalleryImage("https://example.com/image2.jpg", null),
+                new GalleryImage("https://example.com/image3.jpg", null)
         );
 
         // Act
@@ -97,7 +98,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 galleryImages,
                 "Short description",
                 "Full description",
@@ -113,9 +114,9 @@ class FurnitureTest {
         // Assert
         assertNotNull(furniture);
         assertEquals(3, furniture.gallery().size());
-        assertEquals("https://example.com/image1.jpg", furniture.gallery().get(0));
-        assertEquals("https://example.com/image2.jpg", furniture.gallery().get(1));
-        assertEquals("https://example.com/image3.jpg", furniture.gallery().get(2));
+        assertEquals("https://example.com/image1.jpg", furniture.gallery().get(0).url());
+        assertEquals("https://example.com/image2.jpg", furniture.gallery().get(1).url());
+        assertEquals("https://example.com/image3.jpg", furniture.gallery().get(2).url());
     }
 
     @Test
@@ -129,7 +130,7 @@ class FurnitureTest {
                 "", // Empty material
                 0,   // Year 0
                 "", // Empty coverImage
-                null, null,
+                null,
                 List.of(),
                 "", // Empty shortDescription
                 "", // Empty description
@@ -157,8 +158,8 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
-                null, null,
-                List.of("https://example.com/image1.jpg"),
+                null,
+                List.of(new GalleryImage("https://example.com/image1.jpg", null)),
                 "Short description",
                 "Full description",
                 List.of("Dimension 1"),
@@ -178,8 +179,8 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
-                null, null,
-                List.of("https://example.com/image1.jpg"),
+                null,
+                List.of(new GalleryImage("https://example.com/image1.jpg", null)),
                 "Short description",
                 "Full description",
                 List.of("Dimension 1"),
@@ -206,7 +207,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(),
                 "Short description",
                 "Full description",
@@ -240,7 +241,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(),
                 "Short description",
                 "Full description",
@@ -261,7 +262,7 @@ class FurnitureTest {
                 "Test Material",
                 2023,
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(),
                 "Short description",
                 "Full description",

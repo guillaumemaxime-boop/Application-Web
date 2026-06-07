@@ -1,13 +1,16 @@
-import { Component, Input, forwardRef, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, forwardRef, inject, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
+import { Crop } from '../../../models/crop.model';
 import { PhotoPickerComponent } from './photo-picker.component';
+import { ImageCropPickerComponent } from './image-crop-picker.component';
+import { CroppedImageCanvasComponent } from './cropped-image-canvas.component';
 
 @Component({
   selector: 'app-image-field',
   standalone: true,
-  imports: [PhotoPickerComponent],
+  imports: [PhotoPickerComponent, ImageCropPickerComponent, CroppedImageCanvasComponent],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -29,8 +32,33 @@ import { PhotoPickerComponent } from './photo-picker.component';
           <button type="button" class="btn-pick" [disabled]="disabled()" (click)="openPicker()" title="Choisir depuis la médiathèque">
             Médiathèque
           </button>
+          @if (cropEnabled) {
+            <button type="button" class="btn-pick" [disabled]="disabled() || !value()" (click)="openCrop()" title="Cadrer cette image">
+              Cadrer
+            </button>
+          }
         </div>
       </label>
+
+      @if (cropEnabled && value()) {
+        <div class="crop-preview">
+          <app-cropped-image-canvas
+            class="crop-preview-canvas"
+            [imageUrl]="value()"
+            [crop]="cropValue ?? null"
+            mode="adaptive"
+            [targetHeight]="140"
+            [maxWidth]="240"
+            alt="Aperçu de l'image cadrée" />
+          <span class="crop-preview-label">
+            @if (cropValue) {
+              Cadrée — {{ cropValue.w.toFixed(0) }}% × {{ cropValue.h.toFixed(0) }}%
+            } @else {
+              Image entière — aucun cadrage défini
+            }
+          </span>
+        </div>
+      }
     </div>
 
     @if (pickerOpen()) {
@@ -39,6 +67,14 @@ import { PhotoPickerComponent } from './photo-picker.component';
         [photos]="photos()"
         (selected)="onSelected($event)"
         (closed)="pickerOpen.set(false)" />
+    }
+
+    @if (cropOpen()) {
+      <app-image-crop-picker
+        [imageUrl]="value()"
+        [initialCrop]="cropValue ?? null"
+        (validated)="onCropValidated($event)"
+        (cancelled)="cropOpen.set(false)" />
     }
   `,
   styles: [`
@@ -57,6 +93,15 @@ import { PhotoPickerComponent } from './photo-picker.component';
     }
     .btn-pick:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .btn-pick:disabled { opacity: 0.5; cursor: not-allowed; }
+    .crop-preview { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+    .crop-preview-canvas {
+      max-width: 240px; max-height: 160px;
+      border: 1px solid var(--color-line); background: var(--color-bg-alt);
+      flex-shrink: 0;
+    }
+    .crop-preview-label {
+      font-size: 0.78rem; color: var(--color-mute); line-height: 1.4;
+    }
     @media (max-width: 600px) {
       .image-field-row { flex-direction: column; }
     }
@@ -66,10 +111,14 @@ export class ImageFieldComponent implements ControlValueAccessor {
   private readonly portfolio = inject(PortfolioService);
 
   @Input() label = 'Image';
+  @Input() cropEnabled = false;
+  @Input() cropValue: Crop | null | undefined = null;
+  @Output() cropChange = new EventEmitter<Crop | null>();
 
   protected readonly value = signal('');
   protected readonly disabled = signal(false);
   protected readonly pickerOpen = signal(false);
+  protected readonly cropOpen = signal(false);
   protected readonly photos = signal<Photo[]>([]);
 
   private onChange: (value: string) => void = () => {};
@@ -100,6 +149,16 @@ export class ImageFieldComponent implements ControlValueAccessor {
   protected openPicker(): void {
     this.pickerOpen.set(true);
     this.portfolio.getPhotos().subscribe(p => this.photos.set(p));
+  }
+
+  protected openCrop(): void {
+    this.cropOpen.set(true);
+  }
+
+
+  protected onCropValidated(crop: Crop): void {
+    this.cropChange.emit(crop);
+    this.cropOpen.set(false);
   }
 
   protected onSelected(photo: Photo): void {

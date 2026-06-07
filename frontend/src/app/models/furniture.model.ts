@@ -1,4 +1,6 @@
 import { Slide } from './slide.model';
+import { Crop } from './crop.model';
+import { GalleryItem } from './gallery-item.model';
 
 export interface Furniture {
   id: string;
@@ -8,9 +10,8 @@ export interface Furniture {
   material: string;
   year: number;
   coverImage: string;
-  coverFocalX?: number | null;
-  coverFocalY?: number | null;
-  gallery: string[];
+  coverCrop?: Crop | null;
+  gallery: GalleryItem[];
   shortDescription: string;
   description: string;
   dimensions: string[];

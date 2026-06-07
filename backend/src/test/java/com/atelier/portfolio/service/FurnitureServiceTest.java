@@ -1,6 +1,8 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.model.Furniture;
+import com.atelier.portfolio.model.GalleryImage;
+import com.atelier.portfolio.model.ImageCrop;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.Test;
@@ -83,8 +85,8 @@ class FurnitureServiceTest {
                 null, "Linéa — Banc en frêne", null,
                 "Sièges", "Frêne huilé", 2026,
                 "https://example.com/linea.jpg",
-                null, null,
-                List.of("https://example.com/linea-1.jpg"),
+                null,
+                List.of(new GalleryImage("https://example.com/linea-1.jpg", null)),
                 "Banc épuré", "Description longue",
                 List.of("L 180 cm", "H 45 cm"),
                 "Milo GUILLAUME Design", false, true, true, List.of(), List.of()
@@ -104,7 +106,7 @@ class FurnitureServiceTest {
         Furniture input = new Furniture(
                 null, "Echo", "echo-custom-slug",
                 "Sièges", "Chêne", 2026,
-                null, null, null,
+                null, null,
                 List.of(), "court", "long",
                 List.of(), "Milo GUILLAUME Design", false, true, true, List.of(), List.of()
         );
@@ -121,7 +123,7 @@ class FurnitureServiceTest {
                 null, "Solstice — Étagère en chêne", null,
                 "Rangements", "Chêne massif", 2026,
                 "https://example.com/solstice.jpg",
-                null, null,
+                null,
                 List.of(),
                 "Étagère minimaliste", "Description longue",
                 List.of("L 120 cm", "H 180 cm"),
@@ -143,7 +145,7 @@ class FurnitureServiceTest {
         Furniture changes = new Furniture(
                 original.id(), "Onde — Édition limitée", original.slug(),
                 original.category(), original.material(), original.year(),
-                original.coverImage(), original.coverFocalX(), original.coverFocalY(),
+                original.coverImage(), original.coverCrop(),
                 original.gallery(),
                 "Nouvelle description courte", original.description(),
                 original.dimensions(), original.designer(), false, true, true, List.of(),
@@ -163,7 +165,7 @@ class FurnitureServiceTest {
     void testUpdate_NonExistingSlug_ReturnsEmpty() {
         Furniture changes = new Furniture(
                 null, "X", null, "Tables", null, 2026,
-                null, null, null,
+                null, null,
                 List.of(), "", "", List.of(), "", false, true, true, List.of(), List.of()
         );
 
@@ -196,7 +198,7 @@ class FurnitureServiceTest {
         Furniture f = new Furniture(
                 null, "Titre", null,
                 "Sièges", null, 2026,
-                null, null, null,
+                null, null,
                 List.of(), null, null,
                 List.of(), null, false, true, true, List.of(),
                 List.of("a".repeat(256))
@@ -213,7 +215,7 @@ class FurnitureServiceTest {
         Furniture f = new Furniture(
                 null, "Titre", null,
                 "Sièges", null, 2026,
-                null, null, null,
+                null, null,
                 List.of(), null, null,
                 List.of(), null, false, true, true, List.of(),
                 List.of("a".repeat(255))
@@ -241,5 +243,54 @@ class FurnitureServiceTest {
         assertFalse(item.gallery().isEmpty());
         assertNotNull(item.dimensions());
         assertFalse(item.dimensions().isEmpty());
+    }
+
+    @Test
+    void create_avec_crop_persiste_et_relit_les_4_coords() {
+        Furniture input = new Furniture(null, "T", null, "Cat", "mat", 2024, "/c.jpg",
+            new ImageCrop(10.0, 20.0, 60.0, 40.0),
+            List.of(), "s", "d", List.of(), "des", false, true, true, List.of(), List.of());
+        Furniture created = furnitureService.create(input);
+        Furniture reloaded = furnitureService.findBySlug(created.slug()).orElseThrow();
+        assertThat(reloaded.coverCrop()).isNotNull();
+        assertThat(reloaded.coverCrop().x()).isEqualTo(10.0);
+        assertThat(reloaded.coverCrop().w()).isEqualTo(60.0);
+    }
+
+    @Test
+    void update_avec_coverCrop_null_reset_les_4_coords_en_db() {
+        // Cree d'abord un meuble avec crop defini
+        Furniture initial = new Furniture(null, "Reset Test", null, "Cat", "mat", 2024, "/c.jpg",
+            new ImageCrop(10.0, 20.0, 60.0, 40.0),
+            List.of(), "s", "d", List.of(), "des", false, true, true, List.of(), List.of());
+        Furniture created = furnitureService.create(initial);
+        assertThat(created.coverCrop()).isNotNull();
+
+        // Update avec coverCrop = null
+        Furniture cleared = new Furniture(created.id(), created.title(), created.slug(), created.category(),
+            created.material(), created.year(), created.coverImage(),
+            null,  // reset crop
+            created.gallery(), created.shortDescription(), created.description(), created.dimensions(),
+            created.designer(), created.featured(), created.showStoryLink(), created.showStoryButton(),
+            created.slides(), created.tags());
+        furnitureService.update(created.slug(), cleared).orElseThrow();
+
+        // Relit et verifie que le crop est bien null
+        Furniture reloaded = furnitureService.findBySlug(created.slug()).orElseThrow();
+        assertThat(reloaded.coverCrop()).isNull();
+    }
+
+    @Test
+    void create_avec_gallery_items_persiste_crop_par_item() {
+        Furniture input = new Furniture(null, "T2", null, "Cat", "mat", 2024, "/c.jpg",
+            null,
+            List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0)),
+                    new GalleryImage("/g2.jpg", null)),
+            "s", "d", List.of(), "des", false, true, true, List.of(), List.of());
+        Furniture created = furnitureService.create(input);
+        Furniture reloaded = furnitureService.findBySlug(created.slug()).orElseThrow();
+        assertThat(reloaded.gallery()).hasSize(2);
+        assertThat(reloaded.gallery().get(0).crop().w()).isEqualTo(50.0);
+        assertThat(reloaded.gallery().get(1).crop()).isNull();
     }
 }

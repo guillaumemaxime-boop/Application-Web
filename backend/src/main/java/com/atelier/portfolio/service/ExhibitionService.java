@@ -1,7 +1,10 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.ExhibitionEntity;
+import com.atelier.portfolio.entity.GalleryEntry;
 import com.atelier.portfolio.model.Exhibition;
+import com.atelier.portfolio.model.GalleryImage;
+import com.atelier.portfolio.model.ImageCrop;
 import com.atelier.portfolio.repository.ExhibitionRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -50,7 +53,7 @@ public class ExhibitionService {
             return new Exhibition(
                     base.id(), base.title(), base.slug(), base.venue(), base.city(),
                     base.country(), base.startDate(), base.endDate(), base.coverImage(),
-                    base.coverFocalX(), base.coverFocalY(),
+                    base.coverCrop(),
                     base.gallery(), base.curator(), base.shortDescription(), base.description(),
                     base.tags(), base.featured(),
                     base.showStoryLink(),
@@ -106,8 +109,12 @@ public class ExhibitionService {
         if (input.startDate() != null) entity.setStartDate(input.startDate());
         if (input.endDate() != null) entity.setEndDate(input.endDate());
         if (input.coverImage() != null) entity.setCoverImage(input.coverImage());
-        entity.setCoverFocalX(input.coverFocalX());
-        entity.setCoverFocalY(input.coverFocalY());
+        // coverCrop : null = reset (centrer par defaut cote affichage)
+        ImageCrop c = input.coverCrop();
+        entity.setCoverCropX(c != null ? c.x() : null);
+        entity.setCoverCropY(c != null ? c.y() : null);
+        entity.setCoverCropW(c != null ? c.w() : null);
+        entity.setCoverCropH(c != null ? c.h() : null);
         if (input.curator() != null) entity.setCurator(input.curator());
         if (input.shortDescription() != null) entity.setShortDescription(input.shortDescription());
         if (input.description() != null) entity.setDescription(input.description());
@@ -116,7 +123,16 @@ public class ExhibitionService {
         entity.setShowStoryButton(input.showStoryButton());
         if (input.gallery() != null) {
             entity.getGallery().clear();
-            entity.getGallery().addAll(new ArrayList<>(input.gallery()));
+            for (GalleryImage gi : input.gallery()) {
+                GalleryEntry ge = new GalleryEntry(gi.url());
+                if (gi.crop() != null) {
+                    ge.setCropX(gi.crop().x());
+                    ge.setCropY(gi.crop().y());
+                    ge.setCropW(gi.crop().w());
+                    ge.setCropH(gi.crop().h());
+                }
+                entity.getGallery().add(ge);
+            }
         }
         if (input.tags() != null) {
             entity.getTags().clear();
@@ -135,6 +151,11 @@ public class ExhibitionService {
     }
 
     private static Exhibition toDto(ExhibitionEntity entity) {
+        ImageCrop coverCrop = ImageCrop.ofNullable(entity.getCoverCropX(), entity.getCoverCropY(),
+                                        entity.getCoverCropW(), entity.getCoverCropH());
+        List<GalleryImage> gallery = entity.getGallery().stream()
+                .map(e -> new GalleryImage(e.getUrl(), ImageCrop.ofNullable(e.getCropX(), e.getCropY(), e.getCropW(), e.getCropH())))
+                .toList();
         return new Exhibition(
                 entity.getId(),
                 entity.getTitle(),
@@ -145,9 +166,8 @@ public class ExhibitionService {
                 entity.getStartDate(),
                 entity.getEndDate(),
                 entity.getCoverImage(),
-                entity.getCoverFocalX(),
-                entity.getCoverFocalY(),
-                List.copyOf(entity.getGallery()),
+                coverCrop,
+                gallery,
                 entity.getCurator(),
                 entity.getShortDescription(),
                 entity.getDescription(),

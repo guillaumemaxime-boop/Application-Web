@@ -92,6 +92,21 @@ describe('NewsSliderComponent', () => {
     expect((cmp as any).atEnd()).toBeTrue();
   });
 
+  it('storyCoverStyle() retourne transform calcule pour une story avec coverCrop', () => {
+    const story = { id: 'st-x', slug: 'x', title: 'X', coverImage: '/x.jpg',
+                    coverCrop: { x: 25, y: 25, w: 50, h: 50 },
+                    ownerKind: 'furniture', ownerId: 'f-1', ownerLabel: 'Foo' } as any;
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.storyCoverStyle(story).transform).toBe('translate(-50%, -50%) scale(2)');
+  });
+
+  it('storyCoverStyle() retourne transform none pour une story sans coverCrop', () => {
+    const story = { id: 'st-x', slug: 'x', title: 'X', coverImage: '/x.jpg',
+                    ownerKind: 'furniture', ownerId: 'f-1', ownerLabel: 'Foo' } as any;
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.storyCoverStyle(story).transform).toBe('none');
+  });
+
   it('applique le style du role section-title sur le titre du slider', () => {
     fixture.componentRef.setInput('content', {
       'typo.section-title.font': 'helvetica',

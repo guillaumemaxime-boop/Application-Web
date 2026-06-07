@@ -1,9 +1,11 @@
 import { Slide } from '../models/slide.model';
 import { DisplaySlide } from '../models/display-slide.model';
+import { Crop } from '../models/crop.model';
 
 export interface DisplayContext {
   slug: string;
   coverImage?: string | null;
+  coverCrop?: Crop | null;
   slides: Slide[];
   showStoryLink: boolean;
 }
@@ -23,7 +25,7 @@ export function enrichSlides(
     .filter(s => (s.type as string) !== 'cover' && (s.type as string) !== 'link') as DisplaySlide[];
   const out: DisplaySlide[] = [];
   if (ctx.coverImage) {
-    out.push({ type: 'cover', id: '_cover', position: 0, src: ctx.coverImage });
+    out.push({ type: 'cover', id: '_cover', position: 0, src: ctx.coverImage, coverCrop: ctx.coverCrop });
   }
   out.push(...narrative);
   if (ctx.showStoryLink !== false) {

@@ -22,8 +22,8 @@ class ExhibitionTest {
                 LocalDate.of(2025, 3, 14),
                 LocalDate.of(2025, 5, 18),
                 "https://picsum.photos/seed/matieres-cover/1200/800",
-                null, null,
-                List.of("https://picsum.photos/seed/matieres-1/1200/800"),
+                null,
+                List.of(new GalleryImage("https://picsum.photos/seed/matieres-1/1200/800", null)),
                 "Léa Bornand",
                 "Une exploration du silence comme matière première",
                 "Description détaillée",
@@ -45,7 +45,7 @@ class ExhibitionTest {
         assertEquals(LocalDate.of(2025, 3, 14), exhibition.startDate());
         assertEquals(LocalDate.of(2025, 5, 18), exhibition.endDate());
         assertEquals("https://picsum.photos/seed/matieres-cover/1200/800", exhibition.coverImage());
-        assertEquals(List.of("https://picsum.photos/seed/matieres-1/1200/800"), exhibition.gallery());
+        assertEquals(List.of(new GalleryImage("https://picsum.photos/seed/matieres-1/1200/800", null)), exhibition.gallery());
         assertEquals("Léa Bornand", exhibition.curator());
         assertEquals("Une exploration du silence comme matière première", exhibition.shortDescription());
         assertEquals("Description détaillée", exhibition.description());
@@ -66,7 +66,7 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(), // Empty gallery
                 "Test Curator",
                 "Short description",
@@ -87,10 +87,10 @@ class ExhibitionTest {
     @Test
     void testExhibitionRecord_WithMultipleGalleryImages() {
         // Arrange
-        List<String> galleryImages = List.of(
-                "https://example.com/image1.jpg",
-                "https://example.com/image2.jpg",
-                "https://example.com/image3.jpg"
+        List<GalleryImage> galleryImages = List.of(
+                new GalleryImage("https://example.com/image1.jpg", null),
+                new GalleryImage("https://example.com/image2.jpg", null),
+                new GalleryImage("https://example.com/image3.jpg", null)
         );
 
         // Act
@@ -104,7 +104,7 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 galleryImages,
                 "Test Curator",
                 "Short description",
@@ -119,9 +119,9 @@ class ExhibitionTest {
         // Assert
         assertNotNull(exhibition);
         assertEquals(3, exhibition.gallery().size());
-        assertEquals("https://example.com/image1.jpg", exhibition.gallery().get(0));
-        assertEquals("https://example.com/image2.jpg", exhibition.gallery().get(1));
-        assertEquals("https://example.com/image3.jpg", exhibition.gallery().get(2));
+        assertEquals("https://example.com/image1.jpg", exhibition.gallery().get(0).url());
+        assertEquals("https://example.com/image2.jpg", exhibition.gallery().get(1).url());
+        assertEquals("https://example.com/image3.jpg", exhibition.gallery().get(2).url());
     }
 
     @Test
@@ -137,7 +137,7 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 1, 10),
                 "", // Empty coverImage
-                null, null,
+                null,
                 List.of(),
                 "", // Empty curator
                 "", // Empty shortDescription
@@ -166,8 +166,8 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
-                null, null,
-                List.of("https://example.com/image1.jpg"),
+                null,
+                List.of(new GalleryImage("https://example.com/image1.jpg", null)),
                 "Test Curator",
                 "Short description",
                 "Full description",
@@ -188,8 +188,8 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
-                null, null,
-                List.of("https://example.com/image1.jpg"),
+                null,
+                List.of(new GalleryImage("https://example.com/image1.jpg", null)),
                 "Test Curator",
                 "Short description",
                 "Full description",
@@ -217,7 +217,7 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(),
                 "Test Curator",
                 "Short description",
@@ -252,7 +252,7 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(),
                 "Test Curator",
                 "Short description",
@@ -274,7 +274,7 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(),
                 "Test Curator",
                 "Short description",
@@ -303,7 +303,7 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(),
                 "Test Curator",
                 "Short description",
@@ -335,7 +335,7 @@ class ExhibitionTest {
                 date,
                 date, // Same start and end date
                 "https://example.com/cover.jpg",
-                null, null,
+                null,
                 List.of(),
                 "Test Curator",
                 "Short description",

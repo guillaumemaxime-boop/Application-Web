@@ -9,6 +9,9 @@ import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 import { enrichSlides } from '../../utils/display-slides';
+import { cropTransform, CropStyle } from '../../utils/crop-transform';
+import { CroppedImageCanvasComponent } from '../admin/shared/cropped-image-canvas.component';
+import { GalleryItem } from '../../models/gallery-item.model';
 import { StoryInlineComponent } from '../../components/story-inline/story-inline.component';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
@@ -16,7 +19,7 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
 @Component({
   selector: 'app-furniture-detail',
   standalone: true,
-  imports: [NgStyle, RouterLink, StoryInlineComponent, StoryViewerComponent, ContactFormComponent],
+  imports: [NgStyle, RouterLink, StoryInlineComponent, StoryViewerComponent, ContactFormComponent, CroppedImageCanvasComponent],
   template: `
     @if (loading()) {
       <div class="container section"><p class="status">Chargement…</p></div>
@@ -29,7 +32,11 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       <article class="fade-in">
         <header class="hero">
           <div class="hero-bg">
-            <img [src]="f.coverImage" [alt]="f.title" [style.object-position]="coverPosition()" />
+            <app-cropped-image-canvas
+              [imageUrl]="f.coverImage"
+              [crop]="f.coverCrop ?? null"
+              [alt]="f.title"
+              mode="cover" />
           </div>
           <div class="container hero-content">
             <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ f.category }} · {{ f.year }}</span>
@@ -81,9 +88,13 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
           <section class="section gallery">
             <div class="container">
               <div class="g-grid">
-                @for (img of f.gallery; track img; let i = $index) {
+                @for (img of f.gallery; track img.url; let i = $index) {
                   <figure [class.tall]="i % 3 === 0">
-                    <img [src]="img" [alt]="f.title + ' — vue ' + (i + 1)" loading="lazy" />
+                    <div class="gallery-img-wrap">
+                      <img [src]="img.url" [alt]="f.title + ' — vue ' + (i + 1)" loading="lazy"
+                           [style.transform]="galleryItemStyle(img).transform"
+                           [style.transform-origin]="galleryItemStyle(img).transformOrigin" />
+                    </div>
                   </figure>
                 }
               </div>
@@ -126,11 +137,17 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       position: absolute;
       inset: 0;
       z-index: 0;
+      overflow: hidden;
     }
     .hero-bg img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .hero-bg app-cropped-image-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
     .hero-bg::after {
       content: '';
@@ -230,7 +247,18 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       aspect-ratio: 4 / 3;
     }
     figure.tall { aspect-ratio: 3 / 4; }
-    figure img { width: 100%; height: 100%; object-fit: cover; }
+    .gallery-img-wrap {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+    .gallery-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
 
     .cta { text-align: center; border-top: 1px solid var(--color-line); }
     .cta p { margin: 16px 0 32px; }
@@ -279,6 +307,7 @@ export class FurnitureDetailComponent {
     return enrichSlides({
       slug: f.slug,
       coverImage: f.coverImage,
+      coverCrop: f.coverCrop,
       slides: f.slides ?? [],
       showStoryLink: f.showStoryLink,
     }, 'furniture');
@@ -287,6 +316,12 @@ export class FurnitureDetailComponent {
   protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));
   protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
   protected readonly eyebrowStyle      = computed(() => roleStyle(this.content(), 'eyebrow'));
+
+  protected readonly coverCropStyle = computed<CropStyle>(() => cropTransform(this.item()?.coverCrop));
+
+  protected galleryItemStyle(item: GalleryItem): CropStyle {
+    return cropTransform(item.crop);
+  }
 
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
@@ -310,14 +345,6 @@ export class FurnitureDetailComponent {
         this.loadingSvc.stop('nav');
       },
     });
-  }
-
-  protected coverPosition(): string {
-    const f = this.item();
-    if (!f) return '50% 50%';
-    const x = f.coverFocalX ?? 50;
-    const y = f.coverFocalY ?? 50;
-    return `${x}% ${y}%`;
   }
 
   protected openViewer() {
