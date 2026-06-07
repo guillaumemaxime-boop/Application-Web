@@ -1,13 +1,15 @@
-import { Component, Input, forwardRef, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, forwardRef, inject, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
+import { Crop } from '../../../models/crop.model';
 import { PhotoPickerComponent } from './photo-picker.component';
+import { ImageCropPickerComponent } from './image-crop-picker.component';
 
 @Component({
   selector: 'app-image-field',
   standalone: true,
-  imports: [PhotoPickerComponent],
+  imports: [PhotoPickerComponent, ImageCropPickerComponent],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -29,6 +31,11 @@ import { PhotoPickerComponent } from './photo-picker.component';
           <button type="button" class="btn-pick" [disabled]="disabled()" (click)="openPicker()" title="Choisir depuis la médiathèque">
             Médiathèque
           </button>
+          @if (cropEnabled) {
+            <button type="button" class="btn-pick" [disabled]="disabled() || !value()" (click)="openCrop()" title="Cadrer cette image">
+              Cadrer
+            </button>
+          }
         </div>
       </label>
     </div>
@@ -39,6 +46,14 @@ import { PhotoPickerComponent } from './photo-picker.component';
         [photos]="photos()"
         (selected)="onSelected($event)"
         (closed)="pickerOpen.set(false)" />
+    }
+
+    @if (cropOpen()) {
+      <app-image-crop-picker
+        [imageUrl]="value()"
+        [initialCrop]="cropValue ?? null"
+        (validated)="onCropValidated($event)"
+        (cancelled)="cropOpen.set(false)" />
     }
   `,
   styles: [`
@@ -66,10 +81,14 @@ export class ImageFieldComponent implements ControlValueAccessor {
   private readonly portfolio = inject(PortfolioService);
 
   @Input() label = 'Image';
+  @Input() cropEnabled = false;
+  @Input() cropValue: Crop | null = null;
+  @Output() cropChange = new EventEmitter<Crop | null>();
 
   protected readonly value = signal('');
   protected readonly disabled = signal(false);
   protected readonly pickerOpen = signal(false);
+  protected readonly cropOpen = signal(false);
   protected readonly photos = signal<Photo[]>([]);
 
   private onChange: (value: string) => void = () => {};
@@ -100,6 +119,15 @@ export class ImageFieldComponent implements ControlValueAccessor {
   protected openPicker(): void {
     this.pickerOpen.set(true);
     this.portfolio.getPhotos().subscribe(p => this.photos.set(p));
+  }
+
+  protected openCrop(): void {
+    this.cropOpen.set(true);
+  }
+
+  protected onCropValidated(crop: Crop): void {
+    this.cropChange.emit(crop);
+    this.cropOpen.set(false);
   }
 
   protected onSelected(photo: Photo): void {

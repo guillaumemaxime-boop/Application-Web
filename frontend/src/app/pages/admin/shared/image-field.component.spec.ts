@@ -5,6 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 import { ImageFieldComponent } from './image-field.component';
+import { Crop } from '../../../models/crop.model';
 
 @Component({
   standalone: true,
@@ -68,5 +69,39 @@ describe('ImageFieldComponent', () => {
     expect(fixture.componentInstance.ctrl.value).toBe('/uploads/a.jpg');
     // picker refermé après sélection
     expect(fixture.debugElement.query(By.css('app-photo-picker'))).toBeNull();
+  });
+
+  it('affiche le bouton Cadrer quand cropEnabled=true et URL definie', () => {
+    const fixture = TestBed.createComponent(ImageFieldComponent);
+    const cmp = fixture.componentInstance;
+    fixture.componentRef.setInput('cropEnabled', true);
+    cmp.writeValue('https://example.com/test.jpg');
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+    const cropBtn = buttons.find(b => b.textContent?.trim() === 'Cadrer');
+    expect(cropBtn).toBeTruthy();
+    expect(cropBtn!.disabled).toBeFalse();
+  });
+
+  it('n affiche pas le bouton Cadrer quand cropEnabled=false', () => {
+    const fixture = TestBed.createComponent(ImageFieldComponent);
+    const cmp = fixture.componentInstance;
+    fixture.componentRef.setInput('cropEnabled', false);
+    cmp.writeValue('https://example.com/test.jpg');
+    fixture.detectChanges();
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
+    expect(buttons.find(b => b.textContent?.trim() === 'Cadrer')).toBeUndefined();
+  });
+
+  it('emet cropChange quand crop validate', () => {
+    const fixture = TestBed.createComponent(ImageFieldComponent);
+    const cmp = fixture.componentInstance;
+    fixture.componentRef.setInput('cropEnabled', true);
+    cmp.writeValue('https://example.com/test.jpg');
+    fixture.detectChanges();
+    let emitted: unknown = null;
+    cmp.cropChange.subscribe(c => emitted = c);
+    (cmp as any).onCropValidated({ x: 10, y: 20, w: 50, h: 40 });
+    expect(emitted).toEqual({ x: 10, y: 20, w: 50, h: 40 } as Crop);
   });
 });
