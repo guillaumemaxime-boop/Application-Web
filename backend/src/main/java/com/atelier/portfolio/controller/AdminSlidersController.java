@@ -42,6 +42,9 @@ public class AdminSlidersController {
     @PutMapping("/{id}/stories")
     public ResponseEntity<NewsSlider> replaceStories(@PathVariable String id, @RequestBody Map<String, List<String>> body) {
         List<String> storyIds = body.getOrDefault("storyIds", List.of());
+        if (storyIds.size() > 50) {
+            return ResponseEntity.badRequest().build();
+        }
         return ResponseEntity.ok(service.replaceStories(id, storyIds));
     }
 

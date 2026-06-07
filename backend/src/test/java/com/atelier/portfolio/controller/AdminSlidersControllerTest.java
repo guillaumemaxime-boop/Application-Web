@@ -75,4 +75,21 @@ class AdminSlidersControllerTest {
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         assertThat(response.getBody()).containsEntry("error", "Unknown zone key: bad");
     }
+
+    @Test
+    void replaceStoriesAvec51ElementsRetourne400() {
+        List<String> ids = java.util.Collections.nCopies(51, "st-x");
+        Map<String, List<String>> body = Map.of("storyIds", ids);
+        assertThat(controller.replaceStories("sld-1", body).getStatusCode().value()).isEqualTo(400);
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void replaceStoriesAvec50ElementsEst_accepte() {
+        List<String> ids = java.util.Collections.nCopies(50, "st-x");
+        Map<String, List<String>> body = Map.of("storyIds", ids);
+        NewsSlider expected = new NewsSlider("sld-1", "x", "X", null, ids);
+        when(service.replaceStories("sld-1", ids)).thenReturn(expected);
+        assertThat(controller.replaceStories("sld-1", body).getStatusCode().value()).isEqualTo(200);
+    }
 }
