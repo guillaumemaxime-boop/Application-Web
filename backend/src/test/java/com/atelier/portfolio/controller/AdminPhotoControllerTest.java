@@ -38,7 +38,9 @@ class AdminPhotoControllerTest {
                 "portrait-studio.jpg",
                 "/api/photos/files/8f3a1b2c-uuid.jpg",
                 "2026-05-10T18:47:54.746Z",
-                List.of()
+                List.of(),
+                "JPG",
+                123456L
         );
     }
 
@@ -108,7 +110,9 @@ class AdminPhotoControllerTest {
                 samplePhoto.originalName(),
                 samplePhoto.url(),
                 samplePhoto.uploadedAt(),
-                List.of("studio", "atelier")
+                List.of("studio", "atelier"),
+                samplePhoto.format(),
+                samplePhoto.sizeBytes()
         );
         when(service.updateTags("ph-abc12345", List.of("Studio", "Atelier")))
                 .thenReturn(Optional.of(updated));

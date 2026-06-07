@@ -5,4 +5,6 @@ export interface Photo {
   url: string;
   uploadedAt: string;
   tags: string[];
+  format?: string;
+  sizeBytes?: number;
 }

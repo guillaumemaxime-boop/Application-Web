@@ -8,6 +8,8 @@ public record Photo(
         String originalName,
         String url,
         String uploadedAt,
-        List<String> tags
+        List<String> tags,
+        String format,
+        long sizeBytes
 ) {
 }
