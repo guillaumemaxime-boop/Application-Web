@@ -55,4 +55,13 @@ public class AdminPhotoController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    /**
+     * Migration one-shot : applique l'optimisation a toutes les photos deja uploadees.
+     * Idempotent : peut etre rejoue sans risque, les fichiers deja optimises sont laisses.
+     */
+    @PostMapping("/optimize")
+    public ResponseEntity<PhotoService.OptimizeReport> optimizeAll() {
+        return ResponseEntity.ok(service.optimizeAll());
+    }
 }

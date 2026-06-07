@@ -14,11 +14,16 @@ import { ToastService } from '../shared/toast.service';
     <div class="photos-tab">
       <div class="photos-upload-zone">
         <h2>Importer des photos</h2>
-        <p class="photos-upload-hint">Formats acceptés : JPG, PNG, WebP, GIF · Taille max : 50 Mo par fichier</p>
+        <p class="photos-upload-hint">Formats acceptés : JPG, PNG, WebP, GIF · Taille max : 50 Mo par fichier · JPEG/PNG > 1920px sont automatiquement redimensionnés</p>
         <input #fileInput type="file" accept="image/*" multiple style="display:none" (change)="uploadFiles($event)" />
-        <button type="button" class="btn-primary" [disabled]="uploading()" (click)="fileInput.click()">
-          {{ uploading() ? 'Importation en cours…' : 'Choisir des fichiers' }}
-        </button>
+        <div class="photos-upload-actions">
+          <button type="button" class="btn-primary" [disabled]="uploading()" (click)="fileInput.click()">
+            {{ uploading() ? 'Importation en cours…' : 'Choisir des fichiers' }}
+          </button>
+          <button type="button" class="btn-secondary" [disabled]="optimizing()" (click)="optimizeAll()">
+            {{ optimizing() ? 'Optimisation en cours…' : 'Optimiser les images existantes' }}
+          </button>
+        </div>
       </div>
 
       @if (loading()) {
@@ -105,11 +110,18 @@ import { ToastService } from '../shared/toast.service';
     }
     .photos-upload-zone h2 { margin: 0 0 8px; font-size: 1.3rem; }
     .photos-upload-hint { margin: 0 0 20px; color: var(--color-mute); font-size: 0.85rem; }
+    .photos-upload-actions { display: inline-flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
     .btn-primary {
       padding: 12px 28px; background: var(--color-ink); color: var(--color-bg); border: 0;
       cursor: pointer; font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase;
     }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      padding: 12px 28px; background: var(--color-bg); color: var(--color-ink); border: 1px solid var(--color-ink);
+      cursor: pointer; font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--color-ink); color: var(--color-bg); }
+    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
     .status { color: var(--color-mute); }
     .photos-search {
       display: block; width: 100%; max-width: 360px; padding: 10px 14px;
@@ -186,6 +198,7 @@ export class MediathequeComponent implements AfterViewInit {
   protected readonly photos = signal<Photo[]>([]);
   protected readonly loading = signal(true);
   protected readonly uploading = signal(false);
+  protected readonly optimizing = signal(false);
   protected readonly viewingPhoto = signal<Photo | null>(null);
   protected readonly search = signal('');
   protected readonly filtered = computed<Photo[]>(() => {
@@ -215,6 +228,23 @@ export class MediathequeComponent implements AfterViewInit {
     this.portfolio.getPhotos().subscribe({
       next: data => { this.photos.set(data); this.loading.set(false); },
       error: () => { this.loading.set(false); this.toast.error('Impossible de charger la médiathèque.'); }
+    });
+  }
+
+  optimizeAll(): void {
+    this.optimizing.set(true);
+    this.portfolio.optimizeAllPhotos().subscribe({
+      next: report => {
+        this.optimizing.set(false);
+        const mb = (report.bytesSaved / (1024 * 1024)).toFixed(1);
+        this.toast.success(
+          `${report.optimized} / ${report.count} image(s) optimisée(s) — ${mb} Mo économisés.`
+        );
+      },
+      error: () => {
+        this.optimizing.set(false);
+        this.toast.error('Erreur lors de l\'optimisation des images.');
+      }
     });
   }
 

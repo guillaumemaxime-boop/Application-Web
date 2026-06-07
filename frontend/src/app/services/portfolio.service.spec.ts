@@ -399,6 +399,15 @@ describe('PortfolioService', () => {
       req.flush(mockPhoto);
     });
 
+    it('optimizeAllPhotos appelle POST /api/admin/photos/optimize et retourne le rapport', () => {
+      let result: any = null;
+      service.optimizeAllPhotos().subscribe(r => { result = r; });
+      const req = httpMock.expectOne('/api/admin/photos/optimize');
+      expect(req.request.method).toBe('POST');
+      req.flush({ count: 5, optimized: 3, bytesSaved: 1500000 });
+      expect(result).toEqual({ count: 5, optimized: 3, bytesSaved: 1500000 });
+    });
+
     it('should delete a photo via DELETE on /api/admin/photos/:id', () => {
       let completed = false;
 
