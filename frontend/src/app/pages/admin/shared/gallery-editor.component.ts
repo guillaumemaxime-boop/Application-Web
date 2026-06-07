@@ -2,13 +2,15 @@ import { Component, EventEmitter, Input, Output, inject, signal } from '@angular
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
 import { GalleryItem } from '../../../models/gallery-item.model';
+import { Crop } from '../../../models/crop.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { PhotoPickerComponent } from './photo-picker.component';
+import { ImageCropPickerComponent } from './image-crop-picker.component';
 
 @Component({
   selector: 'app-gallery-editor',
   standalone: true,
-  imports: [ReorderableDirective, PhotoPickerComponent],
+  imports: [ReorderableDirective, PhotoPickerComponent, ImageCropPickerComponent],
   template: `
     <div class="gallery-block">
       <div class="gallery-block-head">
@@ -21,9 +23,13 @@ import { PhotoPickerComponent } from './photo-picker.component';
         <p class="gallery-empty">Aucune image. Cliquez sur « Ajouter » pour insérer une photo depuis la médiathèque.</p>
       } @else {
         <ul class="gallery-thumbs" appReorderable (reordered)="onReorder($event)">
-          @for (item of images; track item.url) {
+          @for (item of images; track item.url; let i = $index) {
             <li class="gallery-thumb">
               <img [src]="item.url" alt="" />
+              @if (item.crop) {
+                <span class="crop-indicator" title="Crop défini">✂ {{ item.crop.w.toFixed(0) }}×{{ item.crop.h.toFixed(0) }}</span>
+              }
+              <button type="button" class="thumb-crop" (click)="openCropFor(i)" aria-label="Cadrer cette image">✂</button>
               <button type="button" class="thumb-remove" (click)="removeImage(item.url)" aria-label="Retirer">×</button>
             </li>
           }
@@ -38,6 +44,14 @@ import { PhotoPickerComponent } from './photo-picker.component';
         [photos]="photos()"
         (selected)="onPhotoSelected($event)"
         (closed)="closePicker()" />
+    }
+
+    @if (cropOpenForIndex() !== null) {
+      <app-image-crop-picker
+        [imageUrl]="images[cropOpenForIndex()!].url"
+        [initialCrop]="images[cropOpenForIndex()!].crop ?? null"
+        (validated)="onCropValidated($event)"
+        (cancelled)="cropOpenForIndex.set(null)" />
     }
   `,
   styles: [`
@@ -74,6 +88,18 @@ import { PhotoPickerComponent } from './photo-picker.component';
       align-items: center; justify-content: center;
     }
     .thumb-remove:hover { background: rgba(0, 0, 0, 0.9); }
+    .thumb-crop {
+      position: absolute; top: 4px; right: 32px;
+      background: var(--color-bg); border: 1px solid var(--color-line);
+      padding: 2px 6px; font-size: 0.8rem; cursor: pointer; color: var(--color-ink-soft);
+      line-height: 1.4;
+    }
+    .thumb-crop:hover { border-color: var(--color-accent); color: var(--color-accent); }
+    .crop-indicator {
+      position: absolute; bottom: 4px; left: 4px; background: var(--color-bg);
+      padding: 2px 5px; font-size: 0.65rem; border: 1px solid var(--color-line);
+      color: var(--color-ink-soft); line-height: 1.4;
+    }
     .gallery-hint { margin: 0; font-size: 0.75rem; color: var(--color-mute); font-style: italic; }
   `]
 })
@@ -85,6 +111,7 @@ export class GalleryEditorComponent {
 
   protected readonly pickerOpen = signal(false);
   protected readonly photos = signal<Photo[]>([]);
+  protected readonly cropOpenForIndex = signal<number | null>(null);
 
   openPicker(): void {
     this.pickerOpen.set(true);
@@ -107,5 +134,19 @@ export class GalleryEditorComponent {
 
   onReorder(order: number[]): void {
     this.imagesChange.emit(order.map(i => this.images[i]));
+  }
+
+  protected openCropFor(i: number): void {
+    this.cropOpenForIndex.set(i);
+  }
+
+  protected onCropValidated(crop: Crop): void {
+    const i = this.cropOpenForIndex();
+    if (i === null) return;
+    if (!this.images[i]) return;
+    const next = [...this.images];
+    next[i] = { ...next[i], crop };
+    this.imagesChange.emit(next);
+    this.cropOpenForIndex.set(null);
   }
 }

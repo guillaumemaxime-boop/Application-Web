@@ -4,6 +4,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { By } from '@angular/platform-browser';
 import { GalleryEditorComponent } from './gallery-editor.component';
 import { GalleryItem } from '../../../models/gallery-item.model';
+import { WritableSignal } from '@angular/core';
 
 type GalleryInternals = {
   pickerOpen: () => boolean;
@@ -13,6 +14,9 @@ type GalleryInternals = {
   onPhotoSelected: (photo: { url: string }) => void;
   removeImage: (url: string) => void;
   onReorder: (order: number[]) => void;
+  cropOpenForIndex: WritableSignal<number | null>;
+  openCropFor: (i: number) => void;
+  onCropValidated: (crop: { x: number; y: number; w: number; h: number }) => void;
 };
 
 describe('GalleryEditorComponent', () => {
@@ -128,5 +132,28 @@ describe('GalleryEditorComponent', () => {
     const cmp = fixture.componentInstance as unknown as GalleryInternals;
     cmp.onReorder([2, 0, 1]);
     expect(received[0]).toEqual([{ url: '/c.jpg' }, { url: '/a.jpg' }, { url: '/b.jpg' }]);
+  });
+
+  it('openCropFor(i) ouvre la modale crop pour l\'item i', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', [{ url: '/a.jpg' }, { url: '/b.jpg' }] as GalleryItem[]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.openCropFor(1);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-image-crop-picker')).toBeTruthy();
+  });
+
+  it('onCropValidated patche images[i].crop et émet imagesChange', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', [{ url: '/a.jpg' }, { url: '/b.jpg' }] as GalleryItem[]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+    cmp.cropOpenForIndex.set(0);
+    let emitted: GalleryItem[] | undefined;
+    fixture.componentInstance.imagesChange.subscribe((v: GalleryItem[]) => { emitted = v; });
+    cmp.onCropValidated({ x: 5, y: 5, w: 90, h: 90 });
+    expect(emitted![0].crop).toEqual({ x: 5, y: 5, w: 90, h: 90 });
+    expect(emitted![1].crop).toBeUndefined();
   });
 });
