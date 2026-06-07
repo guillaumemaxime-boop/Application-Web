@@ -172,6 +172,24 @@ export class ImageCropPickerComponent implements AfterViewInit, OnDestroy {
   }
 
   protected validate(): void {
+    // Lit les donnees fraiches du cropper au moment du clic Valider, plutot
+    // que de se reposer sur this.currentCrop qui peut etre obsolete (event crop
+    // throttle, ou aspect ratio change sans re-fire crop event).
+    if (this.cropper) {
+      const data = this.cropper.getData(true);
+      const img = this.cropImage.nativeElement;
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      if (w && h) {
+        this.validated.emit({
+          x: (data.x / w) * 100,
+          y: (data.y / h) * 100,
+          w: (data.width / w) * 100,
+          h: (data.height / h) * 100,
+        });
+        return;
+      }
+    }
     if (this.currentCrop) this.validated.emit(this.currentCrop);
   }
 
