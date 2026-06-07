@@ -39,6 +39,12 @@ public class FurnitureEntity {
     @Column(name = "cover_image", length = 500)
     private String coverImage;
 
+    @Column(name = "cover_focal_x")
+    private Double coverFocalX;
+
+    @Column(name = "cover_focal_y")
+    private Double coverFocalY;
+
     @Column(name = "short_description", length = 1000)
     private String shortDescription;
 
@@ -97,6 +103,12 @@ public class FurnitureEntity {
 
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
+
+    public Double getCoverFocalX() { return coverFocalX; }
+    public void setCoverFocalX(Double coverFocalX) { this.coverFocalX = coverFocalX; }
+
+    public Double getCoverFocalY() { return coverFocalY; }
+    public void setCoverFocalY(Double coverFocalY) { this.coverFocalY = coverFocalY; }
 
     public String getShortDescription() { return shortDescription; }
     public void setShortDescription(String shortDescription) { this.shortDescription = shortDescription; }

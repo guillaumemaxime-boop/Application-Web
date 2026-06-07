@@ -120,6 +120,7 @@ class ExhibitionServiceTest {
                 "Palais de Tokyo", "Paris", "France",
                 LocalDate.of(2026, 6, 1), LocalDate.of(2026, 9, 30),
                 "https://example.com/souffles.jpg",
+                null, null,
                 List.of("https://example.com/souffles-1.jpg"),
                 "Camille Lévy", "court", "long",
                 List.of("Sculpture", "Lumière"), true, true, true, List.of()
@@ -140,7 +141,8 @@ class ExhibitionServiceTest {
                 null, "Test", "custom-expo-slug",
                 "Lieu", "Ville", "Pays",
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
-                null, List.of(), "", "", "", List.of(), false, true, true, List.of()
+                null, null, null,
+                List.of(), "", "", "", List.of(), false, true, true, List.of()
         );
 
         Exhibition created = exhibitionService.create(input);
@@ -157,7 +159,8 @@ class ExhibitionServiceTest {
                 original.id(), "Matières silencieuses — édition 2", original.slug(),
                 original.venue(), original.city(), original.country(),
                 original.startDate(), original.endDate(),
-                original.coverImage(), original.gallery(), original.curator(),
+                original.coverImage(), original.coverFocalX(), original.coverFocalY(),
+                original.gallery(), original.curator(),
                 "Description courte mise à jour", original.description(),
                 original.tags(), false, true, true, List.of()
         );
@@ -175,7 +178,8 @@ class ExhibitionServiceTest {
         Exhibition changes = new Exhibition(
                 null, "X", null, "", "", "",
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
-                null, List.of(), "", "", "", List.of(), false, true, true, List.of()
+                null, null, null,
+                List.of(), "", "", "", List.of(), false, true, true, List.of()
         );
 
         Optional<Exhibition> updated = exhibitionService.update("non-existent", changes);

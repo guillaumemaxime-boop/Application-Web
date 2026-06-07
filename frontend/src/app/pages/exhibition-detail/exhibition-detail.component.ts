@@ -27,7 +27,7 @@ import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/s
       <article class="fade-in">
         <header class="hero">
           <div class="hero-bg">
-            <img [src]="e.coverImage" [alt]="e.title" />
+            <img [src]="e.coverImage" [alt]="e.title" [style.object-position]="coverPosition()" />
           </div>
           <div class="container hero-content">
             <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ e.venue }} · {{ e.city }}, {{ e.country }}</span>
@@ -242,6 +242,14 @@ export class ExhibitionDetailComponent {
         this.loadingSvc.stop('nav');
       },
     });
+  }
+
+  protected coverPosition(): string {
+    const e = this.item();
+    if (!e) return '50% 50%';
+    const x = e.coverFocalX ?? 50;
+    const y = e.coverFocalY ?? 50;
+    return `${x}% ${y}%`;
   }
 
   protected openViewer() {

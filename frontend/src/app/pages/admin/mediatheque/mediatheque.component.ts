@@ -138,7 +138,7 @@ import { ToastService } from '../shared/toast.service';
     .photo-thumb-btn {
       background: transparent; border: 0; padding: 0; cursor: pointer; width: 100%; height: 100%; display: block;
     }
-    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: contain; }
     .photo-info { padding: 8px 12px; }
     .photo-name { font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
     .photo-tags {

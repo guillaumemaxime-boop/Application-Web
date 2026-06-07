@@ -147,4 +147,20 @@ describe('ExhibitionDetailComponent', () => {
     expect(display.filter((s: DisplaySlide) => s.type === 'cover').length).toBe(1);
     expect((display[0] as any).src).toBe('/c.jpg');
   });
+
+  it('coverPosition() retourne les coordonnées en % quand coverFocalX/Y sont définis', () => {
+    setup('matieres-silencieuses', of({ ...mockExhibition, coverFocalX: 30, coverFocalY: 80 }));
+    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    expect(c.coverPosition()).toBe('30% 80%');
+  });
+
+  it('coverPosition() retourne "50% 50%" quand coverFocalX/Y sont null', () => {
+    setup('matieres-silencieuses', of({ ...mockExhibition, coverFocalX: null, coverFocalY: null }));
+    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    expect(c.coverPosition()).toBe('50% 50%');
+  });
 });

@@ -271,4 +271,20 @@ describe('FurnitureDetailComponent', () => {
     expect(c.contactOpen()).toBeFalse();
     expect(fixture.nativeElement.querySelector('app-contact-form')).toBeNull();
   });
+
+  it('coverPosition() retourne les coordonnées en % quand coverFocalX/Y sont définis', () => {
+    setup('onde', of({ ...mockFurniture, coverFocalX: 75, coverFocalY: 25 }));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    expect(c.coverPosition()).toBe('75% 25%');
+  });
+
+  it('coverPosition() retourne "50% 50%" quand coverFocalX/Y sont null', () => {
+    setup('onde', of({ ...mockFurniture, coverFocalX: null, coverFocalY: null }));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    expect(c.coverPosition()).toBe('50% 50%');
+  });
 });

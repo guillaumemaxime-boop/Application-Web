@@ -33,6 +33,7 @@ type MobilierInternals = {
   newStory: () => void;
   renameStory: (s: unknown) => void;
   deleteStory: (s: unknown) => void;
+  onFurnitureFocalChange: (value: { x: number; y: number } | null) => void;
 };
 
 describe('MobilierComponent', () => {
@@ -455,5 +456,32 @@ describe('MobilierComponent', () => {
     expect(toast.error).toHaveBeenCalled();
     const cmp = fixture.componentInstance as unknown as MobilierInternals;
     expect(cmp.loadingFurniture()).toBe(false);
+  });
+
+  it('onFurnitureFocalChange() met à jour coverFocalX et coverFocalY', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.onFurnitureFocalChange({ x: 30, y: 70 });
+    const v = cmp.furnitureForm.getRawValue();
+    expect(v['coverFocalX']).toBe(30);
+    expect(v['coverFocalY']).toBe(70);
+  });
+
+  it('onFurnitureFocalChange(null) remet coverFocalX et coverFocalY à null', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.onFurnitureFocalChange({ x: 30, y: 70 });
+    cmp.onFurnitureFocalChange(null);
+    const v = cmp.furnitureForm.getRawValue();
+    expect(v['coverFocalX']).toBeNull();
+    expect(v['coverFocalY']).toBeNull();
   });
 });
