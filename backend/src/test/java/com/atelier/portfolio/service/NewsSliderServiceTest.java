@@ -50,8 +50,8 @@ class NewsSliderServiceTest {
     @Test
     void replaceStoriesPreservesGivenOrder() {
         NewsSlider slider = service.create(new NewsSliderInput("Mix", null));
-        Story s1 = stories.create(new StoryInput("furniture", "f-001", "S1", "https://e.com/c.jpg"));
-        Story s2 = stories.create(new StoryInput("furniture", "f-001", "S2", "https://e.com/c.jpg"));
+        Story s1 = stories.create(new StoryInput("furniture", "f-001", "S1", "https://e.com/c.jpg", null));
+        Story s2 = stories.create(new StoryInput("furniture", "f-001", "S2", "https://e.com/c.jpg", null));
         NewsSlider updated = service.replaceStories(slider.id(), List.of(s2.id(), s1.id()));
         assertThat(updated.storyIds()).containsExactly(s2.id(), s1.id());
     }

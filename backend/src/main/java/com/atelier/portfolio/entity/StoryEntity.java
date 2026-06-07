@@ -27,6 +27,11 @@ public class StoryEntity {
     @Column(name = "cover_image", nullable = false, length = 500)
     private String coverImage;
 
+    @Column(name = "cover_crop_x") private Double coverCropX;
+    @Column(name = "cover_crop_y") private Double coverCropY;
+    @Column(name = "cover_crop_w") private Double coverCropW;
+    @Column(name = "cover_crop_h") private Double coverCropH;
+
     @Column(nullable = false, unique = true, length = 200)
     private String slug;
 
@@ -50,6 +55,18 @@ public class StoryEntity {
 
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
+
+    public Double getCoverCropX() { return coverCropX; }
+    public void setCoverCropX(Double coverCropX) { this.coverCropX = coverCropX; }
+
+    public Double getCoverCropY() { return coverCropY; }
+    public void setCoverCropY(Double coverCropY) { this.coverCropY = coverCropY; }
+
+    public Double getCoverCropW() { return coverCropW; }
+    public void setCoverCropW(Double coverCropW) { this.coverCropW = coverCropW; }
+
+    public Double getCoverCropH() { return coverCropH; }
+    public void setCoverCropH(Double coverCropH) { this.coverCropH = coverCropH; }
 
     public String getSlug() { return slug; }
     public void setSlug(String slug) { this.slug = slug; }

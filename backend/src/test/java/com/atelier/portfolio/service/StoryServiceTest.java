@@ -2,6 +2,7 @@ package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.ExhibitionEntity;
 import com.atelier.portfolio.entity.FurnitureEntity;
+import com.atelier.portfolio.model.ImageCrop;
 import com.atelier.portfolio.model.Slide;
 import com.atelier.portfolio.model.Story;
 import com.atelier.portfolio.model.StoryInput;
@@ -29,15 +30,15 @@ class StoryServiceTest {
     @Test
     void createStoryAssignsIncrementalPosition() {
         // Note : utiliser 'f-001' (id technique present dans le seed) au lieu d'un slug
-        Story s1 = service.create(new StoryInput("furniture", "f-001", "Story extra 1", "https://example.com/c.jpg"));
-        Story s2 = service.create(new StoryInput("furniture", "f-001", "Story extra 2", "https://example.com/c.jpg"));
+        Story s1 = service.create(new StoryInput("furniture", "f-001", "Story extra 1", "https://example.com/c.jpg", null));
+        Story s2 = service.create(new StoryInput("furniture", "f-001", "Story extra 2", "https://example.com/c.jpg", null));
         assertThat(s2.position()).isGreaterThan(s1.position());
     }
 
     @Test
     void createStoryGeneratesUniqueSlug() {
-        Story s1 = service.create(new StoryInput("furniture", "f-001", "Premiere", "https://example.com/c.jpg"));
-        Story s2 = service.create(new StoryInput("furniture", "f-001", "Deuxieme", "https://example.com/c.jpg"));
+        Story s1 = service.create(new StoryInput("furniture", "f-001", "Premiere", "https://example.com/c.jpg", null));
+        Story s2 = service.create(new StoryInput("furniture", "f-001", "Deuxieme", "https://example.com/c.jpg", null));
         assertThat(s1.slug()).isNotEqualTo(s2.slug());
     }
 
@@ -53,7 +54,7 @@ class StoryServiceTest {
 
     @Test
     void replaceSlidesAttachesSlidesToStory() {
-        Story s = service.create(new StoryInput("furniture", "f-001", "Test", "https://example.com/c.jpg"));
+        Story s = service.create(new StoryInput("furniture", "f-001", "Test", "https://example.com/c.jpg", null));
         service.replaceSlides(s.id(), List.of(
                 new Slide.ImageSlide(null, 0, "https://example.com/1.jpg", "Caption 1"),
                 new Slide.ImageSlide(null, 1, "https://example.com/2.jpg", "Caption 2")
@@ -64,10 +65,10 @@ class StoryServiceTest {
 
     @Test
     void deleteStoryRemovesItAndCascadesSlides() {
-        Story s = service.create(new StoryInput("furniture", "f-001", "Tmp", "https://example.com/c.jpg"));
+        Story s = service.create(new StoryInput("furniture", "f-001", "Tmp", "https://example.com/c.jpg", null));
         service.replaceSlides(s.id(), List.of(new Slide.ImageSlide(null, 0, "https://example.com/x.jpg", null)));
         service.delete(s.id());
-        assertThatThrownBy(() -> service.update(s.id(), new StoryInput("furniture", "f-001", "X", "https://example.com/c.jpg")))
+        assertThatThrownBy(() -> service.update(s.id(), new StoryInput("furniture", "f-001", "X", "https://example.com/c.jpg", null)))
                 .isInstanceOf(RuntimeException.class);
     }
 
@@ -77,7 +78,7 @@ class StoryServiceTest {
         f.setShowStoryLink(true);
         furnitureRepo.save(f);
 
-        Story s = service.create(new StoryInput("furniture", "f-001", "Test link true", "https://example.com/c.jpg"));
+        Story s = service.create(new StoryInput("furniture", "f-001", "Test link true", "https://example.com/c.jpg", null));
         StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
 
         assertThat(result.ownerShowStoryLink()).isTrue();
@@ -90,7 +91,7 @@ class StoryServiceTest {
         f.setShowStoryLink(false);
         furnitureRepo.save(f);
 
-        Story s = service.create(new StoryInput("furniture", "f-001", "Test link false", "https://example.com/c.jpg"));
+        Story s = service.create(new StoryInput("furniture", "f-001", "Test link false", "https://example.com/c.jpg", null));
         StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
 
         assertThat(result.ownerShowStoryLink()).isFalse();
@@ -103,7 +104,7 @@ class StoryServiceTest {
         ex.setShowStoryLink(true);
         exhibitionRepo.save(ex);
 
-        Story s = service.create(new StoryInput("exhibition", "e-001", "Test exh link true", "https://example.com/c.jpg"));
+        Story s = service.create(new StoryInput("exhibition", "e-001", "Test exh link true", "https://example.com/c.jpg", null));
         StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
 
         assertThat(result.ownerShowStoryLink()).isTrue();
@@ -116,10 +117,21 @@ class StoryServiceTest {
         ex.setShowStoryLink(false);
         exhibitionRepo.save(ex);
 
-        Story s = service.create(new StoryInput("exhibition", "e-001", "Test exh link false", "https://example.com/c.jpg"));
+        Story s = service.create(new StoryInput("exhibition", "e-001", "Test exh link false", "https://example.com/c.jpg", null));
         StoryWithSlides result = service.findBySlugWithSlides(s.slug()).orElseThrow();
 
         assertThat(result.ownerShowStoryLink()).isFalse();
         assertThat(result.ownerSlug()).isEqualTo(ex.getSlug());
+    }
+
+    @Test
+    void create_avec_coverCrop_persiste_et_relit() {
+        Story created = service.create(new StoryInput(
+                "furniture", "f-001", "Crop test", "https://example.com/c.jpg",
+                new ImageCrop(5.0, 10.0, 80.0, 60.0)));
+        StoryWithSlides reloaded = service.findBySlugWithSlides(created.slug()).orElseThrow();
+        assertThat(reloaded.story().coverCrop()).isNotNull();
+        assertThat(reloaded.story().coverCrop().w()).isEqualTo(80.0);
+        assertThat(reloaded.story().coverCrop().x()).isEqualTo(5.0);
     }
 }
