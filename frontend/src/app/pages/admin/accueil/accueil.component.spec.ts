@@ -16,6 +16,12 @@ type AccueilInternals = {
   moveDown: (i: number) => void;
 };
 
+/** Flush les deux requêtes émises par SlidersComponent.ngOnInit(). */
+function flushSliders(httpMock: HttpTestingController): void {
+  httpMock.expectOne('/api/admin/sliders').flush([]);
+  httpMock.expectOne('/api/admin/stories/all').flush([]);
+}
+
 describe('AccueilComponent', () => {
   let httpMock: HttpTestingController;
 
@@ -35,8 +41,20 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([{ id: '1', slug: 'a', title: 'A', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false }]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     expect(fixture.debugElement.queryAll(By.css('.home-row')).length).toBe(1);
+  });
+
+  it('rend le composant app-admin-sliders', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('app-admin-sliders'))).toBeTruthy();
   });
 
   it('toggleIncluded() persiste le feed et notifie via ToastService', () => {
@@ -47,6 +65,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([{ id: '1', slug: 'a', title: 'A', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false }]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     const items = cmp.homeItems()!;
@@ -70,6 +89,7 @@ describe('AccueilComponent', () => {
       { kind: 'furniture', slug: 'fur-incl' },
       { kind: 'exhibition', slug: 'exh-incl' },
     ]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     const items = cmp.homeItems()!;
@@ -94,6 +114,7 @@ describe('AccueilComponent', () => {
       { kind: 'furniture', slug: 'a' },
       { kind: 'furniture', slug: 'b' },
     ]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     cmp.onFeedReorder([1, 0]);
@@ -117,6 +138,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushSliders(httpMock);
   });
 
   it('persistFeed() filtre les items non inclus', () => {
@@ -130,6 +152,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/admin/home/feed').flush([
       { kind: 'furniture', slug: 'a' }, // a inclus, b exclus
     ]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     cmp.persistFeed();
@@ -150,6 +173,7 @@ describe('AccueilComponent', () => {
       { kind: 'furniture', slug: 'a' },
       { kind: 'furniture', slug: 'b' },
     ]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     cmp.moveUp(1);
@@ -167,6 +191,7 @@ describe('AccueilComponent', () => {
     ]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     cmp.moveUp(0);
@@ -182,6 +207,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushSliders(httpMock);
   });
 
   it('moveDown() echange avec le suivant et persiste (A-04)', () => {
@@ -196,6 +222,7 @@ describe('AccueilComponent', () => {
       { kind: 'furniture', slug: 'a' },
       { kind: 'furniture', slug: 'b' },
     ]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     cmp.moveDown(0);
@@ -213,6 +240,7 @@ describe('AccueilComponent', () => {
     ]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     cmp.moveDown(0); // dernier index, on ne bouge pas
@@ -227,6 +255,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushSliders(httpMock);
   });
 
   it('persistFeed() error -> toast error', () => {
@@ -239,6 +268,7 @@ describe('AccueilComponent', () => {
     ]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([{ kind: 'furniture', slug: 'a' }]);
+    flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     cmp.persistFeed();
