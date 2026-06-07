@@ -14,11 +14,12 @@ Donner à l'admin un outil de cadrage rectangulaire précis pour décrire exacte
 |---|---|---|
 | Cover mobilier | focal point (X/Y) | crop rectangulaire (x/y/w/h) |
 | Cover exposition | focal point (X/Y) | crop rectangulaire |
+| Cover story | URL brute | URL + crop optionnel |
 | Galerie mobilier | URL brute | URL + crop optionnel |
 | Galerie exposition | URL brute | URL + crop optionnel |
 
 Hors portée (autres specs ou plus tard) :
-- Slides de story
+- Slides individuels d'une story (l'image au sein du slide narratif)
 - Items composés de la home
 - Preview WYSIWYG des pages
 - Génération serveur des variantes croppées
@@ -105,6 +106,15 @@ Un seul changeset atomique :
             - { column: { name: crop_y, type: double } }
             - { column: { name: crop_w, type: double } }
             - { column: { name: crop_h, type: double } }
+
+      # Story cover : 4 colonnes crop
+      - addColumn:
+          tableName: story
+          columns:
+            - { column: { name: cover_crop_x, type: double } }
+            - { column: { name: cover_crop_y, type: double } }
+            - { column: { name: cover_crop_w, type: double } }
+            - { column: { name: cover_crop_h, type: double } }
 ```
 
 **Conventions** :
@@ -117,6 +127,9 @@ Un seul changeset atomique :
 `FurnitureEntity` et `ExhibitionEntity` :
 - Supprimer les champs `coverFocalX`, `coverFocalY`.
 - Ajouter 4 champs `Double coverCropX`, `coverCropY`, `coverCropW`, `coverCropH` mappés sur les colonnes.
+
+`StoryEntity` :
+- Ajouter 4 champs `Double coverCropX/Y/W/H` (pas de focal point à dropper, c'est nouveau).
 
 `furniture_gallery` et `exhibition_gallery` passent d'une `@ElementCollection<String>` (mappée sur `url`) à une `@ElementCollection<GalleryEntry>` où `GalleryEntry` est une classe `@Embeddable` :
 
@@ -164,6 +177,9 @@ public record GalleryImage(
 
 `Exhibition` : symétrique.
 
+`Story` :
+- Ajouter `ImageCrop coverCrop` (nullable) à la position juste après `coverImage`.
+
 ### TypeScript — interfaces
 
 ```ts
@@ -192,6 +208,13 @@ export interface Exhibition {
   coverImage: string;
   coverCrop?: Crop | null;
   gallery: GalleryItem[];
+  // …
+}
+
+export interface Story {
+  // … champs existants …
+  coverImage: string;
+  coverCrop?: Crop | null;
   // …
 }
 ```
@@ -237,6 +260,11 @@ export class ImageCropPickerComponent {
 - Chaque vignette de galerie reçoit un overlay au hover avec icône « ✂️ Cadrer » → ouvre la modale pour cet item.
 - Indicateur visuel sur la vignette : mini-rectangle en overlay montrant la zone du crop défini, ou rien si crop null.
 - Optionnel : chip en coin de vignette avec le ratio approximatif (« 4:5 », « 16:9 », « libre »).
+
+**Pour le cover de story** :
+- Le cover de story est édité dans `mobilier.component` et `expositions.component` (modale d'édition / inline avec `<app-image-field>` + `coverEditCtrl`).
+- Étendre la zone d'édition pour inclure un bouton « Cadrer » à côté de l'`<app-image-field>` du cover de story.
+- Validation patche un nouveau champ `coverCrop` envoyé dans le payload `PUT /api/admin/stories/{id}`.
 
 ## Rendu public (CSS)
 
@@ -312,15 +340,18 @@ Si `crop` est `null` (fiches sans crop défini, soit toutes après migration) �
 
 - `furniture-detail.component` : hero img + chaque image de galerie.
 - `exhibition-detail.component` : hero img + chaque image de galerie.
+- `story-viewer.component` : slide de type `cover` au début de la story (utilise `story.coverImage` via `enrichSlides`).
+- `story-inline.component` : la cover de story affichée dans la fiche détail mobilier.
+- `news-slider.component` : chaque card affiche `story.coverImage` — le crop story s'y applique.
 
-Tous les autres sites publics (home cards, catalogue, médiathèque) servent les images en `object-fit: cover` standard et **ne sont pas touchés** dans ce spec.
+Les autres sites (home masonry, catalogue, médiathèque, etc.) servent les images en `object-fit: cover` standard et **ne sont pas touchés** dans ce spec.
 
 ## Découpe en commits
 
-1. **Backend** : Liquibase 028 + entités + records (incluant `ImageCrop`, `GalleryImage`) + services + tests existants adaptés. Breaking interne (DTO `gallery`) mais autonome côté backend.
-2. **Frontend modèle** : interfaces TS `Crop` + `GalleryItem`, MAJ de `Furniture`/`Exhibition`. Adapter le service mock + helpers + tests qui consommaient `gallery: string[]`. Pas de rendu modifié encore.
+1. **Backend** : Liquibase 028 + entités (Furniture, Exhibition, Story, GalleryEntry) + records (`ImageCrop`, `GalleryImage`, MAJ `Furniture`/`Exhibition`/`Story`) + services + tests existants adaptés. Breaking interne (DTO `gallery`) mais autonome côté backend.
+2. **Frontend modèle** : interfaces TS `Crop` + `GalleryItem`, MAJ de `Furniture`/`Exhibition`/`Story`. Adapter le service mock + helpers + tests qui consommaient `gallery: string[]`. Pas de rendu modifié encore.
 3. **Frontend composant** : `<app-image-crop-picker>` + spec, sans intégration. Install `cropperjs` dans package.json.
-4. **Frontend intégration + rendu public** : remplace `<app-focal-point-picker>` (supprimé) par le nouveau bouton "Cadrer" dans `<app-image-field>`, étend `<app-gallery-editor>` pour `GalleryItem`, branche `cropTransform` sur les fiches détail. Régen baselines Playwright après validation visuelle utilisateur.
+4. **Frontend intégration + rendu public** : remplace `<app-focal-point-picker>` (supprimé) par le nouveau bouton "Cadrer" dans `<app-image-field>` (cover mobilier + expo + story), étend `<app-gallery-editor>` pour `GalleryItem`, branche `cropTransform` sur les fiches détail + story-viewer + story-inline + news-slider. Régen baselines Playwright après validation visuelle utilisateur.
 
 ## Tests
 
@@ -329,20 +360,22 @@ Tous les autres sites publics (home cards, catalogue, médiathèque) servent les
 - `ImageCropTest` (record) : validation contraintes 0-100, equals/hashCode, null OK.
 - `GalleryImageTest` : équivalence URL + crop.
 - `FurnitureServiceTest` + `ExhibitionServiceTest` : 4-5 tests par service (create/update avec et sans crop, propagation aux galerie items, round-trip cover crop).
-- `FurnitureControllerTest` + `ExhibitionControllerTest` : 1-2 tests sur POST/PUT avec crop.
+- `StoryServiceTest` : 2-3 tests pour propagation du `coverCrop` au save/load.
+- `FurnitureControllerTest` + `ExhibitionControllerTest` + `AdminStoryControllerTest` : 1-2 tests sur POST/PUT avec crop.
 - Tous les tests existants qui construisaient `new Furniture(...)` ou `new Exhibition(...)` adaptés au nouveau record (cf. pattern utilisé pour les ajouts précédents).
 
 ### Frontend (∼25 nouveaux/adaptés)
 
 - `ImageCropPickerComponent.spec` : 10 tests — init avec/sans `initialCrop`, change aspect, validate émet le payload normalisé, cancel n'émet rien, Escape ferme, destroy nettoie Cropper.js.
 - `cropTransform` utility .spec : 8 tests — null → 'none', valeurs nominales, edge cases (w=0, h=0, ratios opposés).
-- `mobilier.component.spec` + `expositions.component.spec` : adapter le pattern existant (focal point retiré), ajout test « crop persiste dans le payload save » et « gallery items contiennent crop ».
+- `mobilier.component.spec` + `expositions.component.spec` : adapter le pattern existant (focal point retiré), ajout test « crop persiste dans le payload save » + « gallery items contiennent crop » + « cover crop de story est envoyé au PUT story ».
 - `furniture-detail.component.spec` + `exhibition-detail.component.spec` : test du `[style.transform]` calculé selon crop fourni / null.
+- `story-viewer.component.spec` + `story-inline.component.spec` + `news-slider.component.spec` : test que le crop story est appliqué via transform au cover.
 - `gallery-editor.spec` : adapter au nouveau modèle `GalleryItem[]`.
 
 ### Tests visuels Playwright
 
-- Régénération des baselines `furniture-detail` (desktop + mobile) et `exhibition-detail` après validation visuelle manuelle.
+- Régénération des baselines `furniture-detail`, `exhibition-detail`, et `home` (à cause des news-sliders) après validation visuelle manuelle.
 - Probablement aucune régression visible si les fixtures n'ont pas de crop défini (fallback `transform: none`), mais à vérifier en visuel d'abord (règle projet).
 - Aucun nouveau spec Playwright dans cette itération.
 
@@ -356,8 +389,8 @@ Tous les autres sites publics (home cards, catalogue, médiathèque) servent les
 
 ## Critères de complétion
 
-- L'admin peut cropper le cover d'un mobilier/expo + chaque image de galerie via la modale.
-- Le crop choisi s'affiche pixel-perfect sur la fiche publique.
+- L'admin peut cropper le cover d'un mobilier/expo, le cover d'une story, et chaque image de galerie via la modale.
+- Le crop choisi s'affiche pixel-perfect sur la fiche publique (hero, galerie, story-viewer, story-inline, news-slider cards).
 - Aucun focal point résiduel dans le code ou la DB (colonnes droppées, composant supprimé, refs supprimées).
 - Backend tests verts + frontend tests verts.
 - Baselines Playwright régénérées après validation visuelle utilisateur.
