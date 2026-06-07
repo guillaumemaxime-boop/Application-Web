@@ -157,7 +157,14 @@ export class ImageCropPickerComponent implements AfterViewInit, OnDestroy {
   protected onAspectChange(event: Event): void {
     const label = (event.target as HTMLSelectElement).value;
     const ar = this.aspectRatios.find(a => a.label === label);
-    if (ar && this.cropper) this.cropper.setAspectRatio(ar.value);
+    if (!ar || !this.cropper) return;
+    this.cropper.setAspectRatio(ar.value);
+    // Pour "Libre" (NaN), setAspectRatio ne reshape pas la zone existante
+    // (toute taille est valide). Reset force le retour a l'autoCropArea complete
+    // pour que l'utilisateur reparte d'une zone non contrainte.
+    if (isNaN(ar.value)) {
+      this.cropper.reset();
+    }
   }
 
   protected resetCrop(): void {

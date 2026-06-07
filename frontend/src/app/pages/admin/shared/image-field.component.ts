@@ -42,7 +42,7 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
 
       @if (cropEnabled && value()) {
         <div class="crop-preview">
-          <div class="crop-preview-thumb">
+          <div class="crop-preview-thumb" [style.aspect-ratio]="thumbAspectRatio()">
             <img [src]="value()" alt="Aperçu cadré"
                  [style.transform]="cropPreviewStyle().transform"
                  [style.transform-origin]="cropPreviewStyle().transformOrigin" />
@@ -90,10 +90,11 @@ import { ImageCropPickerComponent } from './image-crop-picker.component';
     }
     .btn-pick:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .btn-pick:disabled { opacity: 0.5; cursor: not-allowed; }
-    .crop-preview { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+    .crop-preview { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
     .crop-preview-thumb {
-      width: 160px; height: 100px; overflow: hidden; position: relative;
+      height: 120px; overflow: hidden; position: relative;
       border: 1px solid var(--color-line); background: var(--color-bg-alt); flex-shrink: 0;
+      max-width: 240px;
     }
     .crop-preview-thumb img {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -157,6 +158,18 @@ export class ImageFieldComponent implements ControlValueAccessor {
 
   protected cropPreviewStyle(): CropStyle {
     return cropTransform(this.cropValue ?? null);
+  }
+
+  /**
+   * Aspect ratio du conteneur preview = celui du crop pour que <img object-fit:cover>
+   * + transform produise EXACTEMENT la zone croppée (sinon object-fit pre-cadre
+   * l'image avant le transform et le rendu est faux).
+   * Sans crop défini : fallback 16:10 pour un aperçu honnête.
+   */
+  protected thumbAspectRatio(): string {
+    const c = this.cropValue;
+    if (!c || !c.w || !c.h) return '16 / 10';
+    return `${c.w} / ${c.h}`;
   }
 
   protected onCropValidated(crop: Crop): void {
