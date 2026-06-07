@@ -272,4 +272,31 @@ describe('FurnitureDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('app-contact-form')).toBeNull();
   });
 
+  it('coverCropStyle() applique transform quand coverCrop est défini', () => {
+    setup('onde', of({ ...mockFurniture, coverCrop: { x: 25, y: 25, w: 50, h: 50 } }));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.coverCropStyle().transform).toBe('translate(-50%, -50%) scale(2)');
+  });
+
+  it('coverCropStyle() retourne "none" quand coverCrop est null', () => {
+    setup('onde', of({ ...mockFurniture, coverCrop: null }));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.coverCropStyle().transform).toBe('none');
+  });
+
+  it('galleryItemStyle() applique transform quand item.crop est defini', () => {
+    setup('onde', of({ ...mockFurniture,
+      gallery: [{ url: '/g.jpg', crop: { x: 0, y: 0, w: 100, h: 100 } }]
+    }));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const style = cmp.galleryItemStyle({ url: '/g.jpg', crop: { x: 0, y: 0, w: 100, h: 100 } });
+    expect(style.transform).toBe('translate(0%, 0%) scale(1)');
+  });
+
 });
