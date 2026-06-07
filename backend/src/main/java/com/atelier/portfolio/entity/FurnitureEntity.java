@@ -39,11 +39,10 @@ public class FurnitureEntity {
     @Column(name = "cover_image", length = 500)
     private String coverImage;
 
-    @Column(name = "cover_focal_x")
-    private Double coverFocalX;
-
-    @Column(name = "cover_focal_y")
-    private Double coverFocalY;
+    @Column(name = "cover_crop_x") private Double coverCropX;
+    @Column(name = "cover_crop_y") private Double coverCropY;
+    @Column(name = "cover_crop_w") private Double coverCropW;
+    @Column(name = "cover_crop_h") private Double coverCropH;
 
     @Column(name = "short_description", length = 1000)
     private String shortDescription;
@@ -65,9 +64,8 @@ public class FurnitureEntity {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "furniture_gallery", joinColumns = @JoinColumn(name = "furniture_id"))
     @OrderColumn(name = "position")
-    @Column(name = "url", length = 500, nullable = false)
     @BatchSize(size = 50)
-    private List<String> gallery = new ArrayList<>();
+    private List<GalleryEntry> gallery = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "furniture_dimension", joinColumns = @JoinColumn(name = "furniture_id"))
@@ -104,11 +102,17 @@ public class FurnitureEntity {
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
 
-    public Double getCoverFocalX() { return coverFocalX; }
-    public void setCoverFocalX(Double coverFocalX) { this.coverFocalX = coverFocalX; }
+    public Double getCoverCropX() { return coverCropX; }
+    public void setCoverCropX(Double coverCropX) { this.coverCropX = coverCropX; }
 
-    public Double getCoverFocalY() { return coverFocalY; }
-    public void setCoverFocalY(Double coverFocalY) { this.coverFocalY = coverFocalY; }
+    public Double getCoverCropY() { return coverCropY; }
+    public void setCoverCropY(Double coverCropY) { this.coverCropY = coverCropY; }
+
+    public Double getCoverCropW() { return coverCropW; }
+    public void setCoverCropW(Double coverCropW) { this.coverCropW = coverCropW; }
+
+    public Double getCoverCropH() { return coverCropH; }
+    public void setCoverCropH(Double coverCropH) { this.coverCropH = coverCropH; }
 
     public String getShortDescription() { return shortDescription; }
     public void setShortDescription(String shortDescription) { this.shortDescription = shortDescription; }
@@ -128,8 +132,8 @@ public class FurnitureEntity {
     public boolean isShowStoryButton() { return showStoryButton; }
     public void setShowStoryButton(boolean showStoryButton) { this.showStoryButton = showStoryButton; }
 
-    public List<String> getGallery() { return gallery; }
-    public void setGallery(List<String> gallery) { this.gallery = gallery; }
+    public List<GalleryEntry> getGallery() { return gallery; }
+    public void setGallery(List<GalleryEntry> gallery) { this.gallery = gallery; }
 
     public List<String> getDimensions() { return dimensions; }
     public void setDimensions(List<String> dimensions) { this.dimensions = dimensions; }

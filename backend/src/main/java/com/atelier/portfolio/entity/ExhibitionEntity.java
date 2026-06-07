@@ -46,11 +46,10 @@ public class ExhibitionEntity {
     @Column(name = "cover_image", length = 500)
     private String coverImage;
 
-    @Column(name = "cover_focal_x")
-    private Double coverFocalX;
-
-    @Column(name = "cover_focal_y")
-    private Double coverFocalY;
+    @Column(name = "cover_crop_x") private Double coverCropX;
+    @Column(name = "cover_crop_y") private Double coverCropY;
+    @Column(name = "cover_crop_w") private Double coverCropW;
+    @Column(name = "cover_crop_h") private Double coverCropH;
 
     private String curator;
 
@@ -110,11 +109,17 @@ public class ExhibitionEntity {
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
 
-    public Double getCoverFocalX() { return coverFocalX; }
-    public void setCoverFocalX(Double coverFocalX) { this.coverFocalX = coverFocalX; }
+    public Double getCoverCropX() { return coverCropX; }
+    public void setCoverCropX(Double coverCropX) { this.coverCropX = coverCropX; }
 
-    public Double getCoverFocalY() { return coverFocalY; }
-    public void setCoverFocalY(Double coverFocalY) { this.coverFocalY = coverFocalY; }
+    public Double getCoverCropY() { return coverCropY; }
+    public void setCoverCropY(Double coverCropY) { this.coverCropY = coverCropY; }
+
+    public Double getCoverCropW() { return coverCropW; }
+    public void setCoverCropW(Double coverCropW) { this.coverCropW = coverCropW; }
+
+    public Double getCoverCropH() { return coverCropH; }
+    public void setCoverCropH(Double coverCropH) { this.coverCropH = coverCropH; }
 
     public String getCurator() { return curator; }
     public void setCurator(String curator) { this.curator = curator; }

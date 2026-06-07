@@ -2,6 +2,7 @@ package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.ExhibitionEntity;
 import com.atelier.portfolio.model.Exhibition;
+import com.atelier.portfolio.model.ImageCrop;
 import com.atelier.portfolio.repository.ExhibitionRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,7 @@ public class ExhibitionService {
             return new Exhibition(
                     base.id(), base.title(), base.slug(), base.venue(), base.city(),
                     base.country(), base.startDate(), base.endDate(), base.coverImage(),
-                    base.coverFocalX(), base.coverFocalY(),
+                    base.coverCrop(),
                     base.gallery(), base.curator(), base.shortDescription(), base.description(),
                     base.tags(), base.featured(),
                     base.showStoryLink(),
@@ -106,8 +107,12 @@ public class ExhibitionService {
         if (input.startDate() != null) entity.setStartDate(input.startDate());
         if (input.endDate() != null) entity.setEndDate(input.endDate());
         if (input.coverImage() != null) entity.setCoverImage(input.coverImage());
-        entity.setCoverFocalX(input.coverFocalX());
-        entity.setCoverFocalY(input.coverFocalY());
+        // coverCrop : null = reset (centrer par defaut cote affichage)
+        ImageCrop c = input.coverCrop();
+        entity.setCoverCropX(c != null ? c.x() : null);
+        entity.setCoverCropY(c != null ? c.y() : null);
+        entity.setCoverCropW(c != null ? c.w() : null);
+        entity.setCoverCropH(c != null ? c.h() : null);
         if (input.curator() != null) entity.setCurator(input.curator());
         if (input.shortDescription() != null) entity.setShortDescription(input.shortDescription());
         if (input.description() != null) entity.setDescription(input.description());
@@ -134,7 +139,14 @@ public class ExhibitionService {
         return normalized.replaceAll("-+", "-").replaceAll("^-|-$", "");
     }
 
+    private static ImageCrop buildCrop(Double x, Double y, Double w, Double h) {
+        if (x == null && y == null && w == null && h == null) return null;
+        return new ImageCrop(x, y, w, h);
+    }
+
     private static Exhibition toDto(ExhibitionEntity entity) {
+        ImageCrop coverCrop = buildCrop(entity.getCoverCropX(), entity.getCoverCropY(),
+                                        entity.getCoverCropW(), entity.getCoverCropH());
         return new Exhibition(
                 entity.getId(),
                 entity.getTitle(),
@@ -145,8 +157,7 @@ public class ExhibitionService {
                 entity.getStartDate(),
                 entity.getEndDate(),
                 entity.getCoverImage(),
-                entity.getCoverFocalX(),
-                entity.getCoverFocalY(),
+                coverCrop,
                 List.copyOf(entity.getGallery()),
                 entity.getCurator(),
                 entity.getShortDescription(),
