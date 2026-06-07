@@ -39,6 +39,44 @@ describe('MediathequeComponent', () => {
 
   afterEach(() => httpMock?.verify());
 
+  it('affiche le format et la taille formatee dans la carte photo', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ format: 'JPG', sizeBytes: 1572864 }),  // 1.5 Mo
+    ]);
+    fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector('.photo-card');
+    expect(card.textContent).toContain('JPG');
+    expect(card.textContent).toContain('1.5 Mo');
+  });
+
+  it('formatSize() couvre o / Ko / Mo', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.formatSize(500)).toBe('500 o');
+    expect(cmp.formatSize(12345)).toBe('12 Ko');
+    expect(cmp.formatSize(2_500_000)).toBe('2.4 Mo');
+  });
+
+  it('n\'affiche pas la taille si sizeBytes est 0 ou absent', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ format: 'PNG', sizeBytes: 0 }),
+    ]);
+    fixture.detectChanges();
+    const meta = fixture.nativeElement.querySelector('.photo-meta');
+    expect(meta.textContent).toContain('PNG');
+    expect(meta.querySelector('.meta-size')).toBeNull();
+  });
+
   it('charge la liste de photos au démarrage', () => {
     configure();
     const fixture = TestBed.createComponent(MediathequeComponent);

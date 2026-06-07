@@ -56,6 +56,12 @@ import { ToastService } from '../shared/toast.service';
               </div>
               <div class="photo-info">
                 <span class="photo-name" [title]="photo.originalName">{{ photo.originalName }}</span>
+                <span class="photo-meta">
+                  @if (photo.format) { <span class="meta-chip">{{ photo.format }}</span> }
+                  @if (photo.sizeBytes !== undefined && photo.sizeBytes !== null && photo.sizeBytes > 0) {
+                    <span class="meta-size">{{ formatSize(photo.sizeBytes) }}</span>
+                  }
+                </span>
               </div>
               <div class="photo-tags">
                 @for (tag of photo.tags ?? []; track tag) {
@@ -139,8 +145,15 @@ import { ToastService } from '../shared/toast.service';
       background: transparent; border: 0; padding: 0; cursor: pointer; width: 100%; height: 100%; display: block;
     }
     .photo-thumb img { width: 100%; height: 100%; object-fit: contain; }
-    .photo-info { padding: 8px 12px; }
+    .photo-info { padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
     .photo-name { font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .photo-meta { display: inline-flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--color-mute); }
+    .meta-chip {
+      display: inline-block; padding: 1px 6px; border: 1px solid var(--color-line);
+      letter-spacing: 0.08em; font-weight: 500; color: var(--color-ink-soft);
+      background: var(--color-bg-alt);
+    }
+    .meta-size { color: var(--color-mute); }
     .photo-tags {
       display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 12px; border-top: 1px solid var(--color-line);
     }
@@ -194,6 +207,17 @@ export class MediathequeComponent implements AfterViewInit {
   private readonly route = inject(ActivatedRoute);
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
+
+  /**
+   * Formate des octets en chaine compacte : "812 o", "12 Ko", "1.4 Mo".
+   * Convention SI binaire (1 Ko = 1024 o) — coherente avec ce qu'affichent
+   * la plupart des explorateurs de fichiers OS.
+   */
+  protected formatSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} o`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} Ko`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  }
 
   protected readonly photos = signal<Photo[]>([]);
   protected readonly loading = signal(true);

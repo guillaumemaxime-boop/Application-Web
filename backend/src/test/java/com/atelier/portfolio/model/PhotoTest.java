@@ -16,7 +16,7 @@ class PhotoTest {
     private static final List<String> TAGS   = List.of();
 
     private Photo sample() {
-        return new Photo(ID, FILENAME, ORIGINAL, URL, UPLOADED_AT, TAGS);
+        return new Photo(ID, FILENAME, ORIGINAL, URL, UPLOADED_AT, TAGS, "JPG", 0L);
     }
 
     @Test
@@ -43,7 +43,7 @@ class PhotoTest {
     @Test
     void testEquality_DifferentId_AreNotEqual() {
         Photo a = sample();
-        Photo b = new Photo("ph-different", FILENAME, ORIGINAL, URL, UPLOADED_AT, TAGS);
+        Photo b = new Photo("ph-different", FILENAME, ORIGINAL, URL, UPLOADED_AT, TAGS, "JPG", 0L);
 
         assertNotEquals(a, b);
     }
@@ -51,7 +51,7 @@ class PhotoTest {
     @Test
     void testEquality_DifferentUrl_AreNotEqual() {
         Photo a = sample();
-        Photo b = new Photo(ID, FILENAME, ORIGINAL, "/api/photos/files/other.jpg", UPLOADED_AT, TAGS);
+        Photo b = new Photo(ID, FILENAME, ORIGINAL, "/api/photos/files/other.jpg", UPLOADED_AT, TAGS, "JPG", 0L);
 
         assertNotEquals(a, b);
     }
@@ -67,7 +67,7 @@ class PhotoTest {
 
     @Test
     void testNullableFields_AcceptNull() {
-        Photo photo = new Photo(ID, FILENAME, null, URL, null, TAGS);
+        Photo photo = new Photo(ID, FILENAME, null, URL, null, TAGS, "JPG", 0L);
 
         assertNull(photo.originalName());
         assertNull(photo.uploadedAt());
@@ -75,8 +75,8 @@ class PhotoTest {
 
     @Test
     void testEquality_NullFieldsMatch() {
-        Photo a = new Photo(ID, FILENAME, null, URL, null, TAGS);
-        Photo b = new Photo(ID, FILENAME, null, URL, null, TAGS);
+        Photo a = new Photo(ID, FILENAME, null, URL, null, TAGS, "JPG", 0L);
+        Photo b = new Photo(ID, FILENAME, null, URL, null, TAGS, "JPG", 0L);
 
         assertEquals(a, b);
     }

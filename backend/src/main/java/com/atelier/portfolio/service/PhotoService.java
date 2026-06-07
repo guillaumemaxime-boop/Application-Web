@@ -47,7 +47,7 @@ public class PhotoService {
 
     public List<Photo> findAll() {
         return repository.findAllByOrderByUploadedAtDesc().stream()
-                .map(PhotoService::toDto)
+                .map(this::toDto)
                 .toList();
     }
 
@@ -177,14 +177,34 @@ public class PhotoService {
                 .toList();
     }
 
-    private static Photo toDto(PhotoEntity entity) {
+    private Photo toDto(PhotoEntity entity) {
         return new Photo(
                 entity.getId(),
                 entity.getFilename(),
                 entity.getOriginalName(),
                 entity.getUrl(),
                 entity.getUploadedAt(),
-                List.copyOf(entity.getTags())
+                List.copyOf(entity.getTags()),
+                computeFormat(entity.getFilename()),
+                computeSizeBytes(entity.getFilename())
         );
+    }
+
+    private static String computeFormat(String filename) {
+        if (filename == null) return "";
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0 || dot == filename.length() - 1) return "";
+        return filename.substring(dot + 1).toUpperCase(Locale.ROOT);
+    }
+
+    private long computeSizeBytes(String filename) {
+        if (filename == null) return 0L;
+        try {
+            Path file = Paths.get(uploadDir).resolve(filename).normalize();
+            if (!Files.exists(file)) return 0L;
+            return Files.size(file);
+        } catch (IOException e) {
+            return 0L;
+        }
     }
 }

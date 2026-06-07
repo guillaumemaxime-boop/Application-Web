@@ -37,7 +37,9 @@ class PhotoControllerTest {
                 "portrait-studio.jpg",
                 "/api/photos/files/8f3a1b2c-uuid.jpg",
                 "2026-05-10T18:47:54.746Z",
-                List.of()
+                List.of(),
+                "JPG",
+                123456L
         );
     }
 
