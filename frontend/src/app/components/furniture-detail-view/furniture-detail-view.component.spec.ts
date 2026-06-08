@@ -84,4 +84,85 @@ describe('FurnitureDetailViewComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-story-inline')).toBeNull();
   });
+
+  it('n\'affiche pas les overlays par defaut (editable=false)', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.edit-overlay')).toBeNull();
+  });
+
+  it('affiche l\'overlay hero quand editable=true', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.hero-bg .edit-overlay')).toBeTruthy();
+  });
+
+  it('emet coverEdit=crop au clic sur Cadrer', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let emitted: any = null;
+    fixture.componentInstance.coverEdit.subscribe(a => emitted = a);
+    const btn = fixture.nativeElement.querySelector('.hero-bg .edit-btn[aria-label="Cadrer la cover"]') as HTMLButtonElement;
+    btn.click();
+    expect(emitted).toBe('crop');
+  });
+
+  it('emet coverEdit=replace au clic sur Remplacer', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let emitted: any = null;
+    fixture.componentInstance.coverEdit.subscribe(a => emitted = a);
+    const btn = fixture.nativeElement.querySelector('.hero-bg .edit-btn[aria-label="Remplacer la cover"]') as HTMLButtonElement;
+    btn.click();
+    expect(emitted).toBe('replace');
+  });
+
+  it('emet textFieldClick au clic sur le titre', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let emitted: any = null;
+    fixture.componentInstance.textFieldClick.subscribe(n => emitted = n);
+    const h1 = fixture.nativeElement.querySelector('h1.editable-text') as HTMLElement;
+    h1.click();
+    expect(emitted).toBe('title');
+  });
+
+  it('emet textFieldClick=title au keydown Enter sur le titre', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let emitted: any = null;
+    fixture.componentInstance.textFieldClick.subscribe(n => emitted = n);
+    const h1 = fixture.nativeElement.querySelector('h1.editable-text') as HTMLElement;
+    h1.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(emitted).toBe('title');
+  });
+
+  it('emet galleryItemEdit avec index + action remove', () => {
+    const f = { ...mockFurniture, gallery: [{ url: 'a.jpg', crop: null }, { url: 'b.jpg', crop: null }] };
+    fixture.componentRef.setInput('item', f);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let emitted: any = null;
+    fixture.componentInstance.galleryItemEdit.subscribe(e => emitted = e);
+    const btns = fixture.nativeElement.querySelectorAll('.gallery-img-wrap .edit-btn[aria-label="Retirer cette image"]') as NodeListOf<HTMLButtonElement>;
+    btns[1].click();
+    expect(emitted).toEqual({ index: 1, action: 'remove' });
+  });
+
+  it('overlays galerie absents quand editable=false', () => {
+    const f = { ...mockFurniture, gallery: [{ url: 'a.jpg', crop: null }] };
+    fixture.componentRef.setInput('item', f);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.gallery-img-wrap .edit-overlay')).toBeNull();
+  });
 });

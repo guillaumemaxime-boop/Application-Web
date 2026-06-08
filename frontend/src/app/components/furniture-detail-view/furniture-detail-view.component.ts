@@ -1,37 +1,75 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+
+export type EditableTextField = 'title' | 'category' | 'material' | 'description' | 'shortDescription';
 import { Furniture } from '../../models/furniture.model';
 import { DisplaySlide } from '../../models/display-slide.model';
 import { SiteContent } from '../../models/site-content.model';
 import { Story } from '../../models/story.model';
 import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
 import { StoryInlineComponent } from '../story-inline/story-inline.component';
+import { ReorderableDirective } from '../../directives/reorderable.directive';
 
 @Component({
   selector: 'app-furniture-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, StoryInlineComponent],
+  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective],
   template: `
     @if (item) {
       <article class="fade-in">
-        <header class="hero">
+        <header class="hero" [class.editable]="editable">
           <div class="hero-bg">
             <app-cropped-image-canvas
               [imageUrl]="item.coverImage"
               [crop]="item.coverCrop ?? null"
               [alt]="item.title"
               mode="cover" />
+            @if (editable) {
+              <div class="edit-overlay">
+                <button type="button" class="edit-btn" aria-label="Cadrer la cover" (click)="coverEdit.emit('crop')">✂ Cadrer</button>
+                <button type="button" class="edit-btn" aria-label="Remplacer la cover" (click)="coverEdit.emit('replace')">🖼 Remplacer</button>
+              </div>
+            }
           </div>
           <div class="container hero-content">
-            <span class="eyebrow">{{ item.category }} · {{ item.year }}</span>
-            <h1>{{ item.title }}</h1>
-            <p class="material">{{ item.material }}</p>
+            @if (editable) {
+              <span class="eyebrow editable-text" role="button" tabindex="0"
+                    (click)="textFieldClick.emit('category')"
+                    (keydown.enter)="textFieldClick.emit('category')"
+                    (keydown.space)="textFieldClick.emit('category'); $event.preventDefault()">{{ item.category }} · {{ item.year }}</span>
+              <h1 class="editable-text" role="button" tabindex="0"
+                  (click)="textFieldClick.emit('title')"
+                  (keydown.enter)="textFieldClick.emit('title')"
+                  (keydown.space)="textFieldClick.emit('title'); $event.preventDefault()">{{ item.title }}</h1>
+              <p class="material editable-text" role="button" tabindex="0"
+                 (click)="textFieldClick.emit('material')"
+                 (keydown.enter)="textFieldClick.emit('material')"
+                 (keydown.space)="textFieldClick.emit('material'); $event.preventDefault()">{{ item.material }}</p>
+            } @else {
+              <span class="eyebrow">{{ item.category }} · {{ item.year }}</span>
+              <h1>{{ item.title }}</h1>
+              <p class="material">{{ item.material }}</p>
+            }
           </div>
         </header>
 
         <section class="section description">
           <div class="container narrow">
-            <p class="lead">{{ item.shortDescription }}</p>
-            <p class="body">{{ item.description }}</p>
+            @if (editable) {
+              <p class="lead editable-text" role="button" tabindex="0"
+                 (click)="textFieldClick.emit('shortDescription')"
+                 (keydown.enter)="textFieldClick.emit('shortDescription')"
+                 (keydown.space)="textFieldClick.emit('shortDescription'); $event.preventDefault()">{{ item.shortDescription }}</p>
+            } @else {
+              <p class="lead">{{ item.shortDescription }}</p>
+            }
+            @if (editable) {
+              <p class="body editable-text" role="button" tabindex="0"
+                 (click)="textFieldClick.emit('description')"
+                 (keydown.enter)="textFieldClick.emit('description')"
+                 (keydown.space)="textFieldClick.emit('description'); $event.preventDefault()">{{ item.description }}</p>
+            } @else {
+              <p class="body">{{ item.description }}</p>
+            }
 
             <dl class="specs">
               <div><dt>Designer</dt><dd>{{ item.designer }}</dd></div>
@@ -54,19 +92,42 @@ import { StoryInlineComponent } from '../story-inline/story-inline.component';
         @if (item.gallery.length > 0) {
           <section class="section gallery">
             <div class="container">
-              <div class="g-grid">
-                @for (img of item.gallery; track img.url; let i = $index) {
-                  <figure [class.tall]="i % 3 === 0">
-                    <div class="gallery-img-wrap">
-                      <app-cropped-image-canvas
-                        [imageUrl]="img.url"
-                        [crop]="img.crop ?? null"
-                        [alt]="item.title + ' — vue ' + (i + 1)"
-                        mode="cover" />
-                    </div>
-                  </figure>
-                }
-              </div>
+              @if (editable) {
+                <ul class="g-grid editable" appReorderable (reordered)="galleryReorder.emit($event)">
+                  @for (img of item.gallery; track img.url; let i = $index) {
+                    <li>
+                      <figure [class.tall]="i % 3 === 0">
+                        <div class="gallery-img-wrap">
+                          <app-cropped-image-canvas
+                            [imageUrl]="img.url"
+                            [crop]="img.crop ?? null"
+                            [alt]="item.title + ' — vue ' + (i + 1)"
+                            mode="cover" />
+                          <div class="edit-overlay">
+                            <button type="button" class="edit-btn" aria-label="Cadrer cette image" (click)="galleryItemEdit.emit({ index: i, action: 'crop' })">✂</button>
+                            <button type="button" class="edit-btn" aria-label="Remplacer cette image" (click)="galleryItemEdit.emit({ index: i, action: 'replace' })">🖼</button>
+                            <button type="button" class="edit-btn edit-btn-danger" aria-label="Retirer cette image" (click)="galleryItemEdit.emit({ index: i, action: 'remove' })">×</button>
+                          </div>
+                        </div>
+                      </figure>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <div class="g-grid">
+                  @for (img of item.gallery; track img.url; let i = $index) {
+                    <figure [class.tall]="i % 3 === 0">
+                      <div class="gallery-img-wrap">
+                        <app-cropped-image-canvas
+                          [imageUrl]="img.url"
+                          [crop]="img.crop ?? null"
+                          [alt]="item.title + ' — vue ' + (i + 1)"
+                          mode="cover" />
+                      </div>
+                    </figure>
+                  }
+                </div>
+              }
             </div>
           </section>
         }
@@ -125,6 +186,30 @@ import { StoryInlineComponent } from '../story-inline/story-inline.component';
       .specs > div { grid-template-columns: 1fr; gap: 4px; }
       .lead { font-size: 1.4rem; }
     }
+
+    .editable .hero-bg { cursor: pointer; outline: 1px dashed rgba(255,255,255,0.25); outline-offset: -2px; }
+    .hero-bg .edit-overlay {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 12px;
+      background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 180ms ease; z-index: 2;
+    }
+    .hero-bg:hover .edit-overlay, .hero-bg:focus-within .edit-overlay { opacity: 1; }
+    .edit-btn {
+      padding: 8px 14px; background: var(--color-bg); border: 1px solid var(--color-line);
+      color: var(--color-ink); font-size: 0.85rem; cursor: pointer; font-family: inherit;
+    }
+    .edit-btn:hover { background: var(--color-ink); color: var(--color-bg); }
+    .edit-btn-danger:hover { background: #c44; color: #fff; border-color: #c44; }
+    .editable-text { cursor: pointer; outline: 1px dashed transparent; outline-offset: 4px; transition: outline-color 180ms ease; border-radius: 2px; }
+    .editable-text:hover, .editable-text:focus-visible { outline-color: currentColor; }
+    .gallery-img-wrap { position: relative; }
+    .gallery-img-wrap .edit-overlay {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 180ms ease; z-index: 2;
+    }
+    .gallery-img-wrap:hover .edit-overlay, .gallery-img-wrap:focus-within .edit-overlay { opacity: 1; }
+    .gallery-img-wrap .edit-btn { padding: 4px 8px; font-size: 0.75rem; }
+    .g-grid.editable { list-style: none; padding: 0; margin: 0; }
+    .g-grid.editable li { display: block; }
   `]
 })
 export class FurnitureDetailViewComponent {
@@ -132,4 +217,10 @@ export class FurnitureDetailViewComponent {
   @Input() story: Story | null = null;
   @Input() displaySlides: DisplaySlide[] = [];
   @Input() content: SiteContent = {};
+  @Input() editable = false;
+
+  @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
+  @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
+  @Output() galleryReorder = new EventEmitter<number[]>();
+  @Output() textFieldClick = new EventEmitter<EditableTextField>();
 }
