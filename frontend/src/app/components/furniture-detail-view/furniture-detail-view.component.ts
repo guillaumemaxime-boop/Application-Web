@@ -331,6 +331,9 @@ import { roleStyle } from '../../utils/title-style';
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
     .g-grid.editable { list-style: none; padding: 0; margin: 0; }
+    .g-grid.editable > li { position: relative; display: block; }
+    .g-grid.editable > li[draggable="true"] { cursor: grab; }
+    .g-grid.editable > li[draggable="true"]:active { cursor: grabbing; }
     .gallery-add-tile { display: block; }
     .gallery-add-btn {
       width: 100%; height: 100%; min-height: 200px;
@@ -466,8 +469,6 @@ export class FurnitureDetailViewComponent implements OnDestroy {
       this.resizingCols.set(newCol);
       this.resizingRows.set(newRow);
       this.galleryItemResize.emit({ index: this.resizing!.index, colSpan: newCol, rowSpan: newRow });
-      this.cdr.markForCheck();
-      this.appRef.tick();
     });
   };
 

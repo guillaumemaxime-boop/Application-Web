@@ -65,14 +65,19 @@ export class ReorderableDirective implements AfterViewInit, OnDestroy {
   private onDrop(e: DragEvent, targetIndex: number) {
     e.preventDefault();
     if (this.dragSrcIndex === null || this.dragSrcIndex === targetIndex) return;
-    const order = Array.from(this.host.nativeElement.children).map((_, i) => i);
+    // Order construit a partir des SEULS enfants draggables (filtres par data-no-drag),
+    // pour rester aligne sur les index utilises dans dragSrcIndex / targetIndex et
+    // ne pas reinjecter l'index d'une tuile non-draggable (ex: "+ Ajouter") dans
+    // l'ordre emis a l'application — qui produirait un items[N]=undefined cote parent.
+    const draggableCount = (Array.from(this.host.nativeElement.children) as HTMLElement[])
+      .filter(el => el.dataset['noDrag'] === undefined).length;
+    const order = Array.from({ length: draggableCount }, (_, i) => i);
     const [moved] = order.splice(this.dragSrcIndex, 1);
     order.splice(targetIndex, 0, moved);
     // Listeners drag natifs sont hors NgZone : re-enter pour que les
     // bindings du parent (preview) se reevaluent immediatement apres le drop.
     this.zone.run(() => {
       this.reordered.emit(order);
-      this.appRef.tick();
     });
     this.dragSrcIndex = null;
   }
