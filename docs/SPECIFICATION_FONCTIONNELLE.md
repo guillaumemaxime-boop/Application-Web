@@ -1,6 +1,6 @@
 # Spécification Fonctionnelle — Milo GUILLAUME Design
 
-**Version** : 2.3.0
+**Version** : 2.4.0
 **Date** : 08/06/2026
 **Auteur** : Maxime Guillaume
 **Statut** : En cours de validation
@@ -121,7 +121,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Description longue** : texte éditorial de la pièce.
 - **Tags** : mots-clés thématiques associés à la pièce (cliquables → `/creations?tags=...`).
 - **Stories** : si la pièce possède des stories éditoriaux, un bouton "Voir la story" ouvre le viewer plein écran. Le crop du cover de story est appliqué dans le viewer et dans les cards de news-slider.
-- **Galerie** : mosaïque d'images complémentaires (3 colonnes, alternance portrait/paysage). Chaque item affiche son crop si défini.
+- **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item affiche son crop si défini.
 - **CTA** : lien de contact par e-mail.
 - Gestion 404 si le slug n'existe pas.
 
@@ -165,6 +165,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Outil de cadrage de la cover** : bouton « Cadrer » à côté du sélecteur d'image. Ouvre une modale avec Cropper.js (sélecteur d'aspect ratio : Libre / 16:9 / 4:5 / 1:1, coordonnées live en %, boutons Réinitialiser / Annuler / Valider). Une vignette de prévisualisation affiche le rendu pixel-perfect du crop sous le champ.
 - **Galerie** : chaque vignette dispose d'un bouton ✂ ouvrant la même modale de cadrage. Un badge `✂ LxH` sur la vignette indique qu'un crop est défini.
 - **Bloc Stories** : liste des stories de la pièce, CRUD stories, éditeur de slides par story. Le cover de chaque story dispose également d'un bouton « Cadrer ».
+- **Preview WYSIWYG** (sous-projet 2/4) : voir section dédiée ci-après.
 
 **Page Expositions (`/admin/expositions`)** :
 
@@ -179,7 +180,52 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - Toggle CMS pour chaque entrée de menu (visible / masqué).
 - L'entrée **Créations** est configurable depuis cette page.
 
-> **Hors portée — sous-projets 2–4 (à venir)** : preview WYSIWYG du rendu page sur fiche mobilier / exposition / accueil ; modification du crop directement depuis la preview (drag sur le rendu page) ; items composés home autres que le masonry. Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
+> **Hors portée — sous-projets 3–4 (à venir)** : preview WYSIWYG du rendu page sur fiche exposition (sous-projet 3) et accueil (sous-projet 4) ; fallback clavier pour drag/resize ; édition inline du champ catégorie ; édition des slides de story depuis le preview. Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
+
+---
+
+### 4.1.1 Preview WYSIWYG — Fiche Mobilier (sous-projet 2/4)
+
+> Spec complète : [docs/superpowers/specs/2026-06-08-furniture-detail-wysiwyg-preview-design.md](../superpowers/specs/2026-06-08-furniture-detail-wysiwyg-preview-design.md)
+
+L'édition d'une fiche mobilier propose un **toggle** entre deux modes :
+
+- **✏ Modifier la pièce** (mode formulaire, défaut) : formulaire de saisie à gauche.
+- **👁 Aperçu** (mode preview WYSIWYG) : rendu live de la fiche à droite, identique au public.
+
+Le layout adopte un **split 50/50** en desktop (≥ 1280 px), empilé en tablette, preview masqué en mobile (< 768 px, l'admin n'est pas conçu pour mobile).
+
+#### Interactivité du preview
+
+| Zone | Comportement |
+| ------ | -------------- |
+| **Titre / catégorie / matériau / description / lead** | Clic → scroll-into-view + focus du champ form correspondant. Double-clic → édition inline directe (`contenteditable` + outline accent) ; Entrée valide, Échap annule. |
+| **Cover hero** | Hover → boutons **✂ Cadrer** et **🖼 Remplacer** (même modales que le form). |
+| **Item de galerie** | Hover → boutons **✂ Cadrer**, **🖼 Remplacer**, **× Retirer**. Pastille **⋮⋮** (top-left) → drag&drop pour réordonner. Pastille **⤡** (bottom-right) → drag pour redimensionner (1–3 colonnes × 1–4 lignes) avec badge live `N × M`. |
+| **Tuile « + Ajouter une image »** | En fin de galerie → ouvre la médiathèque. |
+| **Story-inline** | Rendu lecture seule (données DB au dernier chargement). |
+| **CTA contact** | Rendu visuel uniquement, pas de soumission depuis le preview. |
+
+#### Toolbar du preview
+
+- Bouton **💾 Enregistrer** : équivalent au submit du formulaire, désactivé si le formulaire est invalide.
+- Toggle **⤢ Plein écran** / **⤡ Réduire** : le preview occupe tout le viewport par-dessus le reste de l'app. Les modales (Cadrer / Remplacer) s'affichent par-dessus.
+
+#### Comportement après sauvegarde
+
+Après une sauvegarde réussie, l'admin **reste sur la fiche** (rechargée depuis la réponse serveur) au lieu d'être redirigé vers un formulaire vide.
+
+#### Architecture technique
+
+- `<app-furniture-detail-view>` : composant standalone purement présentation, partagé entre la page publique et le preview admin. Prend une `Furniture` en input ; émet des Outputs en mode `editable=true`.
+- `<app-furniture-preview>` : wrap le view, agrège les signaux du `MobilierComponent` (FormGroup + signal galerie) dans un objet `Furniture` virtuel via `computed()`, et branche les Outputs aux modales existantes.
+- La page publique `FurnitureDetailComponent` délègue désormais tout le rendu au view (`<app-furniture-detail-view>`), garantissant le pixel-perfect validé par Playwright.
+
+#### Accessibilité
+
+- Boutons Cadrer / Remplacer / Retirer : `aria-label` explicite en français.
+- Toggle Modifier / Aperçu : `role="tab"` + `aria-selected`.
+- Drag/resize : souris uniquement (pas de fallback clavier — limitation connue, reportée).
 
 #### Header
 
@@ -284,10 +330,14 @@ Objet partagé porté par l'entité qui utilise l'image (cover ou item de galeri
 
 ##### GalleryImage (Item de galerie avec crop optionnel)
 
-| Champ  | Type        | Description                            | Exemple         |
-|--------|-------------|----------------------------------------|-----------------|
-| `url`  | `String`    | URL de l'image (max 500 car.)          | `"https://..."` |
-| `crop` | `ImageCrop` | Zone de cadrage de cet item (nullable) | `null`          |
+| Champ      | Type        | Description                                                        | Exemple         |
+|------------|-------------|--------------------------------------------------------------------|-----------------|
+| `url`      | `String`    | URL de l'image (max 500 car.)                                      | `"https://..."` |
+| `crop`     | `ImageCrop` | Zone de cadrage de cet item (nullable)                             | `null`          |
+| `colSpan`  | `Integer`   | Nombre de colonnes CSS Grid occupées (1–3, défaut 1)               | `2`             |
+| `rowSpan`  | `Integer`   | Nombre de lignes CSS Grid occupées (1–4, défaut 1)                 | `1`             |
+
+Les valeurs `colSpan` / `rowSpan` sont définies par l'admin via le preview WYSIWYG (resize depuis la pastille **⤡** en bas-droite de l'item). La valeur 1×1 s'applique rétroactivement aux items existants.
 
 ##### Story (Cover de story avec crop)
 
@@ -346,6 +396,7 @@ Objet partagé porté par l'entité qui utilise l'image (cover ou item de galeri
 | **F037** | Sliders d'actualités | Composer des sliders depuis des stories variées, assigner à une zone de la home. | ⭐⭐ | ✅ Fait |
 | **F038** | Navigation CMS | Activer / désactiver des entrées de menu (dont Créations) depuis l'admin. | ⭐⭐ | ✅ Fait |
 | **F039** | Outil de cadrage d'image | Cadrer précisément la zone affichée pour la cover et chaque item de galerie (mobilier, exposition, cover de story), via modale Cropper.js avec présets d'aspect ratio (Libre / 16:9 / 4:5 / 1:1). Remplace le focal point. | ⭐⭐⭐ | ✅ Fait |
+| **F047** | Preview WYSIWYG fiche mobilier | Toggle Modifier / Aperçu sur la page admin mobilier. Preview live identique au public, interactif : click-to-focus textes, double-clic édition inline, hover cover/galerie → Cadrer/Remplacer/Retirer, drag-reorder galerie, resize colSpan/rowSpan, toolbar Enregistrer + Plein écran. | ⭐⭐⭐ | ✅ Fait |
 
 ### 5.5 Navigation et UX
 
@@ -541,6 +592,19 @@ Objet partagé porté par l'entité qui utilise l'image (cover ou item de galeri
          → clic sur l'e-mail de contact → [client e-mail]
 ```
 
+#### Flux 5 — Édition WYSIWYG d'une Fiche Mobilier (Admin)
+
+```
+[/admin/mobilier] → clic sur une pièce existante
+                 → layout split : formulaire à gauche, preview à droite
+                 → clic "👁 Aperçu" → bascule en mode preview plein
+                 → double-clic sur le titre → édition inline, Entrée valide
+                 → hover sur la cover → clic "✂ Cadrer" → modale Cropper.js → Valider
+                 → hover sur un item galerie → clic "⋮⋮" → drag-reorder
+                 → clic "⤢ Plein écran" → preview occupe tout le viewport
+                 → clic "💾 Enregistrer" → sauvegarde, fiche rechargée depuis le serveur
+```
+
 ---
 
 ## 8. Contraintes Techniques
@@ -605,10 +669,14 @@ Objet partagé porté par l'entité qui utilise l'image (cover ou item de galeri
 | **Création** | Terme générique regroupant une pièce de mobilier ou une exposition dans la page `/creations`. |
 | **ControlValueAccessor** | Interface Angular permettant à un composant custom (ex. `TagInputComponent`) de s'intégrer nativement dans `ReactiveFormsModule`. |
 | **ImageCrop** | Objet `{x, y, w, h}` en pourcentages (0–100) décrivant le rectangle à afficher sur une image. `null` = pas de crop, rendu natif `object-fit: cover`. |
-| **GalleryImage** | Item de galerie composé d'une URL et d'un `ImageCrop` optionnel, remplace l'ancienne liste de simples URLs. |
+| **GalleryImage** | Item de galerie composé d'une URL, d'un `ImageCrop` optionnel et de valeurs `colSpan`/`rowSpan` pour le positionnement CSS Grid. |
 | **Crop** | Synonyme de cadrage : délimitation d'une zone rectangulaire d'une image à afficher côté public. |
 | **Cropper.js** | Bibliothèque JavaScript de cadrage d'image (v1.6), première lib UI tierce du projet — utilisée dans `<app-image-crop-picker>` (cf. ADR-0017). |
 | **Focal point** | Ancien mécanisme de centrage (coordonnées X/Y simples) — remplacé par `ImageCrop` dans cette version. |
+| **WYSIWYG** | What You See Is What You Get — mode d'édition où le rendu admin est identique au rendu public. Dans ce projet, désigne le preview interactif de la fiche mobilier dans l'interface admin. |
+| **colSpan / rowSpan** | Propriétés d'un `GalleryImage` définissant le nombre de colonnes (1–3) et de lignes (1–4) CSS Grid occupées par l'item. Remplacent l'heuristique `figure.tall` (ancien item tall automatique). |
+| **app-furniture-detail-view** | Composant Angular standalone purement présentationnel, partagé entre la page publique `/mobilier/:slug` et le preview admin. Prend une `Furniture` en input ; émet des Outputs en mode `editable=true` pour les interactions admin. |
+| **click-to-focus** | Pattern UX du preview WYSIWYG : clic sur un texte du preview → scroll-into-view + focus du champ form correspondant côté formulaire. Double-clic → édition inline directe. |
 
 ---
 
@@ -691,7 +759,8 @@ PostgreSQL 16 (:5432)
 | **Phase 5** | Formulaire de contact (envoi d'e-mail via Resend) | ✅ Terminé |
 | **Phase 6** | Stories multiples + sliders d'actualités + page Créations + tags mobilier | ✅ Terminé |
 | **Phase 6bis** | Outil de cadrage d'image (crop) — sous-projet 1/4 : modale Cropper.js, crop cover + galerie mobilier/expo/story, rendu public CSS transform | ✅ Terminé |
-| **Phase 6ter** | Preview WYSIWYG du rendu page + modification du crop depuis la preview (sous-projets 2–4) | ⏳ À faire |
+| **Phase 6ter** | Preview WYSIWYG fiche mobilier — sous-projet 2/4 : toggle Modifier/Aperçu, interactivité textes/images/galerie, toolbar Enregistrer + Plein écran, CSS Grid colSpan/rowSpan galerie | ✅ Terminé |
+| **Phase 6quater** | Preview WYSIWYG fiche exposition (sous-projet 3) et accueil (sous-projet 4) | ⏳ À faire |
 | **Phase 7** | Recherche texte dans le catalogue | ⏳ À faire |
 | **Phase 8** | Internationalisation FR/EN | ⏳ À faire |
 | **Phase 9** | Optimisations SEO (balises méta, sitemap) | ⏳ À faire |
@@ -707,6 +776,7 @@ PostgreSQL 16 (:5432)
 | 2.1.0 | 11/05/2026 | Maxime Guillaume | Authentification admin JWT (F034 ✅) · Suppression du lien Admin du menu de navigation · Correction CORS (`127.0.0.1:4200`) · Roadmap Phase 4 terminée |
 | 2.2.0 | 07/06/2026 | Maxime Guillaume | Stories multiples + sliders d'actualités (F036, F037 ✅) · Page publique `/creations` + tags mobilier (F044, F035 ✅) · Navigation CMS (F038 ✅) · Viewer story plein écran (F045 ✅) · Page Accueil admin consolidant masonry + sliders · Roadmap Phase 5 et 6 terminées · Glossaire enrichi |
 | 2.3.0 | 08/06/2026 | Maxime Guillaume | Outil de cadrage d'image — sous-projet 1/4 (F039, F046 ✅) · Remplacement du focal point par `ImageCrop` · Modèle `GalleryImage[]` sur mobilier/exposition · Crop cover de story · Modale Cropper.js admin · Rendu public CSS transform · Cropper.js ajouté aux frameworks (ADR-0017) · Roadmap Phase 6bis terminée · Glossaire enrichi (ImageCrop, GalleryImage, Focal point, Cropper.js) |
+| 2.4.0 | 08/06/2026 | Maxime Guillaume | Preview WYSIWYG fiche mobilier — sous-projet 2/4 (F047 ✅) · Section 4.1.1 dédiée (toggle Modifier/Aperçu, interactivité textes + images + galerie, toolbar, plein écran, comportement post-sauvegarde) · Flux 5 admin WYSIWYG · Galerie publique migre en CSS Grid colSpan/rowSpan · `GalleryImage` enrichi (colSpan, rowSpan) · Roadmap Phase 6ter terminée, Phase 6quater ajoutée · Glossaire enrichi (WYSIWYG, colSpan/rowSpan, app-furniture-detail-view, click-to-focus) |
 
 ---
 
