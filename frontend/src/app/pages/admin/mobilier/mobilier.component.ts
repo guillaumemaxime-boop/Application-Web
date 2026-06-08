@@ -713,11 +713,15 @@ export class MobilierComponent implements OnInit, OnDestroy {
       ? this.portfolio.updateFurniture(slug, payload)
       : this.portfolio.createFurniture(payload);
     op$.subscribe({
-      next: () => {
+      next: (saved) => {
         this.saving.set(false);
         this.toast.success(slug ? 'Pièce mise à jour.' : 'Pièce créée.');
         this.refreshFurniture();
-        this.newFurniture();
+        // Reste sur la fiche après save : recharge depuis la réponse serveur
+        // (préserve form + preview, slug/id à jour pour les opérations suivantes)
+        if (saved) {
+          this.loadFurniture(saved);
+        }
       },
       error: () => {
         this.saving.set(false);
