@@ -47,6 +47,23 @@ import { enrichSlides } from '../../../utils/display-slides';
       </aside>
 
       <div class="admin-split">
+        @if (editingFurnitureSlug() !== null || editingFurnitureId() !== null || creatingFurniture()) {
+          <div class="admin-mode-bar" role="tablist" aria-label="Mode d'édition de la pièce">
+            <button type="button" role="tab" class="admin-mode-tab"
+                    [class.active]="mobilierViewMode() === 'form'"
+                    [attr.aria-selected]="mobilierViewMode() === 'form'"
+                    (click)="mobilierViewMode.set('form')">
+              ✏ Modifier la pièce
+            </button>
+            <button type="button" role="tab" class="admin-mode-tab"
+                    [class.active]="mobilierViewMode() === 'preview'"
+                    [attr.aria-selected]="mobilierViewMode() === 'preview'"
+                    (click)="mobilierViewMode.set('preview')">
+              👁 Aperçu
+            </button>
+          </div>
+        }
+        @if (mobilierViewMode() === 'form') {
         <section class="admin-form">
           <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
             <div class="form-head">
@@ -196,8 +213,9 @@ import { enrichSlides } from '../../../utils/display-slides';
             </div>
           </form>
         </section>
+        }
 
-        @if (editingFurnitureSlug() !== null || editingFurnitureId() !== null || creatingFurniture()) {
+        @if (mobilierViewMode() === 'preview' && (editingFurnitureSlug() !== null || editingFurnitureId() !== null || creatingFurniture())) {
           <aside class="admin-preview" [class.fullscreen]="previewFullscreen()" aria-label="Aperçu de la fiche">
             <div class="admin-preview-toolbar">
               <span class="admin-preview-label">Aperçu</span>
@@ -247,9 +265,13 @@ import { enrichSlides } from '../../../utils/display-slides';
     .row-meta { font-size: 0.75rem; color: var(--color-mute); letter-spacing: 0.06em; text-transform: uppercase; }
     .row-del { background: transparent; border: 0; padding: 0 16px; color: var(--color-mute); font-size: 1.5rem; cursor: pointer; line-height: 1; }
     .row-del:hover { color: #b1532a; }
-    .admin-split { display: grid; grid-template-columns: 2fr 3fr; gap: 32px; max-width: 100%; }
-    .admin-form { overflow-y: auto; max-height: calc(100vh - 80px); padding-right: 8px; }
-    .admin-preview { position: sticky; top: 16px; max-height: calc(100vh - 80px); overflow-y: auto; background: var(--color-bg-alt); border: 1px solid var(--color-line); padding: 24px; }
+    .admin-split { display: flex; flex-direction: column; gap: 16px; max-width: 100%; }
+    .admin-mode-bar { display: inline-flex; gap: 4px; padding: 4px; background: var(--color-bg-alt); border: 1px solid var(--color-line); align-self: flex-start; }
+    .admin-mode-tab { padding: 8px 16px; background: transparent; border: 0; color: var(--color-ink-soft); font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: background 180ms ease, color 180ms ease; }
+    .admin-mode-tab:hover { color: var(--color-ink); }
+    .admin-mode-tab.active { background: var(--color-ink); color: var(--color-bg); font-weight: 600; }
+    .admin-form { max-width: 100%; }
+    .admin-preview { max-height: calc(100vh - 100px); overflow-y: auto; background: var(--color-bg-alt); border: 1px solid var(--color-line); padding: 24px; }
     .admin-preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px -8px 16px; padding: 0 4px; }
     .admin-preview-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-mute); }
     .btn-preview-toggle { padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-line); color: var(--color-ink-soft); font-size: 0.78rem; cursor: pointer; font-family: inherit; }
@@ -360,6 +382,7 @@ export class MobilierComponent implements OnInit, OnDestroy {
 
   protected readonly creatingFurniture = signal(false);
   protected readonly previewFullscreen = signal(false);
+  protected readonly mobilierViewMode = signal<'form' | 'preview'>('form');
 
   protected togglePreviewFullscreen(): void { this.previewFullscreen.update(v => !v); }
   protected previewFullscreenLabel(): string {
@@ -432,6 +455,7 @@ export class MobilierComponent implements OnInit, OnDestroy {
     this.editingFurnitureSlug.set(null);
     this.editingFurnitureId.set(null);
     this.creatingFurniture.set(true);
+    this.mobilierViewMode.set('form');
     this.currentStories.set([]);
     this.editingStoryId.set(null);
     this.furnitureForm.reset({
@@ -450,6 +474,7 @@ export class MobilierComponent implements OnInit, OnDestroy {
     this.editingFurnitureSlug.set(item.slug);
     this.editingFurnitureId.set(item.id ?? null);
     this.creatingFurniture.set(false);
+    this.mobilierViewMode.set('form');
     this.currentStories.set([]);
     this.editingStoryId.set(null);
     const dims = this.parseDimensions(item.dimensions ?? []);
