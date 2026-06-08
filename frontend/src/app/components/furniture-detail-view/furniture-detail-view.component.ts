@@ -44,7 +44,8 @@ import { roleStyle } from '../../utils/title-style';
                     (keydown.enter)="onInlineEnter($event, 'category')"
                     (keydown.escape)="cancelInlineEdit($event)"
                     (keydown.space)="onSpaceWhenNotEditing($event, 'category')">{{ item.category }} · {{ item.year }}</span>
-              <h1 class="editable-text" [ngStyle]="titleStyle()" role="button" tabindex="0"
+              <h1 class="editable-text" [ngStyle]="titleStyle()" tabindex="0"
+                  [attr.aria-label]="isEditingField('title') ? item.title + ' — en édition, Entrée pour valider, Échap pour annuler' : item.title + ' — cliquer pour focus formulaire, double-cliquer pour éditer'"
                   [attr.contenteditable]="isEditingField('title')"
                   (click)="textFieldClick.emit('title')"
                   (dblclick)="startInlineEdit($event, 'title')"

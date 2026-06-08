@@ -63,7 +63,7 @@ import { enrichSlides } from '../../../utils/display-slides';
             </button>
           </div>
         }
-        <section class="admin-form" [class.is-hidden]="mobilierViewMode() !== 'form'">
+        <section class="admin-form" [class.is-hidden]="mobilierViewMode() !== 'form'" [attr.inert]="mobilierViewMode() !== 'form' ? '' : null">
           <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
             <div class="form-head">
               <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
@@ -214,7 +214,7 @@ import { enrichSlides } from '../../../utils/display-slides';
         </section>
 
         @if (mobilierViewMode() === 'preview' && (editingFurnitureSlug() !== null || editingFurnitureId() !== null || creatingFurniture())) {
-          <aside class="admin-preview" [class.fullscreen]="previewFullscreen()" aria-label="Aperçu de la fiche">
+          <aside class="admin-preview" [class.fullscreen]="previewFullscreen()" [attr.aria-modal]="previewFullscreen() ? 'true' : null" [attr.role]="previewFullscreen() ? 'dialog' : null" aria-label="Aperçu de la fiche">
             <div class="admin-preview-toolbar">
               <span class="admin-preview-label">Aperçu</span>
               <div class="admin-preview-actions">

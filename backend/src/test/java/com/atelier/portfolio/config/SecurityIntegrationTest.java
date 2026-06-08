@@ -226,6 +226,44 @@ class SecurityIntegrationTest {
         assertEquals(400, response.statusCode());
     }
 
+    @Test
+    void postFurniture_galleryItemColSpanHorsBornes_retourne400() throws Exception {
+        String token = getValidToken();
+        // colSpan=10 viole @Max(3) sur GalleryImage
+        String payload = """
+            {"title":"T","slug":"test-securite","category":"C","year":2024,
+             "featured":false,"showStoryLink":false,"showStoryButton":false,
+             "gallery":[{"url":"https://example.com/img.jpg","colSpan":10,"rowSpan":1}]}
+            """;
+        var request = HttpRequest.newBuilder()
+                .uri(uri("/api/furniture"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .build();
+        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, response.statusCode());
+    }
+
+    @Test
+    void postFurniture_galleryItemRowSpanHorsBornes_retourne400() throws Exception {
+        String token = getValidToken();
+        // rowSpan=5 viole @Max(4) sur GalleryImage
+        String payload = """
+            {"title":"T","slug":"test-securite","category":"C","year":2024,
+             "featured":false,"showStoryLink":false,"showStoryButton":false,
+             "gallery":[{"url":"https://example.com/img.jpg","colSpan":1,"rowSpan":5}]}
+            """;
+        var request = HttpRequest.newBuilder()
+                .uri(uri("/api/furniture"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .build();
+        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, response.statusCode());
+    }
+
     // -----------------------------------------------------------------------
     // Headers de securite (F-12)
     // -----------------------------------------------------------------------
