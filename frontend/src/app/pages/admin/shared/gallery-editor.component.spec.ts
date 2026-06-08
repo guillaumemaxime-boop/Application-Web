@@ -16,6 +16,7 @@ type GalleryInternals = {
   onReorder: (order: number[]) => void;
   cropOpenForIndex: WritableSignal<number | null>;
   openCropFor: (i: number) => void;
+  openReplaceFor: (i: number) => void;
   onCropValidated: (crop: { x: number; y: number; w: number; h: number }) => void;
 };
 
@@ -155,5 +156,21 @@ describe('GalleryEditorComponent', () => {
     cmp.onCropValidated({ x: 5, y: 5, w: 90, h: 90 });
     expect(emitted![0].crop).toEqual({ x: 5, y: 5, w: 90, h: 90 });
     expect(emitted![1].crop).toBeUndefined();
+  });
+
+  it('openReplaceFor + onPhotoSelected remplace l\'item à l\'index sans ajouter', () => {
+    const fixture = TestBed.createComponent(GalleryEditorComponent);
+    fixture.componentRef.setInput('images', [{ url: '/a.jpg', crop: null }, { url: '/b.jpg', crop: null }] as GalleryItem[]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as GalleryInternals;
+
+    let emitted: unknown = null;
+    fixture.componentInstance.imagesChange.subscribe(v => { emitted = v; });
+
+    cmp.openReplaceFor(1);
+    httpMock.expectOne('/api/photos').flush([]);
+    cmp.onPhotoSelected({ url: '/new.jpg' });
+
+    expect(emitted).toEqual([{ url: '/a.jpg', crop: null }, { url: '/new.jpg', crop: null }]);
   });
 });

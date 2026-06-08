@@ -7,6 +7,8 @@ import { By } from '@angular/platform-browser';
 import { MobilierComponent } from './mobilier.component';
 import { ToastService } from '../shared/toast.service';
 
+type GalleryItem = { url: string; crop?: unknown };
+
 type MobilierInternals = {
   furnitureForm: {
     patchValue: (v: Record<string, unknown>) => void;
@@ -18,7 +20,7 @@ type MobilierInternals = {
   loadingFurniture: () => boolean;
   editingFurnitureSlug: () => string | null;
   editingFurnitureId: () => string | null;
-  furnitureGallery: { (): Array<{ url: string; crop?: unknown }>; set: (v: Array<{ url: string; crop?: unknown }>) => void };
+  furnitureGallery: { (): GalleryItem[]; set: (v: GalleryItem[]) => void; update: (fn: (v: GalleryItem[]) => GalleryItem[]) => void };
   currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
   editingStoryId: { (): string | null; set: (v: string | null) => void };
   editingStoryCoverCrop: { (): { x: number; y: number; w: number; h: number } | null; set: (v: { x: number; y: number; w: number; h: number } | null) => void };
@@ -39,6 +41,10 @@ type MobilierInternals = {
   saveCover: (s: unknown) => void;
   onCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
   onStoryCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
+  focusField: (name: string) => void;
+  onPreviewCoverEdit: (action: 'crop' | 'replace') => void;
+  onPreviewGalleryItemEdit: (e: { index: number; action: 'crop' | 'replace' | 'remove' }) => void;
+  onPreviewGalleryReorder: (order: number[]) => void;
 };
 
 describe('MobilierComponent', () => {
@@ -575,6 +581,64 @@ describe('MobilierComponent', () => {
     const story = { id: 'st-1', ownerKind: 'furniture', ownerId: 'f1', title: 'S1', coverImage: '/c.jpg', coverCrop: { x: 5, y: 5, w: 90, h: 90 }, slug: 's1', position: 0, createdAt: '' };
     cmp.openCoverEditor(story);
     expect(cmp.editingStoryCoverCrop()).toEqual({ x: 5, y: 5, w: 90, h: 90 });
+  });
+
+  it('focusField scroll + focus l\'input field-title', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+
+    // L'input avec id="field-title" est rendu dans le template du composant
+    const input = document.getElementById('field-title') as HTMLInputElement;
+    expect(input).toBeTruthy();
+    spyOn(input, 'scrollIntoView');
+    spyOn(input, 'focus');
+
+    cmp.focusField('title');
+
+    expect(input.scrollIntoView).toHaveBeenCalled();
+    expect(input.focus).toHaveBeenCalled();
+  });
+
+  it('focusField no-op quand id introuvable', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    expect(() => cmp.focusField('inexistant')).not.toThrow();
+  });
+
+  it('onPreviewGalleryItemEdit remove enleve l\'item du signal galerie', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.furnitureGallery.set([{ url: 'a', crop: null }, { url: 'b', crop: null }]);
+    cmp.onPreviewGalleryItemEdit({ index: 0, action: 'remove' });
+    expect(cmp.furnitureGallery()).toEqual([{ url: 'b', crop: null }]);
+  });
+
+  it('onPreviewGalleryReorder remet le signal galerie dans le bon ordre', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.furnitureGallery.set([{ url: 'a', crop: null }, { url: 'b', crop: null }, { url: 'c', crop: null }]);
+    cmp.onPreviewGalleryReorder([2, 0, 1]);
+    expect(cmp.furnitureGallery().map((i: GalleryItem) => i.url)).toEqual(['c', 'a', 'b']);
   });
 
 });

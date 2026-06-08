@@ -1,7 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ViewChild, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Furniture } from '../../../models/furniture.model';
 import { Story } from '../../../models/story.model';
@@ -13,11 +13,13 @@ import { TagInputComponent } from '../shared/tag-input.component';
 import { ToastService } from '../shared/toast.service';
 import { GalleryItem } from '../../../models/gallery-item.model';
 import { Crop } from '../../../models/crop.model';
+import { FurniturePreviewComponent } from './preview/furniture-preview.component';
+import { enrichSlides } from '../../../utils/display-slides';
 
 @Component({
   selector: 'app-mobilier',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -44,151 +46,171 @@ import { Crop } from '../../../models/crop.model';
         }
       </aside>
 
-      <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
-        <div class="form-head">
-          <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
-          @if (editingFurnitureSlug(); as s) {
-            <a class="view-link" [href]="'/mobilier/' + s" target="_blank" rel="noopener" title="Voir sur le site">Voir sur le site ↗</a>
-          }
-        </div>
-
-        <label>
-          <span>Titre *</span>
-          <input type="text" formControlName="title" />
-        </label>
-        @if (editingFurnitureSlug()) {
-          <label class="readonly-row">
-            <span>Slug</span>
-            <input type="text" formControlName="slug" readonly />
-          </label>
-        }
-        <div class="row-2">
-          <label>
-            <span>Catégorie *</span>
-            <input type="text" formControlName="category" placeholder="Sièges, Tables…" />
-          </label>
-          <label>
-            <span>Année</span>
-            <input type="number" inputmode="numeric" formControlName="year" />
-          </label>
-        </div>
-        <label>
-          <span>Matériaux</span>
-          <input type="text" formControlName="material" />
-        </label>
-        <label>
-          <span>Designer</span>
-          <input type="text" formControlName="designer" />
-        </label>
-
-        <app-image-field
-          formControlName="coverImage"
-          label="Image principale (URL)"
-          [cropEnabled]="true"
-          [cropValue]="furnitureForm.get('coverCrop')?.value"
-          (cropChange)="onCoverCropChange($event)" />
-
-        <label>
-          <span>Tags</span>
-          <app-tag-input formControlName="tags" [suggestions]="allTags()" />
-        </label>
-
-        <app-gallery-editor
-          [images]="furnitureGallery()"
-          (imagesChange)="furnitureGallery.set($event)" />
-
-        <fieldset class="dim-fieldset">
-          <legend>Dimensions</legend>
-          <div class="dim-grid">
-            <label class="dim-cell">
-              <span>Largeur (cm)</span>
-              <input type="number" inputmode="decimal" step="0.1" min="0" formControlName="dimW" placeholder="—" />
-            </label>
-            <label class="dim-cell">
-              <span>Profondeur (cm)</span>
-              <input type="number" inputmode="decimal" step="0.1" min="0" formControlName="dimD" placeholder="—" />
-            </label>
-            <label class="dim-cell">
-              <span>Hauteur (cm)</span>
-              <input type="number" inputmode="decimal" step="0.1" min="0" formControlName="dimH" placeholder="—" />
-            </label>
-          </div>
-          <label class="dim-notes">
-            <span>Autres dimensions (une par ligne)</span>
-            <textarea rows="2" formControlName="dimNotes" placeholder="Ex. : Diamètre assise 45 cm"></textarea>
-          </label>
-        </fieldset>
-        <label>
-          <span>Description courte</span>
-          <textarea rows="2" formControlName="shortDescription"></textarea>
-        </label>
-        <label>
-          <span>Description longue</span>
-          <textarea rows="5" formControlName="description"></textarea>
-        </label>
-
-        <label class="checkbox">
-          <input type="checkbox" formControlName="showStoryLink" />
-          <span>Afficher le lien en fin de story</span>
-        </label>
-
-        <label class="checkbox">
-          <input type="checkbox" formControlName="showStoryButton" />
-          <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
-        </label>
-
-        @if (editingFurnitureId()) {
-          <section class="stories-block">
-            <header class="stories-head">
-              <h3>Stories</h3>
-              <button type="button" class="btn-link" (click)="newStory()">+ Nouvelle story</button>
-            </header>
-            @if (currentStories().length === 0) {
-              <p class="empty">Aucune story pour ce mobilier.</p>
-            }
-            @for (story of currentStories(); track story.id; let i = $index) {
-              <article class="story-item" [class.active]="editingStoryId() === story.id">
-                <img [src]="story.coverImage" alt="" class="story-cover" />
-                <span class="story-title">{{ story.title }}</span>
-                <div class="story-actions">
-                  <button type="button" class="reorder-btn" (click)="moveStoryUp(story)" [disabled]="i === 0" aria-label="Monter la story">↑</button>
-                  <button type="button" class="reorder-btn" (click)="moveStoryDown(story)" [disabled]="i === currentStories().length - 1" aria-label="Descendre la story">↓</button>
-                  <button type="button" class="btn-mini" (click)="editStory(story)">Éditer slides</button>
-                  <button type="button" class="btn-mini" (click)="openCoverEditor(story)">Cover</button>
-                  <button type="button" class="btn-mini" (click)="renameStory(story)">Renommer</button>
-                  <button type="button" class="btn-mini danger" (click)="deleteStory(story)">Supprimer</button>
-                </div>
-              </article>
-              @if (editingCoverStoryId() === story.id) {
-                <div class="cover-editor">
-                  <app-image-field label="Image de couverture" [formControl]="coverEditCtrl"
-                    [cropEnabled]="true"
-                    [cropValue]="editingStoryCoverCrop()"
-                    (cropChange)="onStoryCoverCropChange($event)" />
-                  <div class="cover-editor-actions">
-                    <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
-                    <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
-                  </div>
-                </div>
+      <div class="admin-split">
+        <section class="admin-form">
+          <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
+            <div class="form-head">
+              <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
+              @if (editingFurnitureSlug(); as s) {
+                <a class="view-link" [href]="'/mobilier/' + s" target="_blank" rel="noopener" title="Voir sur le site">Voir sur le site ↗</a>
               }
-            }
-          </section>
-          @if (editingStoryId(); as sid) {
-            <app-slides-editor [storyId]="sid" [ownerSlug]="editingFurnitureSlug()" />
-          }
-        } @else {
-          <p class="slides-hint">Enregistre la pièce une première fois pour pouvoir éditer ses slides.</p>
-        }
+            </div>
 
-        <div class="actions">
-          <button type="submit" class="btn-primary" [disabled]="furnitureForm.invalid || saving()">
-            {{ saving() ? 'Enregistrement…' : (editingFurnitureSlug() ? 'Mettre à jour' : 'Créer') }}
-          </button>
-          @if (editingFurnitureSlug()) {
-            <button type="button" class="btn-link" (click)="newFurniture()">Annuler</button>
-          }
-        </div>
-      </form>
+            <label>
+              <span>Titre *</span>
+              <input type="text" id="field-title" formControlName="title" />
+            </label>
+            @if (editingFurnitureSlug()) {
+              <label class="readonly-row">
+                <span>Slug</span>
+                <input type="text" formControlName="slug" readonly />
+              </label>
+            }
+            <div class="row-2">
+              <label>
+                <span>Catégorie *</span>
+                <input type="text" id="field-category" formControlName="category" placeholder="Sièges, Tables…" />
+              </label>
+              <label>
+                <span>Année</span>
+                <input type="number" inputmode="numeric" formControlName="year" />
+              </label>
+            </div>
+            <label>
+              <span>Matériaux</span>
+              <input type="text" id="field-material" formControlName="material" />
+            </label>
+            <label>
+              <span>Designer</span>
+              <input type="text" formControlName="designer" />
+            </label>
+
+            <app-image-field
+              #coverField
+              formControlName="coverImage"
+              label="Image principale (URL)"
+              [cropEnabled]="true"
+              [cropValue]="furnitureForm.get('coverCrop')?.value"
+              (cropChange)="onCoverCropChange($event)" />
+
+            <label>
+              <span>Tags</span>
+              <app-tag-input formControlName="tags" [suggestions]="allTags()" />
+            </label>
+
+            <app-gallery-editor
+              #galleryEditor
+              [images]="furnitureGallery()"
+              (imagesChange)="furnitureGallery.set($event)" />
+
+            <fieldset class="dim-fieldset">
+              <legend>Dimensions</legend>
+              <div class="dim-grid">
+                <label class="dim-cell">
+                  <span>Largeur (cm)</span>
+                  <input type="number" inputmode="decimal" step="0.1" min="0" formControlName="dimW" placeholder="—" />
+                </label>
+                <label class="dim-cell">
+                  <span>Profondeur (cm)</span>
+                  <input type="number" inputmode="decimal" step="0.1" min="0" formControlName="dimD" placeholder="—" />
+                </label>
+                <label class="dim-cell">
+                  <span>Hauteur (cm)</span>
+                  <input type="number" inputmode="decimal" step="0.1" min="0" formControlName="dimH" placeholder="—" />
+                </label>
+              </div>
+              <label class="dim-notes">
+                <span>Autres dimensions (une par ligne)</span>
+                <textarea rows="2" formControlName="dimNotes" placeholder="Ex. : Diamètre assise 45 cm"></textarea>
+              </label>
+            </fieldset>
+            <label>
+              <span>Description courte</span>
+              <textarea rows="2" id="field-shortDescription" formControlName="shortDescription"></textarea>
+            </label>
+            <label>
+              <span>Description longue</span>
+              <textarea rows="5" id="field-description" formControlName="description"></textarea>
+            </label>
+
+            <label class="checkbox">
+              <input type="checkbox" formControlName="showStoryLink" />
+              <span>Afficher le lien en fin de story</span>
+            </label>
+
+            <label class="checkbox">
+              <input type="checkbox" formControlName="showStoryButton" />
+              <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
+            </label>
+
+            @if (editingFurnitureId()) {
+              <section class="stories-block">
+                <header class="stories-head">
+                  <h3>Stories</h3>
+                  <button type="button" class="btn-link" (click)="newStory()">+ Nouvelle story</button>
+                </header>
+                @if (currentStories().length === 0) {
+                  <p class="empty">Aucune story pour ce mobilier.</p>
+                }
+                @for (story of currentStories(); track story.id; let i = $index) {
+                  <article class="story-item" [class.active]="editingStoryId() === story.id">
+                    <img [src]="story.coverImage" alt="" class="story-cover" />
+                    <span class="story-title">{{ story.title }}</span>
+                    <div class="story-actions">
+                      <button type="button" class="reorder-btn" (click)="moveStoryUp(story)" [disabled]="i === 0" aria-label="Monter la story">↑</button>
+                      <button type="button" class="reorder-btn" (click)="moveStoryDown(story)" [disabled]="i === currentStories().length - 1" aria-label="Descendre la story">↓</button>
+                      <button type="button" class="btn-mini" (click)="editStory(story)">Éditer slides</button>
+                      <button type="button" class="btn-mini" (click)="openCoverEditor(story)">Cover</button>
+                      <button type="button" class="btn-mini" (click)="renameStory(story)">Renommer</button>
+                      <button type="button" class="btn-mini danger" (click)="deleteStory(story)">Supprimer</button>
+                    </div>
+                  </article>
+                  @if (editingCoverStoryId() === story.id) {
+                    <div class="cover-editor">
+                      <app-image-field label="Image de couverture" [formControl]="coverEditCtrl"
+                        [cropEnabled]="true"
+                        [cropValue]="editingStoryCoverCrop()"
+                        (cropChange)="onStoryCoverCropChange($event)" />
+                      <div class="cover-editor-actions">
+                        <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
+                        <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
+                      </div>
+                    </div>
+                  }
+                }
+              </section>
+              @if (editingStoryId(); as sid) {
+                <app-slides-editor [storyId]="sid" [ownerSlug]="editingFurnitureSlug()" />
+              }
+            } @else {
+              <p class="slides-hint">Enregistre la pièce une première fois pour pouvoir éditer ses slides.</p>
+            }
+
+            <div class="actions">
+              <button type="submit" class="btn-primary" [disabled]="furnitureForm.invalid || saving()">
+                {{ saving() ? 'Enregistrement…' : (editingFurnitureSlug() ? 'Mettre à jour' : 'Créer') }}
+              </button>
+              @if (editingFurnitureSlug()) {
+                <button type="button" class="btn-link" (click)="newFurniture()">Annuler</button>
+              }
+            </div>
+          </form>
+        </section>
+
+        @if (editingFurnitureSlug() !== null || editingFurnitureId() !== null || creatingFurniture()) {
+          <aside class="admin-preview" aria-label="Aperçu de la fiche">
+            <app-furniture-preview
+              [form]="furnitureForm"
+              [gallery]="furnitureGallery.asReadonly()"
+              [story]="currentStories()[0] ?? null"
+              [displaySlides]="previewDisplaySlides()"
+              (coverEdit)="onPreviewCoverEdit($event)"
+              (galleryItemEdit)="onPreviewGalleryItemEdit($event)"
+              (galleryReorder)="onPreviewGalleryReorder($event)"
+              (textFieldClick)="focusField($event)" />
+          </aside>
+        }
+      </div>
     </div>
 
   `,
@@ -207,6 +229,9 @@ import { Crop } from '../../../models/crop.model';
     .row-meta { font-size: 0.75rem; color: var(--color-mute); letter-spacing: 0.06em; text-transform: uppercase; }
     .row-del { background: transparent; border: 0; padding: 0 16px; color: var(--color-mute); font-size: 1.5rem; cursor: pointer; line-height: 1; }
     .row-del:hover { color: #b1532a; }
+    .admin-split { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 100%; }
+    .admin-form { overflow-y: auto; max-height: calc(100vh - 80px); padding-right: 8px; }
+    .admin-preview { position: sticky; top: 16px; max-height: calc(100vh - 80px); overflow-y: auto; background: var(--color-bg-alt); border: 1px solid var(--color-line); padding: 24px; }
     .form { display: flex; flex-direction: column; gap: 20px; padding: 32px; border: 1px solid var(--color-line); background: var(--color-bg); }
     .form h2 { margin: 0; font-size: 1.5rem; }
     .form-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
@@ -266,34 +291,48 @@ import { Crop } from '../../../models/crop.model';
     .reorder-btn { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); width: 28px; height: 28px; padding: 0; cursor: pointer; font-size: 0.9rem; line-height: 1; }
     .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    @media (max-width: 1280px) {
+      .admin-split { grid-template-columns: 1fr; }
+      .admin-preview { position: static; max-height: 60vh; }
+    }
     @media (max-width: 960px) {
       .grid-admin { grid-template-columns: 1fr; }
       .list { position: static; max-height: none; }
       .row-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .admin-preview { display: none; }
     }
     @media (max-width: 600px) {
       .dim-grid { grid-template-columns: 1fr; }
     }
   `]
 })
-export class MobilierComponent {
+export class MobilierComponent implements OnInit, OnDestroy {
   private readonly portfolio = inject(PortfolioService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
+
+  @ViewChild('coverField') coverImageField?: ImageFieldComponent;
+  @ViewChild('galleryEditor') galleryEditor?: GalleryEditorComponent;
 
   protected readonly furniture = signal<Furniture[]>([]);
   protected readonly loadingFurniture = signal(true);
   protected readonly saving = signal(false);
   protected readonly editingFurnitureSlug = signal<string | null>(null);
   protected readonly editingFurnitureId = signal<string | null>(null);
-  protected readonly furnitureGallery = signal<GalleryItem[]>([]);
+  readonly furnitureGallery = signal<GalleryItem[]>([]);
   protected readonly currentStories = signal<Story[]>([]);
   protected readonly editingStoryId = signal<string | null>(null);
   protected readonly editingCoverStoryId = signal<string | null>(null);
   protected readonly coverEditCtrl = new FormControl('');
   protected readonly editingStoryCoverCrop = signal<Crop | null>(null);
   protected readonly allTags = signal<string[]>([]);
+
+  protected readonly creatingFurniture = signal(false);
+  private readonly _formTick = signal(0);
+  private formTickSub?: Subscription;
 
   protected readonly furnitureForm = this.fb.group({
     title: ['', Validators.required],
@@ -315,12 +354,36 @@ export class MobilierComponent {
     tags: this.fb.control<string[]>([], { nonNullable: true }),
   });
 
+  protected readonly previewDisplaySlides = computed(() => {
+    this._formTick(); // dépendance signal — force recompute sur valueChanges
+    const story = this.currentStories()[0];
+    if (!story) return [];
+    const v = this.furnitureForm.getRawValue();
+    return enrichSlides({
+      slug: v.slug ?? '',
+      coverImage: v.coverImage ?? null,
+      coverCrop: v.coverCrop ?? null,
+      slides: [],
+      showStoryLink: v.showStoryLink ?? true,
+    }, 'furniture');
+  });
+
   constructor() {
     this.refreshFurniture();
     this.portfolio.getAllTags().subscribe(t => this.allTags.set(t));
     this.route.queryParamMap.subscribe(params => {
       if (params.get('new') === '1') this.newFurniture();
     });
+  }
+
+  ngOnInit(): void {
+    this.formTickSub = this.furnitureForm.valueChanges.subscribe(() =>
+      this._formTick.update(n => n + 1)
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.formTickSub?.unsubscribe();
   }
 
   private refreshFurniture(): void {
@@ -334,6 +397,7 @@ export class MobilierComponent {
   newFurniture(): void {
     this.editingFurnitureSlug.set(null);
     this.editingFurnitureId.set(null);
+    this.creatingFurniture.set(true);
     this.currentStories.set([]);
     this.editingStoryId.set(null);
     this.furnitureForm.reset({
@@ -351,6 +415,7 @@ export class MobilierComponent {
   loadFurniture(item: Furniture): void {
     this.editingFurnitureSlug.set(item.slug);
     this.editingFurnitureId.set(item.id ?? null);
+    this.creatingFurniture.set(false);
     this.currentStories.set([]);
     this.editingStoryId.set(null);
     const dims = this.parseDimensions(item.dimensions ?? []);
@@ -503,6 +568,38 @@ export class MobilierComponent {
         if (ownerId) this.loadStoriesFor(ownerId, '', '');
       });
     });
+  }
+
+  focusField(name: string): void {
+    const el = document.getElementById(`field-${name}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (el as HTMLInputElement | HTMLTextAreaElement).focus();
+  }
+
+  onPreviewCoverEdit(action: 'crop' | 'replace'): void {
+    if (action === 'crop') {
+      this.coverImageField?.openCrop();
+    } else {
+      this.coverImageField?.openPicker();
+    }
+  }
+
+  onPreviewGalleryItemEdit(e: { index: number; action: 'crop' | 'replace' | 'remove' }): void {
+    if (e.action === 'remove') {
+      this.furnitureGallery.update(arr => arr.filter((_, i) => i !== e.index));
+      return;
+    }
+    if (e.action === 'crop') {
+      this.galleryEditor?.openCropFor(e.index);
+    } else {
+      this.galleryEditor?.openReplaceFor(e.index);
+    }
+  }
+
+  onPreviewGalleryReorder(order: number[]): void {
+    const items = this.furnitureGallery();
+    this.furnitureGallery.set(order.map(i => items[i]));
   }
 
   private parseDimensions(list: string[]): { w: number | null; d: number | null; h: number | null; notes: string } {
