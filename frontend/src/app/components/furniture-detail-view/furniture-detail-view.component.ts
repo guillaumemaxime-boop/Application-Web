@@ -135,9 +135,10 @@ import { roleStyle } from '../../utils/title-style';
               @if (editable) {
                 <ul class="g-grid editable" appReorderable (reordered)="galleryReorder.emit($event)">
                   @for (img of item.gallery; track img.url; let i = $index) {
-                    <li class="g-item-draggable">
-                      <figure [style.grid-column]="'span ' + (img.colSpan ?? 1)"
-                              [style.grid-row]="'span ' + (img.rowSpan ?? 1)">
+                    <li class="g-item-draggable"
+                        [style.grid-column]="'span ' + (img.colSpan ?? 1)"
+                        [style.grid-row]="'span ' + (img.rowSpan ?? 1)">
+                      <figure>
                         <div class="gallery-img-wrap">
                           <app-cropped-image-canvas
                             [imageUrl]="img.url"
