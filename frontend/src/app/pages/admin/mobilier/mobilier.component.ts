@@ -269,7 +269,13 @@ import { enrichSlides } from '../../../utils/display-slides';
     .admin-mode-tab:hover { color: var(--color-ink); }
     .admin-mode-tab.active { background: var(--color-ink); color: var(--color-bg); font-weight: 600; }
     .admin-form { max-width: 100%; }
-    .admin-form.is-hidden { display: none; }
+    /* En mode preview : form sort du flow + invisible, MAIS ne pas utiliser display:none
+       car les modales descendantes (photo-picker, crop-picker) en position:fixed seraient
+       retirees du rendu. visibility:hidden + position:absolute conserve les ViewChild et
+       laisse les modales s'afficher (override visibility:visible ci-dessous). */
+    .admin-form.is-hidden { position: absolute; left: -100vw; top: 0; width: 0; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+    .admin-form.is-hidden .picker-backdrop,
+    .admin-form.is-hidden .crop-backdrop { visibility: visible; pointer-events: auto; }
     .admin-preview { max-height: calc(100vh - 100px); overflow-y: auto; background: var(--color-bg-alt); border: 1px solid var(--color-line); padding: 24px; }
     .admin-preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px -8px 16px; padding: 0 4px; }
     .admin-preview-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-mute); }
