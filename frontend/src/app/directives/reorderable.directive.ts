@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, EventEmitter, inject, NgZone, OnDestroy, Output } from '@angular/core';
+import { AfterViewInit, ApplicationRef, Directive, ElementRef, EventEmitter, inject, NgZone, OnDestroy, Output } from '@angular/core';
 
 @Directive({
   selector: '[appReorderable]',
@@ -8,6 +8,7 @@ export class ReorderableDirective implements AfterViewInit, OnDestroy {
   @Output() reordered = new EventEmitter<number[]>();
 
   private readonly zone = inject(NgZone);
+  private readonly appRef = inject(ApplicationRef);
   private dragSrcIndex: number | null = null;
   private observer: MutationObserver | null = null;
   private listeners: Array<{ el: HTMLElement; type: string; fn: EventListener }> = [];
@@ -71,6 +72,7 @@ export class ReorderableDirective implements AfterViewInit, OnDestroy {
     // bindings du parent (preview) se reevaluent immediatement apres le drop.
     this.zone.run(() => {
       this.reordered.emit(order);
+      this.appRef.tick();
     });
     this.dragSrcIndex = null;
   }

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, inject, Input, NgZone, OnDestroy, Output, signal } from '@angular/core';
+import { ApplicationRef, ChangeDetectorRef, Component, EventEmitter, inject, Input, NgZone, OnDestroy, Output, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
@@ -347,6 +347,7 @@ import { roleStyle } from '../../utils/title-style';
 export class FurnitureDetailViewComponent implements OnDestroy {
   private readonly zone = inject(NgZone);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly appRef = inject(ApplicationRef);
 
   @Input({ required: true }) item: Furniture | null = null;
   @Input() story: Story | null = null;
@@ -466,6 +467,7 @@ export class FurnitureDetailViewComponent implements OnDestroy {
       this.resizingRows.set(newRow);
       this.galleryItemResize.emit({ index: this.resizing!.index, colSpan: newCol, rowSpan: newRow });
       this.cdr.markForCheck();
+      this.appRef.tick();
     });
   };
 
