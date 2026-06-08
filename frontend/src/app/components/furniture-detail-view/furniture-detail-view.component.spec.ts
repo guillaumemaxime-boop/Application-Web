@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FurnitureDetailViewComponent } from './furniture-detail-view.component';
 import { Furniture } from '../../models/furniture.model';
+import { DisplaySlide } from '../../models/display-slide.model';
 
 describe('FurnitureDetailViewComponent', () => {
   let fixture: ComponentFixture<FurnitureDetailViewComponent>;
@@ -47,5 +48,40 @@ describe('FurnitureDetailViewComponent', () => {
     fixture.componentRef.setInput('item', null);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.hero')).toBeNull();
+  });
+
+  it('affiche la description', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.description .body').textContent).toContain('Description du tabouret.');
+  });
+
+  it('ne rend pas la section galerie quand gallery est vide', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.gallery')).toBeNull();
+  });
+
+  it('rend une figure par item de galerie', () => {
+    const f = { ...mockFurniture, gallery: [
+      { url: 'https://e.com/a.jpg', crop: null },
+      { url: 'https://e.com/b.jpg', crop: { x: 0, y: 0, w: 50, h: 50 } },
+    ]};
+    fixture.componentRef.setInput('item', f);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.gallery figure').length).toBe(2);
+  });
+
+  it('rend story-inline quand displaySlides non vides', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('displaySlides', [{ type: 'cover', id: 's1', position: 0, src: 'https://e.com/a.jpg' } as DisplaySlide]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeTruthy();
+  });
+
+  it('ne rend pas story-inline quand displaySlides est vide', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeNull();
   });
 });
