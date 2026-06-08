@@ -165,4 +165,28 @@ describe('FurnitureDetailViewComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.gallery-img-wrap .edit-overlay')).toBeNull();
   });
+
+  it('applique le style du role title sur le h1 quand content fournit l\'override', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('content', {
+      'typo.title.font': 'helvetica',
+      'typo.title.style': 'bold',
+    });
+    fixture.detectChanges();
+    const h1 = fixture.nativeElement.querySelector('h1') as HTMLElement;
+    expect(h1.style.fontFamily).toContain('Helvetica');
+    expect(h1.style.fontWeight).toBe('600');
+  });
+
+  it('applique le style du role eyebrow sur le span eyebrow quand content fournit l\'override', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('content', {
+      'typo.eyebrow.font': 'sans',
+      'typo.eyebrow.style': 'italic',
+    });
+    fixture.detectChanges();
+    const eyebrow = fixture.nativeElement.querySelector('.eyebrow') as HTMLElement;
+    expect(eyebrow.style.fontFamily).toContain('Inter');
+    expect(eyebrow.style.fontStyle).toBe('italic');
+  });
 });

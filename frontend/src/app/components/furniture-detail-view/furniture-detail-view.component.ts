@@ -1,4 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { NgStyle } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 export type EditableTextField = 'title' | 'category' | 'material' | 'description' | 'shortDescription';
 import { Furniture } from '../../models/furniture.model';
@@ -8,11 +10,13 @@ import { Story } from '../../models/story.model';
 import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
 import { StoryInlineComponent } from '../story-inline/story-inline.component';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
+import { StoryItem } from '../story-viewer/story-viewer.component';
+import { roleStyle } from '../../utils/title-style';
 
 @Component({
   selector: 'app-furniture-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective],
+  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective, RouterLink, NgStyle],
   template: `
     @if (item) {
       <article class="fade-in">
@@ -32,11 +36,11 @@ import { ReorderableDirective } from '../../directives/reorderable.directive';
           </div>
           <div class="container hero-content">
             @if (editable) {
-              <span class="eyebrow editable-text" role="button" tabindex="0"
+              <span class="eyebrow editable-text" [ngStyle]="eyebrowStyle()" role="button" tabindex="0"
                     (click)="textFieldClick.emit('category')"
                     (keydown.enter)="textFieldClick.emit('category')"
                     (keydown.space)="textFieldClick.emit('category'); $event.preventDefault()">{{ item.category }} · {{ item.year }}</span>
-              <h1 class="editable-text" role="button" tabindex="0"
+              <h1 class="editable-text" [ngStyle]="titleStyle()" role="button" tabindex="0"
                   (click)="textFieldClick.emit('title')"
                   (keydown.enter)="textFieldClick.emit('title')"
                   (keydown.space)="textFieldClick.emit('title'); $event.preventDefault()">{{ item.title }}</h1>
@@ -45,8 +49,8 @@ import { ReorderableDirective } from '../../directives/reorderable.directive';
                  (keydown.enter)="textFieldClick.emit('material')"
                  (keydown.space)="textFieldClick.emit('material'); $event.preventDefault()">{{ item.material }}</p>
             } @else {
-              <span class="eyebrow">{{ item.category }} · {{ item.year }}</span>
-              <h1>{{ item.title }}</h1>
+              <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ item.category }} · {{ item.year }}</span>
+              <h1 [ngStyle]="titleStyle()">{{ item.title }}</h1>
               <p class="material">{{ item.material }}</p>
             }
           </div>
@@ -82,11 +86,27 @@ import { ReorderableDirective } from '../../directives/reorderable.directive';
                 </dd>
               </div>
             </dl>
+
+            @if (item.tags && item.tags.length > 0) {
+              <div class="tags-list">
+                @for (t of item.tags; track t) {
+                  <a class="tag-chip" [routerLink]="['/creations']" [queryParams]="{ tags: t }">{{ t }}</a>
+                }
+              </div>
+            }
           </div>
         </section>
 
         @if (displaySlides.length > 0) {
           <app-story-inline [slides]="displaySlides"></app-story-inline>
+
+          @if (item.showStoryButton) {
+            <div class="container narrow viewer-link-wrap">
+              <button type="button" class="viewer-link" aria-label="Voir en plein écran" (click)="onViewerOpen()">
+                Voir en plein écran →
+              </button>
+            </div>
+          }
         }
 
         @if (item.gallery.length > 0) {
@@ -137,17 +157,16 @@ import { ReorderableDirective } from '../../directives/reorderable.directive';
     }
   `,
   styles: [`
-    .hero { position: relative; min-height: 70vh; display: flex; align-items: flex-end; padding: 80px 0; overflow: hidden; }
+    .hero { position: relative; min-height: 70vh; display: flex; align-items: flex-end; padding: 120px 0 72px; overflow: hidden; }
     .hero-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
     .hero-bg app-cropped-image-canvas { width: 100%; height: 100%; display: block; }
-    .hero-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.5) 100%); }
-    .hero-content { position: relative; z-index: 1; color: #fff; max-width: 1280px; margin: 0 auto; padding: 0 32px; }
-    .hero-content .eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.85; }
-    .hero-content h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.05; margin: 16px 0; }
-    .hero-content .material { font-size: 0.95rem; opacity: 0.85; }
+    .hero-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 60%, transparent 100%); }
+    .hero-content { position: relative; z-index: 1; color: #ffffff; }
+    .hero-content .eyebrow,
+    .hero-content .material { color: rgba(255, 255, 255, 0.7); }
+    .hero-content h1 { color: #ffffff; margin: 16px 0 18px; max-width: 880px; }
+    .material { font-size: 0.85rem; letter-spacing: 0.08em; }
 
-    .section { padding: 80px 0; }
-    .section .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
     .narrow { max-width: 760px; }
 
     .lead { font-family: var(--serif); font-size: 1.75rem; line-height: 1.4; color: var(--color-ink); }
@@ -177,12 +196,39 @@ import { ReorderableDirective } from '../../directives/reorderable.directive';
     .gallery-img-wrap { position: relative; overflow: hidden; width: 100%; height: 100%; }
     .gallery-img-wrap app-cropped-image-canvas { display: block; width: 100%; height: 100%; }
 
+    .tags-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 24px; }
+    .tag-chip {
+      font-size: 0.78rem; padding: 4px 12px; background: var(--color-bg-alt);
+      border: 1px solid var(--color-line); color: var(--color-ink-soft); text-decoration: none;
+    }
+    .tag-chip:hover { color: var(--color-ink); border-color: var(--color-ink); }
+
+    .viewer-link-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 0 0 96px;
+    }
+    .viewer-link {
+      background: none;
+      border: 1px solid var(--color-ink);
+      color: var(--color-ink);
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 14px 28px;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+    }
+    .viewer-link:hover {
+      background: var(--color-ink);
+      color: var(--color-bg);
+    }
+
     @media (max-width: 960px) {
       .gallery .g-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 600px) {
       .gallery .g-grid { grid-template-columns: 1fr; }
-      figure.tall { aspect-ratio: 4 / 3; }
       .specs > div { grid-template-columns: 1fr; gap: 4px; }
       .lead { font-size: 1.4rem; }
     }
@@ -219,8 +265,25 @@ export class FurnitureDetailViewComponent {
   @Input() content: SiteContent = {};
   @Input() editable = false;
 
+  protected eyebrowStyle(): Record<string, string> { return roleStyle(this.content, 'eyebrow'); }
+  protected titleStyle():   Record<string, string> { return roleStyle(this.content, 'title'); }
+
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();
   @Output() textFieldClick = new EventEmitter<EditableTextField>();
+  @Output() viewerOpen = new EventEmitter<StoryItem[]>();
+
+  onViewerOpen(): void {
+    const f = this.item;
+    if (!f) return;
+    if (this.displaySlides.length === 0) return;
+    this.viewerOpen.emit([{
+      title: f.title,
+      subtitle: `${f.category} · ${f.year}`,
+      slides: this.displaySlides,
+      kind: 'furniture',
+      slug: f.slug,
+    }]);
+  }
 }
