@@ -240,4 +240,169 @@ describe('FurnitureDetailViewComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.resize-handle')).toBeNull();
   });
+
+  it('isEditingField renvoie true uniquement pour le champ en edition', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.editingField = 'title';
+    expect(cmp.isEditingField('title')).toBeTrue();
+    expect(cmp.isEditingField('description')).toBeNull();
+  });
+
+  it('startInlineEdit no-op sur category (champ combine)', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const fake = { preventDefault: () => {}, stopPropagation: () => {}, currentTarget: document.createElement('span') };
+    cmp.startInlineEdit(fake as any, 'category');
+    expect(cmp.editingField).toBeNull();
+  });
+
+  it('startInlineEdit met editingField pour title', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const el = document.createElement('h1');
+    el.textContent = 'Vieux titre';
+    document.body.appendChild(el);
+    const fake = { preventDefault: () => {}, stopPropagation: () => {}, currentTarget: el };
+    cmp.startInlineEdit(fake as any, 'title');
+    expect(cmp.editingField).toBe('title');
+    document.body.removeChild(el);
+  });
+
+  it('commitInlineEdit emet textFieldEdit avec value trim', (done) => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.editingField = 'title';
+    cmp.textFieldEdit.subscribe((e: any) => {
+      expect(e).toEqual({ field: 'title', value: 'Nouveau' });
+      expect(cmp.editingField).toBeNull();
+      done();
+    });
+    const el = document.createElement('h1');
+    el.textContent = '  Nouveau  ';
+    cmp.commitInlineEdit({ target: el } as any, 'title');
+  });
+
+  it('commitInlineEdit no-op quand editingField different', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.editingField = 'title';
+    let emitted = false;
+    cmp.textFieldEdit.subscribe(() => emitted = true);
+    const el = document.createElement('p');
+    el.textContent = 'X';
+    cmp.commitInlineEdit({ target: el } as any, 'description');
+    expect(emitted).toBeFalse();
+  });
+
+  it('onInlineEnter blur quand editingField actif', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.editingField = 'title';
+    const el = document.createElement('h1');
+    const fake = { preventDefault: jasmine.createSpy('preventDefault'), target: el };
+    cmp.onInlineEnter(fake as any, 'title');
+    expect(fake.preventDefault).toHaveBeenCalled();
+  });
+
+  it('onInlineEnter emet textFieldClick quand pas en edition', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    let emitted: any = null;
+    cmp.textFieldClick.subscribe((n: string) => emitted = n);
+    cmp.onInlineEnter({ preventDefault: () => {}, target: document.createElement('h1') } as any, 'title');
+    expect(emitted).toBe('title');
+  });
+
+  it('cancelInlineEdit reset editingField', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.editingField = 'title';
+    const el = document.createElement('h1');
+    cmp.cancelInlineEdit({ preventDefault: () => {}, target: el } as any);
+    expect(cmp.editingField).toBeNull();
+  });
+
+  it('cancelInlineEdit no-op quand pas en edition', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.editingField = null;
+    expect(() => cmp.cancelInlineEdit({ preventDefault: () => {}, target: document.createElement('h1') } as any)).not.toThrow();
+  });
+
+  it('onSpaceWhenNotEditing emet textFieldClick quand pas en edition', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    let emitted: any = null;
+    cmp.textFieldClick.subscribe((n: string) => emitted = n);
+    cmp.onSpaceWhenNotEditing({ preventDefault: () => {}, target: document.createElement('h1') } as any, 'title');
+    expect(emitted).toBe('title');
+  });
+
+  it('onSpaceWhenNotEditing no-op quand champ en edition', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.editingField = 'title';
+    let emitted = false;
+    cmp.textFieldClick.subscribe(() => emitted = true);
+    cmp.onSpaceWhenNotEditing({ preventDefault: () => {}, target: document.createElement('h1') } as any, 'title');
+    expect(emitted).toBeFalse();
+  });
+
+  it('onResizeStart no-op quand pas dans une grille', () => {
+    const f = { ...mockFurniture, gallery: [{ url: 'a.jpg', crop: null }] };
+    fixture.componentRef.setInput('item', f);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    expect(() => cmp.onResizeStart({
+      preventDefault: () => {}, stopPropagation: () => {},
+      clientX: 0, clientY: 0, pointerId: 1, target: el,
+    } as any, 0)).not.toThrow();
+    document.body.removeChild(el);
+  });
+
+  it('emet galleryAdd au clic sur la tuile +Ajouter', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    let emitted = false;
+    fixture.componentInstance.galleryAdd.subscribe(() => emitted = true);
+    const btn = fixture.nativeElement.querySelector('.gallery-add-btn') as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    btn.click();
+    expect(emitted).toBeTrue();
+  });
+
+  it('section galerie editable rendue meme avec gallery vide', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.gallery')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.gallery-add-tile')).toBeTruthy();
+  });
 });

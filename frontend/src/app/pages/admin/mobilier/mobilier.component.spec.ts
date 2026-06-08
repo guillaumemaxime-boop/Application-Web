@@ -654,4 +654,136 @@ describe('MobilierComponent', () => {
     expect(cmp.furnitureGallery()[1]).toEqual({ url: 'b', crop: null, colSpan: 2, rowSpan: 3 } as any);
   });
 
+  it('togglePreviewFullscreen bascule le signal', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.previewFullscreen()).toBeFalse();
+    cmp.togglePreviewFullscreen();
+    expect(cmp.previewFullscreen()).toBeTrue();
+    cmp.togglePreviewFullscreen();
+    expect(cmp.previewFullscreen()).toBeFalse();
+  });
+
+  it('previewFullscreenLabel reflete l\'etat fullscreen', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.previewFullscreen.set(false);
+    expect(cmp.previewFullscreenLabel()).toContain('plein');
+    cmp.previewFullscreen.set(true);
+    expect(cmp.previewFullscreenLabel()).toContain('duire');
+  });
+
+  it('mobilierViewMode default form, switche preview', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.mobilierViewMode()).toBe('form');
+    cmp.mobilierViewMode.set('preview');
+    expect(cmp.mobilierViewMode()).toBe('preview');
+  });
+
+  it('onPreviewTextFieldEdit patche form value + marque dirty', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.onPreviewTextFieldEdit({ field: 'title', value: 'Nouveau titre' });
+    expect(cmp.furnitureForm.get('title').value).toBe('Nouveau titre');
+    expect(cmp.furnitureForm.get('title').dirty).toBeTrue();
+  });
+
+  it('onPreviewGalleryAdd no-op quand galleryEditor absent', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.galleryEditor = undefined;
+    expect(() => cmp.onPreviewGalleryAdd()).not.toThrow();
+  });
+
+  it('onPreviewCoverEdit crop appelle coverImageField.openCrop', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const stub = { openCrop: jasmine.createSpy('openCrop'), openPicker: jasmine.createSpy('openPicker') };
+    cmp.coverImageField = stub;
+    cmp.onPreviewCoverEdit('crop');
+    expect(stub.openCrop).toHaveBeenCalled();
+    expect(stub.openPicker).not.toHaveBeenCalled();
+  });
+
+  it('onPreviewCoverEdit replace appelle coverImageField.openPicker', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const stub = { openCrop: jasmine.createSpy('openCrop'), openPicker: jasmine.createSpy('openPicker') };
+    cmp.coverImageField = stub;
+    cmp.onPreviewCoverEdit('replace');
+    expect(stub.openPicker).toHaveBeenCalled();
+    expect(stub.openCrop).not.toHaveBeenCalled();
+  });
+
+  it('onPreviewGalleryItemEdit crop appelle galleryEditor.openCropFor', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const stub = { openCropFor: jasmine.createSpy('openCropFor'), openReplaceFor: jasmine.createSpy('openReplaceFor') };
+    cmp.galleryEditor = stub;
+    cmp.onPreviewGalleryItemEdit({ index: 2, action: 'crop' });
+    expect(stub.openCropFor).toHaveBeenCalledWith(2);
+  });
+
+  it('onPreviewGalleryItemEdit replace appelle galleryEditor.openReplaceFor', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const stub = { openCropFor: jasmine.createSpy('openCropFor'), openReplaceFor: jasmine.createSpy('openReplaceFor') };
+    cmp.galleryEditor = stub;
+    cmp.onPreviewGalleryItemEdit({ index: 0, action: 'replace' });
+    expect(stub.openReplaceFor).toHaveBeenCalledWith(0);
+  });
+
+  it('saveFurniture toast error quand l\'API echoue', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'error');
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.furnitureForm.patchValue({ title: 'T', category: 'C', year: 2024 });
+    cmp.saveFurniture();
+    const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/furniture');
+    req.error(new ProgressEvent('error'));
+    expect(toast.error).toHaveBeenCalled();
+  });
+
 });

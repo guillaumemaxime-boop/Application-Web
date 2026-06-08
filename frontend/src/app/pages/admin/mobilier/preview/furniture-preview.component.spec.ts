@@ -67,4 +67,60 @@ describe('FurniturePreviewComponent', () => {
     (fixture.componentInstance as any).onTextFieldClick('title');
     expect(emitted).toBe('title');
   });
+
+  it('reemet galleryItemEdit du view', () => {
+    setup();
+    let emitted: any = null;
+    fixture.componentInstance.galleryItemEdit.subscribe(e => emitted = e);
+    (fixture.componentInstance as any).onGalleryItemEdit({ index: 0, action: 'remove' });
+    expect(emitted).toEqual({ index: 0, action: 'remove' });
+  });
+
+  it('reemet galleryReorder du view', () => {
+    setup();
+    let emitted: any = null;
+    fixture.componentInstance.galleryReorder.subscribe(o => emitted = o);
+    (fixture.componentInstance as any).onGalleryReorder([2, 0, 1]);
+    expect(emitted).toEqual([2, 0, 1]);
+  });
+
+  it('reemet galleryAdd du view', () => {
+    setup();
+    let emitted = false;
+    fixture.componentInstance.galleryAdd.subscribe(() => emitted = true);
+    (fixture.componentInstance as any).onGalleryAdd();
+    expect(emitted).toBeTrue();
+  });
+
+  it('reemet textFieldEdit du view avec field+value', () => {
+    setup();
+    let emitted: any = null;
+    fixture.componentInstance.textFieldEdit.subscribe(e => emitted = e);
+    (fixture.componentInstance as any).onTextFieldEdit({ field: 'title', value: 'Nouveau' });
+    expect(emitted).toEqual({ field: 'title', value: 'Nouveau' });
+  });
+
+  it('reemet galleryItemResize du view', () => {
+    setup();
+    let emitted: any = null;
+    fixture.componentInstance.galleryItemResize.subscribe(e => emitted = e);
+    (fixture.componentInstance as any).onGalleryItemResize({ index: 1, colSpan: 2, rowSpan: 3 });
+    expect(emitted).toEqual({ index: 1, colSpan: 2, rowSpan: 3 });
+  });
+
+  it('previewItem est null quand form absent', () => {
+    setup();
+    const cmp = fixture.componentInstance as any;
+    cmp.form = null;
+    cmp._formTick.update((n: number) => n + 1);
+    expect(cmp.previewItem()).toBeNull();
+  });
+
+  it('previewItem applique defaults sains aux champs absents du form', () => {
+    setup({});
+    const item = (fixture.componentInstance as any).previewItem();
+    expect(item.title).toBe('');
+    expect(item.tags).toEqual([]);
+    expect(item.featured).toBeFalse();
+  });
 });

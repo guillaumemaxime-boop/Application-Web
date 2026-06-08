@@ -86,4 +86,5 @@ describe('ReorderableDirective', () => {
   it('detaches all listeners on destroy', () => {
     expect(() => fixture.destroy()).not.toThrow();
   });
+
 });
