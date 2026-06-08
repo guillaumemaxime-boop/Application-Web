@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, Output, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
@@ -151,7 +151,11 @@ import { roleStyle } from '../../utils/title-style';
                           </div>
                           <div class="resize-handle"
                                (pointerdown)="onResizeStart($event, i)"
-                               aria-hidden="true"></div>
+                               title="Glisser pour redimensionner ({{ img.colSpan ?? 1 }}×{{ img.rowSpan ?? 1 }})"
+                               aria-hidden="true">⤡</div>
+                          @if (resizingIndex() === i) {
+                            <div class="resize-badge">{{ resizingCols() }} × {{ resizingRows() }}</div>
+                          }
                         </div>
                       </figure>
                     </li>
@@ -288,13 +292,27 @@ import { roleStyle } from '../../utils/title-style';
     .gallery-img-wrap:hover .edit-overlay, .gallery-img-wrap:focus-within .edit-overlay { opacity: 1; background: rgba(0,0,0,0.4); }
     .gallery-img-wrap .edit-btn { padding: 4px 8px; font-size: 0.75rem; }
     .gallery-img-wrap .resize-handle {
-      position: absolute; right: 0; bottom: 0;
-      width: 18px; height: 18px;
-      background: var(--color-bg); border: 1px solid var(--color-line);
-      border-top-left-radius: 4px; cursor: nwse-resize; z-index: 4;
-      opacity: 0.7; transition: opacity 180ms ease;
+      position: absolute; right: 4px; bottom: 4px;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--color-ink); color: var(--color-bg);
+      border: 2px solid var(--color-bg);
+      border-radius: 50%;
+      font-size: 1rem; line-height: 1; font-weight: bold;
+      cursor: nwse-resize; z-index: 4;
+      opacity: 0.85; transition: opacity 180ms ease, transform 180ms ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      user-select: none;
+      touch-action: none;
     }
-    .gallery-img-wrap .resize-handle:hover { opacity: 1; }
+    .gallery-img-wrap .resize-handle:hover { opacity: 1; transform: scale(1.15); }
+    .resize-badge {
+      position: absolute; top: 8px; left: 8px;
+      padding: 4px 10px; background: var(--color-ink); color: var(--color-bg);
+      font-size: 0.85rem; font-weight: 600; border-radius: 3px;
+      pointer-events: none; z-index: 5;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
     .g-grid.editable { list-style: none; padding: 0; margin: 0; }
     .gallery-add-tile { display: block; }
     .gallery-add-btn {
@@ -382,6 +400,10 @@ export class FurnitureDetailViewComponent implements OnDestroy {
 
   private resizing: { index: number; startX: number; startY: number; startCol: number; startRow: number; cellW: number; cellH: number } | null = null;
 
+  protected readonly resizingIndex = signal<number | null>(null);
+  protected readonly resizingCols = signal(1);
+  protected readonly resizingRows = signal(1);
+
   protected onResizeStart(ev: PointerEvent, index: number): void {
     ev.preventDefault();
     ev.stopPropagation();
@@ -394,12 +416,17 @@ export class FurnitureDetailViewComponent implements OnDestroy {
     const gap = 16;
     const cellW = (rect.width - gap * (cols - 1)) / cols;
     const cellH = 220;
+    const startCol = item.colSpan ?? 1;
+    const startRow = item.rowSpan ?? 1;
     this.resizing = {
       index,
       startX: ev.clientX, startY: ev.clientY,
-      startCol: item.colSpan ?? 1, startRow: item.rowSpan ?? 1,
+      startCol, startRow,
       cellW, cellH,
     };
+    this.resizingIndex.set(index);
+    this.resizingCols.set(startCol);
+    this.resizingRows.set(startRow);
     window.addEventListener('pointermove', this.onResizeMove);
     window.addEventListener('pointerup', this.onResizeEnd);
     (ev.target as HTMLElement & { setPointerCapture?: (id: number) => void }).setPointerCapture?.(ev.pointerId);
@@ -411,11 +438,14 @@ export class FurnitureDetailViewComponent implements OnDestroy {
     const dy = ev.clientY - this.resizing.startY;
     const newCol = Math.max(1, Math.min(3, this.resizing.startCol + Math.round(dx / (this.resizing.cellW + 16))));
     const newRow = Math.max(1, Math.min(4, this.resizing.startRow + Math.round(dy / (this.resizing.cellH + 16))));
+    this.resizingCols.set(newCol);
+    this.resizingRows.set(newRow);
     this.galleryItemResize.emit({ index: this.resizing.index, colSpan: newCol, rowSpan: newRow });
   };
 
   private readonly onResizeEnd = (): void => {
     this.resizing = null;
+    this.resizingIndex.set(null);
     window.removeEventListener('pointermove', this.onResizeMove);
     window.removeEventListener('pointerup', this.onResizeEnd);
   };
