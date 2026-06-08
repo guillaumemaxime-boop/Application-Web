@@ -275,9 +275,9 @@ import { enrichSlides } from '../../../utils/display-slides';
        Angular sur les composants enfants). Les pickers position:fixed s'affichent
        toujours au viewport grace a leur z-index. */
     .admin-form.is-hidden { position: absolute; left: -100vw; top: 0; width: 0; height: 0; overflow: hidden; pointer-events: none; }
-    /* Les pickers ouverts depuis le form re-activent pointer-events pour rester cliquables */
-    .admin-form.is-hidden ::ng-deep .picker-backdrop,
-    .admin-form.is-hidden ::ng-deep .crop-backdrop { pointer-events: auto; }
+    /* L'override pointer-events: auto sur .picker-backdrop / .crop-backdrop est
+       dans styles.css (global, hors view encapsulation Angular) pour fonctionner
+       en build production. */
     .admin-preview { max-height: calc(100vh - 100px); overflow-y: auto; background: var(--color-bg-alt); border: 1px solid var(--color-line); padding: 24px; }
     .admin-preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px -8px 16px; padding: 0 4px; }
     .admin-preview-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-mute); }

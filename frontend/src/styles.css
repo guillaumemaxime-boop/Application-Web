@@ -142,6 +142,17 @@ select:focus-visible,
   outline-color: #fff;
 }
 
+/* Les modales picker/crop ouvertes depuis un form cache (mode preview admin)
+   doivent rester pleinement interactives, malgre le `pointer-events: none`
+   du parent. Regle GLOBALE (hors view encapsulation Angular) pour pierce
+   les composants enfants. */
+.picker-backdrop,
+.picker-backdrop *,
+.crop-backdrop,
+.crop-backdrop * {
+  pointer-events: auto;
+}
+
 /* Skip link : invisible jusqu'au focus clavier */
 .skip-link {
   position: absolute;
