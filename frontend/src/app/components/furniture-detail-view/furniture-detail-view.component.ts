@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnDestroy, Output, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, Input, NgZone, OnDestroy, Output, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
@@ -135,7 +135,7 @@ import { roleStyle } from '../../utils/title-style';
               @if (editable) {
                 <ul class="g-grid editable" appReorderable (reordered)="galleryReorder.emit($event)">
                   @for (img of item.gallery; track img.url; let i = $index) {
-                    <li>
+                    <li class="g-item-draggable">
                       <figure [style.grid-column]="'span ' + (img.colSpan ?? 1)"
                               [style.grid-row]="'span ' + (img.rowSpan ?? 1)">
                         <div class="gallery-img-wrap">
@@ -144,6 +144,7 @@ import { roleStyle } from '../../utils/title-style';
                             [crop]="img.crop ?? null"
                             [alt]="item.title + ' — vue ' + (i + 1)"
                             mode="cover" />
+                          <div class="drag-handle" title="Glisser pour réordonner" aria-hidden="true">⋮⋮</div>
                           <div class="edit-overlay">
                             <button type="button" class="edit-btn" aria-label="Cadrer cette image" (click)="galleryItemEdit.emit({ index: i, action: 'crop' })">✂</button>
                             <button type="button" class="edit-btn" aria-label="Remplacer cette image" (click)="galleryItemEdit.emit({ index: i, action: 'replace' })">🖼</button>
@@ -160,7 +161,7 @@ import { roleStyle } from '../../utils/title-style';
                       </figure>
                     </li>
                   }
-                  <li class="gallery-add-tile">
+                  <li class="gallery-add-tile" data-no-drag>
                     <button type="button" class="gallery-add-btn" aria-label="Ajouter une image à la galerie" (click)="galleryAdd.emit()">
                       <span class="gallery-add-icon">+</span>
                       <span class="gallery-add-label">Ajouter une image</span>
@@ -306,6 +307,22 @@ import { roleStyle } from '../../utils/title-style';
       touch-action: none;
     }
     .gallery-img-wrap .resize-handle:hover { opacity: 1; transform: scale(1.15); }
+    .gallery-img-wrap .drag-handle {
+      position: absolute; top: 4px; left: 4px;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--color-ink); color: var(--color-bg);
+      border: 2px solid var(--color-bg);
+      border-radius: 50%;
+      font-size: 0.85rem; line-height: 1; font-weight: bold; letter-spacing: -2px;
+      cursor: grab; z-index: 4;
+      opacity: 0.85; transition: opacity 180ms ease, transform 180ms ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      user-select: none;
+    }
+    .gallery-img-wrap .drag-handle:hover { opacity: 1; transform: scale(1.15); }
+    .gallery-img-wrap .drag-handle:active { cursor: grabbing; }
+    .g-item-draggable[draggable="true"]:active { cursor: grabbing; }
     .resize-badge {
       position: absolute; top: 8px; left: 8px;
       padding: 4px 10px; background: var(--color-ink); color: var(--color-bg);
@@ -328,6 +345,9 @@ import { roleStyle } from '../../utils/title-style';
   `]
 })
 export class FurnitureDetailViewComponent implements OnDestroy {
+  private readonly zone = inject(NgZone);
+  private readonly cdr = inject(ChangeDetectorRef);
+
   @Input({ required: true }) item: Furniture | null = null;
   @Input() story: Story | null = null;
   @Input() displaySlides: DisplaySlide[] = [];
@@ -438,14 +458,22 @@ export class FurnitureDetailViewComponent implements OnDestroy {
     const dy = ev.clientY - this.resizing.startY;
     const newCol = Math.max(1, Math.min(3, this.resizing.startCol + Math.round(dx / (this.resizing.cellW + 16))));
     const newRow = Math.max(1, Math.min(4, this.resizing.startRow + Math.round(dy / (this.resizing.cellH + 16))));
-    this.resizingCols.set(newCol);
-    this.resizingRows.set(newRow);
-    this.galleryItemResize.emit({ index: this.resizing.index, colSpan: newCol, rowSpan: newRow });
+    // Le pointermove ecoute via window est hors NgZone : re-enter pour
+    // que les bindings template du parent (preview) se reevaluent pendant
+    // le drag, sans attendre une autre interaction utilisateur.
+    this.zone.run(() => {
+      this.resizingCols.set(newCol);
+      this.resizingRows.set(newRow);
+      this.galleryItemResize.emit({ index: this.resizing!.index, colSpan: newCol, rowSpan: newRow });
+      this.cdr.markForCheck();
+    });
   };
 
   private readonly onResizeEnd = (): void => {
-    this.resizing = null;
-    this.resizingIndex.set(null);
+    this.zone.run(() => {
+      this.resizing = null;
+      this.resizingIndex.set(null);
+    });
     window.removeEventListener('pointermove', this.onResizeMove);
     window.removeEventListener('pointerup', this.onResizeEnd);
   };

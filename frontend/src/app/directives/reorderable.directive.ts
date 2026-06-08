@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, EventEmitter, OnDestroy, Output } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, EventEmitter, inject, NgZone, OnDestroy, Output } from '@angular/core';
 
 @Directive({
   selector: '[appReorderable]',
@@ -7,6 +7,7 @@ import { AfterViewInit, Directive, ElementRef, EventEmitter, OnDestroy, Output }
 export class ReorderableDirective implements AfterViewInit, OnDestroy {
   @Output() reordered = new EventEmitter<number[]>();
 
+  private readonly zone = inject(NgZone);
   private dragSrcIndex: number | null = null;
   private observer: MutationObserver | null = null;
   private listeners: Array<{ el: HTMLElement; type: string; fn: EventListener }> = [];
@@ -33,7 +34,8 @@ export class ReorderableDirective implements AfterViewInit, OnDestroy {
 
   private attach() {
     this.detachListeners();
-    const children = Array.from(this.host.nativeElement.children) as HTMLElement[];
+    const children = (Array.from(this.host.nativeElement.children) as HTMLElement[])
+      .filter(el => el.dataset['noDrag'] === undefined);
     children.forEach((el, idx) => {
       el.draggable = true;
       el.dataset['idx'] = String(idx);
@@ -65,7 +67,11 @@ export class ReorderableDirective implements AfterViewInit, OnDestroy {
     const order = Array.from(this.host.nativeElement.children).map((_, i) => i);
     const [moved] = order.splice(this.dragSrcIndex, 1);
     order.splice(targetIndex, 0, moved);
-    this.reordered.emit(order);
+    // Listeners drag natifs sont hors NgZone : re-enter pour que les
+    // bindings du parent (preview) se reevaluent immediatement apres le drop.
+    this.zone.run(() => {
+      this.reordered.emit(order);
+    });
     this.dragSrcIndex = null;
   }
 }
