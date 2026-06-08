@@ -64,7 +64,7 @@ export const DEFAULT_ASPECT_RATIOS: AspectRatio[] = [
     </div>
   `,
   styles: [`
-    .crop-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1100;
+    .crop-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1400;
                      display: flex; align-items: center; justify-content: center; padding: 24px; }
     .crop-panel { background: var(--color-bg); width: 100%; max-width: 900px; max-height: 90vh;
                   display: flex; flex-direction: column; }

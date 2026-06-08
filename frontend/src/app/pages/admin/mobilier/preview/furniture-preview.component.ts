@@ -24,6 +24,7 @@ import { Subscription } from 'rxjs';
       (galleryReorder)="onGalleryReorder($event)"
       (galleryAdd)="onGalleryAdd()"
       (textFieldClick)="onTextFieldClick($event)"
+      (textFieldEdit)="onTextFieldEdit($event)"
       (galleryItemResize)="onGalleryItemResize($event)" />
   `,
   styles: []
@@ -40,6 +41,7 @@ export class FurniturePreviewComponent implements OnInit, OnDestroy {
   @Output() galleryReorder = new EventEmitter<number[]>();
   @Output() galleryAdd = new EventEmitter<void>();
   @Output() textFieldClick = new EventEmitter<EditableTextField>();
+  @Output() textFieldEdit = new EventEmitter<{ field: EditableTextField; value: string }>();
   @Output() galleryItemResize = new EventEmitter<{ index: number; colSpan: number; rowSpan: number }>();
 
   /**
@@ -91,5 +93,6 @@ export class FurniturePreviewComponent implements OnInit, OnDestroy {
   protected onGalleryReorder(order: number[]): void { this.galleryReorder.emit(order); }
   protected onGalleryAdd(): void { this.galleryAdd.emit(); }
   protected onTextFieldClick(name: EditableTextField): void { this.textFieldClick.emit(name); }
+  protected onTextFieldEdit(e: { field: EditableTextField; value: string }): void { this.textFieldEdit.emit(e); }
   protected onGalleryItemResize(e: { index: number; colSpan: number; rowSpan: number }): void { this.galleryItemResize.emit(e); }
 }

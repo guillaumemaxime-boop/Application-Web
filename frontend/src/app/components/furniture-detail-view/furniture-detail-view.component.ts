@@ -37,17 +37,29 @@ import { roleStyle } from '../../utils/title-style';
           <div class="container hero-content">
             @if (editable) {
               <span class="eyebrow editable-text" [ngStyle]="eyebrowStyle()" role="button" tabindex="0"
+                    [attr.contenteditable]="isEditingField('category')"
                     (click)="textFieldClick.emit('category')"
-                    (keydown.enter)="textFieldClick.emit('category')"
-                    (keydown.space)="textFieldClick.emit('category'); $event.preventDefault()">{{ item.category }} · {{ item.year }}</span>
+                    (dblclick)="startInlineEdit($event, 'category')"
+                    (blur)="commitInlineEdit($event, 'category')"
+                    (keydown.enter)="onInlineEnter($event, 'category')"
+                    (keydown.escape)="cancelInlineEdit($event)"
+                    (keydown.space)="onSpaceWhenNotEditing($event, 'category')">{{ item.category }} · {{ item.year }}</span>
               <h1 class="editable-text" [ngStyle]="titleStyle()" role="button" tabindex="0"
+                  [attr.contenteditable]="isEditingField('title')"
                   (click)="textFieldClick.emit('title')"
-                  (keydown.enter)="textFieldClick.emit('title')"
-                  (keydown.space)="textFieldClick.emit('title'); $event.preventDefault()">{{ item.title }}</h1>
+                  (dblclick)="startInlineEdit($event, 'title')"
+                  (blur)="commitInlineEdit($event, 'title')"
+                  (keydown.enter)="onInlineEnter($event, 'title')"
+                  (keydown.escape)="cancelInlineEdit($event)"
+                  (keydown.space)="onSpaceWhenNotEditing($event, 'title')">{{ item.title }}</h1>
               <p class="material editable-text" role="button" tabindex="0"
+                 [attr.contenteditable]="isEditingField('material')"
                  (click)="textFieldClick.emit('material')"
-                 (keydown.enter)="textFieldClick.emit('material')"
-                 (keydown.space)="textFieldClick.emit('material'); $event.preventDefault()">{{ item.material }}</p>
+                 (dblclick)="startInlineEdit($event, 'material')"
+                 (blur)="commitInlineEdit($event, 'material')"
+                 (keydown.enter)="onInlineEnter($event, 'material')"
+                 (keydown.escape)="cancelInlineEdit($event)"
+                 (keydown.space)="onSpaceWhenNotEditing($event, 'material')">{{ item.material }}</p>
             } @else {
               <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ item.category }} · {{ item.year }}</span>
               <h1 [ngStyle]="titleStyle()">{{ item.title }}</h1>
@@ -60,17 +72,25 @@ import { roleStyle } from '../../utils/title-style';
           <div class="container narrow">
             @if (editable) {
               <p class="lead editable-text" role="button" tabindex="0"
+                 [attr.contenteditable]="isEditingField('shortDescription')"
                  (click)="textFieldClick.emit('shortDescription')"
-                 (keydown.enter)="textFieldClick.emit('shortDescription')"
-                 (keydown.space)="textFieldClick.emit('shortDescription'); $event.preventDefault()">{{ item.shortDescription }}</p>
+                 (dblclick)="startInlineEdit($event, 'shortDescription')"
+                 (blur)="commitInlineEdit($event, 'shortDescription')"
+                 (keydown.enter)="onInlineEnter($event, 'shortDescription')"
+                 (keydown.escape)="cancelInlineEdit($event)"
+                 (keydown.space)="onSpaceWhenNotEditing($event, 'shortDescription')">{{ item.shortDescription }}</p>
             } @else {
               <p class="lead">{{ item.shortDescription }}</p>
             }
             @if (editable) {
               <p class="body editable-text" role="button" tabindex="0"
+                 [attr.contenteditable]="isEditingField('description')"
                  (click)="textFieldClick.emit('description')"
-                 (keydown.enter)="textFieldClick.emit('description')"
-                 (keydown.space)="textFieldClick.emit('description'); $event.preventDefault()">{{ item.description }}</p>
+                 (dblclick)="startInlineEdit($event, 'description')"
+                 (blur)="commitInlineEdit($event, 'description')"
+                 (keydown.enter)="onInlineEnter($event, 'description')"
+                 (keydown.escape)="cancelInlineEdit($event)"
+                 (keydown.space)="onSpaceWhenNotEditing($event, 'description')">{{ item.description }}</p>
             } @else {
               <p class="body">{{ item.description }}</p>
             }
@@ -258,6 +278,8 @@ import { roleStyle } from '../../utils/title-style';
     .edit-btn-danger:hover { background: #c44; color: #fff; border-color: #c44; }
     .editable-text { cursor: pointer; outline: 1px dashed transparent; outline-offset: 4px; transition: outline-color 180ms ease; border-radius: 2px; }
     .editable-text:hover, .editable-text:focus-visible { outline-color: currentColor; }
+    .editable-text[contenteditable="true"] { outline: 2px solid var(--color-accent, #2a9d8f); outline-offset: 4px; background: rgba(255,255,255,0.08); cursor: text; }
+    .editable-text[contenteditable="true"]:focus { outline-color: var(--color-accent, #2a9d8f); }
     .gallery-img-wrap { position: relative; }
     .gallery-img-wrap .edit-overlay {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -302,8 +324,61 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   @Output() galleryReorder = new EventEmitter<number[]>();
   @Output() galleryAdd = new EventEmitter<void>();
   @Output() textFieldClick = new EventEmitter<EditableTextField>();
+  @Output() textFieldEdit = new EventEmitter<{ field: EditableTextField; value: string }>();
   @Output() viewerOpen = new EventEmitter<StoryItem[]>();
   @Output() galleryItemResize = new EventEmitter<{ index: number; colSpan: number; rowSpan: number }>();
+
+  protected editingField: EditableTextField | null = null;
+
+  protected isEditingField(name: EditableTextField): boolean | null {
+    return this.editingField === name ? true : null;
+  }
+
+  protected startInlineEdit(ev: Event, field: EditableTextField): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (field === 'category') return;  // category combine "categorie · annee", non editable inline
+    this.editingField = field;
+    const el = ev.currentTarget as HTMLElement;
+    queueMicrotask(() => {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    });
+  }
+
+  protected commitInlineEdit(ev: FocusEvent, field: EditableTextField): void {
+    if (this.editingField !== field) return;
+    const el = ev.target as HTMLElement;
+    const value = (el.textContent ?? '').trim();
+    this.editingField = null;
+    this.textFieldEdit.emit({ field, value });
+  }
+
+  protected onInlineEnter(ev: Event, field: EditableTextField): void {
+    if (this.editingField === field) {
+      ev.preventDefault();
+      (ev.target as HTMLElement).blur();
+    } else {
+      this.textFieldClick.emit(field);
+    }
+  }
+
+  protected cancelInlineEdit(ev: Event): void {
+    if (!this.editingField) return;
+    ev.preventDefault();
+    this.editingField = null;
+    (ev.target as HTMLElement).blur();
+  }
+
+  protected onSpaceWhenNotEditing(ev: Event, field: EditableTextField): void {
+    if (this.editingField === field) return;  // espace normal en édition
+    ev.preventDefault();
+    this.textFieldClick.emit(field);
+  }
 
   private resizing: { index: number; startX: number; startY: number; startCol: number; startRow: number; cellW: number; cellH: number } | null = null;
 

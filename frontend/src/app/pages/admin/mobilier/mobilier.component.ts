@@ -201,11 +201,18 @@ import { enrichSlides } from '../../../utils/display-slides';
           <aside class="admin-preview" [class.fullscreen]="previewFullscreen()" aria-label="Aperçu de la fiche">
             <div class="admin-preview-toolbar">
               <span class="admin-preview-label">Aperçu</span>
-              <button type="button" class="btn-preview-toggle"
-                      (click)="togglePreviewFullscreen()"
-                      [attr.aria-label]="previewFullscreenLabel()">
-                @if (previewFullscreen()) { ⤡ Réduire } @else { ⤢ Plein écran }
-              </button>
+              <div class="admin-preview-actions">
+                <button type="button" class="btn-preview-save"
+                        [disabled]="furnitureForm.invalid || saving()"
+                        (click)="saveFurniture()">
+                  @if (saving()) { Enregistrement… } @else { 💾 Enregistrer }
+                </button>
+                <button type="button" class="btn-preview-toggle"
+                        (click)="togglePreviewFullscreen()"
+                        [attr.aria-label]="previewFullscreenLabel()">
+                  @if (previewFullscreen()) { ⤡ Réduire } @else { ⤢ Plein écran }
+                </button>
+              </div>
             </div>
             <app-furniture-preview
               [form]="furnitureForm"
@@ -217,6 +224,7 @@ import { enrichSlides } from '../../../utils/display-slides';
               (galleryReorder)="onPreviewGalleryReorder($event)"
               (galleryAdd)="onPreviewGalleryAdd()"
               (textFieldClick)="focusField($event)"
+              (textFieldEdit)="onPreviewTextFieldEdit($event)"
               (galleryItemResize)="onPreviewGalleryItemResize($event)" />
           </aside>
         }
@@ -246,6 +254,10 @@ import { enrichSlides } from '../../../utils/display-slides';
     .admin-preview-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-mute); }
     .btn-preview-toggle { padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-line); color: var(--color-ink-soft); font-size: 0.78rem; cursor: pointer; font-family: inherit; }
     .btn-preview-toggle:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .admin-preview-actions { display: inline-flex; gap: 8px; align-items: center; }
+    .btn-preview-save { padding: 6px 14px; background: var(--color-ink); color: var(--color-bg); border: 1px solid var(--color-ink); font-size: 0.78rem; cursor: pointer; font-family: inherit; font-weight: 600; }
+    .btn-preview-save:hover:not(:disabled) { background: var(--color-bg); color: var(--color-ink); }
+    .btn-preview-save:disabled { opacity: 0.4; cursor: not-allowed; }
     .admin-preview.fullscreen { position: fixed; inset: 0; max-height: none; z-index: 1200; border: 0; padding: 24px 32px; }
     .admin-preview.fullscreen .admin-preview-toolbar { margin-top: 0; }
     .form { display: flex; flex-direction: column; gap: 20px; padding: 32px; border: 1px solid var(--color-line); background: var(--color-bg); }
@@ -621,6 +633,11 @@ export class MobilierComponent implements OnInit, OnDestroy {
 
   onPreviewGalleryAdd(): void {
     this.galleryEditor?.openPicker();
+  }
+
+  onPreviewTextFieldEdit(e: { field: string; value: string }): void {
+    this.furnitureForm.patchValue({ [e.field]: e.value });
+    this.furnitureForm.get(e.field)?.markAsDirty();
   }
 
   onPreviewGalleryReorder(order: number[]): void {
