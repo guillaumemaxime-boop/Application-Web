@@ -20,7 +20,7 @@ class FurnitureTest {
                 2024,
                 "https://picsum.photos/seed/onde-cover/1200/800",
                 null,
-                List.of(new GalleryImage("https://picsum.photos/seed/onde-1/1200/800", null)),
+                List.of(new GalleryImage("https://picsum.photos/seed/onde-1/1200/800", null, 1, 1)),
                 "Une silhouette inspirée du mouvement de la mer",
                 "Description détaillée",
                 List.of("Hauteur 92 cm", "Largeur 78 cm"),
@@ -84,9 +84,9 @@ class FurnitureTest {
     void testFurnitureRecord_WithMultipleGalleryImages() {
         // Arrange
         List<GalleryImage> galleryImages = List.of(
-                new GalleryImage("https://example.com/image1.jpg", null),
-                new GalleryImage("https://example.com/image2.jpg", null),
-                new GalleryImage("https://example.com/image3.jpg", null)
+                new GalleryImage("https://example.com/image1.jpg", null, 1, 1),
+                new GalleryImage("https://example.com/image2.jpg", null, 1, 1),
+                new GalleryImage("https://example.com/image3.jpg", null, 1, 1)
         );
 
         // Act
@@ -159,7 +159,7 @@ class FurnitureTest {
                 2023,
                 "https://example.com/cover.jpg",
                 null,
-                List.of(new GalleryImage("https://example.com/image1.jpg", null)),
+                List.of(new GalleryImage("https://example.com/image1.jpg", null, 1, 1)),
                 "Short description",
                 "Full description",
                 List.of("Dimension 1"),
@@ -180,7 +180,7 @@ class FurnitureTest {
                 2023,
                 "https://example.com/cover.jpg",
                 null,
-                List.of(new GalleryImage("https://example.com/image1.jpg", null)),
+                List.of(new GalleryImage("https://example.com/image1.jpg", null, 1, 1)),
                 "Short description",
                 "Full description",
                 List.of("Dimension 1"),

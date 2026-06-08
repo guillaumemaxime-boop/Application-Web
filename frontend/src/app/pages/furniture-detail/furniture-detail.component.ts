@@ -9,17 +9,14 @@ import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
 import { enrichSlides } from '../../utils/display-slides';
-import { cropTransform, CropStyle } from '../../utils/crop-transform';
-import { CroppedImageCanvasComponent } from '../admin/shared/cropped-image-canvas.component';
-import { GalleryItem } from '../../models/gallery-item.model';
-import { StoryInlineComponent } from '../../components/story-inline/story-inline.component';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
+import { FurnitureDetailViewComponent } from '../../components/furniture-detail-view/furniture-detail-view.component';
 
 @Component({
   selector: 'app-furniture-detail',
   standalone: true,
-  imports: [NgStyle, RouterLink, StoryInlineComponent, StoryViewerComponent, ContactFormComponent, CroppedImageCanvasComponent],
+  imports: [NgStyle, RouterLink, FurnitureDetailViewComponent, StoryViewerComponent, ContactFormComponent],
   template: `
     @if (loading()) {
       <div class="container section"><p class="status">Chargement…</p></div>
@@ -29,87 +26,19 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
         <p><a class="btn-link" routerLink="/mobilier">Retour au catalogue</a></p>
       </div>
     } @else if (item(); as f) {
-      <article class="fade-in">
-        <header class="hero">
-          <div class="hero-bg">
-            <app-cropped-image-canvas
-              [imageUrl]="f.coverImage"
-              [crop]="f.coverCrop ?? null"
-              [alt]="f.title"
-              mode="cover" />
-          </div>
-          <div class="container hero-content">
-            <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ f.category }} · {{ f.year }}</span>
-            <h1 [ngStyle]="titleStyle()">{{ f.title }}</h1>
-            <p class="material">{{ f.material }}</p>
-          </div>
-        </header>
-
-        <section class="section description">
-          <div class="container narrow">
-            <p class="lead">{{ f.shortDescription }}</p>
-            <p class="body">{{ f.description }}</p>
-
-            <dl class="specs">
-              <div><dt>Designer</dt><dd>{{ f.designer }}</dd></div>
-              <div>
-                <dt>Dimensions</dt>
-                <dd>
-                  <ul>
-                    @for (d of f.dimensions; track d) { <li>{{ d }}</li> }
-                  </ul>
-                </dd>
-              </div>
-            </dl>
-
-            @if (f.tags && f.tags.length > 0) {
-              <div class="tags-list">
-                @for (t of f.tags; track t) {
-                  <a class="tag-chip" [routerLink]="['/creations']" [queryParams]="{ tags: t }">{{ t }}</a>
-                }
-              </div>
-            }
-          </div>
-        </section>
-
-        @if (hasSlides()) {
-          <app-story-inline [slides]="displaySlides()"></app-story-inline>
-
-          @if (f.showStoryButton) {
-            <div class="container narrow viewer-link-wrap">
-              <button type="button" class="viewer-link" (click)="openViewer()">
-                Voir en plein écran →
-              </button>
-            </div>
-          }
-        }
-
-        @if (f.gallery.length > 0) {
-          <section class="section gallery">
-            <div class="container">
-              <div class="g-grid">
-                @for (img of f.gallery; track img.url; let i = $index) {
-                  <figure [class.tall]="i % 3 === 0">
-                    <div class="gallery-img-wrap">
-                      <img [src]="img.url" [alt]="f.title + ' — vue ' + (i + 1)" loading="lazy"
-                           [style.transform]="galleryItemStyle(img).transform"
-                           [style.transform-origin]="galleryItemStyle(img).transformOrigin" />
-                    </div>
-                  </figure>
-                }
-              </div>
-            </div>
-          </section>
-        }
-
-        <section class="section cta">
+      <app-furniture-detail-view
+        [item]="f"
+        [displaySlides]="displaySlides()"
+        [content]="content()"
+        (viewerOpen)="onViewerOpen($event)">
+        <section class="section cta" ctaSlot>
           <div class="container">
             <h2 [ngStyle]="sectionTitleStyle()">Une pièce vous intéresse ?</h2>
             <p>Contactez le studio pour les disponibilités et les conditions d'édition.</p>
             <button type="button" class="btn-link cta-btn" (click)="openContact()">Contacter le studio →</button>
           </div>
         </section>
-      </article>
+      </app-furniture-detail-view>
 
       @if (viewerQueue().length > 0) {
         <app-story-viewer [queue]="viewerQueue()" (closed)="closeViewer()"></app-story-viewer>
@@ -125,141 +54,8 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
     }
   `,
   styles: [`
-    .hero {
-      position: relative;
-      min-height: 70vh;
-      display: flex;
-      align-items: flex-end;
-      padding: 120px 0 72px;
-      overflow: hidden;
-    }
-    .hero-bg {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-    }
-    .hero-bg img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .hero-bg app-cropped-image-canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    .hero-bg::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 60%, transparent 100%);
-    }
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      color: #ffffff;
-    }
-    .hero-content .eyebrow,
-    .hero-content .material {
-      color: rgba(255, 255, 255, 0.7);
-    }
-    .hero-content h1 {
-      color: #ffffff;
-      margin: 16px 0 18px;
-      max-width: 880px;
-    }
-    .material {
-      font-size: 0.85rem;
-      letter-spacing: 0.08em;
-    }
-
-    .narrow { max-width: 760px; }
-    .lead {
-      font-family: var(--serif);
-      font-size: 1.75rem;
-      line-height: 1.4;
-      color: var(--color-ink);
-    }
-    .body {
-      margin-top: 32px;
-      font-size: 1.05rem;
-      line-height: 1.8;
-      white-space: pre-line;
-    }
-
-    .specs {
-      margin-top: 48px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      border-top: 1px solid var(--color-line);
-      padding-top: 28px;
-    }
-    .specs > div { display: grid; grid-template-columns: 160px 1fr; gap: 16px; }
-    .specs dt {
-      font-size: 0.75rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--color-mute);
-      padding-top: 4px;
-    }
-    .specs dd { color: var(--color-ink); font-size: 0.95rem; }
-    .specs ul { list-style: none; }
-    .specs li { padding: 2px 0; }
-
-    .tags-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 24px; }
-    .tag-chip {
-      font-size: 0.78rem; padding: 4px 12px; background: var(--color-bg-alt);
-      border: 1px solid var(--color-line); color: var(--color-ink-soft); text-decoration: none;
-    }
-    .tag-chip:hover { color: var(--color-ink); border-color: var(--color-ink); }
-
-    .viewer-link-wrap {
-      display: flex;
-      justify-content: center;
-      padding: 0 0 96px;
-    }
-    .viewer-link {
-      background: none;
-      border: 1px solid var(--color-ink);
-      color: var(--color-ink);
-      font-size: 0.78rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      padding: 14px 28px;
-      cursor: pointer;
-      transition: background var(--transition), color var(--transition);
-    }
-    .viewer-link:hover {
-      background: var(--color-ink);
-      color: var(--color-bg);
-    }
-
-    .gallery .g-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-    figure {
-      overflow: hidden;
-      background: var(--color-bg-alt);
-      aspect-ratio: 4 / 3;
-    }
-    figure.tall { aspect-ratio: 3 / 4; }
-    .gallery-img-wrap {
-      position: relative;
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
-    }
-    .gallery-img-wrap img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
+    .status { color: var(--color-mute); }
+    .btn-link { color: var(--color-ink); text-decoration: underline; }
     .cta { text-align: center; border-top: 1px solid var(--color-line); }
     .cta p { margin: 16px 0 32px; }
     .cta .btn-link { margin: 0 auto; }
@@ -269,17 +65,6 @@ import { ContactFormComponent } from '../../components/contact-form/contact-form
       border-bottom: 1px solid var(--color-ink);
       font: inherit;
       cursor: pointer;
-    }
-
-    .status { color: var(--color-mute); }
-
-    @media (max-width: 960px) {
-      .gallery .g-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 600px) {
-      .gallery .g-grid { grid-template-columns: 1fr; }
-      .specs > div { grid-template-columns: 1fr; gap: 4px; }
-      .lead { font-size: 1.4rem; }
     }
   `]
 })
@@ -295,12 +80,6 @@ export class FurnitureDetailComponent {
   protected readonly contactOpen = signal(false);
   protected readonly content = signal<SiteContent>({});
 
-  protected readonly hasSlides = computed(() => {
-    const f = this.item();
-    if (!f) return false;
-    return !!f.coverImage || (f.slides?.length ?? 0) > 0;
-  });
-
   protected readonly displaySlides = computed<DisplaySlide[]>(() => {
     const f = this.item();
     if (!f) return [];
@@ -313,15 +92,7 @@ export class FurnitureDetailComponent {
     }, 'furniture');
   });
 
-  protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));
   protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
-  protected readonly eyebrowStyle      = computed(() => roleStyle(this.content(), 'eyebrow'));
-
-  protected readonly coverCropStyle = computed<CropStyle>(() => cropTransform(this.item()?.coverCrop));
-
-  protected galleryItemStyle(item: GalleryItem): CropStyle {
-    return cropTransform(item.crop);
-  }
 
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
@@ -347,29 +118,19 @@ export class FurnitureDetailComponent {
     });
   }
 
-  protected openViewer() {
-    const f = this.item();
-    if (!f) return;
-    const slides = this.displaySlides();
-    if (slides.length === 0) return;
-    this.viewerQueue.set([{
-      title: f.title,
-      subtitle: `${f.category} · ${f.year}`,
-      slides,
-      kind: 'furniture',
-      slug: f.slug,
-    }]);
+  protected onViewerOpen(queue: StoryItem[]): void {
+    this.viewerQueue.set(queue);
   }
 
-  protected closeViewer() {
+  protected closeViewer(): void {
     this.viewerQueue.set([]);
   }
 
-  protected openContact() {
+  protected openContact(): void {
     this.contactOpen.set(true);
   }
 
-  protected closeContact() {
+  protected closeContact(): void {
     this.contactOpen.set(false);
   }
 }

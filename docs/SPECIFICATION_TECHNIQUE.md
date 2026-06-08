@@ -1,6 +1,6 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.3.0
+**Version** : 2.4.0
 **Date** : 08/06/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
@@ -168,6 +168,8 @@ crop_x        DOUBLE       nullable  (% 0–100, cadrage item galerie)
 crop_y        DOUBLE       nullable
 crop_w        DOUBLE       nullable
 crop_h        DOUBLE       nullable
+col_span      INT          NOT NULL DEFAULT 1   (span CSS grille, 1–3)
+row_span      INT          NOT NULL DEFAULT 1   (span CSS grille, 1–4)
 position      INTEGER      (ordre d'affichage)
 
 furniture_dimension (N:1 → furniture, cascade delete)
@@ -204,6 +206,8 @@ crop_x        DOUBLE       nullable  (% 0–100, cadrage item galerie)
 crop_y        DOUBLE       nullable
 crop_w        DOUBLE       nullable
 crop_h        DOUBLE       nullable
+col_span      INT          NOT NULL DEFAULT 1   (span CSS grille, 1–3)
+row_span      INT          NOT NULL DEFAULT 1   (span CSS grille, 1–4)
 position      INTEGER
 
 exhibition_tag (N:1 → exhibition, cascade delete)
@@ -283,6 +287,7 @@ Index : idx_slider_story_position(slider_id, position)
 | `026-add-tags-to-furniture.yaml` | Table `furniture_tag` (`@ElementCollection` sur mobilier) |
 | `027-add-cover-focal-point.yaml` | Colonnes `cover_focal_x/y` sur `furniture` et `exhibition` (supersédé par 028) |
 | `028-replace-focal-point-with-crop.yaml` | DROP `cover_focal_x/y` sur `furniture` + `exhibition` ; ADD `cover_crop_x/y/w/h` (DOUBLE nullable) sur `furniture`, `exhibition`, `story` ; ADD `crop_x/y/w/h` (DOUBLE nullable) sur `furniture_gallery` + `exhibition_gallery` |
+| `029-add-gallery-item-spans.yaml` | ADD `col_span` + `row_span` INT NOT NULL DEFAULT 1 sur `furniture_gallery` et `exhibition_gallery` (spans grille WYSIWYG) |
 
 ### 3.3 Records Java (DTOs)
 
@@ -298,10 +303,12 @@ record ImageCrop(
     static ImageCrop ofNullable(Double x, Double y, Double w, Double h) { ... }
 }
 
-// model/GalleryImage.java — item de galerie avec cadrage optionnel
+// model/GalleryImage.java — item de galerie avec cadrage optionnel et spans grille
 record GalleryImage(
     @Size(max = 500) String url,
-    @Valid ImageCrop crop   // nullable
+    @Valid ImageCrop crop,          // nullable
+    @Min(1) @Max(3) Integer colSpan,  // span colonnes grille (défaut 1)
+    @Min(1) @Max(4) Integer rowSpan   // span rangées grille (défaut 1)
 ) {}
 
 // model/Furniture.java
@@ -377,7 +384,12 @@ record HomeFeedItem(
 interface Crop { x: number; y: number; w: number; h: number; }
 
 // models/gallery-item.model.ts
-interface GalleryItem { url: string; crop?: Crop | null; }
+interface GalleryItem {
+  url: string;
+  crop?: Crop | null;
+  colSpan?: number;   // span colonnes CSS grille (1–3, défaut 1 côté view)
+  rowSpan?: number;   // span rangées CSS grille (1–4, défaut 1 côté view)
+}
 
 // models/furniture.model.ts
 interface Furniture {
@@ -687,8 +699,11 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - Boutons filtre par catégorie + filtre "Tout"
 
 #### `FurnitureDetailComponent` (`/mobilier/:slug`)
+
+- Refactoré (375 → 137 lignes) — délègue le rendu à `<app-furniture-detail-view>`.
+- Responsabilités conservées : chargement API (`PortfolioService`), routing, story-viewer queue, contact form (projeté dans `[ctaSlot]`), hooks SEO (`Meta`/`Title`).
 - Signals : `item`, `loading`, `notFound`
-- Sections : hero avec specs (matière, designer, dimensions), description longue, galerie masonry 3 colonnes, CTA email
+- Template : `<app-furniture-detail-view [item]="item()" [story]="story()" [displaySlides]="displaySlides()" [content]="content()" (viewerOpen)="onViewerOpen($event)">` + `<ng-content select="[ctaSlot]">`.
 
 #### `ExhibitionsListComponent` (`/expositions`)
 - Liste chronologique `startDate DESC`
@@ -724,7 +739,77 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - `AccueilComponent` (`/admin/accueil`) : masonry home feed + composition des sliders d'actualités (drag & drop stories, assignation zone)
 - `/admin/sliders` redirige vers `/admin/accueil` (sliders fusionnés dans la page Accueil)
 
+#### `MobilierComponent` (`/admin/mobilier`) — WYSIWYG preview
+
+- **Toggle Modifier / Aperçu** : signal `mobilierViewMode` (`'form' | 'preview'`), rendu par onglets (`role="tablist"`).
+- Le formulaire reste **toujours dans le DOM** en mode preview (`position: absolute; left: -100vw`) pour préserver les `ViewChild` et laisser les modales `position: fixed` se rendre normalement.
+- IDs déterministes `field-title`, `field-category`, `field-material`, `field-shortDescription`, `field-description` sur les inputs/textareas pour le click-to-focus.
+- **Handlers preview** : `focusField(name)`, `onPreviewCoverEdit`, `onPreviewGalleryItemEdit`, `onPreviewGalleryReorder`, `onPreviewGalleryAdd`, `onPreviewGalleryItemResize`, `onPreviewTextFieldEdit`.
+- **`saveFurniture()`** : recharge l'item depuis la réponse serveur (au lieu de reset du form) — préserve la fiche après save.
+- **Toolbar preview** : bouton « 💾 Enregistrer » à côté du toggle plein écran.
+- **Toggle plein écran** : signal `previewFullscreen`. Styles : `.admin-preview.fullscreen { position: fixed; inset: 0; z-index: 1200 }`.
+- **Stack z-index** : preview fullscreen 1200 · photo picker 1300 · crop picker 1400.
+
 ### 5.5 Composants partagés
+
+#### `<app-furniture-detail-view>` (`FurnitureDetailViewComponent`)
+
+Chemin : `frontend/src/app/components/furniture-detail-view/furniture-detail-view.component.ts`
+
+Composant standalone purement présentation, partagé entre la page publique (`FurnitureDetailComponent`) et le preview admin (`FurniturePreviewComponent`). Aucune dépendance sur `HttpClient`, `Router` ou `PortfolioService`.
+
+**Inputs :**
+
+| Input | Type | Description |
+| ------- | ------ | ----------- |
+| `item` (required) | `Furniture \| null` | Pièce à rendre |
+| `story` | `Story \| null` | Première story attachée (story-inline) |
+| `displaySlides` | `DisplaySlide[]` | Slides à afficher dans le story-inline |
+| `content` | `SiteContent` | Contenu CMS (styles typographiques) |
+| `editable` | `boolean` | Active les overlays WYSIWYG (défaut `false`) |
+
+**Outputs :**
+
+| Output | Type | Description |
+| -------- | ------ | ----------- |
+| `coverEdit` | `'crop' \| 'replace'` | Clic bouton cover (cadrer / remplacer) |
+| `galleryItemEdit` | `{ index, action: 'crop' \| 'replace' \| 'remove' }` | Action sur un item galerie |
+| `galleryReorder` | `number[]` | Nouvel ordre des indices après drag-reorder |
+| `galleryAdd` | `void` | Clic tuile « + Ajouter une image » |
+| `textFieldClick` | `EditableTextField` | Click simple → focus champ form |
+| `textFieldEdit` | `{ field: EditableTextField; value: string }` | Double-clic inline → valeur validée au blur |
+| `galleryItemResize` | `{ index, colSpan, rowSpan }` | Fin de resize WYSIWYG d'un item galerie |
+| `viewerOpen` | `StoryItem[]` | Ouverture du story-viewer plein écran |
+
+**Type exporté :** `EditableTextField = 'title' | 'category' | 'material' | 'description' | 'shortDescription'`
+
+**Fonctionnalités mode `editable=true` :**
+
+- Overlays hover/focus sur cover et items galerie (boutons Cadrer / Remplacer / Retirer).
+- Édition inline texte : double-clic → `[attr.contenteditable]="true"` + outline accent ; blur valide + émet `textFieldEdit`.
+- Click simple sur texte → émet `textFieldClick` (click-to-focus côté parent).
+- Drag-reorder galerie via `ReorderableDirective` HTML5. La tuile « + Ajouter » porte `data-no-drag` pour être exclue.
+- Resize WYSIWYG galerie : pastille `⤡` (bottom-right), pointer drag, badge live `N × M`, snap grid (1–3 cols × 1–4 rows). Le `[style.grid-column]` / `[style.grid-row]` est appliqué sur le `<li>` (item de grille).
+
+#### `<app-furniture-preview>` (`FurniturePreviewComponent`)
+
+Chemin : `frontend/src/app/pages/admin/mobilier/preview/furniture-preview.component.ts`
+
+Composant admin standalone qui wrap `<app-furniture-detail-view>` en mode `editable=true`. Construit un `Furniture` virtuel via un `computed` depuis le `FormGroup` + signal galerie du `MobilierComponent`.
+
+**Pattern de réactivité :** signal interne `_formTick` incrémenté à chaque `form.valueChanges` (abonnement RxJS). `previewItem = computed(() => { _formTick(); return buildFurnitureFrom(form.getRawValue(), gallery()); })`. Cela contourne l'impossibilité d'utiliser `toSignal()` dans un `computed`.
+
+**Inputs :**
+
+| Input | Type | Description |
+| ------- | ------ | ----------- |
+| `form` (required) | `FormGroup` | Formulaire mobilier du composant parent |
+| `gallery` (required) | `Signal<GalleryItem[]>` | Signal galerie du composant parent (lecture seule) |
+| `story` | `Story \| null` | Story active |
+| `displaySlides` | `DisplaySlide[]` | Slides story-inline |
+| `content` | `SiteContent` | Contenu CMS |
+
+**Outputs :** identiques à `FurnitureDetailViewComponent` (relayés vers `MobilierComponent`).
 
 #### `<app-tag-input>` (`TagInputComponent`)
 

@@ -23,7 +23,7 @@ class ExhibitionTest {
                 LocalDate.of(2025, 5, 18),
                 "https://picsum.photos/seed/matieres-cover/1200/800",
                 null,
-                List.of(new GalleryImage("https://picsum.photos/seed/matieres-1/1200/800", null)),
+                List.of(new GalleryImage("https://picsum.photos/seed/matieres-1/1200/800", null, 1, 1)),
                 "Léa Bornand",
                 "Une exploration du silence comme matière première",
                 "Description détaillée",
@@ -45,7 +45,7 @@ class ExhibitionTest {
         assertEquals(LocalDate.of(2025, 3, 14), exhibition.startDate());
         assertEquals(LocalDate.of(2025, 5, 18), exhibition.endDate());
         assertEquals("https://picsum.photos/seed/matieres-cover/1200/800", exhibition.coverImage());
-        assertEquals(List.of(new GalleryImage("https://picsum.photos/seed/matieres-1/1200/800", null)), exhibition.gallery());
+        assertEquals(List.of(new GalleryImage("https://picsum.photos/seed/matieres-1/1200/800", null, 1, 1)), exhibition.gallery());
         assertEquals("Léa Bornand", exhibition.curator());
         assertEquals("Une exploration du silence comme matière première", exhibition.shortDescription());
         assertEquals("Description détaillée", exhibition.description());
@@ -88,9 +88,9 @@ class ExhibitionTest {
     void testExhibitionRecord_WithMultipleGalleryImages() {
         // Arrange
         List<GalleryImage> galleryImages = List.of(
-                new GalleryImage("https://example.com/image1.jpg", null),
-                new GalleryImage("https://example.com/image2.jpg", null),
-                new GalleryImage("https://example.com/image3.jpg", null)
+                new GalleryImage("https://example.com/image1.jpg", null, 1, 1),
+                new GalleryImage("https://example.com/image2.jpg", null, 1, 1),
+                new GalleryImage("https://example.com/image3.jpg", null, 1, 1)
         );
 
         // Act
@@ -167,7 +167,7 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
                 null,
-                List.of(new GalleryImage("https://example.com/image1.jpg", null)),
+                List.of(new GalleryImage("https://example.com/image1.jpg", null, 1, 1)),
                 "Test Curator",
                 "Short description",
                 "Full description",
@@ -189,7 +189,7 @@ class ExhibitionTest {
                 LocalDate.of(2024, 1, 10),
                 "https://example.com/cover.jpg",
                 null,
-                List.of(new GalleryImage("https://example.com/image1.jpg", null)),
+                List.of(new GalleryImage("https://example.com/image1.jpg", null, 1, 1)),
                 "Test Curator",
                 "Short description",
                 "Full description",

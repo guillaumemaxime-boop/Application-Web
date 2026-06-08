@@ -146,12 +146,12 @@ export class ImageFieldComponent implements ControlValueAccessor {
     this.onChange(url);
   }
 
-  protected openPicker(): void {
+  openPicker(): void {
     this.pickerOpen.set(true);
     this.portfolio.getPhotos().subscribe(p => this.photos.set(p));
   }
 
-  protected openCrop(): void {
+  openCrop(): void {
     this.cropOpen.set(true);
   }
 

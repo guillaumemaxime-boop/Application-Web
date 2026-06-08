@@ -86,7 +86,7 @@ class FurnitureServiceTest {
                 "Sièges", "Frêne huilé", 2026,
                 "https://example.com/linea.jpg",
                 null,
-                List.of(new GalleryImage("https://example.com/linea-1.jpg", null)),
+                List.of(new GalleryImage("https://example.com/linea-1.jpg", null, 1, 1)),
                 "Banc épuré", "Description longue",
                 List.of("L 180 cm", "H 45 cm"),
                 "Milo GUILLAUME Design", false, true, true, List.of(), List.of()
@@ -284,8 +284,8 @@ class FurnitureServiceTest {
     void create_avec_gallery_items_persiste_crop_par_item() {
         Furniture input = new Furniture(null, "T2", null, "Cat", "mat", 2024, "/c.jpg",
             null,
-            List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0)),
-                    new GalleryImage("/g2.jpg", null)),
+            List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0), 1, 1),
+                    new GalleryImage("/g2.jpg", null, 1, 1)),
             "s", "d", List.of(), "des", false, true, true, List.of(), List.of());
         Furniture created = furnitureService.create(input);
         Furniture reloaded = furnitureService.findBySlug(created.slug()).orElseThrow();

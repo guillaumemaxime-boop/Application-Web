@@ -118,18 +118,28 @@ export class GalleryEditorComponent {
   protected readonly pickerOpen = signal(false);
   protected readonly photos = signal<Photo[]>([]);
   protected readonly cropOpenForIndex = signal<number | null>(null);
+  private _replaceIndex: number | null = null;
 
   openPicker(): void {
+    this._replaceIndex = null;
     this.pickerOpen.set(true);
     this.portfolio.getPhotos().subscribe(p => this.photos.set(p));
   }
 
   closePicker(): void {
+    this._replaceIndex = null;
     this.pickerOpen.set(false);
   }
 
   onPhotoSelected(photo: Photo): void {
-    if (!this.images.some(i => i.url === photo.url)) {
+    if (this._replaceIndex !== null) {
+      const idx = this._replaceIndex;
+      const next = [...this.images];
+      next[idx] = { url: photo.url, crop: null };
+      this.imagesChange.emit(next);
+      this._replaceIndex = null;
+      this.pickerOpen.set(false);
+    } else if (!this.images.some(i => i.url === photo.url)) {
       this.imagesChange.emit([...this.images, { url: photo.url, crop: null }]);
     }
   }
@@ -142,8 +152,14 @@ export class GalleryEditorComponent {
     this.imagesChange.emit(order.map(i => this.images[i]));
   }
 
-  protected openCropFor(i: number): void {
+  openCropFor(i: number): void {
     this.cropOpenForIndex.set(i);
+  }
+
+  openReplaceFor(i: number): void {
+    this._replaceIndex = i;
+    this.pickerOpen.set(true);
+    this.portfolio.getPhotos().subscribe(p => this.photos.set(p));
   }
 
   protected onCropValidated(crop: Crop): void {

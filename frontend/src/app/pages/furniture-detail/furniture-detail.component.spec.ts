@@ -7,6 +7,7 @@ import { Slide } from '../../models/slide.model';
 import { DisplaySlide } from '../../models/display-slide.model';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { convertToParamMap } from '@angular/router';
+import { StoryItem } from '../../components/story-viewer/story-viewer.component';
 
 describe('FurnitureDetailComponent', () => {
   let portfolioServiceSpy: jasmine.SpyObj<PortfolioService>;
@@ -89,7 +90,7 @@ describe('FurnitureDetailComponent', () => {
     subject.complete();
     fixture.detectChanges();
     expect(c.loading()).toBeFalse();
-    expect(fixture.nativeElement.textContent).toContain(mockFurniture.title);
+    expect(fixture.nativeElement.querySelector('app-furniture-detail-view')).not.toBeNull();
   });
 
   it('should render the not-found state when service errors', () => {
@@ -120,84 +121,48 @@ describe('FurnitureDetailComponent', () => {
     expect(spy.getFurniture).toHaveBeenCalledWith('');
   });
 
-  it('should not render the story-inline section when slides are empty and no cover image', () => {
-    setup('onde', of({ ...mockFurniture, coverImage: '', slides: [] }));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeNull();
-    expect(fixture.nativeElement.textContent).not.toContain('Voir en plein écran');
-  });
-
-  it('should render the story-inline section and the viewer link when slides are present', () => {
-    setup('onde', of({ ...mockFurniture, slides }));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-story-inline')).not.toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Voir en plein écran');
-  });
-
-  it('hasSlides() retourne false quand item.slides est undefined (fallback ?? 0)', () => {
-    setup('onde', of({ ...mockFurniture, coverImage: '', slides: undefined as any }));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    expect((fixture.componentInstance as any).hasSlides()).toBeFalse();
-  });
-
-  it('should open the viewer with a single furniture story when the link is clicked', () => {
-    setup('onde', of({ ...mockFurniture, slides }));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-
-    const c = fixture.componentInstance as any;
-    expect(c.viewerQueue().length).toBe(0);
-
-    const button = fixture.nativeElement.querySelector('.viewer-link') as HTMLButtonElement;
-    expect(button).not.toBeNull();
-    button.click();
-    fixture.detectChanges();
-
-    const queue = c.viewerQueue();
-    expect(queue.length).toBe(1);
-    expect(queue[0].title).toBe('Onde');
-    // cover prefix + 2 narrative slides + link suffix = 4
-    expect(queue[0].slides.length).toBe(4);
-    expect(queue[0].slides[0].type).toBe('cover');
-    expect(queue[0].slides[queue[0].slides.length - 1].type).toBe('link');
-    expect(queue[0].kind).toBe('furniture');
-    expect(queue[0].slug).toBe('onde');
-    expect(fixture.nativeElement.querySelector('app-story-viewer')).not.toBeNull();
-  });
-
-  it('openViewer is a no-op when item is null or slides are empty', () => {
-    const pending = new Subject<Furniture>();
-    setup('onde', pending.asObservable());
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    const c = fixture.componentInstance as any;
-    // item() is still null while the service hasn't emitted
-    c.openViewer();
-    expect(c.viewerQueue().length).toBe(0);
-
-    // After loading a furniture with no slides and no coverImage, displaySlides() is empty
-    pending.next({ ...mockFurniture, coverImage: '', slides: [], showStoryLink: false });
-    pending.complete();
-    fixture.detectChanges();
-    c.openViewer();
-    expect(c.viewerQueue().length).toBe(0);
-  });
-
   it('should close the viewer by emptying the queue', () => {
     setup('onde', of({ ...mockFurniture, slides }));
     const fixture = TestBed.createComponent(FurnitureDetailComponent);
     fixture.detectChanges();
     const c = fixture.componentInstance as any;
-    c.openViewer();
+
+    const fakeQueue: StoryItem[] = [{
+      title: 'Onde',
+      subtitle: 'Sièges · 2024',
+      slides: [],
+      kind: 'furniture',
+      slug: 'onde',
+    }];
+    c.onViewerOpen(fakeQueue);
     fixture.detectChanges();
     expect(c.viewerQueue().length).toBe(1);
+    expect(fixture.nativeElement.querySelector('app-story-viewer')).not.toBeNull();
+
     c.closeViewer();
     fixture.detectChanges();
     expect(c.viewerQueue().length).toBe(0);
     expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeNull();
+  });
+
+  it('onViewerOpen sets the viewerQueue from emitted StoryItem[]', () => {
+    setup('onde', of(mockFurniture));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    expect(c.viewerQueue().length).toBe(0);
+
+    const queue: StoryItem[] = [{
+      title: 'Onde',
+      subtitle: 'Sièges · 2024',
+      slides: [],
+      kind: 'furniture',
+      slug: 'onde',
+    }];
+    c.onViewerOpen(queue);
+    fixture.detectChanges();
+    expect(c.viewerQueue().length).toBe(1);
+    expect(c.viewerQueue()[0].title).toBe('Onde');
   });
 
   it('should open the contact form when the CTA button is clicked', () => {
@@ -215,6 +180,20 @@ describe('FurnitureDetailComponent', () => {
 
     expect(c.contactOpen()).toBeTrue();
     expect(fixture.nativeElement.querySelector('app-contact-form')).not.toBeNull();
+  });
+
+  it('should close the contact form on close event', () => {
+    setup('onde', of(mockFurniture));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const c = fixture.componentInstance as any;
+    c.openContact();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-contact-form')).not.toBeNull();
+    c.closeContact();
+    fixture.detectChanges();
+    expect(c.contactOpen()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('app-contact-form')).toBeNull();
   });
 
   it('enrichit la liste de slides avec cover prefix + link suffix', () => {
@@ -257,46 +236,4 @@ describe('FurnitureDetailComponent', () => {
     expect(display.filter((s: DisplaySlide) => s.type === 'cover').length).toBe(1);
     expect((display[0] as any).src).toBe('/c.jpg');
   });
-
-  it('should close the contact form on close event', () => {
-    setup('onde', of(mockFurniture));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    const c = fixture.componentInstance as any;
-    c.openContact();
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-contact-form')).not.toBeNull();
-    c.closeContact();
-    fixture.detectChanges();
-    expect(c.contactOpen()).toBeFalse();
-    expect(fixture.nativeElement.querySelector('app-contact-form')).toBeNull();
-  });
-
-  it('coverCropStyle() applique transform quand coverCrop est défini', () => {
-    setup('onde', of({ ...mockFurniture, coverCrop: { x: 25, y: 25, w: 50, h: 50 } }));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    expect(cmp.coverCropStyle().transform).toBe('translate(-50%, -50%) scale(2)');
-  });
-
-  it('coverCropStyle() retourne "none" quand coverCrop est null', () => {
-    setup('onde', of({ ...mockFurniture, coverCrop: null }));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    expect(cmp.coverCropStyle().transform).toBe('none');
-  });
-
-  it('galleryItemStyle() applique transform quand item.crop est defini', () => {
-    setup('onde', of({ ...mockFurniture,
-      gallery: [{ url: '/g.jpg', crop: { x: 0, y: 0, w: 100, h: 100 } }]
-    }));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    const style = cmp.galleryItemStyle({ url: '/g.jpg', crop: { x: 0, y: 0, w: 100, h: 100 } });
-    expect(style.transform).toBe('translate(0%, 0%) scale(1)');
-  });
-
 });

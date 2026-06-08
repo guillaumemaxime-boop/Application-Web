@@ -56,7 +56,7 @@ import { Photo } from '../../../models/photo.model';
   `,
   styles: [`
     .picker-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1300;
       display: flex; align-items: center; justify-content: center; padding: 24px;
     }
     .picker-panel {

@@ -41,7 +41,7 @@ class FurnitureControllerTest {
                 2024,
                 "https://picsum.photos/seed/onde-cover/1200/800",
                 null,
-                List.of(new GalleryImage("https://picsum.photos/seed/onde-1/1200/800", null)),
+                List.of(new GalleryImage("https://picsum.photos/seed/onde-1/1200/800", null, 1, 1)),
                 "Une silhouette inspirée du mouvement de la mer",
                 "Description détaillée",
                 List.of("Hauteur 92 cm", "Largeur 78 cm"),
