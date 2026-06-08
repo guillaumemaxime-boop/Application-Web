@@ -198,7 +198,15 @@ import { enrichSlides } from '../../../utils/display-slides';
         </section>
 
         @if (editingFurnitureSlug() !== null || editingFurnitureId() !== null || creatingFurniture()) {
-          <aside class="admin-preview" aria-label="Aperçu de la fiche">
+          <aside class="admin-preview" [class.fullscreen]="previewFullscreen()" aria-label="Aperçu de la fiche">
+            <div class="admin-preview-toolbar">
+              <span class="admin-preview-label">Aperçu</span>
+              <button type="button" class="btn-preview-toggle"
+                      (click)="togglePreviewFullscreen()"
+                      [attr.aria-label]="previewFullscreenLabel()">
+                @if (previewFullscreen()) { ⤡ Réduire } @else { ⤢ Plein écran }
+              </button>
+            </div>
             <app-furniture-preview
               [form]="furnitureForm"
               [gallery]="furnitureGallery.asReadonly()"
@@ -207,7 +215,9 @@ import { enrichSlides } from '../../../utils/display-slides';
               (coverEdit)="onPreviewCoverEdit($event)"
               (galleryItemEdit)="onPreviewGalleryItemEdit($event)"
               (galleryReorder)="onPreviewGalleryReorder($event)"
-              (textFieldClick)="focusField($event)" />
+              (galleryAdd)="onPreviewGalleryAdd()"
+              (textFieldClick)="focusField($event)"
+              (galleryItemResize)="onPreviewGalleryItemResize($event)" />
           </aside>
         }
       </div>
@@ -229,9 +239,15 @@ import { enrichSlides } from '../../../utils/display-slides';
     .row-meta { font-size: 0.75rem; color: var(--color-mute); letter-spacing: 0.06em; text-transform: uppercase; }
     .row-del { background: transparent; border: 0; padding: 0 16px; color: var(--color-mute); font-size: 1.5rem; cursor: pointer; line-height: 1; }
     .row-del:hover { color: #b1532a; }
-    .admin-split { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 100%; }
+    .admin-split { display: grid; grid-template-columns: 2fr 3fr; gap: 32px; max-width: 100%; }
     .admin-form { overflow-y: auto; max-height: calc(100vh - 80px); padding-right: 8px; }
     .admin-preview { position: sticky; top: 16px; max-height: calc(100vh - 80px); overflow-y: auto; background: var(--color-bg-alt); border: 1px solid var(--color-line); padding: 24px; }
+    .admin-preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px -8px 16px; padding: 0 4px; }
+    .admin-preview-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-mute); }
+    .btn-preview-toggle { padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-line); color: var(--color-ink-soft); font-size: 0.78rem; cursor: pointer; font-family: inherit; }
+    .btn-preview-toggle:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .admin-preview.fullscreen { position: fixed; inset: 0; max-height: none; z-index: 1200; border: 0; padding: 24px 32px; }
+    .admin-preview.fullscreen .admin-preview-toolbar { margin-top: 0; }
     .form { display: flex; flex-direction: column; gap: 20px; padding: 32px; border: 1px solid var(--color-line); background: var(--color-bg); }
     .form h2 { margin: 0; font-size: 1.5rem; }
     .form-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
@@ -331,6 +347,12 @@ export class MobilierComponent implements OnInit, OnDestroy {
   protected readonly allTags = signal<string[]>([]);
 
   protected readonly creatingFurniture = signal(false);
+  protected readonly previewFullscreen = signal(false);
+
+  protected togglePreviewFullscreen(): void { this.previewFullscreen.update(v => !v); }
+  protected previewFullscreenLabel(): string {
+    return this.previewFullscreen() ? 'Réduire l’aperçu' : 'Aperçu plein écran';
+  }
   private readonly _formTick = signal(0);
   private formTickSub?: Subscription;
 
@@ -597,9 +619,19 @@ export class MobilierComponent implements OnInit, OnDestroy {
     }
   }
 
+  onPreviewGalleryAdd(): void {
+    this.galleryEditor?.openPicker();
+  }
+
   onPreviewGalleryReorder(order: number[]): void {
     const items = this.furnitureGallery();
     this.furnitureGallery.set(order.map(i => items[i]));
+  }
+
+  onPreviewGalleryItemResize(e: { index: number; colSpan: number; rowSpan: number }): void {
+    this.furnitureGallery.update(arr => arr.map((it, i) =>
+      i === e.index ? { ...it, colSpan: e.colSpan, rowSpan: e.rowSpan } : it
+    ));
   }
 
   private parseDimensions(list: string[]): { w: number | null; d: number | null; h: number | null; notes: string } {

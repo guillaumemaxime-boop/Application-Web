@@ -14,9 +14,12 @@ public class GalleryEntry {
     @Column(name = "crop_w") private Double cropW;
     @Column(name = "crop_h") private Double cropH;
 
+    @Column(name = "col_span") private Integer colSpan = 1;
+    @Column(name = "row_span") private Integer rowSpan = 1;
+
     public GalleryEntry() {}
 
-    public GalleryEntry(String url) { this.url = url; }
+    public GalleryEntry(String url) { this.url = url; this.colSpan = 1; this.rowSpan = 1; }
 
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
@@ -33,6 +36,12 @@ public class GalleryEntry {
     public Double getCropH() { return cropH; }
     public void setCropH(Double cropH) { this.cropH = cropH; }
 
+    public Integer getColSpan() { return colSpan; }
+    public void setColSpan(Integer colSpan) { this.colSpan = colSpan != null ? colSpan : 1; }
+
+    public Integer getRowSpan() { return rowSpan; }
+    public void setRowSpan(Integer rowSpan) { this.rowSpan = rowSpan != null ? rowSpan : 1; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -41,11 +50,13 @@ public class GalleryEntry {
             && java.util.Objects.equals(cropX, that.cropX)
             && java.util.Objects.equals(cropY, that.cropY)
             && java.util.Objects.equals(cropW, that.cropW)
-            && java.util.Objects.equals(cropH, that.cropH);
+            && java.util.Objects.equals(cropH, that.cropH)
+            && java.util.Objects.equals(colSpan, that.colSpan)
+            && java.util.Objects.equals(rowSpan, that.rowSpan);
     }
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(url, cropX, cropY, cropW, cropH);
+        return java.util.Objects.hash(url, cropX, cropY, cropW, cropH, colSpan, rowSpan);
     }
 }

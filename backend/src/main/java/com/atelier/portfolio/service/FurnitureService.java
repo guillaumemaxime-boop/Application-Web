@@ -132,6 +132,8 @@ public class FurnitureService {
                     ge.setCropW(gi.crop().w());
                     ge.setCropH(gi.crop().h());
                 }
+                ge.setColSpan(gi.colSpan() != null ? gi.colSpan() : 1);
+                ge.setRowSpan(gi.rowSpan() != null ? gi.rowSpan() : 1);
                 entity.getGallery().add(ge);
             }
         }
@@ -159,7 +161,9 @@ public class FurnitureService {
         ImageCrop coverCrop = ImageCrop.ofNullable(entity.getCoverCropX(), entity.getCoverCropY(),
                                         entity.getCoverCropW(), entity.getCoverCropH());
         List<GalleryImage> gallery = entity.getGallery().stream()
-                .map(e -> new GalleryImage(e.getUrl(), ImageCrop.ofNullable(e.getCropX(), e.getCropY(), e.getCropW(), e.getCropH())))
+                .map(e -> new GalleryImage(e.getUrl(), ImageCrop.ofNullable(e.getCropX(), e.getCropY(), e.getCropW(), e.getCropH()),
+                        e.getColSpan() != null ? e.getColSpan() : 1,
+                        e.getRowSpan() != null ? e.getRowSpan() : 1))
                 .toList();
         return new Furniture(
                 entity.getId(),

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
@@ -109,14 +109,15 @@ import { roleStyle } from '../../utils/title-style';
           }
         }
 
-        @if (item.gallery.length > 0) {
+        @if (item.gallery.length > 0 || editable) {
           <section class="section gallery">
             <div class="container">
               @if (editable) {
                 <ul class="g-grid editable" appReorderable (reordered)="galleryReorder.emit($event)">
                   @for (img of item.gallery; track img.url; let i = $index) {
                     <li>
-                      <figure [class.tall]="i % 3 === 0">
+                      <figure [style.grid-column]="'span ' + (img.colSpan ?? 1)"
+                              [style.grid-row]="'span ' + (img.rowSpan ?? 1)">
                         <div class="gallery-img-wrap">
                           <app-cropped-image-canvas
                             [imageUrl]="img.url"
@@ -128,15 +129,25 @@ import { roleStyle } from '../../utils/title-style';
                             <button type="button" class="edit-btn" aria-label="Remplacer cette image" (click)="galleryItemEdit.emit({ index: i, action: 'replace' })">🖼</button>
                             <button type="button" class="edit-btn edit-btn-danger" aria-label="Retirer cette image" (click)="galleryItemEdit.emit({ index: i, action: 'remove' })">×</button>
                           </div>
+                          <div class="resize-handle"
+                               (pointerdown)="onResizeStart($event, i)"
+                               aria-hidden="true"></div>
                         </div>
                       </figure>
                     </li>
                   }
+                  <li class="gallery-add-tile">
+                    <button type="button" class="gallery-add-btn" aria-label="Ajouter une image à la galerie" (click)="galleryAdd.emit()">
+                      <span class="gallery-add-icon">+</span>
+                      <span class="gallery-add-label">Ajouter une image</span>
+                    </button>
+                  </li>
                 </ul>
               } @else {
                 <div class="g-grid">
                   @for (img of item.gallery; track img.url; let i = $index) {
-                    <figure [class.tall]="i % 3 === 0">
+                    <figure [style.grid-column]="'span ' + (img.colSpan ?? 1)"
+                            [style.grid-row]="'span ' + (img.rowSpan ?? 1)">
                       <div class="gallery-img-wrap">
                         <app-cropped-image-canvas
                           [imageUrl]="img.url"
@@ -160,7 +171,7 @@ import { roleStyle } from '../../utils/title-style';
     .hero { position: relative; min-height: 70vh; display: flex; align-items: flex-end; padding: 120px 0 72px; overflow: hidden; }
     .hero-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
     .hero-bg app-cropped-image-canvas { width: 100%; height: 100%; display: block; }
-    .hero-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 60%, transparent 100%); }
+    .hero-bg::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 60%, transparent 100%); }
     .hero-content { position: relative; z-index: 1; color: #ffffff; }
     .hero-content .eyebrow,
     .hero-content .material { color: rgba(255, 255, 255, 0.7); }
@@ -189,10 +200,10 @@ import { roleStyle } from '../../utils/title-style';
     .gallery .g-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
+      grid-auto-rows: 220px;
+      gap: 16px;
     }
-    figure { overflow: hidden; background: var(--color-bg-alt); aspect-ratio: 4 / 3; }
-    figure.tall { aspect-ratio: 3 / 4; }
+    figure { overflow: hidden; background: var(--color-bg-alt); }
     .gallery-img-wrap { position: relative; overflow: hidden; width: 100%; height: 100%; }
     .gallery-img-wrap app-cropped-image-canvas { display: block; width: 100%; height: 100%; }
 
@@ -236,9 +247,9 @@ import { roleStyle } from '../../utils/title-style';
     .editable .hero-bg { cursor: pointer; outline: 1px dashed rgba(255,255,255,0.25); outline-offset: -2px; }
     .hero-bg .edit-overlay {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 12px;
-      background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 180ms ease; z-index: 2;
+      background: rgba(0,0,0,0.0); opacity: 0.55; transition: opacity 180ms ease, background 180ms ease; z-index: 3;
     }
-    .hero-bg:hover .edit-overlay, .hero-bg:focus-within .edit-overlay { opacity: 1; }
+    .hero-bg:hover .edit-overlay, .hero-bg:focus-within .edit-overlay { opacity: 1; background: rgba(0,0,0,0.4); }
     .edit-btn {
       padding: 8px 14px; background: var(--color-bg); border: 1px solid var(--color-line);
       color: var(--color-ink); font-size: 0.85rem; cursor: pointer; font-family: inherit;
@@ -250,15 +261,33 @@ import { roleStyle } from '../../utils/title-style';
     .gallery-img-wrap { position: relative; }
     .gallery-img-wrap .edit-overlay {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px;
-      background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 180ms ease; z-index: 2;
+      background: rgba(0,0,0,0.0); opacity: 0.55; transition: opacity 180ms ease, background 180ms ease; z-index: 3;
     }
-    .gallery-img-wrap:hover .edit-overlay, .gallery-img-wrap:focus-within .edit-overlay { opacity: 1; }
+    .gallery-img-wrap:hover .edit-overlay, .gallery-img-wrap:focus-within .edit-overlay { opacity: 1; background: rgba(0,0,0,0.4); }
     .gallery-img-wrap .edit-btn { padding: 4px 8px; font-size: 0.75rem; }
+    .gallery-img-wrap .resize-handle {
+      position: absolute; right: 0; bottom: 0;
+      width: 18px; height: 18px;
+      background: var(--color-bg); border: 1px solid var(--color-line);
+      border-top-left-radius: 4px; cursor: nwse-resize; z-index: 4;
+      opacity: 0.7; transition: opacity 180ms ease;
+    }
+    .gallery-img-wrap .resize-handle:hover { opacity: 1; }
     .g-grid.editable { list-style: none; padding: 0; margin: 0; }
+    .gallery-add-tile { display: block; }
+    .gallery-add-btn {
+      width: 100%; height: 100%; min-height: 200px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+      background: transparent; border: 2px dashed var(--color-line); color: var(--color-ink-soft);
+      cursor: pointer; font-family: inherit; transition: border-color 180ms ease, color 180ms ease;
+    }
+    .gallery-add-btn:hover { border-color: var(--color-ink); color: var(--color-ink); }
+    .gallery-add-icon { font-size: 2rem; line-height: 1; }
+    .gallery-add-label { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
     .g-grid.editable li { display: block; }
   `]
 })
-export class FurnitureDetailViewComponent {
+export class FurnitureDetailViewComponent implements OnDestroy {
   @Input({ required: true }) item: Furniture | null = null;
   @Input() story: Story | null = null;
   @Input() displaySlides: DisplaySlide[] = [];
@@ -271,8 +300,55 @@ export class FurnitureDetailViewComponent {
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();
+  @Output() galleryAdd = new EventEmitter<void>();
   @Output() textFieldClick = new EventEmitter<EditableTextField>();
   @Output() viewerOpen = new EventEmitter<StoryItem[]>();
+  @Output() galleryItemResize = new EventEmitter<{ index: number; colSpan: number; rowSpan: number }>();
+
+  private resizing: { index: number; startX: number; startY: number; startCol: number; startRow: number; cellW: number; cellH: number } | null = null;
+
+  protected onResizeStart(ev: PointerEvent, index: number): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const item = this.item?.gallery[index];
+    if (!item) return;
+    const grid = (ev.target as HTMLElement).closest('.g-grid') as HTMLElement | null;
+    if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    const cols = 3;
+    const gap = 16;
+    const cellW = (rect.width - gap * (cols - 1)) / cols;
+    const cellH = 220;
+    this.resizing = {
+      index,
+      startX: ev.clientX, startY: ev.clientY,
+      startCol: item.colSpan ?? 1, startRow: item.rowSpan ?? 1,
+      cellW, cellH,
+    };
+    window.addEventListener('pointermove', this.onResizeMove);
+    window.addEventListener('pointerup', this.onResizeEnd);
+    (ev.target as HTMLElement & { setPointerCapture?: (id: number) => void }).setPointerCapture?.(ev.pointerId);
+  }
+
+  private readonly onResizeMove = (ev: PointerEvent): void => {
+    if (!this.resizing) return;
+    const dx = ev.clientX - this.resizing.startX;
+    const dy = ev.clientY - this.resizing.startY;
+    const newCol = Math.max(1, Math.min(3, this.resizing.startCol + Math.round(dx / (this.resizing.cellW + 16))));
+    const newRow = Math.max(1, Math.min(4, this.resizing.startRow + Math.round(dy / (this.resizing.cellH + 16))));
+    this.galleryItemResize.emit({ index: this.resizing.index, colSpan: newCol, rowSpan: newRow });
+  };
+
+  private readonly onResizeEnd = (): void => {
+    this.resizing = null;
+    window.removeEventListener('pointermove', this.onResizeMove);
+    window.removeEventListener('pointerup', this.onResizeEnd);
+  };
+
+  ngOnDestroy(): void {
+    window.removeEventListener('pointermove', this.onResizeMove);
+    window.removeEventListener('pointerup', this.onResizeEnd);
+  }
 
   onViewerOpen(): void {
     const f = this.item;

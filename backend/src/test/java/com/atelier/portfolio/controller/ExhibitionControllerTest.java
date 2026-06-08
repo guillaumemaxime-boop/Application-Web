@@ -43,7 +43,7 @@ class ExhibitionControllerTest {
                 LocalDate.of(2025, 5, 18),
                 "https://picsum.photos/seed/matieres-cover/1200/800",
                 null,
-                List.of(new GalleryImage("https://picsum.photos/seed/matieres-1/1200/800", null)),
+                List.of(new GalleryImage("https://picsum.photos/seed/matieres-1/1200/800", null, 1, 1)),
                 "Léa Bornand",
                 "Une exploration du silence comme matière première",
                 "Description détaillée",

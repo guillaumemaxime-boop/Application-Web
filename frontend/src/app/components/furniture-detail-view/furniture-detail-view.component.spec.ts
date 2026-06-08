@@ -189,4 +189,55 @@ describe('FurnitureDetailViewComponent', () => {
     expect(eyebrow.style.fontFamily).toContain('Inter');
     expect(eyebrow.style.fontStyle).toBe('italic');
   });
+
+  it('applique grid-column/grid-row depuis item.colSpan/rowSpan', () => {
+    const f = { ...mockFurniture, gallery: [
+      { url: 'a.jpg', crop: null, colSpan: 2, rowSpan: 3 },
+    ]};
+    fixture.componentRef.setInput('item', f);
+    fixture.detectChanges();
+    const fig = fixture.nativeElement.querySelector('.gallery figure') as HTMLElement;
+    expect(fig.style.gridColumn).toBe('span 2');
+    expect(fig.style.gridRow).toBe('span 3');
+  });
+
+  it('applique grid-column/grid-row avec valeur par defaut 1 si colSpan/rowSpan absent', () => {
+    const f = { ...mockFurniture, gallery: [
+      { url: 'a.jpg', crop: null },
+    ]};
+    fixture.componentRef.setInput('item', f);
+    fixture.detectChanges();
+    const fig = fixture.nativeElement.querySelector('.gallery figure') as HTMLElement;
+    expect(fig.style.gridColumn).toBe('span 1');
+    expect(fig.style.gridRow).toBe('span 1');
+  });
+
+  it('emet galleryItemResize lors du drag', () => {
+    const f = { ...mockFurniture, gallery: [{ url: 'a.jpg', crop: null }] };
+    fixture.componentRef.setInput('item', f);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let emitted: any = null;
+    fixture.componentInstance.galleryItemResize.subscribe(e => emitted = e);
+
+    const handle = fixture.nativeElement.querySelector('.resize-handle') as HTMLElement;
+    expect(handle).toBeTruthy();
+
+    const pdown = new PointerEvent('pointerdown', { clientX: 100, clientY: 100, pointerId: 1, bubbles: true });
+    handle.dispatchEvent(pdown);
+    const pmove = new PointerEvent('pointermove', { clientX: 400, clientY: 100, pointerId: 1, bubbles: true });
+    window.dispatchEvent(pmove);
+
+    expect(emitted).not.toBeNull();
+    expect(emitted.index).toBe(0);
+    expect(emitted.colSpan).toBeGreaterThanOrEqual(1);
+  });
+
+  it('resize handle absent quand editable=false', () => {
+    const f = { ...mockFurniture, gallery: [{ url: 'a.jpg', crop: null }] };
+    fixture.componentRef.setInput('item', f);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.resize-handle')).toBeNull();
+  });
 });

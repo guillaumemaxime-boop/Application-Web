@@ -45,6 +45,7 @@ type MobilierInternals = {
   onPreviewCoverEdit: (action: 'crop' | 'replace') => void;
   onPreviewGalleryItemEdit: (e: { index: number; action: 'crop' | 'replace' | 'remove' }) => void;
   onPreviewGalleryReorder: (order: number[]) => void;
+  onPreviewGalleryItemResize: (e: { index: number; colSpan: number; rowSpan: number }) => void;
 };
 
 describe('MobilierComponent', () => {
@@ -639,6 +640,18 @@ describe('MobilierComponent', () => {
     cmp.furnitureGallery.set([{ url: 'a', crop: null }, { url: 'b', crop: null }, { url: 'c', crop: null }]);
     cmp.onPreviewGalleryReorder([2, 0, 1]);
     expect(cmp.furnitureGallery().map((i: GalleryItem) => i.url)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('onPreviewGalleryItemResize patche colSpan/rowSpan sur l\'item du signal', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.furnitureGallery.set([{ url: 'a', crop: null }, { url: 'b', crop: null }]);
+    cmp.onPreviewGalleryItemResize({ index: 1, colSpan: 2, rowSpan: 3 });
+    expect(cmp.furnitureGallery()[1]).toEqual({ url: 'b', crop: null, colSpan: 2, rowSpan: 3 } as any);
   });
 
 });

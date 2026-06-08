@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: 029-add-gallery-item-spans
+      author: claude
+      changes:
+        - addColumn:
+            tableName: furniture_gallery
+            columns:
+              - column:
+                  name: col_span
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: row_span
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: exhibition_gallery
+            columns:
+              - column:
+                  name: col_span
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false
+              - column:
+                  name: row_span
+                  type: INT
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false

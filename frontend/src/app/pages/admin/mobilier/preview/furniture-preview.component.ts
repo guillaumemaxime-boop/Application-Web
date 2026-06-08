@@ -22,7 +22,9 @@ import { Subscription } from 'rxjs';
       (coverEdit)="onCoverEdit($event)"
       (galleryItemEdit)="onGalleryItemEdit($event)"
       (galleryReorder)="onGalleryReorder($event)"
-      (textFieldClick)="onTextFieldClick($event)" />
+      (galleryAdd)="onGalleryAdd()"
+      (textFieldClick)="onTextFieldClick($event)"
+      (galleryItemResize)="onGalleryItemResize($event)" />
   `,
   styles: []
 })
@@ -36,7 +38,9 @@ export class FurniturePreviewComponent implements OnInit, OnDestroy {
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();
+  @Output() galleryAdd = new EventEmitter<void>();
   @Output() textFieldClick = new EventEmitter<EditableTextField>();
+  @Output() galleryItemResize = new EventEmitter<{ index: number; colSpan: number; rowSpan: number }>();
 
   /**
    * Tick signal qui s'incrémente à chaque valueChanges du form, pour
@@ -85,5 +89,7 @@ export class FurniturePreviewComponent implements OnInit, OnDestroy {
   protected onCoverEdit(action: 'crop' | 'replace'): void { this.coverEdit.emit(action); }
   protected onGalleryItemEdit(e: { index: number; action: 'crop' | 'replace' | 'remove' }): void { this.galleryItemEdit.emit(e); }
   protected onGalleryReorder(order: number[]): void { this.galleryReorder.emit(order); }
+  protected onGalleryAdd(): void { this.galleryAdd.emit(); }
   protected onTextFieldClick(name: EditableTextField): void { this.textFieldClick.emit(name); }
+  protected onGalleryItemResize(e: { index: number; colSpan: number; rowSpan: number }): void { this.galleryItemResize.emit(e); }
 }

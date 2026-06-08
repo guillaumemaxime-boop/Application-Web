@@ -123,7 +123,7 @@ class ExhibitionServiceTest {
                 LocalDate.of(2026, 6, 1), LocalDate.of(2026, 9, 30),
                 "https://example.com/souffles.jpg",
                 null,
-                List.of(new GalleryImage("https://example.com/souffles-1.jpg", null)),
+                List.of(new GalleryImage("https://example.com/souffles-1.jpg", null, 1, 1)),
                 "Camille Lévy", "court", "long",
                 List.of("Sculpture", "Lumière"), true, true, true, List.of()
         );
@@ -214,8 +214,8 @@ class ExhibitionServiceTest {
                 java.time.LocalDate.of(2024, 1, 1), java.time.LocalDate.of(2024, 12, 31),
                 "/c.jpg",
                 null,
-                List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0)),
-                        new GalleryImage("/g2.jpg", null)),
+                List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0), 1, 1),
+                        new GalleryImage("/g2.jpg", null, 1, 1)),
                 "curator", "s", "d", List.of(), false, true, true, List.of());
         Exhibition created = exhibitionService.create(input);
         Exhibition reloaded = exhibitionService.findBySlug(created.slug()).orElseThrow();
