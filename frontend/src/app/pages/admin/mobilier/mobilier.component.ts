@@ -63,8 +63,7 @@ import { enrichSlides } from '../../../utils/display-slides';
             </button>
           </div>
         }
-        @if (mobilierViewMode() === 'form') {
-        <section class="admin-form">
+        <section class="admin-form" [class.is-hidden]="mobilierViewMode() !== 'form'">
           <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
             <div class="form-head">
               <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
@@ -213,7 +212,6 @@ import { enrichSlides } from '../../../utils/display-slides';
             </div>
           </form>
         </section>
-        }
 
         @if (mobilierViewMode() === 'preview' && (editingFurnitureSlug() !== null || editingFurnitureId() !== null || creatingFurniture())) {
           <aside class="admin-preview" [class.fullscreen]="previewFullscreen()" aria-label="Aperçu de la fiche">
@@ -271,6 +269,7 @@ import { enrichSlides } from '../../../utils/display-slides';
     .admin-mode-tab:hover { color: var(--color-ink); }
     .admin-mode-tab.active { background: var(--color-ink); color: var(--color-bg); font-weight: 600; }
     .admin-form { max-width: 100%; }
+    .admin-form.is-hidden { display: none; }
     .admin-preview { max-height: calc(100vh - 100px); overflow-y: auto; background: var(--color-bg-alt); border: 1px solid var(--color-line); padding: 24px; }
     .admin-preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px -8px 16px; padding: 0 4px; }
     .admin-preview-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-mute); }
