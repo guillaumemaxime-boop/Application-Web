@@ -63,7 +63,7 @@ import { enrichSlides } from '../../../utils/display-slides';
             </button>
           </div>
         }
-        <section class="admin-form" [class.is-hidden]="mobilierViewMode() !== 'form'" [attr.inert]="mobilierViewMode() !== 'form' ? '' : null">
+        <section class="admin-form" [class.is-hidden]="mobilierViewMode() !== 'form'">
           <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
             <div class="form-head">
               <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
