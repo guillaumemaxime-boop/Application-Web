@@ -665,8 +665,10 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne('/api/tags').flush([]);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as any;
-    cmp.onPreviewTextFieldEdit({ field: 'featured', value: 'true' });
-    expect(cmp.exhibitionForm.get('featured')?.dirty).toBeFalse();
+    // showStoryLink est dans le form (boolean true par defaut) mais HORS whitelist
+    cmp.onPreviewTextFieldEdit({ field: 'showStoryLink', value: 'attack' });
+    expect(cmp.exhibitionForm.get('showStoryLink')?.value).toBe(true);  // pas patche
+    expect(cmp.exhibitionForm.get('showStoryLink')?.dirty).toBeFalse();
   });
 
   it('onPreviewDateFieldEdit ignore champ autre que start/endDate', () => {
