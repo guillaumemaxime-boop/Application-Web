@@ -12,18 +12,22 @@ type ExpoInternals = {
     getRawValue: () => Record<string, unknown>;
     reset: (v?: Record<string, unknown>) => void;
     invalid: boolean;
+    get: (name: string) => { value: unknown; dirty: boolean } | null;
   };
   exhibitions: () => unknown[];
   loadingExhibitions: () => boolean;
   editingExhibitionSlug: () => string | null;
   editingExhibitionId: () => string | null;
-  exhibitionGallery: { (): Array<{ url: string; crop?: unknown }>; set: (v: Array<{ url: string; crop?: unknown }>) => void };
+  exhibitionGallery: { (): Array<{ url: string; crop?: unknown; colSpan?: number; rowSpan?: number }>; set: (v: Array<{ url: string; crop?: unknown }>) => void; update: (fn: (arr: unknown[]) => unknown[]) => void };
   allTags: () => string[];
   currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
   editingStoryId: { (): string | null; set: (v: string | null) => void };
   editingStoryCoverCrop: { (): { x: number; y: number; w: number; h: number } | null; set: (v: { x: number; y: number; w: number; h: number } | null) => void };
   coverEditCtrl: { value: string | null; setValue: (v: string) => void };
   saving: () => boolean;
+  creatingExhibition: { (): boolean; set: (v: boolean) => void };
+  previewFullscreen: { (): boolean; set: (v: boolean) => void };
+  expoViewMode: { (): 'form' | 'preview'; set: (v: 'form' | 'preview') => void };
   loadExhibition: (item: unknown) => void;
   newExhibition: () => void;
   saveExhibition: () => void;
@@ -36,6 +40,13 @@ type ExpoInternals = {
   saveCover: (s: unknown) => void;
   onCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
   onStoryCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
+  focusField: (name: string) => void;
+  togglePreviewFullscreen: () => void;
+  onPreviewGalleryItemEdit: (e: { index: number; action: 'crop' | 'replace' | 'remove' }) => void;
+  onPreviewGalleryReorder: (order: number[]) => void;
+  onPreviewGalleryItemResize: (e: { index: number; colSpan: number; rowSpan: number }) => void;
+  onPreviewTextFieldEdit: (e: { field: string; value: string }) => void;
+  onPreviewDateFieldEdit: (e: { field: 'startDate' | 'endDate'; value: string }) => void;
 };
 
 describe('ExpositionsComponent', () => {
@@ -508,6 +519,114 @@ describe('ExpositionsComponent', () => {
     const story = { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '/c.jpg', coverCrop: { x: 5, y: 5, w: 90, h: 90 }, slug: 's1', position: 0, createdAt: '' };
     cmp.openCoverEditor(story);
     expect(cmp.editingStoryCoverCrop()).toEqual({ x: 5, y: 5, w: 90, h: 90 });
+  });
+
+  it('focusField scroll + focus l\'input field-title', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    // L'input avec id="field-title" est rendu dans le template du composant
+    const input = document.getElementById('field-title') as HTMLInputElement;
+    expect(input).toBeTruthy();
+    spyOn(input, 'scrollIntoView');
+    spyOn(input, 'focus');
+    cmp.focusField('title');
+    expect(input.scrollIntoView).toHaveBeenCalled();
+    expect(input.focus).toHaveBeenCalled();
+  });
+
+  it('onPreviewGalleryItemEdit remove enleve l\'item du signal', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.exhibitionGallery.set([{ url: 'a', crop: null }, { url: 'b', crop: null }]);
+    cmp.onPreviewGalleryItemEdit({ index: 0, action: 'remove' });
+    expect(cmp.exhibitionGallery()).toEqual([{ url: 'b', crop: null }]);
+  });
+
+  it('onPreviewGalleryReorder remet le signal dans le bon ordre', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.exhibitionGallery.set([{ url: 'a', crop: null }, { url: 'b', crop: null }, { url: 'c', crop: null }]);
+    cmp.onPreviewGalleryReorder([2, 0, 1]);
+    expect(cmp.exhibitionGallery().map((i: any) => i.url)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('onPreviewGalleryItemResize patche colSpan/rowSpan', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.exhibitionGallery.set([{ url: 'a', crop: null }, { url: 'b', crop: null }]);
+    cmp.onPreviewGalleryItemResize({ index: 1, colSpan: 2, rowSpan: 3 });
+    expect(cmp.exhibitionGallery()[1]).toEqual({ url: 'b', crop: null, colSpan: 2, rowSpan: 3 } as any);
+  });
+
+  it('onPreviewTextFieldEdit patche form value + dirty', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.onPreviewTextFieldEdit({ field: 'title', value: 'Nouveau titre' });
+    expect(cmp.exhibitionForm.get('title')?.value).toBe('Nouveau titre');
+    expect(cmp.exhibitionForm.get('title')?.dirty).toBeTrue();
+  });
+
+  it('onPreviewDateFieldEdit patche date dans le form', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.onPreviewDateFieldEdit({ field: 'startDate', value: '2026-03-01' });
+    expect(cmp.exhibitionForm.get('startDate')?.value).toBe('2026-03-01');
+  });
+
+  it('togglePreviewFullscreen bascule le signal', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    expect(cmp.previewFullscreen()).toBeFalse();
+    cmp.togglePreviewFullscreen();
+    expect(cmp.previewFullscreen()).toBeTrue();
+  });
+
+  it('expoViewMode default form, switche preview', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    expect(cmp.expoViewMode()).toBe('form');
+    cmp.expoViewMode.set('preview');
+    expect(cmp.expoViewMode()).toBe('preview');
   });
 
 });

@@ -97,13 +97,12 @@ describe('ExhibitionDetailComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('introuvable');
   });
 
-  it('should format a French date range', () => {
+  it('should pass the item to app-exhibition-detail-view', () => {
     setup('matieres-silencieuses', of(mockExhibition));
     const fixture = TestBed.createComponent(ExhibitionDetailComponent);
     fixture.detectChanges();
-    const range = (fixture.componentInstance as any).formatRange('2025-03-14', '2025-05-18');
-    expect(range).toContain('—');
-    expect(range).toContain('2025');
+    const view = fixture.nativeElement.querySelector('app-exhibition-detail-view');
+    expect(view).toBeTruthy();
   });
 
   it('enrichit la liste de slides avec cover prefix + link suffix', () => {
@@ -126,33 +125,6 @@ describe('ExhibitionDetailComponent', () => {
     expect(display[display.length - 1].type).toBe('link');
     expect((display[display.length - 1] as any).href).toBe('/expositions/expo-test');
     expect((display[display.length - 1] as any).label).toBe('Voir l\'exposition');
-  });
-
-  it('coverCropStyle() applique transform quand coverCrop est défini', () => {
-    setup('matieres-silencieuses', of({ ...mockExhibition, coverCrop: { x: 25, y: 25, w: 50, h: 50 } }));
-    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    expect(cmp.coverCropStyle().transform).toBe('translate(-50%, -50%) scale(2)');
-  });
-
-  it('coverCropStyle() retourne "none" quand coverCrop est null', () => {
-    setup('matieres-silencieuses', of({ ...mockExhibition, coverCrop: null }));
-    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    expect(cmp.coverCropStyle().transform).toBe('none');
-  });
-
-  it('galleryItemStyle() applique transform quand item.crop est defini', () => {
-    setup('matieres-silencieuses', of({ ...mockExhibition,
-      gallery: [{ url: '/g.jpg', crop: { x: 0, y: 0, w: 100, h: 100 } }]
-    }));
-    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    const style = cmp.galleryItemStyle({ url: '/g.jpg', crop: { x: 0, y: 0, w: 100, h: 100 } });
-    expect(style.transform).toBe('translate(0%, 0%) scale(1)');
   });
 
   it('filtre les slides legacy de type cover/link recues de l API', () => {

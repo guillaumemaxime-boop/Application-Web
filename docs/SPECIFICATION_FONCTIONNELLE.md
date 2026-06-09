@@ -1,7 +1,7 @@
 # Spécification Fonctionnelle — Milo GUILLAUME Design
 
-**Version** : 2.4.0
-**Date** : 08/06/2026
+**Version** : 2.5.0
+**Date** : 09/06/2026
 **Auteur** : Maxime Guillaume
 **Statut** : En cours de validation
 
@@ -132,9 +132,9 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 #### Fiche Exposition (`/expositions/:slug`)
 
 - **Bannière** : image principale. Si un crop est défini, seule la zone cadrée est affichée (rendu CSS transform pixel-perfect) ; sinon, rendu natif `object-fit: cover`.
-- **Détails** : titre, lieu, ville, pays, dates, commissaire.
+- **Détails** : titre, lieu (`venue · city, country`), dates, commissaire.
 - **Description** : texte éditorial.
-- **Galerie** d'images. Chaque item affiche son crop si défini.
+- **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item est rendu via `<app-cropped-image-canvas>` (crop appliqué si défini).
 - **Tags** associés à l'exposition.
 - Gestion 404 si le slug n'existe pas.
 
@@ -174,13 +174,14 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Outil de cadrage de la cover** : identique à la page Mobilier.
 - **Galerie** : même comportement que Mobilier (bouton ✂ par vignette, badge crop).
 - **Bloc Stories** : idem mobilier, avec cadrage du cover de story.
+- **Preview WYSIWYG** (sous-projet 3/4) : voir section dédiée ci-après.
 
 **Page Navigation (`/admin/navigation`)** :
 
 - Toggle CMS pour chaque entrée de menu (visible / masqué).
 - L'entrée **Créations** est configurable depuis cette page.
 
-> **Hors portée — sous-projets 3–4 (à venir)** : preview WYSIWYG du rendu page sur fiche exposition (sous-projet 3) et accueil (sous-projet 4) ; fallback clavier pour drag/resize ; édition inline du champ catégorie ; édition des slides de story depuis le preview. Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
+> **Hors portée — sous-projet 4 (à venir)** : preview WYSIWYG de l'accueil (sous-projet 4) ; fallback clavier pour drag/resize ; édition inline du champ catégorie ; édition des slides de story depuis le preview. Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
 
 ---
 
@@ -236,6 +237,69 @@ Après une sauvegarde réussie, l'admin **reste sur la fiche** (rechargée depui
 
 - Liens rapides, mentions légales, copyright.
 - Entrée **Créations** dans les liens rapides du footer.
+
+---
+
+### 4.1.2 Preview WYSIWYG — Fiche Exposition (sous-projet 3/4)
+
+> Spec complète : [docs/superpowers/specs/2026-06-09-exhibition-detail-wysiwyg-preview-design.md](../superpowers/specs/2026-06-09-exhibition-detail-wysiwyg-preview-design.md)
+
+L'édition d'une fiche exposition propose un **toggle** entre deux modes :
+
+- **✏ Modifier l'exposition** (mode formulaire, défaut) : formulaire de saisie, pleine largeur.
+- **👁 Aperçu** (mode preview WYSIWYG) : rendu live de la fiche, identique au public.
+
+Contrairement au mobilier (split 50/50), le layout expositions utilise un **toggle plein-largeur** : le formulaire est maintenu dans le DOM en `position: absolute; left: -100vw` en mode preview (pour préserver les `@ViewChild`) mais invisible et non-interactif.
+
+#### Interactivité du preview — Exposition
+
+| Zone | Comportement |
+| ---- | ------------ |
+| **Titre** | Clic → scroll-into-view + focus du champ form. Double-clic → édition inline (`contenteditable` + outline accent) ; Entrée ou Blur valide, Échap annule. |
+| **Eyebrow `venue · city, country`** | Décomposé en **3 spans cliquables** + 2 séparateurs `aria-hidden`. Clic sur chaque span → focus du champ form correspondant. Double-clic → édition inline du champ concerné. |
+| **Date début / Date fin** | Clic → focus du champ form. **Double-clic → swap vers `<input type="date">` natif** (datepicker browser, format ISO `YYYY-MM-DD`). Blur valide, Échap annule. |
+| **Eyebrow commissaire `Commissariat — curator`** | Préfixe « Commissariat — » statique. `curator` cliquable individuellement : clic → focus, double-clic → édition inline. |
+| **Lead (shortDescription) / Description** | Clic → focus. Double-clic → édition inline. |
+| **Tags** | Rendu lecture seule (chips). Édition dans le form uniquement. |
+| **Cover hero** | Hover → boutons **✂ Cadrer** et **🖼 Remplacer** (même modales que le form). |
+| **Item de galerie** | Hover → boutons **✂ Cadrer**, **🖼 Remplacer**, **× Retirer**. Pastille **⋮⋮** (top-left) → drag&drop pour réordonner. Pastille **⤡** (bottom-right) → drag pour redimensionner (1–3 colonnes × 1–4 lignes) avec badge live `N × M`. |
+| **Tuile « + Ajouter une image »** | En fin de galerie → ouvre la médiathèque. |
+| **Bouton « Voir la story »** | Rendu conditionnel si `displaySlides.length > 0`. Lecture seule (ouvre le viewer). |
+
+#### Toolbar du preview — Exposition
+
+- Bouton **💾 Enregistrer** : équivalent au submit du formulaire, désactivé si le formulaire est invalide ou en cours d'enregistrement.
+- Toggle **⤢ Plein écran** / **⤡ Réduire** : le preview occupe tout le viewport. Les modales (Cadrer / Remplacer) s'affichent par-dessus.
+
+#### Comportement après sauvegarde — Exposition
+
+Après une sauvegarde réussie, l'admin **reste sur la fiche** (rechargée depuis la réponse serveur) au lieu d'être redirigé.
+
+#### Galerie publique — migration canvas
+
+La galerie de la fiche exposition publique est migrée de `<img + style.transform>` vers `<app-cropped-image-canvas>`, par cohérence avec le mobilier (sous-projet 2). Le rendu visuel reste identique ; les baselines Playwright sont mises à jour après validation visuelle manuelle.
+
+#### Architecture technique — Exposition
+
+- `<app-exhibition-detail-view>` : composant standalone purement présentationnel, partagé entre la page publique et le preview admin. Prend une `Exhibition` en input ; émet des Outputs en mode `editable=true`.
+- `<app-exhibition-preview>` : wrap le view, agrège les signaux du `ExpositionsComponent` (FormGroup + signal galerie) dans un objet `Exhibition` virtuel via `computed()`, et branche les Outputs aux modales existantes.
+- La page publique `ExhibitionDetailComponent` délègue désormais tout le rendu au view (`<app-exhibition-detail-view>`), garantissant le pixel-perfect validé par Playwright.
+- Pattern page/view documenté dans ADR-0018.
+
+#### Accessibilité — Exposition
+
+- Toggle Modifier / Aperçu : `role="tab"` + `aria-selected`.
+- Plein écran : `aria-modal="true"` + `role="dialog"`.
+- Édition inline texte : `aria-label` dynamique selon le mode actif.
+- Spans eyebrow : séparateurs `aria-hidden` pour éviter la verbosité lecteur d'écran.
+- Drag/resize : souris uniquement (pas de fallback clavier — limitation connue, reportée).
+
+#### Hors portée (reporté)
+
+- Sélecteur de story dans le preview (toujours `currentStories()[0]`).
+- Validation cross-field dates côté frontend (start ≤ end) — backend reste responsable.
+- Fallback clavier pour drag/resize.
+- Application au sous-projet 4 (Accueil).
 
 ---
 
@@ -397,6 +461,7 @@ Les valeurs `colSpan` / `rowSpan` sont définies par l'admin via le preview WYSI
 | **F038** | Navigation CMS | Activer / désactiver des entrées de menu (dont Créations) depuis l'admin. | ⭐⭐ | ✅ Fait |
 | **F039** | Outil de cadrage d'image | Cadrer précisément la zone affichée pour la cover et chaque item de galerie (mobilier, exposition, cover de story), via modale Cropper.js avec présets d'aspect ratio (Libre / 16:9 / 4:5 / 1:1). Remplace le focal point. | ⭐⭐⭐ | ✅ Fait |
 | **F047** | Preview WYSIWYG fiche mobilier | Toggle Modifier / Aperçu sur la page admin mobilier. Preview live identique au public, interactif : click-to-focus textes, double-clic édition inline, hover cover/galerie → Cadrer/Remplacer/Retirer, drag-reorder galerie, resize colSpan/rowSpan, toolbar Enregistrer + Plein écran. | ⭐⭐⭐ | ✅ Fait |
+| **F048** | Preview WYSIWYG fiche exposition | Toggle Modifier / Aperçu sur la page admin expositions (toggle plein-largeur). Preview live identique au public, interactif : click-to-focus textes, double-clic édition inline texte, double-clic dates → swap `<input type="date">` natif, eyebrow décomposé en 3 spans cliquables, hover cover/galerie → Cadrer/Remplacer/Retirer, drag-reorder galerie, resize colSpan/rowSpan, toolbar Enregistrer + Plein écran. Galerie publique migrée en canvas. | ⭐⭐⭐ | ✅ Fait |
 
 ### 5.5 Navigation et UX
 
@@ -605,6 +670,21 @@ Les valeurs `colSpan` / `rowSpan` sont définies par l'admin via le preview WYSI
                  → clic "💾 Enregistrer" → sauvegarde, fiche rechargée depuis le serveur
 ```
 
+#### Flux 6 — Édition WYSIWYG d'une Fiche Exposition (Admin)
+
+```
+[/admin/expositions] → clic sur une exposition existante
+                    → formulaire pleine largeur affiché (mode défaut)
+                    → clic "👁 Aperçu" → bascule en mode preview plein-largeur
+                    → clic sur "Galerie Perrotin" (venue) → focus du champ venue dans le form
+                    → double-clic sur la date de fin → swap vers <input type="date">, saisie, Blur valide
+                    → double-clic sur le titre → édition inline, Entrée valide
+                    → hover sur la cover → clic "🖼 Remplacer" → médiathèque
+                    → hover sur un item galerie → clic "⤡" → drag resize 2×2, badge live "2 × 2"
+                    → clic "⤢ Plein écran" → preview occupe tout le viewport
+                    → clic "💾 Enregistrer" → sauvegarde, fiche rechargée depuis le serveur
+```
+
 ---
 
 ## 8. Contraintes Techniques
@@ -677,6 +757,9 @@ Les valeurs `colSpan` / `rowSpan` sont définies par l'admin via le preview WYSI
 | **colSpan / rowSpan** | Propriétés d'un `GalleryImage` définissant le nombre de colonnes (1–3) et de lignes (1–4) CSS Grid occupées par l'item. Remplacent l'heuristique `figure.tall` (ancien item tall automatique). |
 | **app-furniture-detail-view** | Composant Angular standalone purement présentationnel, partagé entre la page publique `/mobilier/:slug` et le preview admin. Prend une `Furniture` en input ; émet des Outputs en mode `editable=true` pour les interactions admin. |
 | **click-to-focus** | Pattern UX du preview WYSIWYG : clic sur un texte du preview → scroll-into-view + focus du champ form correspondant côté formulaire. Double-clic → édition inline directe. |
+| **app-exhibition-detail-view** | Composant Angular standalone purement présentationnel, partagé entre la page publique `/expositions/:slug` et le preview admin. Prend une `Exhibition` en input ; émet des Outputs en mode `editable=true` pour les interactions admin. Parallèle exact de `app-furniture-detail-view`. |
+| **eyebrow composite** | Dans la fiche exposition, ligne `venue · city, country` rendue en un seul span côté public. En mode editable, décomposée en 3 spans cliquables individuellement + séparateurs `aria-hidden`, pour permettre le click-to-focus et l'édition inline champ par champ. |
+| **date swap** | Mécanisme d'édition inline des dates dans le preview exposition : double-clic sur le span de date → remplacement visible par un `<input type="date">` natif (datepicker browser, format ISO `YYYY-MM-DD`). Blur valide, Échap annule. Préféré à `contenteditable` pour éviter les ambiguïtés de format. |
 
 ---
 
@@ -760,7 +843,8 @@ PostgreSQL 16 (:5432)
 | **Phase 6** | Stories multiples + sliders d'actualités + page Créations + tags mobilier | ✅ Terminé |
 | **Phase 6bis** | Outil de cadrage d'image (crop) — sous-projet 1/4 : modale Cropper.js, crop cover + galerie mobilier/expo/story, rendu public CSS transform | ✅ Terminé |
 | **Phase 6ter** | Preview WYSIWYG fiche mobilier — sous-projet 2/4 : toggle Modifier/Aperçu, interactivité textes/images/galerie, toolbar Enregistrer + Plein écran, CSS Grid colSpan/rowSpan galerie | ✅ Terminé |
-| **Phase 6quater** | Preview WYSIWYG fiche exposition (sous-projet 3) et accueil (sous-projet 4) | ⏳ À faire |
+| **Phase 6quater** | Preview WYSIWYG fiche exposition — sous-projet 3/4 : toggle Modifier/Aperçu plein-largeur, interactivité textes/images/galerie, dates inline via swap input natif, eyebrow décomposé, toolbar Enregistrer + Plein écran, galerie publique migrée canvas | ✅ Terminé |
+| **Phase 6quinquies** | Preview WYSIWYG accueil (sous-projet 4) | ⏳ À faire |
 | **Phase 7** | Recherche texte dans le catalogue | ⏳ À faire |
 | **Phase 8** | Internationalisation FR/EN | ⏳ À faire |
 | **Phase 9** | Optimisations SEO (balises méta, sitemap) | ⏳ À faire |
@@ -777,6 +861,7 @@ PostgreSQL 16 (:5432)
 | 2.2.0 | 07/06/2026 | Maxime Guillaume | Stories multiples + sliders d'actualités (F036, F037 ✅) · Page publique `/creations` + tags mobilier (F044, F035 ✅) · Navigation CMS (F038 ✅) · Viewer story plein écran (F045 ✅) · Page Accueil admin consolidant masonry + sliders · Roadmap Phase 5 et 6 terminées · Glossaire enrichi |
 | 2.3.0 | 08/06/2026 | Maxime Guillaume | Outil de cadrage d'image — sous-projet 1/4 (F039, F046 ✅) · Remplacement du focal point par `ImageCrop` · Modèle `GalleryImage[]` sur mobilier/exposition · Crop cover de story · Modale Cropper.js admin · Rendu public CSS transform · Cropper.js ajouté aux frameworks (ADR-0017) · Roadmap Phase 6bis terminée · Glossaire enrichi (ImageCrop, GalleryImage, Focal point, Cropper.js) |
 | 2.4.0 | 08/06/2026 | Maxime Guillaume | Preview WYSIWYG fiche mobilier — sous-projet 2/4 (F047 ✅) · Section 4.1.1 dédiée (toggle Modifier/Aperçu, interactivité textes + images + galerie, toolbar, plein écran, comportement post-sauvegarde) · Flux 5 admin WYSIWYG · Galerie publique migre en CSS Grid colSpan/rowSpan · `GalleryImage` enrichi (colSpan, rowSpan) · Roadmap Phase 6ter terminée, Phase 6quater ajoutée · Glossaire enrichi (WYSIWYG, colSpan/rowSpan, app-furniture-detail-view, click-to-focus) |
+| 2.5.0 | 09/06/2026 | Maxime Guillaume | Preview WYSIWYG fiche exposition — sous-projet 3/4 (F048 ✅) · Section 4.1.2 dédiée (toggle plein-largeur Modifier/Aperçu, eyebrow composite 3 spans, date swap input natif, interactivité textes + images + galerie, toolbar, plein écran, migration galerie publique canvas) · Fiche Exposition publique enrichie (CSS Grid galerie, canvas) · Flux 6 admin WYSIWYG exposition · Roadmap Phase 6quater terminée, Phase 6quinquies ajoutée · Glossaire enrichi (app-exhibition-detail-view, eyebrow composite, date swap) |
 
 ---
 
