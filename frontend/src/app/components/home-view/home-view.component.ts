@@ -83,7 +83,7 @@ export type EditableHomeContentKey =
           @if (data.feed.length > 0) {
             @if (editable) {
               <ul class="grid editable" appReorderable (reordered)="feedReorder.emit($event)">
-                @for (item of data.feed; track item.slug; let i = $index) {
+                @for (item of data.feed; track item.kind + ':' + item.slug; let i = $index) {
                   <li class="card editable" [class.excluded]="!isIncluded(item)">
                     @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
                     @if (!isIncluded(item)) { <span class="excluded-badge">Exclu</span> }
@@ -113,7 +113,7 @@ export type EditableHomeContentKey =
               </ul>
             } @else {
               <div class="grid">
-                @for (item of data.feed; track item.slug) {
+                @for (item of data.feed; track item.kind + ':' + item.slug) {
                   <a class="card" [routerLink]="cardLink(item)">
                     @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
                     <div class="thumb">

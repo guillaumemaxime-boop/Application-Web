@@ -216,7 +216,10 @@ export class AccueilComponent {
     const current = this.homeItems();
     if (!current) return;
     this.homeItems.set(order.map(i => current[i]));
-    this.persistFeed();
+    this.saveFeed().subscribe({
+      next: () => this.toast.success('Ordre enregistré.'),
+      error: () => this.toast.error('Impossible d\'enregistrer l\'ordre.'),
+    });
   }
 
   moveUp(index: number): void {
@@ -239,13 +242,21 @@ export class AccueilComponent {
   toggleIncluded(item: HomeAdminItem, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.homeItems.update(items => items?.map(x => x === item ? { ...x, included: checked } : x) ?? null);
-    this.persistFeed();
+    this.saveFeed().subscribe({
+      next: () => this.toast.success('Ordre enregistré.'),
+      error: () => this.toast.error('Impossible d\'enregistrer l\'ordre.'),
+    });
   }
 
-  persistFeed(): void {
+  saveFeed(): import('rxjs').Observable<unknown> {
     const items = this.homeItems() ?? [];
     const entries: AdminFeedEntry[] = items.filter(i => i.included).map(i => ({ kind: i.kind, slug: i.slug }));
-    this.portfolio.replaceAdminFeed(entries).subscribe({
+    return this.portfolio.replaceAdminFeed(entries);
+  }
+
+  /** @deprecated Use saveFeed() directly. Kept for backward compatibility. */
+  persistFeed(): void {
+    this.saveFeed().subscribe({
       next: () => this.toast.success('Ordre enregistré.'),
       error: () => this.toast.error('Impossible d\'enregistrer l\'ordre.'),
     });
@@ -257,16 +268,30 @@ export class AccueilComponent {
   }
 
   protected onPreviewFeedReorder(order: number[]): void {
-    this.onFeedReorder(order);
-    this.portfolio.getHome().subscribe(h => this.homeData.set(h));
+    const current = this.homeItems();
+    if (!current) return;
+    this.homeItems.set(order.map(i => current[i]));
+    this.saveFeed().subscribe({
+      next: () => {
+        this.toast.success('Ordre enregistré.');
+        this.portfolio.getHome().subscribe(h => this.homeData.set(h));
+      },
+      error: () => this.toast.error('Impossible d\'enregistrer l\'ordre.'),
+    });
   }
 
   protected onPreviewFeedItemToggleInclude(e: { kind: 'furniture' | 'exhibition'; slug: string; included: boolean }): void {
     const items = this.homeItems() ?? [];
     const target = items.find((it: HomeAdminItem) => it.kind === e.kind && it.slug === e.slug);
     if (!target) return;
-    this.toggleIncluded(target as HomeAdminItem, { target: { checked: e.included } } as unknown as Event);
-    this.portfolio.getHome().subscribe(h => this.homeData.set(h));
+    this.homeItems.update(all => all?.map(x => x === target ? { ...x, included: e.included } : x) ?? null);
+    this.saveFeed().subscribe({
+      next: () => {
+        this.toast.success('Ordre enregistré.');
+        this.portfolio.getHome().subscribe(h => this.homeData.set(h));
+      },
+      error: () => this.toast.error('Impossible d\'enregistrer l\'ordre.'),
+    });
   }
 
   private static readonly EDITABLE_CONTENT_KEYS = new Set([

@@ -17,6 +17,7 @@ type AccueilInternals = {
   includedSlugs: () => Set<string>;
   toggleIncluded: (item: HomeItem, event: Event) => void;
   onFeedReorder: (order: number[]) => void;
+  saveFeed: () => import('rxjs').Observable<unknown>;
   persistFeed: () => void;
   moveUp: (i: number) => void;
   moveDown: (i: number) => void;
