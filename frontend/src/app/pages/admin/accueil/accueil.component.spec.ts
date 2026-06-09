@@ -9,17 +9,36 @@ type HomeItem = { kind: 'furniture' | 'exhibition'; slug: string; title: string;
 
 type AccueilInternals = {
   homeItems: { (): HomeItem[] | null; set: (v: HomeItem[]) => void };
+  accueilViewMode: { (): 'form' | 'preview'; set: (v: 'form' | 'preview') => void };
+  previewFullscreen: { (): boolean; set: (v: boolean) => void; update: (fn: (v: boolean) => boolean) => void };
+  homeData: { (): any; set: (v: any) => void };
+  content: { (): any; set: (v: any) => void };
+  sliders: { (): any[]; set: (v: any[]) => void };
+  includedSlugs: () => Set<string>;
   toggleIncluded: (item: HomeItem, event: Event) => void;
   onFeedReorder: (order: number[]) => void;
   persistFeed: () => void;
   moveUp: (i: number) => void;
   moveDown: (i: number) => void;
+  togglePreviewFullscreen: () => void;
+  previewFullscreenLabel: () => string;
+  onPreviewTextFieldEdit: (e: { key: string; value: string }) => void;
+  onSliderEditRequested: (zone: 'home-top' | 'home-middle' | 'home-bottom') => void;
+  onPreviewFeedReorder: (order: number[]) => void;
+  onPreviewFeedItemToggleInclude: (e: { kind: 'furniture' | 'exhibition'; slug: string; included: boolean }) => void;
 };
 
 /** Flush les deux requêtes émises par SlidersComponent.ngOnInit(). */
 function flushSliders(httpMock: HttpTestingController): void {
   httpMock.expectOne('/api/admin/sliders').flush([]);
   httpMock.expectOne('/api/admin/stories/all').flush([]);
+}
+
+/** Flush les trois requêtes de preview (home, content, sliders publics). */
+function flushPreview(httpMock: HttpTestingController): void {
+  httpMock.expectOne('/api/home').flush({ categories: [], exhibitions: [], feed: [] });
+  httpMock.expectOne('/api/content').flush({});
+  httpMock.expectOne('/api/sliders').flush([]);
 }
 
 describe('AccueilComponent', () => {
@@ -41,6 +60,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([{ id: '1', slug: 'a', title: 'A', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false }]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     expect(fixture.debugElement.queryAll(By.css('.home-row')).length).toBe(1);
@@ -52,6 +72,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('app-admin-sliders'))).toBeTruthy();
@@ -65,6 +86,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([{ id: '1', slug: 'a', title: 'A', category: '', year: 2024, coverImage: '', dimensions: [], gallery: [], featured: false }]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
@@ -89,6 +111,7 @@ describe('AccueilComponent', () => {
       { kind: 'furniture', slug: 'fur-incl' },
       { kind: 'exhibition', slug: 'exh-incl' },
     ]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
@@ -114,6 +137,7 @@ describe('AccueilComponent', () => {
       { kind: 'furniture', slug: 'a' },
       { kind: 'furniture', slug: 'b' },
     ]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
@@ -138,6 +162,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
   });
 
@@ -152,6 +177,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/admin/home/feed').flush([
       { kind: 'furniture', slug: 'a' }, // a inclus, b exclus
     ]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
@@ -173,6 +199,7 @@ describe('AccueilComponent', () => {
       { kind: 'furniture', slug: 'a' },
       { kind: 'furniture', slug: 'b' },
     ]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
@@ -191,6 +218,7 @@ describe('AccueilComponent', () => {
     ]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
@@ -207,6 +235,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
   });
 
@@ -222,6 +251,7 @@ describe('AccueilComponent', () => {
       { kind: 'furniture', slug: 'a' },
       { kind: 'furniture', slug: 'b' },
     ]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
@@ -240,6 +270,7 @@ describe('AccueilComponent', () => {
     ]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
@@ -255,6 +286,7 @@ describe('AccueilComponent', () => {
     httpMock.expectOne('/api/furniture').flush([]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
   });
 
@@ -268,11 +300,149 @@ describe('AccueilComponent', () => {
     ]);
     httpMock.expectOne('/api/exhibitions').flush([]);
     httpMock.expectOne('/api/admin/home/feed').flush([{ kind: 'furniture', slug: 'a' }]);
+    flushPreview(httpMock);
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
     cmp.persistFeed();
     httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/home/feed').error(new ProgressEvent('err'));
     expect(toast.error).toHaveBeenCalled();
+  });
+
+  // ---- Tests Task 6 : toggle + handlers preview ----
+
+  it('accueilViewMode default form, switche preview', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    expect(cmp.accueilViewMode()).toBe('form');
+    cmp.accueilViewMode.set('preview');
+    expect(cmp.accueilViewMode()).toBe('preview');
+  });
+
+  it('togglePreviewFullscreen bascule', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    expect(cmp.previewFullscreen()).toBeFalse();
+    cmp.togglePreviewFullscreen();
+    expect(cmp.previewFullscreen()).toBeTrue();
+    cmp.togglePreviewFullscreen();
+    expect(cmp.previewFullscreen()).toBeFalse();
+  });
+
+  it('includedSlugs reflete les items inclus', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.homeItems.set([
+      { kind: 'furniture', slug: 'a', title: 'A', cover: '', included: true },
+      { kind: 'exhibition', slug: 'b', title: 'B', cover: '', included: false },
+    ]);
+    expect(cmp.includedSlugs().has('furniture:a')).toBeTrue();
+    expect(cmp.includedSlugs().has('exhibition:b')).toBeFalse();
+  });
+
+  it('onPreviewTextFieldEdit appelle updateContent avec map mergee', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'success');
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.content.set({ 'home.hero.eyebrow': 'Ancien' });
+    cmp.onPreviewTextFieldEdit({ key: 'home.hero.title', value: 'Nouveau titre' });
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
+    expect(req.request.body).toEqual({ 'home.hero.eyebrow': 'Ancien', 'home.hero.title': 'Nouveau titre' });
+    req.flush({ 'home.hero.eyebrow': 'Ancien', 'home.hero.title': 'Nouveau titre' });
+    expect(cmp.content()['home.hero.title']).toBe('Nouveau titre');
+    expect(toast.success).toHaveBeenCalled();
+  });
+
+  it('onPreviewTextFieldEdit ignore les cles hors whitelist', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.onPreviewTextFieldEdit({ key: 'home.hero.evil', value: 'x' });
+    // Aucune requête PUT attendue
+    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/admin/content');
+  });
+
+  it('onPreviewTextFieldEdit error -> toast error', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'error');
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.onPreviewTextFieldEdit({ key: 'home.hero.lead', value: 'test' });
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content').error(new ProgressEvent('err'));
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it('onSliderEditRequested switch mode + scroll', (done) => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+
+    // Spy sur le prototype pour intercepter scrollIntoView quel que soit l'élément retourné
+    const scrollSpy = spyOn(HTMLElement.prototype, 'scrollIntoView');
+
+    // Ajoute un div id=admin-sliders-anchor pour que getElementById le trouve
+    const anchor = document.createElement('div');
+    anchor.id = 'admin-sliders-anchor';
+    document.body.appendChild(anchor);
+
+    cmp.accueilViewMode.set('preview');
+    expect(cmp.accueilViewMode()).toBe('preview');
+    cmp.onSliderEditRequested('home-top');
+    expect(cmp.accueilViewMode()).toBe('form');
+
+    // queueMicrotask -> attendre la prochaine microtâche après celle du composant
+    queueMicrotask(() => {
+      expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth' });
+      document.body.removeChild(anchor);
+      done();
+    });
   });
 });
