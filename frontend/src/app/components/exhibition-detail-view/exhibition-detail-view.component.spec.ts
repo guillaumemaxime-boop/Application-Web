@@ -21,6 +21,8 @@ describe('ExhibitionDetailViewComponent', () => {
     fixture = TestBed.createComponent(ExhibitionDetailViewComponent);
   });
 
+  // --- Tests Task 1 (4 tests) ---
+
   it('affiche le titre de l\'exposition', () => {
     fixture.componentRef.setInput('item', mockExhibition);
     fixture.detectChanges();
@@ -47,6 +49,8 @@ describe('ExhibitionDetailViewComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.hero')).toBeNull();
   });
+
+  // --- Tests Task 2 (7 tests) ---
 
   it('affiche la lead et la description', () => {
     fixture.componentRef.setInput('item', mockExhibition);
@@ -103,5 +107,100 @@ describe('ExhibitionDetailViewComponent', () => {
     fixture.componentInstance.viewerOpen.subscribe(() => emitted = true);
     (fixture.nativeElement.querySelector('.viewer-link') as HTMLButtonElement).click();
     expect(emitted).toBeTrue();
+  });
+
+  // --- Tests Task 3 (9 tests) ---
+
+  it('decompose l\'eyebrow en 3 spans editable en mode editable', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const segments = fixture.nativeElement.querySelectorAll('.eyebrow-segment');
+    expect(segments.length).toBe(3);
+  });
+
+  it('emet coverEdit=crop au clic sur Cadrer', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    let emitted: any = null;
+    fixture.componentInstance.coverEdit.subscribe((a: any) => emitted = a);
+    const btn = fixture.nativeElement.querySelector('.hero-bg .edit-btn[aria-label="Cadrer la cover"]') as HTMLButtonElement;
+    btn.click();
+    expect(emitted).toBe('crop');
+  });
+
+  it('emet textFieldClick au clic sur le titre', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    let emitted: any = null;
+    fixture.componentInstance.textFieldClick.subscribe((n: any) => emitted = n);
+    (fixture.nativeElement.querySelector('h1.editable-text') as HTMLElement).click();
+    expect(emitted).toBe('title');
+  });
+
+  it('emet textFieldClick au clic sur startDate', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    let emitted: any = null;
+    fixture.componentInstance.textFieldClick.subscribe((n: any) => emitted = n);
+    (fixture.nativeElement.querySelector('.date-segment') as HTMLElement).click();
+    expect(emitted).toBe('startDate');
+  });
+
+  it('startDateEdit affiche un input type=date', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.startDateEdit({ preventDefault: () => {}, stopPropagation: () => {} } as any, 'startDate');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('input[type="date"]')).toBeTruthy();
+  });
+
+  it('commitDateEdit emet dateFieldEdit avec valeur du input', (done) => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.editingDateField = 'startDate';
+    cmp.dateFieldEdit.subscribe((e: any) => {
+      expect(e).toEqual({ field: 'startDate', value: '2026-01-15' });
+      done();
+    });
+    const input = document.createElement('input');
+    input.type = 'date';
+    input.value = '2026-01-15';
+    cmp.commitDateEdit({ target: input } as any, 'startDate');
+  });
+
+  it('emet galleryItemEdit remove au clic sur ×', () => {
+    const e = { ...mockExhibition, gallery: [{ url: 'a.jpg', crop: null }] };
+    fixture.componentRef.setInput('item', e);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    let emitted: any = null;
+    fixture.componentInstance.galleryItemEdit.subscribe((ev: any) => emitted = ev);
+    const btn = fixture.nativeElement.querySelector('.gallery-img-wrap .edit-btn[aria-label="Retirer cette image"]') as HTMLButtonElement;
+    btn.click();
+    expect(emitted).toEqual({ index: 0, action: 'remove' });
+  });
+
+  it('emet galleryAdd au clic sur la tuile +', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    let emitted = false;
+    fixture.componentInstance.galleryAdd.subscribe(() => emitted = true);
+    (fixture.nativeElement.querySelector('.gallery-add-btn') as HTMLButtonElement).click();
+    expect(emitted).toBeTrue();
+  });
+
+  it('overlays absents quand editable=false', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.hero-bg .edit-overlay')).toBeNull();
   });
 });
