@@ -45,6 +45,38 @@ class HomeFeedServiceTest {
         assertEquals("lumen", saved.get(1).getRefSlug());
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void replace_preserveCoverCropExistant() {
+        HomeFeedEntryEntity existing = new HomeFeedEntryEntity();
+        existing.setPosition(0);
+        existing.setKind("furniture");
+        existing.setRefSlug("console");
+        existing.setCoverCropX(10.0);
+        existing.setCoverCropY(20.0);
+        existing.setCoverCropW(50.0);
+        existing.setCoverCropH(60.0);
+        when(repository.findAllByOrderByPositionAsc()).thenReturn(List.of(existing));
+
+        List<HomeFeedService.FeedEntry> input = List.of(
+                new HomeFeedService.FeedEntry("exhibition", "lumen"),
+                new HomeFeedService.FeedEntry("furniture", "console")
+        );
+        service.replace(input);
+
+        ArgumentCaptor<List<HomeFeedEntryEntity>> captor = ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+        List<HomeFeedEntryEntity> saved = captor.getValue();
+        // L'item "console" est maintenant à la position 1, mais doit conserver son coverCrop
+        assertEquals("console", saved.get(1).getRefSlug());
+        assertEquals(10.0, saved.get(1).getCoverCropX());
+        assertEquals(20.0, saved.get(1).getCoverCropY());
+        assertEquals(50.0, saved.get(1).getCoverCropW());
+        assertEquals(60.0, saved.get(1).getCoverCropH());
+        // L'item lumen (nouveau, sans crop) reste sans crop
+        assertNull(saved.get(0).getCoverCropX());
+    }
+
     // --- F-07 : validation kind/slug ---
 
     @Test
