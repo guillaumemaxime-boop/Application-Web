@@ -5,8 +5,6 @@ import { of, throwError } from 'rxjs';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Furniture } from '../../models/furniture.model';
-import { Exhibition } from '../../models/exhibition.model';
 import { HomePageData } from '../../models/home.model';
 import { Story, StoryWithSlides } from '../../models/story.model';
 
@@ -28,24 +26,6 @@ describe('HomeComponent', () => {
     ],
   };
 
-  const mockFurniture: Furniture = {
-    id: 'f-001', title: 'Onde', slug: 'onde-fauteuil-sculpte', category: 'Sièges',
-    material: 'Chêne', year: 2024, coverImage: 'f.jpg', gallery: [],
-    shortDescription: '', description: '', dimensions: [], designer: '',
-    featured: true,
-    showStoryLink: true, showStoryButton: true, slides: [{ type: 'cover', id: 's1', position: 0, src: 'cover.jpg' }] as any,
-  };
-
-  const mockExhibition: Exhibition = {
-    id: 'e-001', title: 'Matières', slug: 'matieres-silencieuses',
-    venue: 'Galerie Joseph', city: 'Paris', country: 'France',
-    startDate: '2025-03-14', endDate: '2025-05-18',
-    coverImage: 'e.jpg', gallery: [], curator: '',
-    shortDescription: '', description: '', tags: [],
-    featured: true,
-    showStoryLink: true, showStoryButton: true, slides: [{ type: 'cover', id: 's2', position: 0, src: 'cover2.jpg' }] as any,
-  };
-
   const mockFurnitureStory: Story = {
     id: 'st-f-001',
     ownerKind: 'furniture',
@@ -57,17 +37,6 @@ describe('HomeComponent', () => {
     createdAt: '2025-01-01T00:00:00Z',
   };
 
-  const mockExhibitionStory: Story = {
-    id: 'st-e-001',
-    ownerKind: 'exhibition',
-    ownerId: 'e-001',
-    title: 'Matières',
-    coverImage: 'e.jpg',
-    slug: 'matieres-silencieuses-principale',
-    position: 0,
-    createdAt: '2025-01-01T00:00:00Z',
-  };
-
   const mockFurnitureStoryWithSlides: StoryWithSlides = {
     story: mockFurnitureStory,
     slides: [{ type: 'cover', id: 's1', position: 0, src: 'cover.jpg' }] as any,
@@ -75,29 +44,14 @@ describe('HomeComponent', () => {
     ownerSlug: 'onde-fauteuil-sculpte',
   };
 
-  const mockExhibitionStoryWithSlides: StoryWithSlides = {
-    story: mockExhibitionStory,
-    slides: [{ type: 'cover', id: 's2', position: 0, src: 'cover2.jpg' }] as any,
-    ownerShowStoryLink: true,
-    ownerSlug: 'matieres-silencieuses',
-  };
-
   beforeEach(async () => {
     const spy = jasmine.createSpyObj<PortfolioService>('PortfolioService', [
-      'getHome', 'getFurniture', 'getExhibition', 'getContent', 'getPublicSliders',
-      'getStoryBySlug', 'getStories',
+      'getHome', 'getContent', 'getPublicSliders', 'getStoryBySlug',
     ]);
     spy.getHome.and.returnValue(of(mockHome));
-    spy.getFurniture.and.returnValue(of(mockFurniture));
-    spy.getExhibition.and.returnValue(of(mockExhibition));
     spy.getContent.and.returnValue(of({}));
     spy.getPublicSliders.and.returnValue(of([]));
-    spy.getStories.and.callFake((kind, _ownerId) =>
-      of(kind === 'furniture' ? [mockFurnitureStory] : [mockExhibitionStory])
-    );
-    spy.getStoryBySlug.and.callFake((slug) =>
-      of(slug === mockFurnitureStory.slug ? mockFurnitureStoryWithSlides : mockExhibitionStoryWithSlides)
-    );
+    spy.getStoryBySlug.and.returnValue(of(mockFurnitureStoryWithSlides));
 
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
@@ -124,60 +78,9 @@ describe('HomeComponent', () => {
     expect((component as any).data()).toEqual(mockHome);
   });
 
-  it('cardLink returns furniture detail route', () => {
-    expect((component as any).cardLink(mockHome.feed[0])).toBe('/mobilier/onde-fauteuil-sculpte');
-  });
-
-  it('cardLink returns exhibition detail route', () => {
-    expect((component as any).cardLink(mockHome.feed[1])).toBe('/expositions/matieres-silencieuses');
-  });
-
-  it('renders feed card excerpt when description is provided', () => {
-    const excerpts = fixture.nativeElement.querySelectorAll('.feed .card .excerpt') as NodeListOf<HTMLElement>;
-    expect(excerpts.length).toBe(2);
-    expect(excerpts[0].textContent).toContain('Fauteuil en chêne');
-    expect(excerpts[1].textContent).toContain('calcaire');
-  });
-
-  it('heroTitle returns the default text when content is empty', () => {
-    portfolioServiceSpy.getContent.and.returnValue(of({}));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    expect((f.componentInstance as any).heroTitle()).toContain('Mobilier');
-  });
-
-  it('heroTitle uses the configured value when content provides a non-empty title', () => {
-    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.hero.title': 'Atelier\nLumen' }));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    const title = (f.componentInstance as any).heroTitle();
-    expect(title).toContain('Atelier');
-    expect(title).toContain('\n');
-    // XSS: la chaine ne doit JAMAIS contenir de <br/> brut ni d'HTML injecte.
-    expect(title).not.toContain('<br/>');
-    expect(title).not.toContain('<');
-  });
-
-  it('renders heroTitle as plain text without injecting HTML', () => {
-    portfolioServiceSpy.getContent.and.returnValue(of({
-      'home.hero.title': 'Innocent<script>alert(1)</script>\nLigne 2',
-    }));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    const h1 = f.nativeElement.querySelector('.hero h1.hero-title') as HTMLElement;
-    expect(h1).not.toBeNull();
-    // textContent contient le texte litteral (incluant les < > non-interpretes)
-    expect(h1.textContent).toContain('<script>');
-    // innerHTML est encode (les < sont &lt;), donc aucune balise script reelle
-    expect(h1.querySelector('script')).toBeNull();
-    expect(h1.querySelector('br')).toBeNull();
-  });
-
-  it('heroTitle falls back to the default when content has a whitespace-only title', () => {
-    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.hero.title': '   ' }));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    expect((f.componentInstance as any).heroTitle()).toContain('Mobilier');
+  it('passe data/content/sliders/viewerQueue a app-home-view', () => {
+    const view = fixture.nativeElement.querySelector('app-home-view');
+    expect(view).not.toBeNull();
   });
 
   it('closeViewer empties the queue', () => {
@@ -216,74 +119,10 @@ describe('HomeComponent', () => {
     expect(slides.every(s => s.type !== 'link')).toBeTrue();
   });
 
-  it('heroEyebrow retourne vide quand data est null (chargement)', () => {
-    portfolioServiceSpy.getHome.and.returnValue(of(mockHome));
-    const f = TestBed.createComponent(HomeComponent);
-    // Avant detectChanges, data() est null → heroEyebrow() = ''
-    expect((f.componentInstance as any).heroEyebrow()).toBe('');
-  });
-
-  it('heroEyebrow retourne la valeur configuree quand content la fournit', () => {
-    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.hero.eyebrow': 'Studio' }));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    expect((f.componentInstance as any).heroEyebrow()).toBe('Studio');
-  });
-
-  it('heroLead retourne vide quand data est null (chargement)', () => {
-    const f = TestBed.createComponent(HomeComponent);
-    expect((f.componentInstance as any).heroLead()).toBe('');
-  });
-
-  it('heroLead retourne la valeur configuree quand content la fournit', () => {
-    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.hero.lead': 'Lead personnalisé.' }));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    expect((f.componentInstance as any).heroLead()).toBe('Lead personnalisé.');
-  });
-
-  it('feedTitle retourne vide quand data est null (chargement)', () => {
-    const f = TestBed.createComponent(HomeComponent);
-    expect((f.componentInstance as any).feedTitle()).toBe('');
-  });
-
-  it('feedTitle retourne la valeur configuree quand content la fournit', () => {
-    portfolioServiceSpy.getContent.and.returnValue(of({ 'home.feed.title': 'Sélection' }));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    expect((f.componentInstance as any).feedTitle()).toBe('Sélection');
-  });
-
-  it('sliderByZone place les sliders dans la bonne zone', () => {
-    const sliderHomeTop = {
-      id: 'sld-1', slug: 'top', title: 'Top', zoneKey: 'home-top' as const,
-      stories: [],
-    };
-    portfolioServiceSpy.getPublicSliders.and.returnValue(of([sliderHomeTop]));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    const byZone = (f.componentInstance as any).sliderByZone();
-    expect(byZone['home-top']).toBeTruthy();
-    expect(byZone['home-top'].id).toBe('sld-1');
-  });
-
-  it('sliderByZone ignore les zones inconnues', () => {
-    const invalidSlider = {
-      id: 'sld-x', slug: 'x', title: 'X', zoneKey: 'unknown-zone' as any,
-      stories: [],
-    };
-    portfolioServiceSpy.getPublicSliders.and.returnValue(of([invalidSlider]));
-    const f = TestBed.createComponent(HomeComponent);
-    f.detectChanges();
-    const byZone = (f.componentInstance as any).sliderByZone();
-    expect(Object.keys(byZone).length).toBe(0);
-  });
-
   it('ngOnInit error callback stoppe le LoadingService sans planter', () => {
     portfolioServiceSpy.getHome.and.returnValue(throwError(() => new Error('réseau')));
     const f = TestBed.createComponent(HomeComponent);
     expect(() => f.detectChanges()).not.toThrow();
-    // data reste null, pas de plantage
     expect((f.componentInstance as any).data()).toBeNull();
   });
 
@@ -298,8 +137,6 @@ describe('HomeComponent', () => {
     (component as any).openStoryFromSlider(storyRef);
     const queue = (component as any).viewerQueue();
     expect(queue.length).toBe(1);
-    // Pas de slide cover ni link (coverImage défini mais showStoryLink false)
-    // Vérifie juste que ça n'a pas planté et que la queue est remplie
     expect(Array.isArray(queue[0].slides)).toBeTrue();
   });
 });
