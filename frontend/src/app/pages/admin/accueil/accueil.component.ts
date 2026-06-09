@@ -270,7 +270,15 @@ export class AccueilComponent {
   protected onPreviewFeedReorder(order: number[]): void {
     const current = this.homeItems();
     if (!current) return;
-    this.homeItems.set(order.map(i => current[i]));
+    // L'ordre vient de la preview qui n'affiche QUE les items inclus.
+    // On reordonne seulement les inclus, en preservant la position des exclus dans homeItems.
+    const includedItems = current.filter(i => i.included);
+    const newIncluded = order.map(i => includedItems[i]).filter((x): x is HomeAdminItem => !!x);
+    let nextIncludedIdx = 0;
+    const newItems = current.map(item =>
+      item.included ? (newIncluded[nextIncludedIdx++] ?? item) : item
+    );
+    this.homeItems.set(newItems);
     this.saveFeed().subscribe({
       next: () => {
         this.toast.success('Ordre enregistré.');

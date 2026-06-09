@@ -518,4 +518,29 @@ describe('AccueilComponent', () => {
     expect(cmp.cropEditOpen()).toBeFalse();
     expect(cmp.cropEditItem()).toBeNull();
   });
+
+  it('onPreviewFeedReorder ne supprime pas les items exclus du homeItems', () => {
+    const { cmp } = setupWithFeed(httpMock);
+    cmp.homeItems.set([
+      { kind: 'furniture', slug: 'A', title: 'A', cover: '', included: true },
+      { kind: 'furniture', slug: 'B', title: 'B', cover: '', included: true },
+      { kind: 'furniture', slug: 'C', title: 'C', cover: '', included: true },
+      { kind: 'furniture', slug: 'D', title: 'D', cover: '', included: false },
+      { kind: 'exhibition', slug: 'E', title: 'E', cover: '', included: false },
+    ]);
+    // Drag : preview reordre les inclus [A,B,C] en [B,A,C] -> order=[1,0,2]
+    cmp.onPreviewFeedReorder([1, 0, 2]);
+    const items = cmp.homeItems();
+    expect(items?.length).toBe(5);
+    expect(items?.[0].slug).toBe('B');
+    expect(items?.[1].slug).toBe('A');
+    expect(items?.[2].slug).toBe('C');
+    expect(items?.[3].slug).toBe('D');
+    expect(items?.[4].slug).toBe('E');
+    // Flush requests pour eviter les leaks
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/home/feed');
+    put.flush([{ kind: 'furniture', slug: 'B' }, { kind: 'furniture', slug: 'A' }, { kind: 'furniture', slug: 'C' }]);
+    const get = httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/home');
+    get.flush({ hero: {}, feed: [], sliders: [] });
+  });
 });
