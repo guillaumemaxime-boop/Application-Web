@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { NgStyle, CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HomePageData, HomeFeedItem } from '../../models/home.model';
@@ -8,27 +8,67 @@ import { NewsSliderComponent } from '../news-slider/news-slider.component';
 import { StoryViewerComponent, StoryItem } from '../story-viewer/story-viewer.component';
 import { NewsSliderView, SLIDER_ZONES, SliderStoryRef } from '../../models/news-slider.model';
 import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
+import { ReorderableDirective } from '../../directives/reorderable.directive';
+
+export type EditableHomeContentKey =
+  | 'home.hero.eyebrow' | 'home.hero.title' | 'home.hero.lead';
 
 @Component({
   selector: 'app-home-view',
   standalone: true,
-  imports: [NgStyle, CommonModule, RouterLink, NewsSliderComponent, StoryViewerComponent, CroppedImageCanvasComponent],
+  imports: [NgStyle, CommonModule, RouterLink, NewsSliderComponent, StoryViewerComponent, CroppedImageCanvasComponent, ReorderableDirective],
   template: `
     @if (data) {
-      <section class="hero">
+      <section class="hero" [class.editable]="editable">
         <div class="container">
-          <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ heroEyebrow() }}</span>
-          <h1 class="hero-title" [ngStyle]="titleStyle()">{{ heroTitle() }}</h1>
-          <p class="lead">{{ heroLead() }}</p>
+          @if (editable) {
+            <span class="eyebrow editable-text" tabindex="0" [ngStyle]="eyebrowStyle()"
+                  [attr.contenteditable]="isEditingKey('home.hero.eyebrow')"
+                  (click)="textFieldEdit.emit({ key: 'home.hero.eyebrow', value: heroEyebrow() })"
+                  (dblclick)="startInlineEdit($event, 'home.hero.eyebrow')"
+                  (blur)="commitInlineEdit($event, 'home.hero.eyebrow')"
+                  (keydown.enter)="onInlineEnter($event, 'home.hero.eyebrow')"
+                  (keydown.escape)="cancelInlineEdit($event)">{{ heroEyebrow() }}</span>
+            <h1 class="hero-title editable-text" tabindex="0" [ngStyle]="titleStyle()"
+                [attr.contenteditable]="isEditingKey('home.hero.title')"
+                (click)="textFieldEdit.emit({ key: 'home.hero.title', value: heroTitle() })"
+                (dblclick)="startInlineEdit($event, 'home.hero.title')"
+                (blur)="commitInlineEdit($event, 'home.hero.title')"
+                (keydown.enter)="onInlineEnter($event, 'home.hero.title')"
+                (keydown.escape)="cancelInlineEdit($event)">{{ heroTitle() }}</h1>
+            <p class="lead editable-text" tabindex="0"
+               [attr.contenteditable]="isEditingKey('home.hero.lead')"
+               (click)="textFieldEdit.emit({ key: 'home.hero.lead', value: heroLead() })"
+               (dblclick)="startInlineEdit($event, 'home.hero.lead')"
+               (blur)="commitInlineEdit($event, 'home.hero.lead')"
+               (keydown.enter)="onInlineEnter($event, 'home.hero.lead')"
+               (keydown.escape)="cancelInlineEdit($event)">{{ heroLead() }}</p>
+          } @else {
+            <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ heroEyebrow() }}</span>
+            <h1 class="hero-title" [ngStyle]="titleStyle()">{{ heroTitle() }}</h1>
+            <p class="lead">{{ heroLead() }}</p>
+          }
         </div>
       </section>
 
       @if (sliderByZone()['home-top']; as s) {
-        <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+        <div class="slider-wrap" [class.editable]="editable">
+          <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+          @if (editable) {
+            <button type="button" class="slider-edit-badge" aria-label="Éditer ce slider (Sliders dans Modifier)"
+                    (click)="onSliderEditRequested('home-top')">i</button>
+          }
+        </div>
       }
 
       @if (sliderByZone()['home-middle']; as s) {
-        <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+        <div class="slider-wrap" [class.editable]="editable">
+          <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+          @if (editable) {
+            <button type="button" class="slider-edit-badge" aria-label="Éditer ce slider (Sliders dans Modifier)"
+                    (click)="onSliderEditRequested('home-middle')">i</button>
+          }
+        </div>
       }
 
       <section class="feed">
@@ -37,32 +77,67 @@ import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-im
             <h2 class="feed-title" [ngStyle]="feedTitleStyle()">{{ t }}</h2>
           }
           @if (data.feed.length > 0) {
-            <div class="grid">
-              @for (item of data.feed; track item.slug) {
-                <a class="card" [routerLink]="cardLink(item)">
-                  @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
-                  <div class="thumb">
-                    <app-cropped-image-canvas
-                      [imageUrl]="item.cover"
-                      [crop]="item.coverCrop ?? null"
-                      [alt]="item.title"
-                      mode="cover" />
-                  </div>
-                  <div class="meta">
-                    <span class="cat" [ngStyle]="eyebrowStyle()">{{ item.subtitle }}</span>
-                    <h3 class="title" [ngStyle]="cardTitleStyle()">{{ item.title }}</h3>
-                    @if (item.description) { <p class="excerpt">{{ item.description }}</p> }
-                    <span class="cta">Découvrir <span class="arrow" aria-hidden="true">→</span></span>
-                  </div>
-                </a>
-              }
-            </div>
+            @if (editable) {
+              <ul class="grid editable" appReorderable (reordered)="feedReorder.emit($event)">
+                @for (item of data.feed; track item.slug; let i = $index) {
+                  <li class="card editable" [class.excluded]="!isIncluded(item)">
+                    @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
+                    @if (!isIncluded(item)) { <span class="excluded-badge">Exclu</span> }
+                    <div class="thumb">
+                      <app-cropped-image-canvas
+                        [imageUrl]="item.cover"
+                        [crop]="item.coverCrop ?? null"
+                        [alt]="item.title"
+                        mode="cover" />
+                    </div>
+                    <div class="meta">
+                      <span class="cat">{{ item.subtitle }}</span>
+                      <h3 class="title">{{ item.title }}</h3>
+                    </div>
+                    <div class="edit-overlay">
+                      <label class="incl-toggle">
+                        <input type="checkbox" [checked]="isIncluded(item)" (change)="onToggleInclude(item, $event)" />
+                        <span>Inclus</span>
+                      </label>
+                      <div class="drag-handle" title="Glisser pour réordonner" aria-hidden="true">⋮⋮</div>
+                    </div>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <div class="grid">
+                @for (item of data.feed; track item.slug) {
+                  <a class="card" [routerLink]="cardLink(item)">
+                    @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
+                    <div class="thumb">
+                      <app-cropped-image-canvas
+                        [imageUrl]="item.cover"
+                        [crop]="item.coverCrop ?? null"
+                        [alt]="item.title"
+                        mode="cover" />
+                    </div>
+                    <div class="meta">
+                      <span class="cat" [ngStyle]="eyebrowStyle()">{{ item.subtitle }}</span>
+                      <h3 class="title" [ngStyle]="cardTitleStyle()">{{ item.title }}</h3>
+                      @if (item.description) { <p class="excerpt">{{ item.description }}</p> }
+                      <span class="cta">Découvrir <span class="arrow" aria-hidden="true">→</span></span>
+                    </div>
+                  </a>
+                }
+              </div>
+            }
           }
         </div>
       </section>
 
       @if (sliderByZone()['home-bottom']; as s) {
-        <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+        <div class="slider-wrap" [class.editable]="editable">
+          <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+          @if (editable) {
+            <button type="button" class="slider-edit-badge" aria-label="Éditer ce slider (Sliders dans Modifier)"
+                    (click)="onSliderEditRequested('home-bottom')">i</button>
+          }
+        </div>
       }
 
       @if (viewerQueue.length > 0) {
@@ -105,6 +180,44 @@ import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-im
       .ring { width: 72px; height: 72px; }
       .title { font-size: 1.35rem; }
     }
+
+    /* Editable styles */
+    .editable-text { cursor: pointer; outline: 1px dashed transparent; outline-offset: 4px; transition: outline-color 180ms ease; border-radius: 2px; }
+    .editable-text:hover, .editable-text:focus-visible { outline-color: currentColor; }
+    .editable-text[contenteditable="true"] { outline: 2px solid var(--color-accent, #2a9d8f); outline-offset: 4px; background: rgba(0,0,0,0.03); cursor: text; }
+
+    .slider-wrap { position: relative; }
+    .slider-edit-badge {
+      position: absolute; top: 16px; right: 32px; z-index: 5;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--color-ink); color: var(--color-bg);
+      border: 0; font-family: serif; font-style: italic; font-weight: bold;
+      cursor: pointer; opacity: 0.6; transition: opacity 180ms ease, transform 180ms ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .slider-edit-badge:hover { opacity: 1; transform: scale(1.1); }
+
+    .grid.editable { list-style: none; padding: 0; }
+    .grid.editable > li.card { position: relative; }
+    .grid.editable > li.card.excluded { opacity: 0.35; }
+    .excluded-badge { position: absolute; top: 14px; right: 14px; background: #c44; color: #fff; font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 10px; z-index: 2; }
+    .card.editable .edit-overlay {
+      position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: space-between;
+      background: rgba(0,0,0,0.0); opacity: 0; transition: opacity 180ms ease, background 180ms ease;
+      padding: 12px; z-index: 3;
+    }
+    .card.editable:hover .edit-overlay { opacity: 1; background: rgba(0,0,0,0.45); }
+    .card.editable .incl-toggle {
+      background: var(--color-bg); color: var(--color-ink); padding: 6px 10px;
+      display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; cursor: pointer;
+    }
+    .card.editable .drag-handle {
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      background: var(--color-ink); color: var(--color-bg); border: 2px solid var(--color-bg);
+      border-radius: 50%; font-size: 0.85rem; letter-spacing: -2px; cursor: grab;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .card.editable .drag-handle:active { cursor: grabbing; }
   `]
 })
 export class HomeViewComponent {
@@ -112,9 +225,17 @@ export class HomeViewComponent {
   @Input() content: SiteContent = {};
   @Input() sliders: NewsSliderView[] = [];
   @Input() viewerQueue: StoryItem[] = [];
+  @Input() editable = false;
+  @Input() includedSlugs: Set<string> = new Set();
 
   @Output() storyOpen = new EventEmitter<SliderStoryRef>();
   @Output() viewerClosed = new EventEmitter<void>();
+  @Output() feedReorder = new EventEmitter<number[]>();
+  @Output() feedItemToggleInclude = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string; included: boolean }>();
+  @Output() textFieldEdit = new EventEmitter<{ key: EditableHomeContentKey; value: string }>();
+  @Output() sliderEditRequested = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
+
+  protected editingKey: EditableHomeContentKey | null = null;
 
   protected eyebrowStyle(): Record<string, string> { return roleStyle(this.content, 'eyebrow'); }
   protected titleStyle(): Record<string, string> { return roleStyle(this.content, 'title'); }
@@ -146,6 +267,60 @@ export class HomeViewComponent {
 
   protected cardLink(item: HomeFeedItem): string[] {
     return item.kind === 'exhibition' ? ['/expositions', item.slug] : ['/mobilier', item.slug];
+  }
+
+  protected isEditingKey(k: EditableHomeContentKey): boolean | null {
+    return this.editingKey === k ? true : null;
+  }
+
+  protected isIncluded(item: HomeFeedItem): boolean {
+    return this.includedSlugs.has(item.kind + ':' + item.slug);
+  }
+
+  protected onToggleInclude(item: HomeFeedItem, ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    this.feedItemToggleInclude.emit({ kind: item.kind, slug: item.slug, included: checked });
+  }
+
+  protected startInlineEdit(ev: Event, key: EditableHomeContentKey): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.editingKey = key;
+    const el = ev.currentTarget as HTMLElement;
+    queueMicrotask(() => {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    });
+  }
+
+  protected commitInlineEdit(ev: FocusEvent, key: EditableHomeContentKey): void {
+    if (this.editingKey !== key) return;
+    const el = ev.target as HTMLElement;
+    const value = (el.textContent ?? '').trim();
+    this.editingKey = null;
+    this.textFieldEdit.emit({ key, value });
+  }
+
+  protected onInlineEnter(ev: Event, key: EditableHomeContentKey): void {
+    if (this.editingKey === key) {
+      ev.preventDefault();
+      (ev.target as HTMLElement).blur();
+    }
+  }
+
+  protected cancelInlineEdit(ev: Event): void {
+    if (!this.editingKey) return;
+    ev.preventDefault();
+    this.editingKey = null;
+    (ev.target as HTMLElement).blur();
+  }
+
+  protected onSliderEditRequested(zone: 'home-top' | 'home-middle' | 'home-bottom'): void {
+    this.sliderEditRequested.emit(zone);
   }
 
   protected onSliderStoryOpen(story: SliderStoryRef): void {
