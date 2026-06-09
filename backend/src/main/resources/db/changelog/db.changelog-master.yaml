@@ -86,3 +86,6 @@ databaseChangeLog:
   - include:
       file: changes/029-add-gallery-item-spans.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/030-add-home-feed-cover-crop.yaml
+      relativeToChangelogFile: true

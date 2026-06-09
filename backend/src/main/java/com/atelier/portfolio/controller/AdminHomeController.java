@@ -1,7 +1,9 @@
 package com.atelier.portfolio.controller;
 
+import com.atelier.portfolio.model.HomeFeedCoverCropRequest;
 import com.atelier.portfolio.service.HomeFeedService;
 import com.atelier.portfolio.service.HomeFeedService.FeedEntry;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +33,12 @@ public class AdminHomeController {
     @PutMapping("/feed")
     public List<FeedEntry> replace(@RequestBody List<FeedEntry> entries) {
         return feed.replace(entries);
+    }
+
+    @PutMapping("/feed/cover-crop")
+    public ResponseEntity<Void> setFeedCoverCrop(@RequestBody @Valid HomeFeedCoverCropRequest request) {
+        feed.setCoverCrop(request.kind(), request.slug(), request.crop());
+        return ResponseEntity.noContent().build();
     }
 
     /**

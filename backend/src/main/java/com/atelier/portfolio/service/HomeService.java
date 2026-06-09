@@ -78,17 +78,21 @@ public class HomeService {
                     if ("furniture".equals(entry.getKind())) {
                         FurnitureEntity f = furnitureBySlug.get(entry.getRefSlug());
                         if (f == null) return null;
+                        ImageCrop crop = entry.getCoverCropX() != null
+                                ? new ImageCrop(entry.getCoverCropX(), entry.getCoverCropY(), entry.getCoverCropW(), entry.getCoverCropH())
+                                : ImageCrop.ofNullable(f.getCoverCropX(), f.getCoverCropY(), f.getCoverCropW(), f.getCoverCropH());
                         return new HomeFeedItem("furniture", f.getSlug(), f.getTitle(),
-                                f.getCoverImage(),
-                                ImageCrop.ofNullable(f.getCoverCropX(), f.getCoverCropY(), f.getCoverCropW(), f.getCoverCropH()),
+                                f.getCoverImage(), crop,
                                 f.getCategory() + " · " + f.getYear(),
                                 f.getShortDescription());
                     } else if ("exhibition".equals(entry.getKind())) {
                         ExhibitionEntity e = exhibitionBySlug.get(entry.getRefSlug());
                         if (e == null) return null;
+                        ImageCrop crop = entry.getCoverCropX() != null
+                                ? new ImageCrop(entry.getCoverCropX(), entry.getCoverCropY(), entry.getCoverCropW(), entry.getCoverCropH())
+                                : ImageCrop.ofNullable(e.getCoverCropX(), e.getCoverCropY(), e.getCoverCropW(), e.getCoverCropH());
                         return new HomeFeedItem("exhibition", e.getSlug(), e.getTitle(),
-                                e.getCoverImage(),
-                                ImageCrop.ofNullable(e.getCoverCropX(), e.getCoverCropY(), e.getCoverCropW(), e.getCoverCropH()),
+                                e.getCoverImage(), crop,
                                 e.getVenue() + " · " + formatPeriod(e),
                                 e.getShortDescription());
                     }
