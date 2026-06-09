@@ -56,4 +56,12 @@ describe('HomePreviewComponent', () => {
     (fixture.componentInstance as any).onSliderEditRequested('home-top');
     expect(emitted).toBe('home-top');
   });
+
+  it('reemet feedItemCropEdit du view', () => {
+    setup({ feed: [] } as unknown as HomePageData);
+    let emitted: any = null;
+    fixture.componentInstance.feedItemCropEdit.subscribe(e => emitted = e);
+    (fixture.componentInstance as any).onFeedItemCropEdit({ kind: 'furniture', slug: 'chaise' });
+    expect(emitted).toEqual({ kind: 'furniture', slug: 'chaise' });
+  });
 });

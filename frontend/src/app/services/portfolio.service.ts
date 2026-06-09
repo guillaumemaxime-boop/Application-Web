@@ -7,6 +7,7 @@ import { Profile } from '../models/profile.model';
 import { SiteContent } from '../models/site-content.model';
 import { Photo } from '../models/photo.model';
 import { HomePageData, AdminFeedEntry, AdminCategoryView, AdminExhibitionMetaView } from '../models/home.model';
+import { Crop } from '../models/crop.model';
 import { Slide } from '../models/slide.model';
 import { ContactRequestInput, ContactRequestAck } from '../models/contact.model';
 import { MailSettingsView, MailSettingsInput, MailTestResult } from '../models/mail-settings.model';
@@ -146,6 +147,12 @@ export class PortfolioService {
 
   replaceAdminFeed(entries: AdminFeedEntry[]): Observable<AdminFeedEntry[]> {
     return this.http.put<AdminFeedEntry[]>(`${API}/admin/home/feed`, entries).pipe(
+      tap(() => { this.home$ = null; })
+    );
+  }
+
+  updateHomeFeedCoverCrop(kind: 'furniture' | 'exhibition', slug: string, crop: Crop | null): Observable<void> {
+    return this.http.put<void>(`${API}/admin/home/feed/cover-crop`, { kind, slug, crop }).pipe(
       tap(() => { this.home$ = null; })
     );
   }

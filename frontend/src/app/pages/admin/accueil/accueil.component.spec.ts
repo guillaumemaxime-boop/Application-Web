@@ -26,6 +26,11 @@ type AccueilInternals = {
   onSliderEditRequested: (zone: 'home-top' | 'home-middle' | 'home-bottom') => void;
   onPreviewFeedReorder: (order: number[]) => void;
   onPreviewFeedItemToggleInclude: (e: { kind: 'furniture' | 'exhibition'; slug: string; included: boolean }) => void;
+  cropEditOpen: { (): boolean; set: (v: boolean) => void };
+  cropEditItem: { (): any; set: (v: any) => void };
+  onPreviewFeedItemCropEdit: (e: { kind: 'furniture' | 'exhibition'; slug: string }) => void;
+  onCropEditSave: (crop: any) => void;
+  onCropEditCancel: () => void;
 };
 
 /** Flush les deux requêtes émises par SlidersComponent.ngOnInit(). */
@@ -444,5 +449,72 @@ describe('AccueilComponent', () => {
       document.body.removeChild(anchor);
       done();
     });
+  });
+
+  // ---- Tests Task 6bis.3 : crop card feed ----
+
+  function setupWithFeed(httpMock: HttpTestingController): { fixture: any; cmp: AccueilInternals } {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    httpMock.expectOne('/api/home').flush({
+      categories: [],
+      exhibitions: [],
+      feed: [{ kind: 'furniture', slug: 'table', title: 'Table', cover: '/t.jpg', coverCrop: null, subtitle: '' }],
+    });
+    httpMock.expectOne('/api/content').flush({});
+    httpMock.expectOne('/api/sliders').flush([]);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    return { fixture, cmp: fixture.componentInstance as unknown as AccueilInternals };
+  }
+
+  it('onPreviewFeedItemCropEdit set cropEditItem et ouvre modale', () => {
+    const { cmp } = setupWithFeed(httpMock);
+    expect(cmp.cropEditOpen()).toBeFalse();
+    cmp.onPreviewFeedItemCropEdit({ kind: 'furniture', slug: 'table' });
+    expect(cmp.cropEditOpen()).toBeTrue();
+    const ctx = cmp.cropEditItem();
+    expect(ctx).toBeTruthy();
+    expect(ctx.slug).toBe('table');
+    expect(ctx.kind).toBe('furniture');
+    expect(ctx.imageUrl).toBe('/t.jpg');
+    expect(ctx.initialCrop).toBeNull();
+  });
+
+  it('onCropEditSave appelle updateHomeFeedCoverCrop + refresh homeData', () => {
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'success');
+    const { cmp } = setupWithFeed(httpMock);
+    cmp.cropEditItem.set({ kind: 'furniture', slug: 'table', imageUrl: '/t.jpg', initialCrop: null });
+    cmp.cropEditOpen.set(true);
+    cmp.onCropEditSave({ x: 0.1, y: 0.2, w: 0.5, h: 0.6 });
+    const putReq = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/home/feed/cover-crop');
+    expect(putReq.request.body).toEqual({ kind: 'furniture', slug: 'table', crop: { x: 0.1, y: 0.2, w: 0.5, h: 0.6 } });
+    putReq.flush(null);
+    // Après le flush du PUT, un GET /api/home est attendu pour le refresh
+    httpMock.expectOne('/api/home').flush({ categories: [], exhibitions: [], feed: [] });
+    expect(cmp.cropEditOpen()).toBeFalse();
+    expect(cmp.cropEditItem()).toBeNull();
+    expect(toast.success).toHaveBeenCalled();
+  });
+
+  it('onCropEditCancel ferme modale sans appeler API', () => {
+    const { cmp } = setupWithFeed(httpMock);
+    cmp.cropEditOpen.set(true);
+    cmp.cropEditItem.set({ kind: 'furniture', slug: 'table', imageUrl: '/t.jpg', initialCrop: null });
+    cmp.onCropEditCancel();
+    expect(cmp.cropEditOpen()).toBeFalse();
+    expect(cmp.cropEditItem()).toBeNull();
+    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/admin/home/feed/cover-crop');
+  });
+
+  it('onPreviewFeedItemCropEdit ignore si item absent du feed', () => {
+    const { cmp } = setupWithFeed(httpMock);
+    cmp.onPreviewFeedItemCropEdit({ kind: 'furniture', slug: 'absent' });
+    expect(cmp.cropEditOpen()).toBeFalse();
+    expect(cmp.cropEditItem()).toBeNull();
   });
 });

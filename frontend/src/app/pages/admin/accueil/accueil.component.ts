@@ -3,12 +3,14 @@ import { A11yModule } from '@angular/cdk/a11y';
 import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { AdminFeedEntry, HomePageData } from '../../../models/home.model';
+import { Crop } from '../../../models/crop.model';
 import { SiteContent } from '../../../models/site-content.model';
 import { NewsSliderView } from '../../../models/news-slider.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { ToastService } from '../shared/toast.service';
 import { SlidersComponent } from '../sliders/sliders.component';
 import { HomePreviewComponent } from './preview/home-preview.component';
+import { ImageCropPickerComponent } from '../shared/image-crop-picker.component';
 
 interface HomeAdminItem {
   kind: 'furniture' | 'exhibition';
@@ -21,7 +23,7 @@ interface HomeAdminItem {
 @Component({
   selector: 'app-accueil',
   standalone: true,
-  imports: [A11yModule, ReorderableDirective, SlidersComponent, HomePreviewComponent],
+  imports: [A11yModule, ReorderableDirective, SlidersComponent, HomePreviewComponent, ImageCropPickerComponent],
   template: `
     <div class="admin-split">
       <div class="admin-mode-bar" role="tablist" aria-label="Mode d'édition de l'accueil">
@@ -94,8 +96,17 @@ interface HomeAdminItem {
             (feedReorder)="onPreviewFeedReorder($event)"
             (feedItemToggleInclude)="onPreviewFeedItemToggleInclude($event)"
             (textFieldEdit)="onPreviewTextFieldEdit($event)"
-            (sliderEditRequested)="onSliderEditRequested($event)" />
+            (sliderEditRequested)="onSliderEditRequested($event)"
+            (feedItemCropEdit)="onPreviewFeedItemCropEdit($event)" />
         </aside>
+      }
+
+      @if (cropEditOpen() && cropEditItem(); as ctx) {
+        <app-image-crop-picker
+          [imageUrl]="ctx.imageUrl"
+          [initialCrop]="ctx.initialCrop"
+          (validated)="onCropEditSave($event)"
+          (cancelled)="onCropEditCancel()" />
       }
     </div>
   `,
@@ -153,6 +164,9 @@ export class AccueilComponent {
   protected readonly homeData = signal<HomePageData | null>(null);
   protected readonly content = signal<SiteContent>({});
   protected readonly sliders = signal<NewsSliderView[]>([]);
+
+  protected readonly cropEditOpen = signal(false);
+  protected readonly cropEditItem = signal<{ kind: 'furniture' | 'exhibition'; slug: string; imageUrl: string; initialCrop: Crop | null } | null>(null);
 
   protected readonly includedSlugs = computed(() => {
     const items = this.homeItems();
@@ -277,5 +291,38 @@ export class AccueilComponent {
       const el = document.getElementById('admin-sliders-anchor');
       el?.scrollIntoView({ behavior: 'smooth' });
     });
+  }
+
+  protected onPreviewFeedItemCropEdit(e: { kind: 'furniture' | 'exhibition'; slug: string }): void {
+    const data = this.homeData();
+    if (!data) return;
+    const item = data.feed.find(f => f.kind === e.kind && f.slug === e.slug);
+    if (!item) return;
+    this.cropEditItem.set({
+      kind: e.kind,
+      slug: e.slug,
+      imageUrl: item.cover,
+      initialCrop: item.coverCrop ?? null,
+    });
+    this.cropEditOpen.set(true);
+  }
+
+  protected onCropEditSave(crop: Crop): void {
+    const ctx = this.cropEditItem();
+    if (!ctx) return;
+    this.portfolio.updateHomeFeedCoverCrop(ctx.kind, ctx.slug, crop).subscribe({
+      next: () => {
+        this.toast.success('Cadrage sauvegardé.');
+        this.cropEditOpen.set(false);
+        this.cropEditItem.set(null);
+        this.portfolio.getHome().subscribe(h => this.homeData.set(h));
+      },
+      error: () => this.toast.error('Erreur lors de la sauvegarde du cadrage.'),
+    });
+  }
+
+  protected onCropEditCancel(): void {
+    this.cropEditOpen.set(false);
+    this.cropEditItem.set(null);
   }
 }

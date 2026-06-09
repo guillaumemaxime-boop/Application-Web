@@ -18,7 +18,8 @@ import { EditableHomeContentKey, HomeViewComponent } from '../../../../component
       (feedReorder)="onFeedReorder($event)"
       (feedItemToggleInclude)="onFeedItemToggleInclude($event)"
       (textFieldEdit)="onTextFieldEdit($event)"
-      (sliderEditRequested)="onSliderEditRequested($event)" />
+      (sliderEditRequested)="onSliderEditRequested($event)"
+      (feedItemCropEdit)="onFeedItemCropEdit($event)" />
   `,
   styles: []
 })
@@ -32,9 +33,11 @@ export class HomePreviewComponent {
   @Output() feedItemToggleInclude = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string; included: boolean }>();
   @Output() textFieldEdit = new EventEmitter<{ key: EditableHomeContentKey; value: string }>();
   @Output() sliderEditRequested = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
+  @Output() feedItemCropEdit = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
 
   protected onFeedReorder(o: number[]): void { this.feedReorder.emit(o); }
   protected onFeedItemToggleInclude(e: { kind: 'furniture' | 'exhibition'; slug: string; included: boolean }): void { this.feedItemToggleInclude.emit(e); }
   protected onTextFieldEdit(e: { key: EditableHomeContentKey; value: string }): void { this.textFieldEdit.emit(e); }
   protected onSliderEditRequested(z: 'home-top' | 'home-middle' | 'home-bottom'): void { this.sliderEditRequested.emit(z); }
+  protected onFeedItemCropEdit(e: { kind: 'furniture' | 'exhibition'; slug: string }): void { this.feedItemCropEdit.emit(e); }
 }
