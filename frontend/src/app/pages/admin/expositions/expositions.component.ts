@@ -1,4 +1,5 @@
 import { Component, ViewChild, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin, Subscription } from 'rxjs';
@@ -19,7 +20,7 @@ import { enrichSlides } from '../../../utils/display-slides';
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent],
+  imports: [A11yModule, ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -176,6 +177,8 @@ import { enrichSlides } from '../../../utils/display-slides';
           <aside class="admin-preview" [class.fullscreen]="previewFullscreen()"
                  [attr.aria-modal]="previewFullscreen() ? 'true' : null"
                  [attr.role]="previewFullscreen() ? 'dialog' : null"
+                 [cdkTrapFocus]="previewFullscreen()"
+                 [cdkTrapFocusAutoCapture]="previewFullscreen()"
                  aria-label="Aperçu de l'exposition">
             <div class="admin-preview-toolbar">
               <span class="admin-preview-label">Aperçu</span>
@@ -567,7 +570,14 @@ export class ExpositionsComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Whitelist des champs admissibles depuis le preview (defense en profondeur). */
+  private static readonly FOCUSABLE_FIELDS = new Set([
+    'title', 'venue', 'city', 'country', 'startDate', 'endDate',
+    'curator', 'shortDescription', 'description',
+  ]);
+
   focusField(name: string): void {
+    if (!ExpositionsComponent.FOCUSABLE_FIELDS.has(name)) return;
     const el = document.getElementById(`field-${name}`);
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -610,11 +620,13 @@ export class ExpositionsComponent implements OnInit, OnDestroy {
   }
 
   onPreviewTextFieldEdit(e: { field: string; value: string }): void {
+    if (!ExpositionsComponent.FOCUSABLE_FIELDS.has(e.field)) return;
     this.exhibitionForm.patchValue({ [e.field]: e.value });
     this.exhibitionForm.get(e.field)?.markAsDirty();
   }
 
   onPreviewDateFieldEdit(e: { field: 'startDate' | 'endDate'; value: string }): void {
+    if (e.field !== 'startDate' && e.field !== 'endDate') return;
     this.exhibitionForm.patchValue({ [e.field]: e.value });
     this.exhibitionForm.get(e.field)?.markAsDirty();
   }
