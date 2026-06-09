@@ -1,7 +1,7 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.4.0
-**Date** : 08/06/2026
+**Version** : 2.5.0
+**Date** : 09/06/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
 
@@ -710,8 +710,11 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - Pas de filtre catégorie (contrairement au mobilier)
 
 #### `ExhibitionDetailComponent` (`/expositions/:slug`)
+
+- Refactoré (307 → 98 lignes) — délègue le rendu à `<app-exhibition-detail-view>`.
+- Responsabilités conservées : chargement API (`PortfolioService`), routing, story-viewer queue, hooks SEO (`document.title`).
 - Signals : `item`, `loading`, `notFound`
-- Sections : bannière, détails (lieu, dates, commissaire), description, galerie, tags
+- Template : `<app-exhibition-detail-view [item]="item()" [story]="story()" [displaySlides]="displaySlides()" [content]="content()" (viewerOpen)="onViewerOpen($event)">`.
 
 #### `StudioComponent` (`/studio`)
 - Affiche `Profile` : bio, presse, distinctions, email, localisation
@@ -746,6 +749,17 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - IDs déterministes `field-title`, `field-category`, `field-material`, `field-shortDescription`, `field-description` sur les inputs/textareas pour le click-to-focus.
 - **Handlers preview** : `focusField(name)`, `onPreviewCoverEdit`, `onPreviewGalleryItemEdit`, `onPreviewGalleryReorder`, `onPreviewGalleryAdd`, `onPreviewGalleryItemResize`, `onPreviewTextFieldEdit`.
 - **`saveFurniture()`** : recharge l'item depuis la réponse serveur (au lieu de reset du form) — préserve la fiche après save.
+- **Toolbar preview** : bouton « 💾 Enregistrer » à côté du toggle plein écran.
+- **Toggle plein écran** : signal `previewFullscreen`. Styles : `.admin-preview.fullscreen { position: fixed; inset: 0; z-index: 1200 }`.
+- **Stack z-index** : preview fullscreen 1200 · photo picker 1300 · crop picker 1400.
+
+#### `ExpositionsComponent` (`/admin/expositions`) — WYSIWYG preview
+
+- **Toggle Modifier / Aperçu** : signal `expoViewMode` (`'form' | 'preview'`), rendu par onglets (`role="tablist"`).
+- Le formulaire reste **toujours dans le DOM** en mode preview (`position: absolute; left: -100vw`) pour préserver les `ViewChild` et laisser les modales `position: fixed` se rendre normalement.
+- IDs déterministes `field-title`, `field-venue`, `field-city`, `field-country`, `field-startDate`, `field-endDate`, `field-curator`, `field-shortDescription`, `field-description` sur les inputs/textareas pour le click-to-focus.
+- **Handlers preview** : `focusField(name)`, `onPreviewCoverEdit`, `onPreviewGalleryItemEdit`, `onPreviewGalleryReorder`, `onPreviewGalleryAdd`, `onPreviewGalleryItemResize`, `onPreviewTextFieldEdit`, `onPreviewDateFieldEdit`.
+- **`saveExhibition()`** : recharge l'item depuis la réponse serveur (au lieu de reset du form) — préserve la fiche après save.
 - **Toolbar preview** : bouton « 💾 Enregistrer » à côté du toggle plein écran.
 - **Toggle plein écran** : signal `previewFullscreen`. Styles : `.admin-preview.fullscreen { position: fixed; inset: 0; z-index: 1200 }`.
 - **Stack z-index** : preview fullscreen 1200 · photo picker 1300 · crop picker 1400.
@@ -810,6 +824,68 @@ Composant admin standalone qui wrap `<app-furniture-detail-view>` en mode `edita
 | `content` | `SiteContent` | Contenu CMS |
 
 **Outputs :** identiques à `FurnitureDetailViewComponent` (relayés vers `MobilierComponent`).
+
+#### `<app-exhibition-detail-view>` (`ExhibitionDetailViewComponent`)
+
+Chemin : `frontend/src/app/components/exhibition-detail-view/exhibition-detail-view.component.ts`
+
+Composant standalone purement présentation, partagé entre la page publique (`ExhibitionDetailComponent`) et le preview admin (`ExhibitionPreviewComponent`). Aucune dépendance sur `HttpClient`, `Router` ou `PortfolioService`.
+
+**Inputs :**
+
+| Input | Type | Description |
+| ------- | ------ | ----------- |
+| `item` (required) | `Exhibition \| null` | Exposition à rendre |
+| `story` | `Story \| null` | Première story attachée (story-inline) |
+| `displaySlides` | `DisplaySlide[]` | Slides à afficher dans le story-inline |
+| `content` | `SiteContent` | Contenu CMS (styles typographiques) |
+| `editable` | `boolean` | Active les overlays WYSIWYG (défaut `false`) |
+
+**Outputs :**
+
+| Output | Type | Description |
+| -------- | ------ | ----------- |
+| `coverEdit` | `'crop' \| 'replace'` | Clic bouton cover (cadrer / remplacer) |
+| `galleryItemEdit` | `{ index, action: 'crop' \| 'replace' \| 'remove' }` | Action sur un item galerie |
+| `galleryReorder` | `number[]` | Nouvel ordre des indices après drag-reorder |
+| `galleryAdd` | `void` | Clic tuile « + Ajouter une image » |
+| `galleryItemResize` | `{ index, colSpan, rowSpan }` | Fin de resize WYSIWYG d'un item galerie |
+| `textFieldClick` | `EditableExhibitionField \| 'startDate' \| 'endDate'` | Click simple → focus champ form |
+| `textFieldEdit` | `{ field: EditableExhibitionField; value: string }` | Double-clic inline → valeur validée au blur |
+| `dateFieldEdit` | `{ field: 'startDate' \| 'endDate'; value: string }` | Swap input date → valeur ISO au blur |
+| `viewerOpen` | `StoryItem[]` | Ouverture du story-viewer plein écran |
+
+**Type exporté :** `EditableExhibitionField = 'title' | 'venue' | 'city' | 'country' | 'curator' | 'shortDescription' | 'description'`
+
+**Fonctionnalités mode `editable=true` :**
+
+- Overlays hover/focus sur cover et items galerie (boutons Cadrer / Remplacer / Retirer).
+- **Eyebrow composite décomposé** : `venue · city, country` rendu publiquement en un seul `<span>` ; en mode editable, décomposé en 3 spans contigus + 2 séparateurs `aria-hidden`, pour que chaque champ soit cliquable/éditable individuellement. Visuellement identique au rendu public.
+- Édition inline texte : double-clic → `[attr.contenteditable]="true"` + outline accent ; blur valide + émet `textFieldEdit`.
+- **Édition inline dates** : double-clic sur un span date → swap visible vers `<input type="date">` (validation browser native, format ISO `yyyy-MM-dd`). Blur → `dateFieldEdit.emit(...)` ; Échap annule.
+- Click simple sur texte → émet `textFieldClick` (click-to-focus côté parent).
+- Drag-reorder galerie via `ReorderableDirective` HTML5. La tuile « + Ajouter » porte `data-no-drag` pour être exclue.
+- Resize WYSIWYG galerie : pastille `⤡` (bottom-right), pointer drag, badge live `N × M`, snap grid (1–3 cols × 1–4 rows).
+
+#### `<app-exhibition-preview>` (`ExhibitionPreviewComponent`)
+
+Chemin : `frontend/src/app/pages/admin/expositions/preview/exhibition-preview.component.ts`
+
+Composant admin standalone qui wrap `<app-exhibition-detail-view>` en mode `editable=true`. Construit un `Exhibition` virtuel via un `computed` depuis le `FormGroup` + signal galerie de `ExpositionsComponent`.
+
+**Pattern de réactivité :** signal interne `_formTick` incrémenté à chaque `form.valueChanges` (abonnement RxJS). `previewItem = computed(() => { _formTick(); return buildExhibitionFrom(form.getRawValue(), gallery()); })`. Ce pattern contourne l'impossibilité d'utiliser `toSignal()` dans un `computed` (identique au sous-projet 2, mobilier).
+
+**Inputs :**
+
+| Input | Type | Description |
+| ------- | ------ | ----------- |
+| `form` (required) | `FormGroup` | Formulaire exposition du composant parent |
+| `gallery` (required) | `Signal<GalleryItem[]>` | Signal galerie du composant parent (lecture seule) |
+| `story` | `Story \| null` | Story active |
+| `displaySlides` | `DisplaySlide[]` | Slides story-inline |
+| `content` | `SiteContent` | Contenu CMS |
+
+**Outputs :** identiques à `ExhibitionDetailViewComponent` (relayés vers `ExpositionsComponent`).
 
 #### `<app-tag-input>` (`TagInputComponent`)
 
@@ -1198,6 +1274,7 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 0015 | Stories multiples par owner + sliders d'actualités |
 | 0016 | Tags partagés mobilier/exposition et page publique /creations |
 | 0017 | Cropper.js pour l'outil de cadrage d'image admin |
+| 0018 | Pattern page/view — composants de rendu partagés entre page publique et preview admin |
 
 ---
 
@@ -1210,3 +1287,5 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 2.1.0 | 11/05/2026 | Authentification JWT (AuthController, SecurityConfig, authGuard, authInterceptor, LoginComponent) · Suppression lien Admin du menu · Correction CORS (`127.0.0.1:4200`) · ADR-0011 ajouté |
 | 2.2.0 | 07/06/2026 | Stories multiples par owner + sliders d'actualités (ADR-0015) · Tags sur mobilier + page `/creations` (ADR-0016) · Nouveaux endpoints `/api/tags`, `/api/sliders`, `/api/stories`, `/api/admin/sliders/**`, `/api/admin/stories/**` · Schéma BDD : tables `story`, `story_slide` refactorisé, `news_slider`, `slider_story`, `furniture_tag` · Composants partagés `TagInputComponent` et `StoryViewerComponent` · Route `/creations` · ADR-0012 à 0016 ajoutés à la table |
 | 2.3.0 | 08/06/2026 | Outil de cadrage d'image — sous-projet 1/4 (ADR-0017) · Changeset 028 : DROP `cover_focal_x/y`, ADD `cover_crop_x/y/w/h` sur `furniture`/`exhibition`/`story`, ADD `crop_x/y/w/h` sur `furniture_gallery`/`exhibition_gallery` · Breaking change DTO : `gallery` passe de `List<String>` à `List<GalleryImage>` · Nouveaux records `ImageCrop`, `GalleryImage` + `@Valid` cascade · Nouveaux composants admin `ImageCropPickerComponent` (Cropper.js 1.6.2), `CroppedImageCanvasComponent` ; extensions `ImageFieldComponent`, `GalleryEditorComponent` · Utilitaire `cropTransform()` · Interfaces TS `Crop`, `GalleryItem` · Stack : ajout Cropper.js 1.6.2 |
+| 2.4.0 | 08/06/2026 | Preview WYSIWYG fiche mobilier — sous-projet 2/4 (ADR-0018) · Changeset 029 : ADD `col_span`/`row_span` sur `furniture_gallery` et `exhibition_gallery` · Pattern page/view : `FurnitureDetailViewComponent` extrait, `FurniturePreviewComponent` créé · `FurnitureDetailComponent` refactoré (375 → 137 lignes) · `MobilierComponent` toggle Modifier/Aperçu, form hors-écran, click-to-focus, handlers preview, `saveFurniture()` reload · ADR-0018 ajouté |
+| 2.5.0 | 09/06/2026 | Preview WYSIWYG fiche exposition — sous-projet 3/4 (ADR-0018) · Pattern page/view appliqué à exhibition-detail : `ExhibitionDetailViewComponent` extrait, `ExhibitionPreviewComponent` créé · `ExhibitionDetailComponent` refactoré (307 → 98 lignes) · `ExpositionsComponent` toggle Modifier/Aperçu, form hors-écran, 9 IDs `field-*`, handlers preview dont `onPreviewDateFieldEdit`, `saveExhibition()` reload · Eyebrow composite décomposé (3 spans + 2 séparateurs ARIA-hidden en mode editable) · Édition inline dates via swap `<input type="date">` · Type `EditableExhibitionField`, Output `dateFieldEdit` |
