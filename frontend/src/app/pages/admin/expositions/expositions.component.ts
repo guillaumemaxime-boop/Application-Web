@@ -1,7 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ViewChild, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Exhibition } from '../../../models/exhibition.model';
 import { Story } from '../../../models/story.model';
@@ -13,11 +13,13 @@ import { TagInputComponent } from '../shared/tag-input.component';
 import { ToastService } from '../shared/toast.service';
 import { GalleryItem } from '../../../models/gallery-item.model';
 import { Crop } from '../../../models/crop.model';
+import { ExhibitionPreviewComponent } from './preview/exhibition-preview.component';
+import { enrichSlides } from '../../../utils/display-slides';
 
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -44,109 +46,168 @@ import { Crop } from '../../../models/crop.model';
         }
       </aside>
 
-      <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
-        <div class="form-head">
-          <h2>{{ editingExhibitionSlug() ? 'Modifier l\\'exposition' : 'Nouvelle exposition' }}</h2>
-          @if (editingExhibitionSlug(); as s) {
-            <a class="view-link" [href]="'/expositions/' + s" target="_blank" rel="noopener">Voir sur le site ↗</a>
-          }
-        </div>
-
-        <label><span>Titre *</span><input type="text" formControlName="title" /></label>
-        @if (editingExhibitionSlug()) {
-          <label class="readonly-row"><span>Slug</span><input type="text" formControlName="slug" readonly /></label>
+      <div class="admin-split">
+        @if (editingExhibitionSlug() !== null || editingExhibitionId() !== null || creatingExhibition()) {
+          <div class="admin-mode-bar" role="tablist" aria-label="Mode d'édition de l'exposition">
+            <button type="button" role="tab" class="admin-mode-tab"
+                    [class.active]="expoViewMode() === 'form'"
+                    [attr.aria-selected]="expoViewMode() === 'form'"
+                    (click)="expoViewMode.set('form')">
+              ✏ Modifier l'exposition
+            </button>
+            <button type="button" role="tab" class="admin-mode-tab"
+                    [class.active]="expoViewMode() === 'preview'"
+                    [attr.aria-selected]="expoViewMode() === 'preview'"
+                    (click)="expoViewMode.set('preview')">
+              👁 Aperçu
+            </button>
+          </div>
         }
-        <label><span>Lieu</span><input type="text" formControlName="venue" /></label>
-        <div class="row-2">
-          <label><span>Ville</span><input type="text" formControlName="city" /></label>
-          <label><span>Pays</span><input type="text" formControlName="country" /></label>
-        </div>
-        <div class="row-2">
-          <label><span>Date de début *</span><input type="date" formControlName="startDate" /></label>
-          <label><span>Date de fin *</span><input type="date" formControlName="endDate" /></label>
-        </div>
-        <label><span>Commissaire</span><input type="text" formControlName="curator" /></label>
 
-        <app-image-field
-          formControlName="coverImage"
-          label="Image principale (URL)"
-          [cropEnabled]="true"
-          [cropValue]="exhibitionForm.get('coverCrop')?.value"
-          (cropChange)="onCoverCropChange($event)" />
-
-        <app-gallery-editor
-          [images]="exhibitionGallery()"
-          (imagesChange)="exhibitionGallery.set($event)" />
-
-        <label>
-          <span>Tags</span>
-          <app-tag-input formControlName="tags" [suggestions]="allTags()" />
-        </label>
-        <label><span>Description courte</span><textarea rows="2" formControlName="shortDescription"></textarea></label>
-        <label><span>Description longue</span><textarea rows="5" formControlName="description"></textarea></label>
-
-        <label class="checkbox">
-          <input type="checkbox" formControlName="showStoryLink" />
-          <span>Afficher le lien en fin de story</span>
-        </label>
-
-        <label class="checkbox">
-          <input type="checkbox" formControlName="showStoryButton" />
-          <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
-        </label>
-
-        @if (editingExhibitionId()) {
-          <section class="stories-block">
-            <header class="stories-head">
-              <h3>Stories</h3>
-              <button type="button" class="btn-link" (click)="newStory()">+ Nouvelle story</button>
-            </header>
-            @if (currentStories().length === 0) {
-              <p class="empty">Aucune story pour cette exposition.</p>
-            }
-            @for (story of currentStories(); track story.id; let i = $index) {
-              <article class="story-item" [class.active]="editingStoryId() === story.id">
-                <img [src]="story.coverImage" alt="" class="story-cover" />
-                <span class="story-title">{{ story.title }}</span>
-                <div class="story-actions">
-                  <button type="button" class="reorder-btn" (click)="moveStoryUp(story)" [disabled]="i === 0" aria-label="Monter la story">↑</button>
-                  <button type="button" class="reorder-btn" (click)="moveStoryDown(story)" [disabled]="i === currentStories().length - 1" aria-label="Descendre la story">↓</button>
-                  <button type="button" class="btn-mini" (click)="editStory(story)">Éditer slides</button>
-                  <button type="button" class="btn-mini" (click)="openCoverEditor(story)">Cover</button>
-                  <button type="button" class="btn-mini" (click)="renameStory(story)">Renommer</button>
-                  <button type="button" class="btn-mini danger" (click)="deleteStory(story)">Supprimer</button>
-                </div>
-              </article>
-              @if (editingCoverStoryId() === story.id) {
-                <div class="cover-editor">
-                  <app-image-field label="Image de couverture" [formControl]="coverEditCtrl"
-                    [cropEnabled]="true"
-                    [cropValue]="editingStoryCoverCrop()"
-                    (cropChange)="onStoryCoverCropChange($event)" />
-                  <div class="cover-editor-actions">
-                    <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
-                    <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
-                  </div>
-                </div>
+        <section class="admin-form" [class.is-hidden]="expoViewMode() !== 'form'">
+          <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
+            <div class="form-head">
+              <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
+              @if (editingExhibitionSlug(); as s) {
+                <a class="view-link" [href]="'/expositions/' + s" target="_blank" rel="noopener">Voir sur le site ↗</a>
               }
-            }
-          </section>
-          @if (editingStoryId(); as sid) {
-            <app-slides-editor [storyId]="sid" [ownerSlug]="editingExhibitionSlug()" />
-          }
-        } @else {
-          <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir éditer ses slides.</p>
-        }
+            </div>
 
-        <div class="actions">
-          <button type="submit" class="btn-primary" [disabled]="exhibitionForm.invalid || saving()">
-            {{ saving() ? 'Enregistrement…' : (editingExhibitionSlug() ? 'Mettre à jour' : 'Créer') }}
-          </button>
-          @if (editingExhibitionSlug()) {
-            <button type="button" class="btn-link" (click)="newExhibition()">Annuler</button>
-          }
-        </div>
-      </form>
+            <label><span>Titre *</span><input type="text" id="field-title" formControlName="title" /></label>
+            @if (editingExhibitionSlug()) {
+              <label class="readonly-row"><span>Slug</span><input type="text" formControlName="slug" readonly /></label>
+            }
+            <label><span>Lieu</span><input type="text" id="field-venue" formControlName="venue" /></label>
+            <div class="row-2">
+              <label><span>Ville</span><input type="text" id="field-city" formControlName="city" /></label>
+              <label><span>Pays</span><input type="text" id="field-country" formControlName="country" /></label>
+            </div>
+            <div class="row-2">
+              <label><span>Date de début *</span><input type="date" id="field-startDate" formControlName="startDate" /></label>
+              <label><span>Date de fin *</span><input type="date" id="field-endDate" formControlName="endDate" /></label>
+            </div>
+            <label><span>Commissaire</span><input type="text" id="field-curator" formControlName="curator" /></label>
+
+            <app-image-field
+              #coverField
+              formControlName="coverImage"
+              label="Image principale (URL)"
+              [cropEnabled]="true"
+              [cropValue]="exhibitionForm.get('coverCrop')?.value"
+              (cropChange)="onCoverCropChange($event)" />
+
+            <app-gallery-editor
+              #galleryEditor
+              [images]="exhibitionGallery()"
+              (imagesChange)="exhibitionGallery.set($event)" />
+
+            <label>
+              <span>Tags</span>
+              <app-tag-input formControlName="tags" [suggestions]="allTags()" />
+            </label>
+            <label><span>Description courte</span><textarea rows="2" id="field-shortDescription" formControlName="shortDescription"></textarea></label>
+            <label><span>Description longue</span><textarea rows="5" id="field-description" formControlName="description"></textarea></label>
+
+            <label class="checkbox">
+              <input type="checkbox" formControlName="showStoryLink" />
+              <span>Afficher le lien en fin de story</span>
+            </label>
+
+            <label class="checkbox">
+              <input type="checkbox" formControlName="showStoryButton" />
+              <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
+            </label>
+
+            @if (editingExhibitionId()) {
+              <section class="stories-block">
+                <header class="stories-head">
+                  <h3>Stories</h3>
+                  <button type="button" class="btn-link" (click)="newStory()">+ Nouvelle story</button>
+                </header>
+                @if (currentStories().length === 0) {
+                  <p class="empty">Aucune story pour cette exposition.</p>
+                }
+                @for (story of currentStories(); track story.id; let i = $index) {
+                  <article class="story-item" [class.active]="editingStoryId() === story.id">
+                    <img [src]="story.coverImage" alt="" class="story-cover" />
+                    <span class="story-title">{{ story.title }}</span>
+                    <div class="story-actions">
+                      <button type="button" class="reorder-btn" (click)="moveStoryUp(story)" [disabled]="i === 0" aria-label="Monter la story">↑</button>
+                      <button type="button" class="reorder-btn" (click)="moveStoryDown(story)" [disabled]="i === currentStories().length - 1" aria-label="Descendre la story">↓</button>
+                      <button type="button" class="btn-mini" (click)="editStory(story)">Éditer slides</button>
+                      <button type="button" class="btn-mini" (click)="openCoverEditor(story)">Cover</button>
+                      <button type="button" class="btn-mini" (click)="renameStory(story)">Renommer</button>
+                      <button type="button" class="btn-mini danger" (click)="deleteStory(story)">Supprimer</button>
+                    </div>
+                  </article>
+                  @if (editingCoverStoryId() === story.id) {
+                    <div class="cover-editor">
+                      <app-image-field label="Image de couverture" [formControl]="coverEditCtrl"
+                        [cropEnabled]="true"
+                        [cropValue]="editingStoryCoverCrop()"
+                        (cropChange)="onStoryCoverCropChange($event)" />
+                      <div class="cover-editor-actions">
+                        <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
+                        <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
+                      </div>
+                    </div>
+                  }
+                }
+              </section>
+              @if (editingStoryId(); as sid) {
+                <app-slides-editor [storyId]="sid" [ownerSlug]="editingExhibitionSlug()" />
+              }
+            } @else {
+              <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir éditer ses slides.</p>
+            }
+
+            <div class="actions">
+              <button type="submit" class="btn-primary" [disabled]="exhibitionForm.invalid || saving()">
+                {{ saving() ? 'Enregistrement…' : (editingExhibitionSlug() ? 'Mettre à jour' : 'Créer') }}
+              </button>
+              @if (editingExhibitionSlug()) {
+                <button type="button" class="btn-link" (click)="newExhibition()">Annuler</button>
+              }
+            </div>
+          </form>
+        </section>
+
+        @if (expoViewMode() === 'preview' && (editingExhibitionSlug() !== null || editingExhibitionId() !== null || creatingExhibition())) {
+          <aside class="admin-preview" [class.fullscreen]="previewFullscreen()"
+                 [attr.aria-modal]="previewFullscreen() ? 'true' : null"
+                 [attr.role]="previewFullscreen() ? 'dialog' : null"
+                 aria-label="Aperçu de l'exposition">
+            <div class="admin-preview-toolbar">
+              <span class="admin-preview-label">Aperçu</span>
+              <div class="admin-preview-actions">
+                <button type="button" class="btn-preview-save"
+                        [disabled]="exhibitionForm.invalid || saving()"
+                        (click)="saveExhibition()">
+                  @if (saving()) { Enregistrement… } @else { 💾 Enregistrer }
+                </button>
+                <button type="button" class="btn-preview-toggle"
+                        (click)="togglePreviewFullscreen()"
+                        [attr.aria-label]="previewFullscreenLabel()">
+                  @if (previewFullscreen()) { ⤡ Réduire } @else { ⤢ Plein écran }
+                </button>
+              </div>
+            </div>
+            <app-exhibition-preview
+              [form]="exhibitionForm"
+              [gallery]="exhibitionGallery.asReadonly()"
+              [story]="currentStories()[0] ?? null"
+              [displaySlides]="previewDisplaySlides()"
+              (coverEdit)="onPreviewCoverEdit($event)"
+              (galleryItemEdit)="onPreviewGalleryItemEdit($event)"
+              (galleryReorder)="onPreviewGalleryReorder($event)"
+              (galleryAdd)="onPreviewGalleryAdd()"
+              (galleryItemResize)="onPreviewGalleryItemResize($event)"
+              (textFieldClick)="focusField($event)"
+              (textFieldEdit)="onPreviewTextFieldEdit($event)"
+              (dateFieldEdit)="onPreviewDateFieldEdit($event)" />
+          </aside>
+        }
+      </div>
     </div>
 
   `,
@@ -157,12 +218,37 @@ import { Crop } from '../../../models/crop.model';
     .list-head h2 { font-size: 1rem; margin: 0; letter-spacing: 0.04em; }
     .list ul { list-style: none; margin: 0; padding: 0; }
     .list li { display: flex; align-items: stretch; border-bottom: 1px solid var(--color-line); }
+    .list li:last-child { border-bottom: 0; }
     .list li.selected { background: rgba(139, 111, 71, 0.08); }
     .row { flex: 1; text-align: left; background: transparent; border: 0; padding: 14px 20px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
     .row:hover { background: var(--color-bg-alt); }
     .row-title { color: var(--color-ink); font-size: 0.95rem; }
     .row-meta { font-size: 0.75rem; color: var(--color-mute); letter-spacing: 0.06em; text-transform: uppercase; }
     .row-del { background: transparent; border: 0; padding: 0 16px; color: var(--color-mute); font-size: 1.5rem; cursor: pointer; line-height: 1; }
+    .row-del:hover { color: #b1532a; }
+    .admin-split { display: flex; flex-direction: column; gap: 16px; max-width: 100%; }
+    .admin-mode-bar { display: inline-flex; gap: 4px; padding: 4px; background: var(--color-bg-alt); border: 1px solid var(--color-line); align-self: flex-start; }
+    .admin-mode-tab { padding: 8px 16px; background: transparent; border: 0; color: var(--color-ink-soft); font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: background 180ms ease, color 180ms ease; }
+    .admin-mode-tab:hover { color: var(--color-ink); }
+    .admin-mode-tab.active { background: var(--color-ink); color: var(--color-bg); font-weight: 600; }
+    .admin-form { max-width: 100%; }
+    /* En mode preview : form rendue mais positionnee hors viewport. Pas de display:none
+       (qui retirerait les modales descendantes) ni de visibility:hidden (qui se propage
+       en heritage CSS aux modales position:fixed et bloque par view encapsulation
+       Angular sur les composants enfants). Les pickers position:fixed s'affichent
+       toujours au viewport grace a leur z-index. */
+    .admin-form.is-hidden { position: absolute; left: -100vw; top: 0; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+    .admin-preview { max-height: calc(100vh - 100px); overflow-y: auto; background: var(--color-bg-alt); border: 1px solid var(--color-line); padding: 24px; }
+    .admin-preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px -8px 16px; padding: 0 4px; }
+    .admin-preview-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-mute); }
+    .admin-preview-actions { display: inline-flex; gap: 8px; align-items: center; }
+    .btn-preview-save { padding: 6px 14px; background: var(--color-ink); color: var(--color-bg); border: 1px solid var(--color-ink); font-size: 0.78rem; cursor: pointer; font-family: inherit; font-weight: 600; }
+    .btn-preview-save:hover:not(:disabled) { background: var(--color-bg); color: var(--color-ink); }
+    .btn-preview-save:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-preview-toggle { padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-line); color: var(--color-ink-soft); font-size: 0.78rem; cursor: pointer; font-family: inherit; }
+    .btn-preview-toggle:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .admin-preview.fullscreen { position: fixed; inset: 0; max-height: none; z-index: 1200; border: 0; padding: 24px 32px; }
+    .admin-preview.fullscreen .admin-preview-toolbar { margin-top: 0; }
     .form { display: flex; flex-direction: column; gap: 20px; padding: 32px; border: 1px solid var(--color-line); background: var(--color-bg); }
     .form h2 { margin: 0; font-size: 1.5rem; }
     .form-head { display: flex; align-items: baseline; justify-content: space-between; }
@@ -194,36 +280,53 @@ import { Crop } from '../../../models/crop.model';
     .btn-mini.danger:hover { color: #b1532a; border-color: #b1532a; }
     .form label.checkbox { flex-direction: row; align-items: center; gap: 10px; }
     .form label.checkbox > span { text-transform: none; letter-spacing: normal; font-size: 0.9rem; color: var(--color-ink); }
-
     .reorder-btn { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); width: 28px; height: 28px; padding: 0; cursor: pointer; font-size: 0.9rem; line-height: 1; }
     .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .status { color: var(--color-mute); }
+    @media (max-width: 1280px) {
+      .admin-split { grid-template-columns: 1fr; }
+      .admin-preview { position: static; max-height: 60vh; }
+    }
     @media (max-width: 960px) {
       .grid-admin { grid-template-columns: 1fr; }
       .list { position: static; max-height: none; }
       .row-2 { grid-template-columns: 1fr; }
     }
+    @media (max-width: 768px) {
+      .admin-mode-tab { font-size: 0.78rem; }
+      .admin-preview { max-height: 60vh; }
+    }
   `]
 })
-export class ExpositionsComponent {
+export class ExpositionsComponent implements OnInit, OnDestroy {
   private readonly portfolio = inject(PortfolioService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
+
+  @ViewChild('coverField') coverImageField?: ImageFieldComponent;
+  @ViewChild('galleryEditor') galleryEditor?: GalleryEditorComponent;
 
   protected readonly exhibitions = signal<Exhibition[]>([]);
   protected readonly loadingExhibitions = signal(true);
   protected readonly saving = signal(false);
   protected readonly editingExhibitionSlug = signal<string | null>(null);
   protected readonly editingExhibitionId = signal<string | null>(null);
-  protected readonly exhibitionGallery = signal<GalleryItem[]>([]);
+  readonly exhibitionGallery = signal<GalleryItem[]>([]);
   protected readonly allTags = signal<string[]>([]);
   protected readonly currentStories = signal<Story[]>([]);
   protected readonly editingStoryId = signal<string | null>(null);
   protected readonly editingCoverStoryId = signal<string | null>(null);
   protected readonly coverEditCtrl = new FormControl('');
   protected readonly editingStoryCoverCrop = signal<Crop | null>(null);
+
+  protected readonly creatingExhibition = signal(false);
+  protected readonly previewFullscreen = signal(false);
+  protected readonly expoViewMode = signal<'form' | 'preview'>('form');
+
+  private readonly _formTick = signal(0);
+  private formTickSub?: Subscription;
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -243,12 +346,41 @@ export class ExpositionsComponent {
     tags: this.fb.control<string[]>([], { nonNullable: true }),
   });
 
+  protected readonly previewDisplaySlides = computed(() => {
+    this._formTick(); // dépendance signal — force recompute sur valueChanges
+    const story = this.currentStories()[0];
+    if (!story) return [];
+    const v = this.exhibitionForm.getRawValue();
+    return enrichSlides({
+      slug: v.slug ?? '',
+      coverImage: v.coverImage ?? null,
+      coverCrop: v.coverCrop ?? null,
+      slides: [],
+      showStoryLink: v.showStoryLink ?? true,
+    }, 'exhibition');
+  });
+
   constructor() {
     this.refreshExhibitions();
     this.portfolio.getAllTags().subscribe(t => this.allTags.set(t));
     this.route.queryParamMap.subscribe(params => {
       if (params.get('new') === '1') this.newExhibition();
     });
+  }
+
+  ngOnInit(): void {
+    this.formTickSub = this.exhibitionForm.valueChanges.subscribe(() =>
+      this._formTick.update(n => n + 1)
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.formTickSub?.unsubscribe();
+  }
+
+  protected togglePreviewFullscreen(): void { this.previewFullscreen.update(v => !v); }
+  protected previewFullscreenLabel(): string {
+    return this.previewFullscreen() ? 'Réduire l’aperçu' : 'Aperçu plein écran';
   }
 
   private refreshExhibitions(): void {
@@ -262,6 +394,8 @@ export class ExpositionsComponent {
   newExhibition(): void {
     this.editingExhibitionSlug.set(null);
     this.editingExhibitionId.set(null);
+    this.creatingExhibition.set(true);
+    this.expoViewMode.set('form');
     this.currentStories.set([]);
     this.editingStoryId.set(null);
     this.exhibitionForm.reset({
@@ -278,6 +412,8 @@ export class ExpositionsComponent {
   loadExhibition(item: Exhibition): void {
     this.editingExhibitionSlug.set(item.slug);
     this.editingExhibitionId.set(item.id ?? null);
+    this.creatingExhibition.set(false);
+    this.expoViewMode.set('form');
     this.currentStories.set([]);
     this.editingStoryId.set(null);
     this.exhibitionForm.reset({
@@ -431,6 +567,58 @@ export class ExpositionsComponent {
     });
   }
 
+  focusField(name: string): void {
+    const el = document.getElementById(`field-${name}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (el as HTMLInputElement | HTMLTextAreaElement).focus();
+  }
+
+  onPreviewCoverEdit(action: 'crop' | 'replace'): void {
+    if (action === 'crop') {
+      this.coverImageField?.openCrop();
+    } else {
+      this.coverImageField?.openPicker();
+    }
+  }
+
+  onPreviewGalleryItemEdit(e: { index: number; action: 'crop' | 'replace' | 'remove' }): void {
+    if (e.action === 'remove') {
+      this.exhibitionGallery.update(arr => arr.filter((_, i) => i !== e.index));
+      return;
+    }
+    if (e.action === 'crop') {
+      this.galleryEditor?.openCropFor(e.index);
+    } else {
+      this.galleryEditor?.openReplaceFor(e.index);
+    }
+  }
+
+  onPreviewGalleryReorder(order: number[]): void {
+    const items = this.exhibitionGallery();
+    this.exhibitionGallery.set(order.map(i => items[i]));
+  }
+
+  onPreviewGalleryAdd(): void {
+    this.galleryEditor?.openPicker();
+  }
+
+  onPreviewGalleryItemResize(e: { index: number; colSpan: number; rowSpan: number }): void {
+    this.exhibitionGallery.update(arr => arr.map((it, i) =>
+      i === e.index ? { ...it, colSpan: e.colSpan, rowSpan: e.rowSpan } : it
+    ));
+  }
+
+  onPreviewTextFieldEdit(e: { field: string; value: string }): void {
+    this.exhibitionForm.patchValue({ [e.field]: e.value });
+    this.exhibitionForm.get(e.field)?.markAsDirty();
+  }
+
+  onPreviewDateFieldEdit(e: { field: 'startDate' | 'endDate'; value: string }): void {
+    this.exhibitionForm.patchValue({ [e.field]: e.value });
+    this.exhibitionForm.get(e.field)?.markAsDirty();
+  }
+
   saveExhibition(): void {
     if (this.exhibitionForm.invalid) return;
     const v = this.exhibitionForm.getRawValue();
@@ -453,11 +641,15 @@ export class ExpositionsComponent {
       ? this.portfolio.updateExhibition(slug, payload)
       : this.portfolio.createExhibition(payload);
     op$.subscribe({
-      next: () => {
+      next: (saved) => {
         this.saving.set(false);
         this.toast.success(slug ? 'Exposition mise à jour.' : 'Exposition créée.');
         this.refreshExhibitions();
-        this.newExhibition();
+        // Reste sur la fiche après save : recharge depuis la réponse serveur
+        // (préserve form + preview, slug/id à jour pour les opérations suivantes)
+        if (saved) {
+          this.loadExhibition(saved);
+        }
       },
       error: () => {
         this.saving.set(false);
