@@ -629,4 +629,139 @@ describe('ExpositionsComponent', () => {
     expect(cmp.expoViewMode()).toBe('preview');
   });
 
+  it('focusField no-op pour champ hors whitelist', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const input = document.createElement('input');
+    input.id = 'field-featured';
+    document.body.appendChild(input);
+    spyOn(input, 'focus');
+    cmp.focusField('featured');
+    expect(input.focus).not.toHaveBeenCalled();
+    document.body.removeChild(input);
+  });
+
+  it('focusField no-op quand id absent', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(() => cmp.focusField('title')).not.toThrow();
+  });
+
+  it('onPreviewTextFieldEdit ignore champ hors whitelist', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.onPreviewTextFieldEdit({ field: 'featured', value: 'true' });
+    expect(cmp.exhibitionForm.get('featured')?.dirty).toBeFalse();
+  });
+
+  it('onPreviewDateFieldEdit ignore champ autre que start/endDate', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(() => cmp.onPreviewDateFieldEdit({ field: 'foo', value: '2026-01-01' })).not.toThrow();
+  });
+
+  it('onPreviewGalleryAdd ouvre picker via galleryEditor', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const stub = { openPicker: jasmine.createSpy('openPicker') };
+    cmp.galleryEditor = stub;
+    cmp.onPreviewGalleryAdd();
+    expect(stub.openPicker).toHaveBeenCalled();
+  });
+
+  it('onPreviewCoverEdit crop appelle coverField.openCrop', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const stub = { openCrop: jasmine.createSpy('openCrop'), openPicker: jasmine.createSpy('openPicker') };
+    cmp.coverImageField = stub;
+    cmp.onPreviewCoverEdit('crop');
+    expect(stub.openCrop).toHaveBeenCalled();
+  });
+
+  it('onPreviewCoverEdit replace appelle coverField.openPicker', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const stub = { openCrop: jasmine.createSpy('openCrop'), openPicker: jasmine.createSpy('openPicker') };
+    cmp.coverImageField = stub;
+    cmp.onPreviewCoverEdit('replace');
+    expect(stub.openPicker).toHaveBeenCalled();
+  });
+
+  it('onPreviewGalleryItemEdit crop appelle galleryEditor.openCropFor', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const stub = { openCropFor: jasmine.createSpy('openCropFor'), openReplaceFor: jasmine.createSpy('openReplaceFor') };
+    cmp.galleryEditor = stub;
+    cmp.onPreviewGalleryItemEdit({ index: 2, action: 'crop' });
+    expect(stub.openCropFor).toHaveBeenCalledWith(2);
+  });
+
+  it('onPreviewGalleryItemEdit replace appelle galleryEditor.openReplaceFor', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const stub = { openCropFor: jasmine.createSpy('openCropFor'), openReplaceFor: jasmine.createSpy('openReplaceFor') };
+    cmp.galleryEditor = stub;
+    cmp.onPreviewGalleryItemEdit({ index: 0, action: 'replace' });
+    expect(stub.openReplaceFor).toHaveBeenCalledWith(0);
+  });
+
+  it('previewFullscreenLabel reflete l\'etat fullscreen', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.previewFullscreen.set(false);
+    expect(cmp.previewFullscreenLabel()).toContain('plein');
+    cmp.previewFullscreen.set(true);
+    expect(cmp.previewFullscreenLabel()).toContain('duire');
+  });
+
 });
