@@ -27,21 +27,27 @@ interface HomeAdminItem {
   template: `
     <div class="admin-split">
       <div class="admin-mode-bar" role="tablist" aria-label="Mode d'édition de l'accueil">
-        <button type="button" role="tab" class="admin-mode-tab"
+        <button type="button" role="tab" id="tab-form" class="admin-mode-tab"
                 [class.active]="accueilViewMode() === 'form'"
                 [attr.aria-selected]="accueilViewMode() === 'form'"
+                [attr.tabindex]="accueilViewMode() === 'form' ? 0 : -1"
+                aria-controls="panel-form"
                 (click)="accueilViewMode.set('form')">
           ✏ Modifier l'accueil
         </button>
-        <button type="button" role="tab" class="admin-mode-tab"
+        <button type="button" role="tab" id="tab-preview" class="admin-mode-tab"
                 [class.active]="accueilViewMode() === 'preview'"
                 [attr.aria-selected]="accueilViewMode() === 'preview'"
+                [attr.tabindex]="accueilViewMode() === 'preview' ? 0 : -1"
+                aria-controls="panel-preview"
                 (click)="accueilViewMode.set('preview')">
           👁 Aperçu
         </button>
       </div>
 
-      <section class="admin-form" [class.is-hidden]="accueilViewMode() !== 'form'">
+      <section class="admin-form" id="panel-form" role="tabpanel" aria-labelledby="tab-form"
+               [class.is-hidden]="accueilViewMode() !== 'form'"
+               [attr.inert]="accueilViewMode() !== 'form' ? '' : null">
         <div class="home-editor">
           <h2>Ordre éditorial du masonry</h2>
           <p class="hint">Glisse pour réordonner. Décoche pour exclure du feed. Les modifications sont enregistrées automatiquement.</p>
@@ -74,12 +80,12 @@ interface HomeAdminItem {
       </section>
 
       @if (accueilViewMode() === 'preview') {
-        <aside class="admin-preview" [class.fullscreen]="previewFullscreen()"
+        <aside class="admin-preview" id="panel-preview"
+               role="tabpanel" aria-labelledby="tab-preview"
+               [class.fullscreen]="previewFullscreen()"
                [attr.aria-modal]="previewFullscreen() ? 'true' : null"
-               [attr.role]="previewFullscreen() ? 'dialog' : null"
                [cdkTrapFocus]="previewFullscreen()"
-               [cdkTrapFocusAutoCapture]="previewFullscreen()"
-               aria-label="Aperçu de l'accueil">
+               [cdkTrapFocusAutoCapture]="previewFullscreen()">
           <div class="admin-preview-toolbar">
             <span class="admin-preview-label">Aperçu</span>
             <button type="button" class="btn-preview-toggle"
