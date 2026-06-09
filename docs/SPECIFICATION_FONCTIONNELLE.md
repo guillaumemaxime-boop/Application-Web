@@ -1,6 +1,6 @@
 # Spécification Fonctionnelle — Milo GUILLAUME Design
 
-**Version** : 2.5.0
+**Version** : 2.6.0
 **Date** : 09/06/2026
 **Auteur** : Maxime Guillaume
 **Statut** : En cours de validation
@@ -157,6 +157,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - Gestion du masonry home feed (visibilité, ordre des sections).
 - **Composition des sliders d'actualités** : création / modification / suppression de sliders, assignation à une zone (`news.primary/.secondary/.tertiary`), ajout/retrait de stories par drag & drop depuis la liste de toutes les stories disponibles.
 - `/admin/sliders` redirige vers `/admin/accueil` (les sliders sont désormais gérés dans la page Accueil).
+- **Preview WYSIWYG** (sous-projet 4/4) : voir section dédiée ci-après.
 
 **Page Mobilier (`/admin/mobilier`)** :
 
@@ -181,7 +182,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - Toggle CMS pour chaque entrée de menu (visible / masqué).
 - L'entrée **Créations** est configurable depuis cette page.
 
-> **Hors portée — sous-projet 4 (à venir)** : preview WYSIWYG de l'accueil (sous-projet 4) ; fallback clavier pour drag/resize ; édition inline du champ catégorie ; édition des slides de story depuis le preview. Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
+> **Hors portée (reporté)** : fallback clavier pour drag/resize ; édition inline du champ catégorie ; édition des slides de story depuis le preview ; édition inline du contenu des news-sliders et des cards depuis l'accueil ; application à d'autres pages (about, contact). Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
 
 ---
 
@@ -294,12 +295,72 @@ La galerie de la fiche exposition publique est migrée de `<img + style.transfor
 - Spans eyebrow : séparateurs `aria-hidden` pour éviter la verbosité lecteur d'écran.
 - Drag/resize : souris uniquement (pas de fallback clavier — limitation connue, reportée).
 
-#### Hors portée (reporté)
+#### Hors portée — Exposition (reporté)
 
 - Sélecteur de story dans le preview (toujours `currentStories()[0]`).
 - Validation cross-field dates côté frontend (start ≤ end) — backend reste responsable.
 - Fallback clavier pour drag/resize.
-- Application au sous-projet 4 (Accueil).
+
+---
+
+### 4.1.3 Preview WYSIWYG — Accueil (sous-projet 4/4)
+
+> Spec complète : [docs/superpowers/specs/2026-06-09-home-wysiwyg-preview-design.md](../superpowers/specs/2026-06-09-home-wysiwyg-preview-design.md)
+
+L'édition de l'accueil propose un **toggle** entre deux modes :
+
+- **✏ Modifier l'accueil** (mode liste éditoriale + sliders, défaut).
+- **👁 Aperçu** (mode preview WYSIWYG) : rendu live de la page d'accueil, identique au public.
+
+Comme pour l'exposition (sous-projet 3), le layout utilise un **toggle plein-largeur** : le formulaire est maintenu en DOM (`position: absolute; left: -100vw`) en mode preview pour préserver les `@ViewChild`.
+
+#### Interactivité du preview — Accueil
+
+| Zone | Comportement |
+| ---- | ------------ |
+| **Hero eyebrow / titre / lead** | Hover → outline dashed. Double-clic → édition inline `contenteditable` + outline accent. Blur ou Entrée → **auto-save immédiat** via `updateContent` API → toast « Texte sauvegardé. » Échap annule. |
+| **News-sliders (3 zones)** | Rendu lecture seule. Cartouche **`[i]`** discret en haut-droite → clic → bascule en mode Modifier + scroll vers la section sliders. |
+| **Cards du feed (mobilier / expo)** | Hover → overlay : checkbox **Inclus dans le feed** + pastille drag **⋮⋮**. RouterLink désactivé en mode editable (pas de navigation accidentelle). |
+| **Cards exclues** | Opacité 0,35 + badge « Exclu » (visibles en preview admin, masquées en public). |
+| **Crop de la card** | Bouton **✂ Cadrer** dans l'overlay → ouvre modale crop avec image source. Crop sauvegardé dans `home_feed_entries.cover_crop_*` — **n'affecte pas la fiche source mobilier/expo**. |
+| **Drag-reorder feed** | Pastille **⋮⋮** → drag&drop (HTML5) → ordre persisté via PUT `/api/admin/home/feed`. Crops préservés après réordonnancement. |
+| **Toggle inclusion** | Checkbox → auto-save immédiat (même endpoint). |
+
+#### Différences clés vs sous-projets 2 et 3
+
+- **Pas de bouton « 💾 Enregistrer »** : tous les changements sont auto-sauvegardés (textes inline, reorder, toggle inclusion). Il n'existe pas de FormGroup global pour l'accueil.
+- **Crop home-only** : le crop d'une card du feed est stocké dans `home_feed_entries` (colonnes `cover_crop_*`), indépendant du `coverCrop` de la fiche source. L'admin peut cadrer l'image pour l'affichage sur la home sans toucher à la fiche mobilier ou exposition d'origine.
+
+#### Toolbar du preview — Accueil
+
+- Pas de bouton « 💾 Enregistrer » (auto-save partout).
+- Toggle **⤢ Plein écran** / **⤡ Réduire** : le preview occupe tout le viewport. Focus trap (`cdkTrapFocus`) + `aria-modal="true"`.
+- Label « Aperçu » à gauche.
+
+#### Refactor de la page publique — Accueil
+
+`home.component.ts` délègue désormais tout le rendu visuel au composant `<app-home-view>` (200 → ~78 lignes). Aucune régression fonctionnelle ; le rendu public est pixel-perfect (validé par Playwright).
+
+#### Architecture technique — Accueil
+
+- `<app-home-view>` : composant standalone purement présentationnel, partagé entre la page publique et le preview admin. Inputs : `data`, `content`, `editable`. Outputs : `feedReorder`, `feedItemToggleInclude`, `textFieldEdit`, `sliderEditRequested`, `storyOpen`, `viewerOpen`.
+- `<app-home-preview>` : wrapper admin, passe les signaux du `AccueilComponent` directement au view (`data`, `content`) et branche les Outputs vers les handlers du parent. Pas de FormGroup.
+- `home.component.ts` (public) : délègue au view ; conserve le chargement API, le `<app-story-viewer>` top-level et les hooks SEO.
+- Pattern page/view documenté dans ADR-0018 (3ème application : mobilier, exposition, accueil).
+
+#### Accessibilité — Accueil
+
+- Toggle Modifier / Aperçu : `role="tab"` + `aria-selected`.
+- Plein écran : `aria-modal="true"` + `role="dialog"` + `cdkTrapFocus`.
+- Édition inline : `aria-label` dynamique selon le champ actif.
+- Cartouche `[i]` et drag-handle : limitations clavier acceptées (identique sous-projets 2/3 — limitation connue, reportée).
+
+#### Hors portée — Accueil (reporté)
+
+- Édition inline du contenu des news-sliders (titre, ordre des stories) — reste dans `<app-admin-sliders>`.
+- Édition inline des cards (cover/titre/extrait) — édité dans les fiches sources.
+- Drag entre les zones news-sliders (top/middle/bottom).
+- Application à d'autres pages (about, contact) — hors chantier.
 
 ---
 
@@ -403,6 +464,18 @@ Objet partagé porté par l'entité qui utilise l'image (cover ou item de galeri
 
 Les valeurs `colSpan` / `rowSpan` sont définies par l'admin via le preview WYSIWYG (resize depuis la pastille **⤡** en bas-droite de l'item). La valeur 1×1 s'applique rétroactivement aux items existants.
 
+##### HomeFeedEntry (Item du feed accueil)
+
+| Champ | Type | Description | Exemple |
+|-------|------|-------------|---------|
+| `kind` | `String` | Type de fiche source (`"furniture"` ou `"exhibition"`) | `"furniture"` |
+| `slug` | `String` | Slug de la fiche source | `"chaise-eclat"` |
+| `included` | `boolean` | Inclusion dans le feed public | `true` |
+| `position` | `Integer` | Ordre d'affichage dans le feed | `1` |
+| `coverCrop` | `ImageCrop` | Crop home-only (nullable) — indépendant du `coverCrop` de la fiche source | `{"x":0,"y":10,"w":100,"h":75}` |
+
+Le champ `coverCrop` est stocké dans `home_feed_entries` (colonnes `cover_crop_x/y/w/h`). Si défini, il est utilisé pour l'affichage de la card sur la home ; sinon, fallback au `coverCrop` de la fiche source (mobilier ou exposition).
+
 ##### Story (Cover de story avec crop)
 
 | Champ         | Type        | Description                            |
@@ -462,6 +535,7 @@ Les valeurs `colSpan` / `rowSpan` sont définies par l'admin via le preview WYSI
 | **F039** | Outil de cadrage d'image | Cadrer précisément la zone affichée pour la cover et chaque item de galerie (mobilier, exposition, cover de story), via modale Cropper.js avec présets d'aspect ratio (Libre / 16:9 / 4:5 / 1:1). Remplace le focal point. | ⭐⭐⭐ | ✅ Fait |
 | **F047** | Preview WYSIWYG fiche mobilier | Toggle Modifier / Aperçu sur la page admin mobilier. Preview live identique au public, interactif : click-to-focus textes, double-clic édition inline, hover cover/galerie → Cadrer/Remplacer/Retirer, drag-reorder galerie, resize colSpan/rowSpan, toolbar Enregistrer + Plein écran. | ⭐⭐⭐ | ✅ Fait |
 | **F048** | Preview WYSIWYG fiche exposition | Toggle Modifier / Aperçu sur la page admin expositions (toggle plein-largeur). Preview live identique au public, interactif : click-to-focus textes, double-clic édition inline texte, double-clic dates → swap `<input type="date">` natif, eyebrow décomposé en 3 spans cliquables, hover cover/galerie → Cadrer/Remplacer/Retirer, drag-reorder galerie, resize colSpan/rowSpan, toolbar Enregistrer + Plein écran. Galerie publique migrée en canvas. | ⭐⭐⭐ | ✅ Fait |
+| **F049** | Preview WYSIWYG accueil | Toggle Modifier / Aperçu sur la page admin Accueil (toggle plein-largeur). Preview live identique au public, interactif : double-clic hero eyebrow/titre/lead → édition inline contenteditable + **auto-save immédiat** (pas de bouton Enregistrer), hover cards feed → overlay checkbox Inclus + drag-reorder + bouton Cadrer (crop home-only, n'affecte pas la fiche source), cards exclues en opacité 0,35 + badge « Exclu », cartouche `[i]` sur sliders → retour mode Modifier + scroll. Plein écran avec focus trap. Refactor `home.component.ts` (délégation à `<app-home-view>`). | ⭐⭐⭐ | ✅ Fait |
 
 ### 5.5 Navigation et UX
 
@@ -685,6 +759,22 @@ Les valeurs `colSpan` / `rowSpan` sont définies par l'admin via le preview WYSI
                     → clic "💾 Enregistrer" → sauvegarde, fiche rechargée depuis le serveur
 ```
 
+#### Flux 7 — Édition WYSIWYG de l'Accueil (Admin)
+
+```
+[/admin/accueil] → mode défaut : liste éditoriale + sliders
+               → clic "👁 Aperçu" → bascule en mode preview plein-largeur
+               → double-clic sur le titre hero → édition inline contenteditable
+               → Blur → auto-save immédiat → toast "Texte sauvegardé."
+               → hover sur une card du feed → overlay affiché
+               → clic "✂ Cadrer" → modale Cropper.js → Valider → crop sauvegardé (home-only)
+               → décocher "Inclus dans le feed" → card passe en opacité 0,35 + badge "Exclu"
+               → drag pastille ⋮⋮ → réordonner les cards → auto-save ordre
+               → clic cartouche [i] sur un slider → retour mode Modifier + scroll vers sliders
+               → clic "⤢ Plein écran" → preview occupe tout le viewport (focus trap)
+               → (pas de bouton Enregistrer — tout est auto-sauvegardé)
+```
+
 ---
 
 ## 8. Contraintes Techniques
@@ -760,6 +850,11 @@ Les valeurs `colSpan` / `rowSpan` sont définies par l'admin via le preview WYSI
 | **app-exhibition-detail-view** | Composant Angular standalone purement présentationnel, partagé entre la page publique `/expositions/:slug` et le preview admin. Prend une `Exhibition` en input ; émet des Outputs en mode `editable=true` pour les interactions admin. Parallèle exact de `app-furniture-detail-view`. |
 | **eyebrow composite** | Dans la fiche exposition, ligne `venue · city, country` rendue en un seul span côté public. En mode editable, décomposée en 3 spans cliquables individuellement + séparateurs `aria-hidden`, pour permettre le click-to-focus et l'édition inline champ par champ. |
 | **date swap** | Mécanisme d'édition inline des dates dans le preview exposition : double-clic sur le span de date → remplacement visible par un `<input type="date">` natif (datepicker browser, format ISO `YYYY-MM-DD`). Blur valide, Échap annule. Préféré à `contenteditable` pour éviter les ambiguïtés de format. |
+| **app-home-view** | Composant Angular standalone purement présentationnel, partagé entre la page publique `/` et le preview admin accueil. Inputs : `data`, `content`, `editable`. Outputs : `feedReorder`, `feedItemToggleInclude`, `textFieldEdit`, `sliderEditRequested`, `storyOpen`, `viewerOpen`. 3ème application du pattern page/view (ADR-0018). |
+| **app-home-preview** | Wrapper admin du preview accueil. Passe les signaux du `AccueilComponent` directement à `<app-home-view editable=true>` et branche les Outputs vers les handlers parent. Pas de FormGroup — toutes les sauvegardes sont des auto-save immédiats. |
+| **auto-save** | Mécanisme de sauvegarde immédiate sans bouton « Enregistrer » global. Dans le preview accueil : édition inline texte → blur/Entrée → API call immédiat ; reorder/toggle inclusion → PUT immédiat. Différencie le preview accueil des previews mobilier/exposition qui utilisent un FormGroup avec bouton 💾. |
+| **crop home-only** | Crop d'une card du feed accueil stocké dans `home_feed_entries` (colonnes `cover_crop_*`), indépendant du `coverCrop` de la fiche source mobilier/expo. Permet de cadrer l'image pour l'affichage sur la home sans modifier la fiche d'origine. Fallback au `coverCrop` source si non défini. |
+| **cartouche [i]** | Indicateur discret (rond, opacité 0,6 → 1 au hover) positionné en haut-droite d'un news-slider en mode preview admin accueil. Clic → bascule en mode Modifier + scroll vers la section sliders correspondante. Signale que l'édition du slider se fait form-side. |
 
 ---
 
@@ -844,7 +939,7 @@ PostgreSQL 16 (:5432)
 | **Phase 6bis** | Outil de cadrage d'image (crop) — sous-projet 1/4 : modale Cropper.js, crop cover + galerie mobilier/expo/story, rendu public CSS transform | ✅ Terminé |
 | **Phase 6ter** | Preview WYSIWYG fiche mobilier — sous-projet 2/4 : toggle Modifier/Aperçu, interactivité textes/images/galerie, toolbar Enregistrer + Plein écran, CSS Grid colSpan/rowSpan galerie | ✅ Terminé |
 | **Phase 6quater** | Preview WYSIWYG fiche exposition — sous-projet 3/4 : toggle Modifier/Aperçu plein-largeur, interactivité textes/images/galerie, dates inline via swap input natif, eyebrow décomposé, toolbar Enregistrer + Plein écran, galerie publique migrée canvas | ✅ Terminé |
-| **Phase 6quinquies** | Preview WYSIWYG accueil (sous-projet 4) | ⏳ À faire |
+| **Phase 6quinquies** | Preview WYSIWYG accueil — sous-projet 4/4 : toggle Modifier/Aperçu plein-largeur, édition inline hero avec auto-save, overlay cards feed (inclusion, reorder, crop home-only), cartouche `[i]` sliders, plein écran focus trap, refactor `home.component.ts`. **Chantier WYSIWYG complet (4/4).** | ✅ Terminé |
 | **Phase 7** | Recherche texte dans le catalogue | ⏳ À faire |
 | **Phase 8** | Internationalisation FR/EN | ⏳ À faire |
 | **Phase 9** | Optimisations SEO (balises méta, sitemap) | ⏳ À faire |
@@ -862,6 +957,7 @@ PostgreSQL 16 (:5432)
 | 2.3.0 | 08/06/2026 | Maxime Guillaume | Outil de cadrage d'image — sous-projet 1/4 (F039, F046 ✅) · Remplacement du focal point par `ImageCrop` · Modèle `GalleryImage[]` sur mobilier/exposition · Crop cover de story · Modale Cropper.js admin · Rendu public CSS transform · Cropper.js ajouté aux frameworks (ADR-0017) · Roadmap Phase 6bis terminée · Glossaire enrichi (ImageCrop, GalleryImage, Focal point, Cropper.js) |
 | 2.4.0 | 08/06/2026 | Maxime Guillaume | Preview WYSIWYG fiche mobilier — sous-projet 2/4 (F047 ✅) · Section 4.1.1 dédiée (toggle Modifier/Aperçu, interactivité textes + images + galerie, toolbar, plein écran, comportement post-sauvegarde) · Flux 5 admin WYSIWYG · Galerie publique migre en CSS Grid colSpan/rowSpan · `GalleryImage` enrichi (colSpan, rowSpan) · Roadmap Phase 6ter terminée, Phase 6quater ajoutée · Glossaire enrichi (WYSIWYG, colSpan/rowSpan, app-furniture-detail-view, click-to-focus) |
 | 2.5.0 | 09/06/2026 | Maxime Guillaume | Preview WYSIWYG fiche exposition — sous-projet 3/4 (F048 ✅) · Section 4.1.2 dédiée (toggle plein-largeur Modifier/Aperçu, eyebrow composite 3 spans, date swap input natif, interactivité textes + images + galerie, toolbar, plein écran, migration galerie publique canvas) · Fiche Exposition publique enrichie (CSS Grid galerie, canvas) · Flux 6 admin WYSIWYG exposition · Roadmap Phase 6quater terminée, Phase 6quinquies ajoutée · Glossaire enrichi (app-exhibition-detail-view, eyebrow composite, date swap) |
+| 2.6.0 | 09/06/2026 | Maxime Guillaume | Preview WYSIWYG accueil — sous-projet 4/4, dernier du chantier WYSIWYG (F049 ✅) · Section 4.1.3 dédiée (toggle plein-largeur Modifier/Aperçu, auto-save inline hero, overlay cards feed — inclusion + reorder + crop home-only, cartouche `[i]` sliders, plein écran focus trap, refactor `home.component.ts`) · Modèle `HomeFeedEntry` ajouté · Page Accueil admin : mention preview WYSIWYG · Note hors-portée mise à jour · Flux 7 admin WYSIWYG accueil · Roadmap Phase 6quinquies terminée — **chantier WYSIWYG complet** · Glossaire enrichi (app-home-view, app-home-preview, auto-save, crop home-only, cartouche [i]) |
 
 ---
 
