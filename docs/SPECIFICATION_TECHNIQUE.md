@@ -1,6 +1,6 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.5.0
+**Version** : 2.6.0
 **Date** : 09/06/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
@@ -261,6 +261,19 @@ slider_id     FK → news_slider(id) CASCADE   PK composite
 story_id      FK → story(id) CASCADE         PK composite
 position      INTEGER      NOT NULL
 Index : idx_slider_story_position(slider_id, position)
+
+home_feed (items de la page d'accueil — mobilier ou exposition)
+─────────────────────────────────────────────────────
+id            VARCHAR(50)  PK
+kind          VARCHAR(20)  NOT NULL   "furniture" | "exhibition"
+ref_slug      VARCHAR(255) NOT NULL   (slug de la fiche source)
+included      BOOLEAN      NOT NULL DEFAULT true
+position      INTEGER      NOT NULL
+cover_crop_x  DOUBLE PRECISION nullable  (cadrage cover override, % 0–100 ; null = utilise la fiche source)
+cover_crop_y  DOUBLE PRECISION nullable
+cover_crop_w  DOUBLE PRECISION nullable
+cover_crop_h  DOUBLE PRECISION nullable
+Index : idx_home_feed_kind_slug(kind, ref_slug) UNIQUE
 ```
 
 ### 3.2 Fichiers de migration Liquibase
@@ -288,6 +301,7 @@ Index : idx_slider_story_position(slider_id, position)
 | `027-add-cover-focal-point.yaml` | Colonnes `cover_focal_x/y` sur `furniture` et `exhibition` (supersédé par 028) |
 | `028-replace-focal-point-with-crop.yaml` | DROP `cover_focal_x/y` sur `furniture` + `exhibition` ; ADD `cover_crop_x/y/w/h` (DOUBLE nullable) sur `furniture`, `exhibition`, `story` ; ADD `crop_x/y/w/h` (DOUBLE nullable) sur `furniture_gallery` + `exhibition_gallery` |
 | `029-add-gallery-item-spans.yaml` | ADD `col_span` + `row_span` INT NOT NULL DEFAULT 1 sur `furniture_gallery` et `exhibition_gallery` (spans grille WYSIWYG) |
+| `030-add-home-feed-cover-crop.yaml` | ADD `cover_crop_x/y/w/h` DOUBLE PRECISION nullable sur `home_feed` (cadrage cover par item de feed, override de la fiche source) |
 
 ### 3.3 Records Java (DTOs)
 
@@ -606,7 +620,46 @@ Zones reconnues : `news.primary`, `news.secondary`, `news.tertiary`. La `zoneKey
 
 **Validation :** `storyIds.size() > 50` → 400. `zoneKey` invalide → 400 (`IllegalArgumentException` traduit par `@ExceptionHandler`).
 
-### 4.7 Actuator
+### 4.7 Home admin — `/api/admin/home` (JWT requis)
+
+#### Feed
+
+| Méthode | Endpoint | Description | Corps | Réponse |
+|---------|----------|-------------|-------|---------|
+| GET | `/api/admin/home` | Données complètes de la home (feed + site_content) | — | `HomePageData` 200 |
+| PUT | `/api/admin/home/feed` | Remplacer la liste des items du feed | `HomeFeedItem[]` | `HomeFeedItem[]` 200 |
+| PUT | `/api/admin/home/feed/cover-crop` | Définir (ou effacer) le cadrage cover d'un item | `HomeFeedCoverCropRequest` | 204 |
+
+**DTO `HomeFeedCoverCropRequest` :**
+
+```java
+record HomeFeedCoverCropRequest(
+    @NotBlank @Pattern(regexp = "furniture|exhibition") String kind,
+    @NotBlank String slug,
+    @Valid ImageCrop crop    // nullable → efface le crop override
+) {}
+```
+
+**Comportement `PUT .../feed/cover-crop` :**
+
+- Trouve l'entry `home_feed` par `(kind, slug)` via `HomeFeedRepository.findByKindAndRefSlug`.
+- Si `crop` non null : set `cover_crop_x/y/w/h`.
+- Si `crop` null : reset les 4 colonnes à null (fallback automatique à la fiche source).
+- `@Transactional` + `@CacheEvict` (`home$` Angular invalidé côté service).
+- 404 si l'entry n'existe pas.
+
+**Comportement `PUT .../feed` (replace) :**
+
+- Snapshot `kind:slug → double[]` des coverCrop existants avant delete+insert.
+- Réapplique les coverCrops snapshot sur les nouvelles entries pour préserver les cadrages lors du réordonnancement.
+
+#### Contenu éditorial
+
+| Méthode | Endpoint                  | Description                                  | Corps                 | Réponse |
+|---------|---------------------------|----------------------------------------------|-----------------------|---------|
+| PUT     | `/api/admin/home/content` | Mettre à jour les blocs texte CMS de la home | `Map<String, String>` | 200     |
+
+### 4.8 Actuator
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
@@ -671,6 +724,7 @@ Singleton (`providedIn: 'root'`). Base : `/api`. Utilise `HttpClient` injecté v
 | `getSliders()` | GET | `/api/sliders` |
 | `getStoriesByOwner(ownerKind, ownerId)` | GET | `/api/stories?ownerKind=&ownerId=` |
 | `getStoryBySlug(slug)` | GET | `/api/stories/{slug}` |
+| `updateHomeFeedCoverCrop(kind, slug, crop)` | PUT | `/api/admin/home/feed/cover-crop` |
 
 #### `AuthService`
 
@@ -732,15 +786,31 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - Clic sur un tag dans une carte active directement le filtre correspondant
 
 #### `HomeComponent` (`/`)
-- Sections : hero, mobilier featured, sliders d'actualités (zones `news.primary/.secondary/.tertiary`), expositions featured, pull-quote
-- Consomme `GET /api/sliders` pour afficher les `NewsSliderComponent` de la home
-- Ouvre le viewer plein écran (`StoryViewerComponent`) au clic sur une story
+
+- Refactoré (200 → 78 lignes) — délègue le rendu à `<app-home-view>`.
+- Responsabilités conservées : chargement API (`PortfolioService.getHome()`), `<app-story-viewer>` toplevel conditionnel sur `viewerQueue`, hooks SEO.
+- Template : `<app-home-view [data]="data()" [content]="content()" (storyOpen)="openStoryFromSlider($event)" (viewerOpen)="onViewerOpen($event)">`.
 
 #### `AdminLayoutComponent` + sous-pages admin (`/admin/**`)
 - Protégé par `authGuard` — redirige vers `/login` si non authentifié
 - Navigation latérale : Accueil · Mobilier · Expositions · Navigation · Médiathèque · Textes · Typographie · Statistiques · Paramètres
-- `AccueilComponent` (`/admin/accueil`) : masonry home feed + composition des sliders d'actualités (drag & drop stories, assignation zone)
 - `/admin/sliders` redirige vers `/admin/accueil` (sliders fusionnés dans la page Accueil)
+
+#### `AccueilComponent` (`/admin/accueil`) — WYSIWYG preview
+
+- **Toggle Modifier / Aperçu** : signal `accueilViewMode` (`'form' | 'preview'`), rendu par onglets (`role="tablist"`).
+- Le form-side (liste éditoriale + sliders) reste **toujours dans le DOM** en mode preview (`position: absolute; left: -100vw; pointer-events: none`) pour préserver les `ViewChild`.
+- **Handlers preview** :
+  - `onPreviewFeedReorder(order)` — préserve les items exclus lors du réordonnancement, PUT `/api/admin/home/feed`.
+  - `onPreviewFeedItemToggleInclude({ kind, slug, included })` — toggle inclusion d'un item, PUT feed.
+  - `onPreviewTextFieldEdit({ key, value })` — **auto-save** immédiat via `updateContent` (pas de FormGroup, pas de bouton Enregistrer).
+  - `onPreviewFeedItemCropEdit({ kind, slug })` — ouvre la modale `<app-image-crop-picker>` + sauvegarde via `PUT /api/admin/home/feed/cover-crop`.
+  - `onSliderEditRequested(zoneKey)` — bascule `accueilViewMode.set('form')` + `scrollIntoView` vers la section sliders correspondante.
+- **Auto-save inline texte hero** : blur ou Entrée → `portfolio.updateContent({ ...this.content(), [e.key]: e.value }).subscribe(...)`. Toast « Texte sauvegardé. » sur succès, revert + toast erreur sur échec.
+- **Toolbar preview** : bouton **⤢ Plein écran / ⤡ Réduire** uniquement (pas de bouton 💾 Enregistrer).
+- **Toggle plein écran** : signal `previewFullscreen`. `cdkTrapFocus` + `aria-modal=true` en plein écran.
+- **`saveFeed()`** : retourne un `Observable` (permet le chaînage lors des saves consécutifs).
+- **Stack z-index** : preview fullscreen 1200 · photo picker 1300 · crop picker 1400.
 
 #### `MobilierComponent` (`/admin/mobilier`) — WYSIWYG preview
 
@@ -886,6 +956,58 @@ Composant admin standalone qui wrap `<app-exhibition-detail-view>` en mode `edit
 | `content` | `SiteContent` | Contenu CMS |
 
 **Outputs :** identiques à `ExhibitionDetailViewComponent` (relayés vers `ExpositionsComponent`).
+
+#### `<app-home-view>` (`HomeViewComponent`)
+
+Chemin : `frontend/src/app/components/home-view/home-view.component.ts`
+
+Composant standalone purement présentation, partagé entre la page publique (`HomeComponent`) et le preview admin (`HomePreviewComponent`). Aucune dépendance sur `HttpClient`, `Router` ou `PortfolioService`.
+
+**Type exporté :** `EditableHomeContentKey = 'home.hero.eyebrow' | 'home.hero.title' | 'home.hero.lead'`
+
+**Inputs :**
+
+| Input | Type | Description |
+| ------- | ------ | ----------- |
+| `data` (required) | `HomePageData \| null` | Données complètes de la home (feed + sliders) |
+| `content` | `SiteContent` | Contenu CMS (textes hero) |
+| `editable` | `boolean` | Active les overlays WYSIWYG (défaut `false`) |
+
+**Outputs :**
+
+| Output | Type | Description |
+| -------- | ------ | ----------- |
+| `feedReorder` | `number[]` | Nouvel ordre des indices du feed après drag-reorder |
+| `feedItemToggleInclude` | `{ kind: 'furniture' \| 'exhibition'; slug: string; included: boolean }` | Toggle inclusion d'un item |
+| `textFieldEdit` | `{ key: EditableHomeContentKey; value: string }` | Double-clic inline → valeur auto-save au blur |
+| `feedItemCropEdit` | `{ kind: 'furniture' \| 'exhibition'; slug: string }` | Clic overlay crop d'une card |
+| `sliderEditRequested` | `'home-top' \| 'home-middle' \| 'home-bottom'` | Clic cartouche `[i]` → navigation vers form sliders |
+| `storyOpen` | `SliderStoryRef` | Ouverture d'une story depuis un slider |
+| `viewerOpen` | `StoryItem[]` | Ouverture du story-viewer plein écran |
+
+**Fonctionnalités mode `editable=true` :**
+
+- **Hero texts** : hover → outline dashed sur eyebrow/title/lead ; double-clic → `[attr.contenteditable]="true"` + outline accent, blur émet `textFieldEdit`.
+- **Feed cards** : rendu en `<li>` (pas de `RouterLink`) + overlay hover avec checkbox Inclus et pastille drag `⋮⋮`. Cards exclues en opacité 0.35 + badge « Exclu ». Overlay crop card émet `feedItemCropEdit`.
+- **Drag-reorder feed** : `ReorderableDirective` HTML5 sur les cards, drop émet `feedReorder`.
+- **News-sliders** : lecture seule. Cartouche `[i]` (opacité 0.6 → 1 au hover) en haut-droite de chaque slider, clic émet `sliderEditRequested`.
+
+#### `<app-home-preview>` (`HomePreviewComponent`)
+
+Chemin : `frontend/src/app/pages/admin/accueil/preview/home-preview.component.ts`
+
+Composant admin standalone qui wrap `<app-home-view>` en mode `editable=true`. Reçoit les données directement sous forme de `Signal<T>` — **pas de `FormGroup`**, différence fondamentale avec les sous-projets 2 et 3.
+
+**Inputs :**
+
+| Input | Type | Description |
+| ------- | ------ | ----------- |
+| `data` (required) | `Signal<HomePageData \| null>` | Signal données home du composant parent |
+| `content` | `Signal<SiteContent>` | Signal contenu CMS du composant parent |
+
+**Outputs :** identiques aux Outputs de `HomeViewComponent` (relayés vers `AccueilComponent`).
+
+**Pattern de réactivité :** pas de tick intermédiaire (contrairement à FurniturePreviewComponent / ExhibitionPreviewComponent) — les Inputs sont des Signals consommés directement dans le template via `data()` et `content()`.
 
 #### `<app-tag-input>` (`TagInputComponent`)
 
@@ -1289,3 +1411,4 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 2.3.0 | 08/06/2026 | Outil de cadrage d'image — sous-projet 1/4 (ADR-0017) · Changeset 028 : DROP `cover_focal_x/y`, ADD `cover_crop_x/y/w/h` sur `furniture`/`exhibition`/`story`, ADD `crop_x/y/w/h` sur `furniture_gallery`/`exhibition_gallery` · Breaking change DTO : `gallery` passe de `List<String>` à `List<GalleryImage>` · Nouveaux records `ImageCrop`, `GalleryImage` + `@Valid` cascade · Nouveaux composants admin `ImageCropPickerComponent` (Cropper.js 1.6.2), `CroppedImageCanvasComponent` ; extensions `ImageFieldComponent`, `GalleryEditorComponent` · Utilitaire `cropTransform()` · Interfaces TS `Crop`, `GalleryItem` · Stack : ajout Cropper.js 1.6.2 |
 | 2.4.0 | 08/06/2026 | Preview WYSIWYG fiche mobilier — sous-projet 2/4 (ADR-0018) · Changeset 029 : ADD `col_span`/`row_span` sur `furniture_gallery` et `exhibition_gallery` · Pattern page/view : `FurnitureDetailViewComponent` extrait, `FurniturePreviewComponent` créé · `FurnitureDetailComponent` refactoré (375 → 137 lignes) · `MobilierComponent` toggle Modifier/Aperçu, form hors-écran, click-to-focus, handlers preview, `saveFurniture()` reload · ADR-0018 ajouté |
 | 2.5.0 | 09/06/2026 | Preview WYSIWYG fiche exposition — sous-projet 3/4 (ADR-0018) · Pattern page/view appliqué à exhibition-detail : `ExhibitionDetailViewComponent` extrait, `ExhibitionPreviewComponent` créé · `ExhibitionDetailComponent` refactoré (307 → 98 lignes) · `ExpositionsComponent` toggle Modifier/Aperçu, form hors-écran, 9 IDs `field-*`, handlers preview dont `onPreviewDateFieldEdit`, `saveExhibition()` reload · Eyebrow composite décomposé (3 spans + 2 séparateurs ARIA-hidden en mode editable) · Édition inline dates via swap `<input type="date">` · Type `EditableExhibitionField`, Output `dateFieldEdit` |
+| 2.6.0 | 09/06/2026 | Preview WYSIWYG accueil — sous-projet 4/4, clôture chantier (ADR-0018) · Changeset 030 : ADD `cover_crop_x/y/w/h` DOUBLE PRECISION nullable sur `home_feed` · `HomeFeedEntryEntity` étendu (4 champs + getters/setters) · `HomeFeedService.setCoverCrop` (@Transactional + @CacheEvict) + `replace` préserve les coverCrops existants via snapshot · `HomeService.buildFeedItem` : override coverCrop home si défini, sinon fallback fiche source · Endpoint `PUT /api/admin/home/feed/cover-crop` + DTO `HomeFeedCoverCropRequest(kind, slug, crop)` · `HomeFeedRepository.findByKindAndRefSlug` ajouté · Pattern page/view appliqué à home : `HomeViewComponent` extrait, `HomePreviewComponent` créé · `HomeComponent` refactoré (200 → 78 lignes) · `AccueilComponent` toggle Modifier/Aperçu, handlers preview (`onPreviewFeedReorder`, `onPreviewFeedItemToggleInclude`, `onPreviewTextFieldEdit`, `onPreviewFeedItemCropEdit`, `onSliderEditRequested`) · **Auto-save inline** texte hero (pas de FormGroup, PUT `updateContent` immédiat) · Pas de bouton 💾 dans toolbar preview · Cartouche `[i]` sliders navigation cross-mode · `saveFeed()` retourne Observable · `PortfolioService.updateHomeFeedCoverCrop` ajouté · Type `EditableHomeContentKey`, 7 Outputs `HomeViewComponent` |
