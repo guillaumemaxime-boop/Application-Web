@@ -3,14 +3,14 @@ package com.atelier.portfolio.service;
 import com.atelier.portfolio.entity.*;
 import com.atelier.portfolio.model.*;
 import com.atelier.portfolio.repository.*;
+
+import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDate;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -84,6 +84,56 @@ class HomeServiceTest {
         FurnitureCategoryMetaEntity m = new FurnitureCategoryMetaEntity();
         m.setCategory(cat); m.setCoverImage(cover); m.setPosition(pos); m.setVisible(true);
         return m;
+    }
+
+    @Test
+    void getHomeData_feed_utilise_override_crop_si_defini() {
+        FurnitureEntity console = furniture("f-001", "console-lumiere", "Console Lumière", "Consoles", 2026);
+        // crop source sur la fiche mobilier
+        console.setCoverCropX(5.0); console.setCoverCropY(5.0);
+        console.setCoverCropW(90.0); console.setCoverCropH(90.0);
+
+        // entry home_feed avec un override crop différent
+        HomeFeedEntryEntity entry = feedEntry(0, "furniture", "console-lumiere");
+        entry.setCoverCropX(10.0); entry.setCoverCropY(20.0);
+        entry.setCoverCropW(50.0); entry.setCoverCropH(60.0);
+
+        when(furnitureRepo.findAll()).thenReturn(List.of(console));
+        when(exhibitionRepo.findAll()).thenReturn(List.of());
+        when(feedRepo.findAllByOrderByPositionAsc()).thenReturn(List.of(entry));
+        when(categoryRepo.findByVisibleTrueOrderByPositionAsc()).thenReturn(List.of());
+        when(exhibitionMetaRepo.findByVisibleTrueOrderByPositionAsc()).thenReturn(List.of());
+
+        HomePageData result = service.getHomeData();
+
+        HomeFeedItem item = result.feed().get(0);
+        assertNotNull(item.coverCrop());
+        assertEquals(10.0, item.coverCrop().x(), "override x attendu");
+        assertEquals(20.0, item.coverCrop().y(), "override y attendu");
+        assertEquals(50.0, item.coverCrop().w(), "override w attendu");
+        assertEquals(60.0, item.coverCrop().h(), "override h attendu");
+    }
+
+    @Test
+    void getHomeData_feed_fallback_sur_crop_source_si_pas_override() {
+        FurnitureEntity console = furniture("f-001", "console-lumiere", "Console Lumière", "Consoles", 2026);
+        console.setCoverCropX(5.0); console.setCoverCropY(5.0);
+        console.setCoverCropW(90.0); console.setCoverCropH(90.0);
+
+        // entry sans override (coverCropX == null)
+        HomeFeedEntryEntity entry = feedEntry(0, "furniture", "console-lumiere");
+
+        when(furnitureRepo.findAll()).thenReturn(List.of(console));
+        when(exhibitionRepo.findAll()).thenReturn(List.of());
+        when(feedRepo.findAllByOrderByPositionAsc()).thenReturn(List.of(entry));
+        when(categoryRepo.findByVisibleTrueOrderByPositionAsc()).thenReturn(List.of());
+        when(exhibitionMetaRepo.findByVisibleTrueOrderByPositionAsc()).thenReturn(List.of());
+
+        HomePageData result = service.getHomeData();
+
+        HomeFeedItem item = result.feed().get(0);
+        assertNotNull(item.coverCrop());
+        assertEquals(5.0, item.coverCrop().x(), "fallback crop source attendu");
     }
 
     private static HomeFeedEntryEntity feedEntry(int pos, String kind, String slug) {

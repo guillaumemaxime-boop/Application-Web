@@ -2,12 +2,13 @@ package com.atelier.portfolio.model;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 
 public record ImageCrop(
-    @DecimalMin("0.0") @DecimalMax("100.0") Double x,
-    @DecimalMin("0.0") @DecimalMax("100.0") Double y,
-    @DecimalMin("0.0") @DecimalMax("100.0") Double w,
-    @DecimalMin("0.0") @DecimalMax("100.0") Double h
+    @NotNull @DecimalMin("0.0") @DecimalMax("100.0") Double x,
+    @NotNull @DecimalMin("0.0") @DecimalMax("100.0") Double y,
+    @NotNull @DecimalMin("0.0") @DecimalMax("100.0") Double w,
+    @NotNull @DecimalMin("0.0") @DecimalMax("100.0") Double h
 ) {
     /**
      * Renvoie {@code null} si les 4 coordonnees sont null, sinon un crop construit.

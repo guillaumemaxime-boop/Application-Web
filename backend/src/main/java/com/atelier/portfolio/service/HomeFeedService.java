@@ -1,6 +1,7 @@
 package com.atelier.portfolio.service;
 
 import com.atelier.portfolio.entity.HomeFeedEntryEntity;
+import com.atelier.portfolio.model.ImageCrop;
 import com.atelier.portfolio.repository.HomeFeedRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -9,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -41,6 +44,14 @@ public class HomeFeedService {
     @CacheEvict(cacheNames = "home", allEntries = true)
     public List<FeedEntry> replace(List<FeedEntry> entries) {
         validateEntries(entries);
+        // Preserve les coverCrop existants (kind+slug -> crop) pour ne pas les perdre
+        // lors d'un reorder/toggle qui passe par un delete+reinsert complet.
+        Map<String, double[]> cropByKey = repository.findAllByOrderByPositionAsc().stream()
+                .filter(e -> e.getCoverCropX() != null)
+                .collect(Collectors.toMap(
+                        e -> e.getKind() + ":" + e.getRefSlug(),
+                        e -> new double[]{e.getCoverCropX(), e.getCoverCropY(), e.getCoverCropW(), e.getCoverCropH()}
+                ));
         repository.deleteAllInBatch();
         // deleteAllInBatch passe outre le persistence context : on le vide pour
         // eviter une collision sur la PK quand on re-insere des entites a position=0..n.
@@ -52,6 +63,13 @@ public class HomeFeedService {
             e.setPosition(i);
             e.setKind(entries.get(i).kind());
             e.setRefSlug(entries.get(i).slug());
+            double[] crop = cropByKey.get(e.getKind() + ":" + e.getRefSlug());
+            if (crop != null) {
+                e.setCoverCropX(crop[0]);
+                e.setCoverCropY(crop[1]);
+                e.setCoverCropW(crop[2]);
+                e.setCoverCropH(crop[3]);
+            }
             toSave.add(e);
         }
         repository.saveAll(toSave);
@@ -80,6 +98,26 @@ public class HomeFeedService {
         entry.setPosition(nextPos);
         entry.setKind(kind);
         entry.setRefSlug(slug);
+        repository.save(entry);
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = "home", allEntries = true)
+    public void setCoverCrop(String kind, String slug, ImageCrop crop) {
+        HomeFeedEntryEntity entry = repository.findByKindAndRefSlug(kind, slug)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "entry introuvable pour kind=" + kind + " slug=" + slug));
+        if (crop == null) {
+            entry.setCoverCropX(null);
+            entry.setCoverCropY(null);
+            entry.setCoverCropW(null);
+            entry.setCoverCropH(null);
+        } else {
+            entry.setCoverCropX(crop.x());
+            entry.setCoverCropY(crop.y());
+            entry.setCoverCropW(crop.w());
+            entry.setCoverCropH(crop.h());
+        }
         repository.save(entry);
     }
 

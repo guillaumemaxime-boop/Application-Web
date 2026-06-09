@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 030-add-home-feed-cover-crop
+      author: maxime
+      changes:
+        - addColumn:
+            tableName: home_feed
+            columns:
+              - column: { name: cover_crop_x, type: double }
+              - column: { name: cover_crop_y, type: double }
+              - column: { name: cover_crop_w, type: double }
+              - column: { name: cover_crop_h, type: double }
