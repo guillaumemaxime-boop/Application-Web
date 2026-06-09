@@ -52,23 +52,27 @@ export type EditableHomeContentKey =
       </section>
 
       @if (sliderByZone()['home-top']; as s) {
-        <div class="slider-wrap" [class.editable]="editable">
-          <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
-          @if (editable) {
+        @if (editable) {
+          <div class="slider-wrap editable">
+            <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
             <button type="button" class="slider-edit-badge" aria-label="Éditer ce slider (Sliders dans Modifier)"
                     (click)="onSliderEditRequested('home-top')">i</button>
-          }
-        </div>
+          </div>
+        } @else {
+          <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+        }
       }
 
       @if (sliderByZone()['home-middle']; as s) {
-        <div class="slider-wrap" [class.editable]="editable">
-          <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
-          @if (editable) {
+        @if (editable) {
+          <div class="slider-wrap editable">
+            <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
             <button type="button" class="slider-edit-badge" aria-label="Éditer ce slider (Sliders dans Modifier)"
                     (click)="onSliderEditRequested('home-middle')">i</button>
-          }
-        </div>
+          </div>
+        } @else {
+          <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+        }
       }
 
       <section class="feed">
@@ -131,13 +135,15 @@ export type EditableHomeContentKey =
       </section>
 
       @if (sliderByZone()['home-bottom']; as s) {
-        <div class="slider-wrap" [class.editable]="editable">
-          <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
-          @if (editable) {
+        @if (editable) {
+          <div class="slider-wrap editable">
+            <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
             <button type="button" class="slider-edit-badge" aria-label="Éditer ce slider (Sliders dans Modifier)"
                     (click)="onSliderEditRequested('home-bottom')">i</button>
-          }
-        </div>
+          </div>
+        } @else {
+          <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+        }
       }
 
       @if (viewerQueue.length > 0) {
@@ -146,8 +152,8 @@ export type EditableHomeContentKey =
     }
   `,
   styles: [`
+    :host { display: block; }
     .hero { min-height: 50vh; padding: 96px 0 64px; display: flex; flex-direction: column; justify-content: center; }
-    .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
     .hero .eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-mute); }
     .hero h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.05; margin-top: 20px; max-width: 820px; white-space: pre-line; }
     .hero .lead { max-width: 540px; margin-top: 28px; font-size: 1.05rem; color: var(--color-ink-soft); }
