@@ -16,6 +16,7 @@ import { AdminPreviewShellComponent, ShellPreviewDirective } from './admin-previ
       [showSave]="showSave()"
       [saveDisabled]="saveDisabled()"
       [saving]="saving()"
+      [hidePreviewOnMobile]="hidePreviewMobile()"
       (save)="saveCount = saveCount + 1">
       <p class="form-marker">FORM</p>
       <ng-template shellPreview><p class="preview-marker">PREVIEW</p></ng-template>
@@ -28,6 +29,7 @@ class HostComponent {
   readonly showSave = signal(true);
   readonly saveDisabled = signal(false);
   readonly saving = signal(false);
+  readonly hidePreviewMobile = signal(false);
   saveCount = 0;
 }
 
@@ -91,6 +93,9 @@ describe('AdminPreviewShellComponent', () => {
     fixture.componentInstance.viewMode.set('preview');
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('#panel-preview'))).toBeNull();
+    const panel = fixture.debugElement.query(By.css('#panel-form'));
+    expect(panel.nativeElement.classList.contains('is-hidden')).toBeFalse();
+    expect(panel.nativeElement.hasAttribute('inert')).toBeFalse();
   });
 
   it('clic sur l\'onglet Aperçu bascule viewMode (two-way vers le host)', () => {
@@ -149,5 +154,14 @@ describe('AdminPreviewShellComponent', () => {
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('.btn-preview-save'))).toBeNull();
     expect(fixture.debugElement.query(By.css('.btn-preview-toggle'))).toBeTruthy();
+  });
+
+  it('pose la classe hide-preview-mobile sur l\'hôte quand hidePreviewOnMobile=true', () => {
+    const fixture = create();
+    const shellHost = fixture.debugElement.query(By.css('app-admin-preview-shell'));
+    expect(shellHost.nativeElement.classList.contains('hide-preview-mobile')).toBeFalse();
+    fixture.componentInstance.hidePreviewMobile.set(true);
+    fixture.detectChanges();
+    expect(shellHost.nativeElement.classList.contains('hide-preview-mobile')).toBeTrue();
   });
 });

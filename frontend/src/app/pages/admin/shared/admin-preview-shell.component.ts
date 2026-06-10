@@ -42,8 +42,8 @@ export class ShellPreviewDirective {
       }
 
       <section class="admin-form" id="panel-form" role="tabpanel" aria-labelledby="tab-form"
-               [class.is-hidden]="viewMode() !== 'form'"
-               [attr.inert]="viewMode() !== 'form' ? '' : null">
+               [class.is-hidden]="active() && viewMode() !== 'form'"
+               [attr.inert]="active() && viewMode() !== 'form' ? '' : null">
         <ng-content />
       </section>
 
