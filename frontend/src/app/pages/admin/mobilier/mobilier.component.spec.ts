@@ -654,33 +654,6 @@ describe('MobilierComponent', () => {
     expect(cmp.furnitureGallery()[1]).toEqual({ url: 'b', crop: null, colSpan: 2, rowSpan: 3 } as any);
   });
 
-  it('togglePreviewFullscreen bascule le signal', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    expect(cmp.previewFullscreen()).toBeFalse();
-    cmp.togglePreviewFullscreen();
-    expect(cmp.previewFullscreen()).toBeTrue();
-    cmp.togglePreviewFullscreen();
-    expect(cmp.previewFullscreen()).toBeFalse();
-  });
-
-  it('previewFullscreenLabel reflete l\'etat fullscreen', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.previewFullscreen.set(false);
-    expect(cmp.previewFullscreenLabel()).toContain('plein');
-    cmp.previewFullscreen.set(true);
-    expect(cmp.previewFullscreenLabel()).toContain('duire');
-  });
-
   it('mobilierViewMode default form, switche preview', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);
@@ -784,6 +757,33 @@ describe('MobilierComponent', () => {
     const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/furniture');
     req.error(new ProgressEvent('error'));
     expect(toast.error).toHaveBeenCalled();
+  });
+
+  it('ouvrir le crop depuis le preview suspend inert sur le panel form (regression 7075927)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.newFurniture();
+    cmp.mobilierViewMode.set('preview');
+    fixture.detectChanges();
+    const panel: HTMLElement = fixture.nativeElement.querySelector('#panel-form');
+    expect(panel.hasAttribute('inert')).toBeTrue();
+
+    // Flux utilisateur : bouton Cadrer de l'overlay cover du preview
+    cmp.onPreviewCoverEdit('crop');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.crop-backdrop')).toBeTruthy();
+    // La modale est descendante du panel form : inert doit etre suspendu
+    // sinon elle est infocusable et incliquable (lecon du commit 7075927).
+    expect(panel.hasAttribute('inert')).toBeFalse();
+
+    // Fermeture de la modale : inert revient proteger le form cache
+    cmp.coverImageField.cropOpen.set(false);
+    fixture.detectChanges();
+    expect(panel.hasAttribute('inert')).toBeTrue();
   });
 
 });

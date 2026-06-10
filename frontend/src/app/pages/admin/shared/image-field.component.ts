@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, forwardRef, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, computed, forwardRef, inject, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
@@ -120,6 +120,14 @@ export class ImageFieldComponent implements ControlValueAccessor {
   protected readonly pickerOpen = signal(false);
   protected readonly cropOpen = signal(false);
   protected readonly photos = signal<Photo[]>([]);
+
+  /**
+   * Vrai quand une modale du champ (photo picker ou crop picker) est ouverte.
+   * Consommé par les pages preview WYSIWYG pour suspendre l'`inert` du panel
+   * form pendant que la modale est ouverte (sinon elle est infocusable et
+   * incliquable — voir commit 7075927).
+   */
+  readonly modalOpen = computed(() => this.pickerOpen() || this.cropOpen());
 
   private onChange: (value: string) => void = () => {};
   protected onTouched: () => void = () => {};

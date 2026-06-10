@@ -26,7 +26,6 @@ type ExpoInternals = {
   coverEditCtrl: { value: string | null; setValue: (v: string) => void };
   saving: () => boolean;
   creatingExhibition: { (): boolean; set: (v: boolean) => void };
-  previewFullscreen: { (): boolean; set: (v: boolean) => void };
   expoViewMode: { (): 'form' | 'preview'; set: (v: 'form' | 'preview') => void };
   loadExhibition: (item: unknown) => void;
   newExhibition: () => void;
@@ -41,7 +40,6 @@ type ExpoInternals = {
   onCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
   onStoryCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
   focusField: (name: string) => void;
-  togglePreviewFullscreen: () => void;
   onPreviewGalleryItemEdit: (e: { index: number; action: 'crop' | 'replace' | 'remove' }) => void;
   onPreviewGalleryReorder: (order: number[]) => void;
   onPreviewGalleryItemResize: (e: { index: number; colSpan: number; rowSpan: number }) => void;
@@ -603,19 +601,6 @@ describe('ExpositionsComponent', () => {
     expect(cmp.exhibitionForm.get('startDate')?.value).toBe('2026-03-01');
   });
 
-  it('togglePreviewFullscreen bascule le signal', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/tags').flush([]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    expect(cmp.previewFullscreen()).toBeFalse();
-    cmp.togglePreviewFullscreen();
-    expect(cmp.previewFullscreen()).toBeTrue();
-  });
-
   it('expoViewMode default form, switche preview', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);
@@ -752,18 +737,32 @@ describe('ExpositionsComponent', () => {
     expect(stub.openReplaceFor).toHaveBeenCalledWith(0);
   });
 
-  it('previewFullscreenLabel reflete l\'etat fullscreen', () => {
+  it('ouvrir le crop depuis le preview suspend inert sur le panel form (regression 7075927)', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);
     fixture.detectChanges();
-    httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/tags').flush([]);
+    flushInitial();
     fixture.detectChanges();
     const cmp = fixture.componentInstance as any;
-    cmp.previewFullscreen.set(false);
-    expect(cmp.previewFullscreenLabel()).toContain('plein');
-    cmp.previewFullscreen.set(true);
-    expect(cmp.previewFullscreenLabel()).toContain('duire');
+    cmp.newExhibition();
+    cmp.expoViewMode.set('preview');
+    fixture.detectChanges();
+    const panel: HTMLElement = fixture.nativeElement.querySelector('#panel-form');
+    expect(panel.hasAttribute('inert')).toBeTrue();
+
+    // Flux utilisateur : bouton Cadrer de l'overlay cover du preview
+    cmp.onPreviewCoverEdit('crop');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.crop-backdrop')).toBeTruthy();
+    // La modale est descendante du panel form : inert doit etre suspendu
+    // sinon elle est infocusable et incliquable (lecon du commit 7075927).
+    expect(panel.hasAttribute('inert')).toBeFalse();
+
+    // Fermeture de la modale : inert revient proteger le form cache
+    cmp.coverImageField.cropOpen.set(false);
+    fixture.detectChanges();
+    expect(panel.hasAttribute('inert')).toBeTrue();
   });
 
 });
+

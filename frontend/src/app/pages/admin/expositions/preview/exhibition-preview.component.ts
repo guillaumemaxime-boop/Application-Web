@@ -1,12 +1,12 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, Signal, computed, signal } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, Signal, computed, inject } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { Subscription } from 'rxjs';
 import { Exhibition } from '../../../../models/exhibition.model';
 import { GalleryItem } from '../../../../models/gallery-item.model';
 import { Story } from '../../../../models/story.model';
 import { SiteContent } from '../../../../models/site-content.model';
 import { DisplaySlide } from '../../../../models/display-slide.model';
 import { EditableExhibitionField, ExhibitionDetailViewComponent } from '../../../../components/exhibition-detail-view/exhibition-detail-view.component';
+import { formTickSignal } from '../../shared/preview-page-helpers';
 
 @Component({
   selector: 'app-exhibition-preview',
@@ -30,7 +30,7 @@ import { EditableExhibitionField, ExhibitionDetailViewComponent } from '../../..
   `,
   styles: []
 })
-export class ExhibitionPreviewComponent implements OnInit, OnDestroy {
+export class ExhibitionPreviewComponent implements OnInit {
   @Input({ required: true }) form!: FormGroup;
   @Input({ required: true }) gallery!: Signal<GalleryItem[]>;
   @Input() story: Story | null = null;
@@ -46,16 +46,17 @@ export class ExhibitionPreviewComponent implements OnInit, OnDestroy {
   @Output() textFieldEdit = new EventEmitter<{ field: EditableExhibitionField; value: string }>();
   @Output() dateFieldEdit = new EventEmitter<{ field: 'startDate' | 'endDate'; value: string }>();
 
+  private readonly destroyRef = inject(DestroyRef);
+
   /**
    * Tick signal qui s'incrémente à chaque valueChanges du form, pour
    * forcer previewItem() à se recalculer. On ne peut pas utiliser toSignal()
    * dans un computed (toSignal() doit être créé en injection context).
    */
-  private readonly _formTick = signal(0);
-  private formSub?: Subscription;
+  private formTick?: Signal<number>;
 
   protected readonly previewItem = computed<Exhibition | null>(() => {
-    this._formTick();  // dépendance signal pour réactivité
+    this.formTick?.();  // dépendance signal pour réactivité
     if (!this.form) return null;
     const v = this.form.getRawValue();
     return {
@@ -83,12 +84,8 @@ export class ExhibitionPreviewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (this.form) {
-      this.formSub = this.form.valueChanges.subscribe(() => this._formTick.update(n => n + 1));
+      this.formTick = formTickSignal(this.form, this.destroyRef);
     }
-  }
-
-  ngOnDestroy(): void {
-    this.formSub?.unsubscribe();
   }
 
   protected onCoverEdit(a: 'crop' | 'replace'): void { this.coverEdit.emit(a); }

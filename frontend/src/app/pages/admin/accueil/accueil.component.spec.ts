@@ -10,7 +10,6 @@ type HomeItem = { kind: 'furniture' | 'exhibition'; slug: string; title: string;
 type AccueilInternals = {
   homeItems: { (): HomeItem[] | null; set: (v: HomeItem[]) => void };
   accueilViewMode: { (): 'form' | 'preview'; set: (v: 'form' | 'preview') => void };
-  previewFullscreen: { (): boolean; set: (v: boolean) => void; update: (fn: (v: boolean) => boolean) => void };
   homeData: { (): any; set: (v: any) => void };
   content: { (): any; set: (v: any) => void };
   sliders: { (): any[]; set: (v: any[]) => void };
@@ -21,8 +20,6 @@ type AccueilInternals = {
   persistFeed: () => void;
   moveUp: (i: number) => void;
   moveDown: (i: number) => void;
-  togglePreviewFullscreen: () => void;
-  previewFullscreenLabel: () => string;
   onPreviewTextFieldEdit: (e: { key: string; value: string }) => void;
   onSliderEditRequested: (zone: 'home-top' | 'home-middle' | 'home-bottom') => void;
   onPreviewFeedReorder: (order: number[]) => void;
@@ -330,23 +327,6 @@ describe('AccueilComponent', () => {
     expect(cmp.accueilViewMode()).toBe('form');
     cmp.accueilViewMode.set('preview');
     expect(cmp.accueilViewMode()).toBe('preview');
-  });
-
-  it('togglePreviewFullscreen bascule', () => {
-    const fixture = TestBed.createComponent(AccueilComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/furniture').flush([]);
-    httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/admin/home/feed').flush([]);
-    flushPreview(httpMock);
-    flushSliders(httpMock);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as AccueilInternals;
-    expect(cmp.previewFullscreen()).toBeFalse();
-    cmp.togglePreviewFullscreen();
-    expect(cmp.previewFullscreen()).toBeTrue();
-    cmp.togglePreviewFullscreen();
-    expect(cmp.previewFullscreen()).toBeFalse();
   });
 
   it('includedSlugs reflete les items inclus', () => {
