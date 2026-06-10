@@ -1,7 +1,7 @@
 # Socle factorisé des previews WYSIWYG admin — Spec
 
 **Date** : 2026-06-10
-**Statut** : Validé — prêt pour writing-plans
+**Statut** : Implémenté — feat/wysiwyg-optimisations (Tasks 1-7)
 **Sous-projet** : 1/6 du chantier « Améliorations WYSIWYG v2 ». Fait suite au chantier WYSIWYG v1 (4 sous-projets, clos au merge de `feat/wysiwyg-home-preview`).
 
 ## Contexte : chantier « Améliorations WYSIWYG v2 »
@@ -48,10 +48,12 @@ Possède tout le squelette dupliqué :
 **API** :
 
 | Membre | Type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `active` | input `boolean` | Affiche la mode-bar et le panneau preview (item en édition) |
-| `entityLabel` | input `string` | Libellés ARIA : `aria-label` de la tablist (« Mode d'édition de la pièce »…) et du dialog plein écran |
-| `formTabLabel` | input `string` | Texte de l'onglet form (« ✏ Modifier la pièce »…) |
+| `modeBarAriaLabel` | input `string` requis | `aria-label` de la tablist (ex. « Mode d'édition de la pièce ») |
+| `formTabLabel` | input `string` requis | Texte de l'onglet form (ex. « ✏ Modifier la pièce ») |
+| `previewDialogLabel` | input `string` requis | `aria-label` du dialog plein écran (ex. « Aperçu de la fiche ») |
+| `hidePreviewOnMobile` | input `boolean` | Préserve le `display:none` mobile de mobilier (≤768px) |
 | `showSave` | input `boolean` | Bouton 💾 dans la toolbar (mobilier/expo : oui ; accueil : non, auto-save) |
 | `saveDisabled` | input `boolean` | Désactive 💾 (form invalide) |
 | `saving` | input `boolean` | Libellé « Enregistrement… » + désactive 💾 |
@@ -74,6 +76,16 @@ Chemin : `frontend/src/app/pages/admin/shared/preview-page-helpers.ts`. Fonction
 L'accueil n'utilise pas ces composables form (pas de FormGroup central) : il garde ses handlers spécifiques (feed reorder, toggle include, auto-save `updateContent`, crop card) qui n'existent qu'en un exemplaire. On ne factorise que ce qui existe en ≥ 2 exemplaires.
 
 `FurniturePreviewComponent` et `ExhibitionPreviewComponent` restent inchangés hormis l'adoption de `formTickSignal`.
+
+### Écarts assumés (validés à l'implémentation)
+
+L'unification CSS harmonise 3 micro-divergences, invisibles à largeur desktop (>1280px) :
+
+1. Mobilier ≤768px gagne `.admin-mode-tab { font-size: 0.78rem; }` (présent sur expo/accueil).
+2. Accueil 769–1280px : `.admin-preview` passe de `max-height: calc(100vh - 100px)` à `60vh` (règle 1280px de mobilier/expo).
+3. Accueil : la toolbar preview gagne un wrapper `.admin-preview-actions` (DOM, rendu identique).
+
+La divergence comportementale mobilier ≤768px (`.admin-preview { display: none; }`) est préservée via l'input `hidePreviewOnMobile`. Le shell durcit aussi 2 points par rapport à l'original : garde `active()` sur `is-hidden`/`inert` (panel form jamais masqué quand aucun item n'est en édition), et handlers du composable galerie en arrow properties (pas de `this` dynamique).
 
 ## Migration
 
