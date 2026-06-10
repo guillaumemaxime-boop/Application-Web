@@ -54,6 +54,7 @@ Possède tout le squelette dupliqué :
 | `formTabLabel` | input `string` requis | Texte de l'onglet form (ex. « ✏ Modifier la pièce ») |
 | `previewDialogLabel` | input `string` requis | `aria-label` du dialog plein écran (ex. « Aperçu de la fiche ») |
 | `hidePreviewOnMobile` | input `boolean` | Préserve le `display:none` mobile de mobilier (≤768px) |
+| `formModalOpen` | input `boolean` | Suspend l'`inert` du panel form tant qu'une modale form-side (photo/crop picker) est ouverte — ces modales sont des descendantes DOM du panel et `inert` les rendrait infocusables/incliquables (leçon du commit 7075927, bug trouvé en validation visuelle). Alimenté par `coverField.modalOpen() \|\| galleryEditor.modalOpen()` sur mobilier/expo |
 | `showSave` | input `boolean` | Bouton 💾 dans la toolbar (mobilier/expo : oui ; accueil : non, auto-save) |
 | `saveDisabled` | input `boolean` | Désactive 💾 (form invalide) |
 | `saving` | input `boolean` | Libellé « Enregistrement… » + désactive 💾 |

@@ -1064,6 +1064,7 @@ Squelette partagé des 3 pages admin à preview WYSIWYG (accueil, mobilier, expo
 | `modeBarAriaLabel` / `formTabLabel` / `previewDialogLabel` | input `string` requis | Libellés par page |
 | `showSave` / `saveDisabled` / `saving` | input `boolean` | Bouton 💾 toolbar |
 | `hidePreviewOnMobile` | input `boolean` | Préserve le comportement mobilier (preview masqué ≤768px) |
+| `formModalOpen` | input `boolean` | Suspend l'`inert` du panel form tant qu'une modale form-side (photo/crop picker, descendante DOM du panel) est ouverte — sinon elle est infocusable/incliquable. Alimenté par `coverField.modalOpen() \|\| galleryEditor.modalOpen()` (mobilier/expo) |
 | `viewMode` | `model<'form' \| 'preview'>` | Two-way avec le signal de la page |
 | `save` | output `void` | Clic 💾 |
 
