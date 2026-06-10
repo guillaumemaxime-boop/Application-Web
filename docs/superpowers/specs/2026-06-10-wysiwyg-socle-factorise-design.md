@@ -84,6 +84,7 @@ L'unification CSS harmonise 3 micro-divergences, invisibles à largeur desktop (
 1. Mobilier ≤768px gagne `.admin-mode-tab { font-size: 0.78rem; }` (présent sur expo/accueil).
 2. Accueil 769–1280px : `.admin-preview` passe de `max-height: calc(100vh - 100px)` à `60vh` (règle 1280px de mobilier/expo).
 3. Accueil : la toolbar preview gagne un wrapper `.admin-preview-actions` (DOM, rendu identique).
+4. Accueil : l'aria-label du bouton plein écran passe de `Réduire l'aperçu` (apostrophe droite) à `Réduire l’aperçu` (typographique, libellé unifié du shell) — aria-only, invisible.
 
 La divergence comportementale mobilier ≤768px (`.admin-preview { display: none; }`) est préservée via l'input `hidePreviewOnMobile`. Le shell durcit aussi 2 points par rapport à l'original : garde `active()` sur `is-hidden`/`inert` (panel form jamais masqué quand aucun item n'est en édition), et handlers du composable galerie en arrow properties (pas de `this` dynamique).
 
