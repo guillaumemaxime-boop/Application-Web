@@ -59,11 +59,16 @@ describe('AdminPreviewShellComponent', () => {
     expect(tabs[1].attributes['aria-selected']).toBe('false');
   });
 
-  it('masque la mode-bar quand active=false', () => {
+  it('masque la mode-bar quand active=false (et retire role/aria-labelledby du panel orphelin)', () => {
     const fixture = create();
     fixture.componentInstance.active.set(false);
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('.admin-mode-bar'))).toBeNull();
+    // Sans tablist rendue, le panel ne doit pas rester un tabpanel orphelin
+    // référençant un id absent (finding audit RGAA).
+    const panel = fixture.debugElement.query(By.css('#panel-form'));
+    expect(panel.nativeElement.hasAttribute('role')).toBeFalse();
+    expect(panel.nativeElement.hasAttribute('aria-labelledby')).toBeFalse();
   });
 
   it('projette le contenu form dans le panel tabpanel, visible en mode form', () => {
