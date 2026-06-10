@@ -53,7 +53,7 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
         [(viewMode)]="expoViewMode"
         modeBarAriaLabel="Mode d'édition de l'exposition"
         formTabLabel="✏ Modifier l'exposition"
-        previewDialogLabel="Aperçu de l'exposition"
+        previewDialogLabel="Aperçu de l’exposition"
         [showSave]="true"
         [saveDisabled]="exhibitionForm.invalid"
         [saving]="saving()"
