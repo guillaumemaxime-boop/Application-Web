@@ -1,8 +1,6 @@
-import { Component, ViewChild, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
-import { A11yModule } from '@angular/cdk/a11y';
+import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin, Subscription } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Exhibition } from '../../../models/exhibition.model';
 import { Story } from '../../../models/story.model';
@@ -16,11 +14,14 @@ import { GalleryItem } from '../../../models/gallery-item.model';
 import { Crop } from '../../../models/crop.model';
 import { ExhibitionPreviewComponent } from './preview/exhibition-preview.component';
 import { enrichSlides } from '../../../utils/display-slides';
+import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
+import { createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, formTickSignal } from '../shared/preview-page-helpers';
+import { EditableExhibitionField } from '../../../components/exhibition-detail-view/exhibition-detail-view.component';
 
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [A11yModule, ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent, AdminPreviewShellComponent, ShellPreviewDirective],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -47,176 +48,137 @@ import { enrichSlides } from '../../../utils/display-slides';
         }
       </aside>
 
-      <div class="admin-split">
-        @if (editingExhibitionSlug() !== null || editingExhibitionId() !== null || creatingExhibition()) {
-          <div class="admin-mode-bar" role="tablist" aria-label="Mode d'édition de l'exposition">
-            <button type="button" role="tab" id="tab-form" class="admin-mode-tab"
-                    aria-controls="panel-form"
-                    [class.active]="expoViewMode() === 'form'"
-                    [attr.aria-selected]="expoViewMode() === 'form'"
-                    (click)="expoViewMode.set('form')">
-              ✏ Modifier l'exposition
-            </button>
-            <button type="button" role="tab" id="tab-preview" class="admin-mode-tab"
-                    aria-controls="panel-preview"
-                    [class.active]="expoViewMode() === 'preview'"
-                    [attr.aria-selected]="expoViewMode() === 'preview'"
-                    (click)="expoViewMode.set('preview')">
-              👁 Aperçu
-            </button>
+      <app-admin-preview-shell
+        [active]="previewActive()"
+        [(viewMode)]="expoViewMode"
+        modeBarAriaLabel="Mode d'édition de l'exposition"
+        formTabLabel="✏ Modifier l'exposition"
+        previewDialogLabel="Aperçu de l'exposition"
+        [showSave]="true"
+        [saveDisabled]="exhibitionForm.invalid"
+        [saving]="saving()"
+        (save)="saveExhibition()">
+        <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
+          <div class="form-head">
+            <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
+            @if (editingExhibitionSlug(); as s) {
+              <a class="view-link" [href]="'/expositions/' + s" target="_blank" rel="noopener">Voir sur le site ↗</a>
+            }
           </div>
-        }
 
-        <section class="admin-form" id="panel-form" role="tabpanel" aria-labelledby="tab-form"
-                 [class.is-hidden]="expoViewMode() !== 'form'"
-                 [attr.inert]="expoViewMode() !== 'form' ? '' : null">
-          <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
-            <div class="form-head">
-              <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
-              @if (editingExhibitionSlug(); as s) {
-                <a class="view-link" [href]="'/expositions/' + s" target="_blank" rel="noopener">Voir sur le site ↗</a>
+          <label><span>Titre *</span><input type="text" id="field-title" formControlName="title" /></label>
+          @if (editingExhibitionSlug()) {
+            <label class="readonly-row"><span>Slug</span><input type="text" formControlName="slug" readonly /></label>
+          }
+          <label><span>Lieu</span><input type="text" id="field-venue" formControlName="venue" /></label>
+          <div class="row-2">
+            <label><span>Ville</span><input type="text" id="field-city" formControlName="city" /></label>
+            <label><span>Pays</span><input type="text" id="field-country" formControlName="country" /></label>
+          </div>
+          <div class="row-2">
+            <label><span>Date de début *</span><input type="date" id="field-startDate" formControlName="startDate" /></label>
+            <label><span>Date de fin *</span><input type="date" id="field-endDate" formControlName="endDate" /></label>
+          </div>
+          <label><span>Commissaire</span><input type="text" id="field-curator" formControlName="curator" /></label>
+
+          <app-image-field
+            #coverField
+            formControlName="coverImage"
+            label="Image principale (URL)"
+            [cropEnabled]="true"
+            [cropValue]="exhibitionForm.get('coverCrop')?.value"
+            (cropChange)="onCoverCropChange($event)" />
+
+          <app-gallery-editor
+            #galleryEditor
+            [images]="exhibitionGallery()"
+            (imagesChange)="exhibitionGallery.set($event)" />
+
+          <label>
+            <span>Tags</span>
+            <app-tag-input formControlName="tags" [suggestions]="allTags()" />
+          </label>
+          <label><span>Description courte</span><textarea rows="2" id="field-shortDescription" formControlName="shortDescription"></textarea></label>
+          <label><span>Description longue</span><textarea rows="5" id="field-description" formControlName="description"></textarea></label>
+
+          <label class="checkbox">
+            <input type="checkbox" formControlName="showStoryLink" />
+            <span>Afficher le lien en fin de story</span>
+          </label>
+
+          <label class="checkbox">
+            <input type="checkbox" formControlName="showStoryButton" />
+            <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
+          </label>
+
+          @if (editingExhibitionId()) {
+            <section class="stories-block">
+              <header class="stories-head">
+                <h3>Stories</h3>
+                <button type="button" class="btn-link" (click)="newStory()">+ Nouvelle story</button>
+              </header>
+              @if (currentStories().length === 0) {
+                <p class="empty">Aucune story pour cette exposition.</p>
               }
-            </div>
+              @for (story of currentStories(); track story.id; let i = $index) {
+                <article class="story-item" [class.active]="editingStoryId() === story.id">
+                  <img [src]="story.coverImage" alt="" class="story-cover" />
+                  <span class="story-title">{{ story.title }}</span>
+                  <div class="story-actions">
+                    <button type="button" class="reorder-btn" (click)="moveStoryUp(story)" [disabled]="i === 0" aria-label="Monter la story">↑</button>
+                    <button type="button" class="reorder-btn" (click)="moveStoryDown(story)" [disabled]="i === currentStories().length - 1" aria-label="Descendre la story">↓</button>
+                    <button type="button" class="btn-mini" (click)="editStory(story)">Éditer slides</button>
+                    <button type="button" class="btn-mini" (click)="openCoverEditor(story)">Cover</button>
+                    <button type="button" class="btn-mini" (click)="renameStory(story)">Renommer</button>
+                    <button type="button" class="btn-mini danger" (click)="deleteStory(story)">Supprimer</button>
+                  </div>
+                </article>
+                @if (editingCoverStoryId() === story.id) {
+                  <div class="cover-editor">
+                    <app-image-field label="Image de couverture" [formControl]="coverEditCtrl"
+                      [cropEnabled]="true"
+                      [cropValue]="editingStoryCoverCrop()"
+                      (cropChange)="onStoryCoverCropChange($event)" />
+                    <div class="cover-editor-actions">
+                      <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
+                      <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
+                    </div>
+                  </div>
+                }
+              }
+            </section>
+            @if (editingStoryId(); as sid) {
+              <app-slides-editor [storyId]="sid" [ownerSlug]="editingExhibitionSlug()" />
+            }
+          } @else {
+            <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir éditer ses slides.</p>
+          }
 
-            <label><span>Titre *</span><input type="text" id="field-title" formControlName="title" /></label>
+          <div class="actions">
+            <button type="submit" class="btn-primary" [disabled]="exhibitionForm.invalid || saving()">
+              {{ saving() ? 'Enregistrement…' : (editingExhibitionSlug() ? 'Mettre à jour' : 'Créer') }}
+            </button>
             @if (editingExhibitionSlug()) {
-              <label class="readonly-row"><span>Slug</span><input type="text" formControlName="slug" readonly /></label>
+              <button type="button" class="btn-link" (click)="newExhibition()">Annuler</button>
             }
-            <label><span>Lieu</span><input type="text" id="field-venue" formControlName="venue" /></label>
-            <div class="row-2">
-              <label><span>Ville</span><input type="text" id="field-city" formControlName="city" /></label>
-              <label><span>Pays</span><input type="text" id="field-country" formControlName="country" /></label>
-            </div>
-            <div class="row-2">
-              <label><span>Date de début *</span><input type="date" id="field-startDate" formControlName="startDate" /></label>
-              <label><span>Date de fin *</span><input type="date" id="field-endDate" formControlName="endDate" /></label>
-            </div>
-            <label><span>Commissaire</span><input type="text" id="field-curator" formControlName="curator" /></label>
-
-            <app-image-field
-              #coverField
-              formControlName="coverImage"
-              label="Image principale (URL)"
-              [cropEnabled]="true"
-              [cropValue]="exhibitionForm.get('coverCrop')?.value"
-              (cropChange)="onCoverCropChange($event)" />
-
-            <app-gallery-editor
-              #galleryEditor
-              [images]="exhibitionGallery()"
-              (imagesChange)="exhibitionGallery.set($event)" />
-
-            <label>
-              <span>Tags</span>
-              <app-tag-input formControlName="tags" [suggestions]="allTags()" />
-            </label>
-            <label><span>Description courte</span><textarea rows="2" id="field-shortDescription" formControlName="shortDescription"></textarea></label>
-            <label><span>Description longue</span><textarea rows="5" id="field-description" formControlName="description"></textarea></label>
-
-            <label class="checkbox">
-              <input type="checkbox" formControlName="showStoryLink" />
-              <span>Afficher le lien en fin de story</span>
-            </label>
-
-            <label class="checkbox">
-              <input type="checkbox" formControlName="showStoryButton" />
-              <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
-            </label>
-
-            @if (editingExhibitionId()) {
-              <section class="stories-block">
-                <header class="stories-head">
-                  <h3>Stories</h3>
-                  <button type="button" class="btn-link" (click)="newStory()">+ Nouvelle story</button>
-                </header>
-                @if (currentStories().length === 0) {
-                  <p class="empty">Aucune story pour cette exposition.</p>
-                }
-                @for (story of currentStories(); track story.id; let i = $index) {
-                  <article class="story-item" [class.active]="editingStoryId() === story.id">
-                    <img [src]="story.coverImage" alt="" class="story-cover" />
-                    <span class="story-title">{{ story.title }}</span>
-                    <div class="story-actions">
-                      <button type="button" class="reorder-btn" (click)="moveStoryUp(story)" [disabled]="i === 0" aria-label="Monter la story">↑</button>
-                      <button type="button" class="reorder-btn" (click)="moveStoryDown(story)" [disabled]="i === currentStories().length - 1" aria-label="Descendre la story">↓</button>
-                      <button type="button" class="btn-mini" (click)="editStory(story)">Éditer slides</button>
-                      <button type="button" class="btn-mini" (click)="openCoverEditor(story)">Cover</button>
-                      <button type="button" class="btn-mini" (click)="renameStory(story)">Renommer</button>
-                      <button type="button" class="btn-mini danger" (click)="deleteStory(story)">Supprimer</button>
-                    </div>
-                  </article>
-                  @if (editingCoverStoryId() === story.id) {
-                    <div class="cover-editor">
-                      <app-image-field label="Image de couverture" [formControl]="coverEditCtrl"
-                        [cropEnabled]="true"
-                        [cropValue]="editingStoryCoverCrop()"
-                        (cropChange)="onStoryCoverCropChange($event)" />
-                      <div class="cover-editor-actions">
-                        <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
-                        <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
-                      </div>
-                    </div>
-                  }
-                }
-              </section>
-              @if (editingStoryId(); as sid) {
-                <app-slides-editor [storyId]="sid" [ownerSlug]="editingExhibitionSlug()" />
-              }
-            } @else {
-              <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir éditer ses slides.</p>
-            }
-
-            <div class="actions">
-              <button type="submit" class="btn-primary" [disabled]="exhibitionForm.invalid || saving()">
-                {{ saving() ? 'Enregistrement…' : (editingExhibitionSlug() ? 'Mettre à jour' : 'Créer') }}
-              </button>
-              @if (editingExhibitionSlug()) {
-                <button type="button" class="btn-link" (click)="newExhibition()">Annuler</button>
-              }
-            </div>
-          </form>
-        </section>
-
-        @if (expoViewMode() === 'preview' && (editingExhibitionSlug() !== null || editingExhibitionId() !== null || creatingExhibition())) {
-          <aside class="admin-preview" id="panel-preview"
-                 [class.fullscreen]="previewFullscreen()"
-                 [attr.aria-modal]="previewFullscreen() ? 'true' : null"
-                 [attr.role]="previewFullscreen() ? 'dialog' : 'tabpanel'"
-                 [attr.aria-labelledby]="previewFullscreen() ? null : 'tab-preview'"
-                 [attr.aria-label]="previewFullscreen() ? previewDialogLabel : null"
-                 [cdkTrapFocus]="previewFullscreen()"
-                 [cdkTrapFocusAutoCapture]="previewFullscreen()">
-            <div class="admin-preview-toolbar">
-              <span class="admin-preview-label">Aperçu</span>
-              <div class="admin-preview-actions">
-                <button type="button" class="btn-preview-save"
-                        [disabled]="exhibitionForm.invalid || saving()"
-                        (click)="saveExhibition()">
-                  @if (saving()) { Enregistrement… } @else { 💾 Enregistrer }
-                </button>
-                <button type="button" class="btn-preview-toggle"
-                        (click)="togglePreviewFullscreen()"
-                        [attr.aria-label]="previewFullscreenLabel()">
-                  @if (previewFullscreen()) { ⤡ Réduire } @else { ⤢ Plein écran }
-                </button>
-              </div>
-            </div>
-            <app-exhibition-preview
-              [form]="exhibitionForm"
-              [gallery]="exhibitionGallery.asReadonly()"
-              [story]="currentStories()[0] ?? null"
-              [displaySlides]="previewDisplaySlides()"
-              (coverEdit)="onPreviewCoverEdit($event)"
-              (galleryItemEdit)="onPreviewGalleryItemEdit($event)"
-              (galleryReorder)="onPreviewGalleryReorder($event)"
-              (galleryAdd)="onPreviewGalleryAdd()"
-              (galleryItemResize)="onPreviewGalleryItemResize($event)"
-              (textFieldClick)="focusField($event)"
-              (textFieldEdit)="onPreviewTextFieldEdit($event)"
-              (dateFieldEdit)="onPreviewDateFieldEdit($event)" />
-          </aside>
-        }
-      </div>
+          </div>
+        </form>
+        <ng-template shellPreview>
+          <app-exhibition-preview
+            [form]="exhibitionForm"
+            [gallery]="exhibitionGallery.asReadonly()"
+            [story]="currentStories()[0] ?? null"
+            [displaySlides]="previewDisplaySlides()"
+            (coverEdit)="onPreviewCoverEdit($event)"
+            (galleryItemEdit)="onPreviewGalleryItemEdit($event)"
+            (galleryReorder)="onPreviewGalleryReorder($event)"
+            (galleryAdd)="onPreviewGalleryAdd()"
+            (galleryItemResize)="onPreviewGalleryItemResize($event)"
+            (textFieldClick)="focusField($event)"
+            (textFieldEdit)="onPreviewTextFieldEdit($event)"
+            (dateFieldEdit)="onPreviewDateFieldEdit($event)" />
+        </ng-template>
+      </app-admin-preview-shell>
     </div>
 
   `,
@@ -235,29 +197,6 @@ import { enrichSlides } from '../../../utils/display-slides';
     .row-meta { font-size: 0.75rem; color: var(--color-mute); letter-spacing: 0.06em; text-transform: uppercase; }
     .row-del { background: transparent; border: 0; padding: 0 16px; color: var(--color-mute); font-size: 1.5rem; cursor: pointer; line-height: 1; }
     .row-del:hover { color: #b1532a; }
-    .admin-split { display: flex; flex-direction: column; gap: 16px; max-width: 100%; }
-    .admin-mode-bar { display: inline-flex; gap: 4px; padding: 4px; background: var(--color-bg-alt); border: 1px solid var(--color-line); align-self: flex-start; }
-    .admin-mode-tab { padding: 8px 16px; background: transparent; border: 0; color: var(--color-ink-soft); font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: background 180ms ease, color 180ms ease; }
-    .admin-mode-tab:hover { color: var(--color-ink); }
-    .admin-mode-tab.active { background: var(--color-ink); color: var(--color-bg); font-weight: 600; }
-    .admin-form { max-width: 100%; }
-    /* En mode preview : form rendue mais positionnee hors viewport. Pas de display:none
-       (qui retirerait les modales descendantes) ni de visibility:hidden (qui se propage
-       en heritage CSS aux modales position:fixed et bloque par view encapsulation
-       Angular sur les composants enfants). Les pickers position:fixed s'affichent
-       toujours au viewport grace a leur z-index. */
-    .admin-form.is-hidden { position: absolute; left: -100vw; top: 0; width: 0; height: 0; overflow: hidden; pointer-events: none; }
-    .admin-preview { max-height: calc(100vh - 100px); overflow-y: auto; background: var(--color-bg-alt); border: 1px solid var(--color-line); padding: 24px; }
-    .admin-preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -8px -8px 16px; padding: 0 4px; }
-    .admin-preview-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-mute); }
-    .admin-preview-actions { display: inline-flex; gap: 8px; align-items: center; }
-    .btn-preview-save { padding: 6px 14px; background: var(--color-ink); color: var(--color-bg); border: 1px solid var(--color-ink); font-size: 0.78rem; cursor: pointer; font-family: inherit; font-weight: 600; }
-    .btn-preview-save:hover:not(:disabled) { background: var(--color-bg); color: var(--color-ink); }
-    .btn-preview-save:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-preview-toggle { padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-line); color: var(--color-ink-soft); font-size: 0.78rem; cursor: pointer; font-family: inherit; }
-    .btn-preview-toggle:hover { color: var(--color-ink); border-color: var(--color-ink); }
-    .admin-preview.fullscreen { position: fixed; inset: 0; max-height: none; z-index: 1200; border: 0; padding: 24px 32px; }
-    .admin-preview.fullscreen .admin-preview-toolbar { margin-top: 0; }
     .form { display: flex; flex-direction: column; gap: 20px; padding: 32px; border: 1px solid var(--color-line); background: var(--color-bg); }
     .form h2 { margin: 0; font-size: 1.5rem; }
     .form-head { display: flex; align-items: baseline; justify-content: space-between; }
@@ -293,22 +232,14 @@ import { enrichSlides } from '../../../utils/display-slides';
     .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
     .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .status { color: var(--color-mute); }
-    @media (max-width: 1280px) {
-      .admin-split { grid-template-columns: 1fr; }
-      .admin-preview { position: static; max-height: 60vh; }
-    }
     @media (max-width: 960px) {
       .grid-admin { grid-template-columns: 1fr; }
       .list { position: static; max-height: none; }
       .row-2 { grid-template-columns: 1fr; }
     }
-    @media (max-width: 768px) {
-      .admin-mode-tab { font-size: 0.78rem; }
-      .admin-preview { max-height: 60vh; }
-    }
   `]
 })
-export class ExpositionsComponent implements OnInit, OnDestroy {
+export class ExpositionsComponent {
   private readonly portfolio = inject(PortfolioService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
@@ -331,11 +262,7 @@ export class ExpositionsComponent implements OnInit, OnDestroy {
   protected readonly editingStoryCoverCrop = signal<Crop | null>(null);
 
   protected readonly creatingExhibition = signal(false);
-  protected readonly previewFullscreen = signal(false);
   protected readonly expoViewMode = signal<'form' | 'preview'>('form');
-
-  private readonly _formTick = signal(0);
-  private formTickSub?: Subscription;
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -354,6 +281,37 @@ export class ExpositionsComponent implements OnInit, OnDestroy {
     showStoryButton: [true],
     tags: this.fb.control<string[]>([], { nonNullable: true }),
   });
+
+  // — Câblage preview WYSIWYG (shell + composables, voir preview-page-helpers) —
+  // Les champs onPreview*/focusField préservent les noms historiques testés par la spec.
+
+  /** Whitelist des champs admissibles depuis le preview (défense en profondeur). */
+  private static readonly FOCUSABLE_FIELDS = new Set<EditableExhibitionField | 'startDate' | 'endDate'>([
+    'title', 'venue', 'city', 'country', 'startDate', 'endDate',
+    'curator', 'shortDescription', 'description',
+  ]);
+  private static readonly DATE_FIELDS = new Set<'startDate' | 'endDate'>(['startDate', 'endDate']);
+
+  protected readonly previewActive = computed(() =>
+    this.editingExhibitionSlug() !== null || this.editingExhibitionId() !== null || this.creatingExhibition()
+  );
+
+  private readonly _formTick = formTickSignal(this.exhibitionForm, inject(DestroyRef));
+
+  protected readonly focusField = createFieldFocus(ExpositionsComponent.FOCUSABLE_FIELDS);
+  protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(this.exhibitionForm, ExpositionsComponent.FOCUSABLE_FIELDS);
+  protected readonly onPreviewDateFieldEdit = createTextFieldEditHandler(this.exhibitionForm, ExpositionsComponent.DATE_FIELDS);
+
+  private readonly galleryHandlers = createGalleryPreviewHandlers({
+    gallery: this.exhibitionGallery,
+    galleryEditor: () => this.galleryEditor,
+    coverField: () => this.coverImageField,
+  });
+  protected readonly onPreviewCoverEdit = this.galleryHandlers.onCoverEdit;
+  protected readonly onPreviewGalleryItemEdit = this.galleryHandlers.onGalleryItemEdit;
+  protected readonly onPreviewGalleryAdd = this.galleryHandlers.onGalleryAdd;
+  protected readonly onPreviewGalleryReorder = this.galleryHandlers.onGalleryReorder;
+  protected readonly onPreviewGalleryItemResize = this.galleryHandlers.onGalleryItemResize;
 
   protected readonly previewDisplaySlides = computed(() => {
     this._formTick(); // dépendance signal — force recompute sur valueChanges
@@ -376,23 +334,6 @@ export class ExpositionsComponent implements OnInit, OnDestroy {
       if (params.get('new') === '1') this.newExhibition();
     });
   }
-
-  ngOnInit(): void {
-    this.formTickSub = this.exhibitionForm.valueChanges.subscribe(() =>
-      this._formTick.update(n => n + 1)
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.formTickSub?.unsubscribe();
-  }
-
-  protected togglePreviewFullscreen(): void { this.previewFullscreen.update(v => !v); }
-  protected previewFullscreenLabel(): string {
-    return this.previewFullscreen() ? 'Réduire l’aperçu' : 'Aperçu plein écran';
-  }
-  /** Label aria du dialog plein écran (apostrophe interdite en binding template inline). */
-  protected readonly previewDialogLabel = 'Aperçu de l’exposition';
 
   private refreshExhibitions(): void {
     this.loadingExhibitions.set(true);
@@ -576,67 +517,6 @@ export class ExpositionsComponent implements OnInit, OnDestroy {
         if (ownerId) this.loadStoriesFor(ownerId, '', '');
       });
     });
-  }
-
-  /** Whitelist des champs admissibles depuis le preview (defense en profondeur). */
-  private static readonly FOCUSABLE_FIELDS = new Set([
-    'title', 'venue', 'city', 'country', 'startDate', 'endDate',
-    'curator', 'shortDescription', 'description',
-  ]);
-
-  focusField(name: string): void {
-    if (!ExpositionsComponent.FOCUSABLE_FIELDS.has(name)) return;
-    const el = document.getElementById(`field-${name}`);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    (el as HTMLInputElement | HTMLTextAreaElement).focus();
-  }
-
-  onPreviewCoverEdit(action: 'crop' | 'replace'): void {
-    if (action === 'crop') {
-      this.coverImageField?.openCrop();
-    } else {
-      this.coverImageField?.openPicker();
-    }
-  }
-
-  onPreviewGalleryItemEdit(e: { index: number; action: 'crop' | 'replace' | 'remove' }): void {
-    if (e.action === 'remove') {
-      this.exhibitionGallery.update(arr => arr.filter((_, i) => i !== e.index));
-      return;
-    }
-    if (e.action === 'crop') {
-      this.galleryEditor?.openCropFor(e.index);
-    } else {
-      this.galleryEditor?.openReplaceFor(e.index);
-    }
-  }
-
-  onPreviewGalleryReorder(order: number[]): void {
-    const items = this.exhibitionGallery();
-    this.exhibitionGallery.set(order.map(i => items[i]));
-  }
-
-  onPreviewGalleryAdd(): void {
-    this.galleryEditor?.openPicker();
-  }
-
-  onPreviewGalleryItemResize(e: { index: number; colSpan: number; rowSpan: number }): void {
-    this.exhibitionGallery.update(arr => arr.map((it, i) =>
-      i === e.index ? { ...it, colSpan: e.colSpan, rowSpan: e.rowSpan } : it
-    ));
-  }
-
-  onPreviewTextFieldEdit(e: { field: string; value: string }): void {
-    if (!ExpositionsComponent.FOCUSABLE_FIELDS.has(e.field)) return;
-    this.exhibitionForm.patchValue({ [e.field]: e.value });
-    this.exhibitionForm.get(e.field)?.markAsDirty();
-  }
-
-  onPreviewDateFieldEdit(e: { field: 'startDate' | 'endDate'; value: string }): void {
-    if (e.field !== 'startDate' && e.field !== 'endDate') return;
-    this.exhibitionForm.patchValue({ [e.field]: e.value });
-    this.exhibitionForm.get(e.field)?.markAsDirty();
   }
 
   saveExhibition(): void {
