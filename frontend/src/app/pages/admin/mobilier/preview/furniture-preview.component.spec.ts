@@ -109,10 +109,11 @@ describe('FurniturePreviewComponent', () => {
   });
 
   it('previewItem est null quand form absent', () => {
-    setup();
+    const { form } = setup();
     const cmp = fixture.componentInstance as any;
+    // Invalider le computed via un valueChanges, puis supprimer le form
+    form.patchValue({ title: 'trigger' });
     cmp.form = null;
-    cmp._formTick.update((n: number) => n + 1);
     expect(cmp.previewItem()).toBeNull();
   });
 
