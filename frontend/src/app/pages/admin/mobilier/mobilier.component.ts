@@ -1,4 +1,5 @@
 import { Component, ViewChild, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin, Subscription } from 'rxjs';
@@ -19,7 +20,7 @@ import { enrichSlides } from '../../../utils/display-slides';
 @Component({
   selector: 'app-mobilier',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent],
+  imports: [A11yModule, ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent],
   template: `
     <div class="grid-admin">
       <aside class="list">
@@ -49,13 +50,15 @@ import { enrichSlides } from '../../../utils/display-slides';
       <div class="admin-split">
         @if (editingFurnitureSlug() !== null || editingFurnitureId() !== null || creatingFurniture()) {
           <div class="admin-mode-bar" role="tablist" aria-label="Mode d'édition de la pièce">
-            <button type="button" role="tab" class="admin-mode-tab"
+            <button type="button" role="tab" id="tab-form" class="admin-mode-tab"
+                    aria-controls="panel-form"
                     [class.active]="mobilierViewMode() === 'form'"
                     [attr.aria-selected]="mobilierViewMode() === 'form'"
                     (click)="mobilierViewMode.set('form')">
               ✏ Modifier la pièce
             </button>
-            <button type="button" role="tab" class="admin-mode-tab"
+            <button type="button" role="tab" id="tab-preview" class="admin-mode-tab"
+                    aria-controls="panel-preview"
                     [class.active]="mobilierViewMode() === 'preview'"
                     [attr.aria-selected]="mobilierViewMode() === 'preview'"
                     (click)="mobilierViewMode.set('preview')">
@@ -63,7 +66,9 @@ import { enrichSlides } from '../../../utils/display-slides';
             </button>
           </div>
         }
-        <section class="admin-form" [class.is-hidden]="mobilierViewMode() !== 'form'">
+        <section class="admin-form" id="panel-form" role="tabpanel" aria-labelledby="tab-form"
+                 [class.is-hidden]="mobilierViewMode() !== 'form'"
+                 [attr.inert]="mobilierViewMode() !== 'form' ? '' : null">
           <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
             <div class="form-head">
               <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
@@ -214,7 +219,14 @@ import { enrichSlides } from '../../../utils/display-slides';
         </section>
 
         @if (mobilierViewMode() === 'preview' && (editingFurnitureSlug() !== null || editingFurnitureId() !== null || creatingFurniture())) {
-          <aside class="admin-preview" [class.fullscreen]="previewFullscreen()" [attr.aria-modal]="previewFullscreen() ? 'true' : null" [attr.role]="previewFullscreen() ? 'dialog' : null" aria-label="Aperçu de la fiche">
+          <aside class="admin-preview" id="panel-preview"
+                 [class.fullscreen]="previewFullscreen()"
+                 [attr.role]="previewFullscreen() ? 'dialog' : 'tabpanel'"
+                 [attr.aria-labelledby]="previewFullscreen() ? null : 'tab-preview'"
+                 [attr.aria-label]="previewFullscreen() ? 'Aperçu de la fiche' : null"
+                 [attr.aria-modal]="previewFullscreen() ? 'true' : null"
+                 [cdkTrapFocus]="previewFullscreen()"
+                 [cdkTrapFocusAutoCapture]="previewFullscreen()">
             <div class="admin-preview-toolbar">
               <span class="admin-preview-label">Aperçu</span>
               <div class="admin-preview-actions">

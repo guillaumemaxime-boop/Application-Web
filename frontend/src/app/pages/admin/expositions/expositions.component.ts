@@ -50,13 +50,15 @@ import { enrichSlides } from '../../../utils/display-slides';
       <div class="admin-split">
         @if (editingExhibitionSlug() !== null || editingExhibitionId() !== null || creatingExhibition()) {
           <div class="admin-mode-bar" role="tablist" aria-label="Mode d'édition de l'exposition">
-            <button type="button" role="tab" class="admin-mode-tab"
+            <button type="button" role="tab" id="tab-form" class="admin-mode-tab"
+                    aria-controls="panel-form"
                     [class.active]="expoViewMode() === 'form'"
                     [attr.aria-selected]="expoViewMode() === 'form'"
                     (click)="expoViewMode.set('form')">
               ✏ Modifier l'exposition
             </button>
-            <button type="button" role="tab" class="admin-mode-tab"
+            <button type="button" role="tab" id="tab-preview" class="admin-mode-tab"
+                    aria-controls="panel-preview"
                     [class.active]="expoViewMode() === 'preview'"
                     [attr.aria-selected]="expoViewMode() === 'preview'"
                     (click)="expoViewMode.set('preview')">
@@ -65,7 +67,9 @@ import { enrichSlides } from '../../../utils/display-slides';
           </div>
         }
 
-        <section class="admin-form" [class.is-hidden]="expoViewMode() !== 'form'">
+        <section class="admin-form" id="panel-form" role="tabpanel" aria-labelledby="tab-form"
+                 [class.is-hidden]="expoViewMode() !== 'form'"
+                 [attr.inert]="expoViewMode() !== 'form' ? '' : null">
           <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
             <div class="form-head">
               <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
@@ -174,12 +178,14 @@ import { enrichSlides } from '../../../utils/display-slides';
         </section>
 
         @if (expoViewMode() === 'preview' && (editingExhibitionSlug() !== null || editingExhibitionId() !== null || creatingExhibition())) {
-          <aside class="admin-preview" [class.fullscreen]="previewFullscreen()"
+          <aside class="admin-preview" id="panel-preview"
+                 [class.fullscreen]="previewFullscreen()"
                  [attr.aria-modal]="previewFullscreen() ? 'true' : null"
-                 [attr.role]="previewFullscreen() ? 'dialog' : null"
+                 [attr.role]="previewFullscreen() ? 'dialog' : 'tabpanel'"
+                 [attr.aria-labelledby]="previewFullscreen() ? null : 'tab-preview'"
+                 [attr.aria-label]="previewFullscreen() ? previewDialogLabel : null"
                  [cdkTrapFocus]="previewFullscreen()"
-                 [cdkTrapFocusAutoCapture]="previewFullscreen()"
-                 aria-label="Aperçu de l'exposition">
+                 [cdkTrapFocusAutoCapture]="previewFullscreen()">
             <div class="admin-preview-toolbar">
               <span class="admin-preview-label">Aperçu</span>
               <div class="admin-preview-actions">
@@ -385,6 +391,8 @@ export class ExpositionsComponent implements OnInit, OnDestroy {
   protected previewFullscreenLabel(): string {
     return this.previewFullscreen() ? 'Réduire l’aperçu' : 'Aperçu plein écran';
   }
+  /** Label aria du dialog plein écran (apostrophe interdite en binding template inline). */
+  protected readonly previewDialogLabel = 'Aperçu de l’exposition';
 
   private refreshExhibitions(): void {
     this.loadingExhibitions.set(true);

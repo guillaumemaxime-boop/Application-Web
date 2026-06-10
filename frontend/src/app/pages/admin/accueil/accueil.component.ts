@@ -30,7 +30,6 @@ interface HomeAdminItem {
         <button type="button" role="tab" id="tab-form" class="admin-mode-tab"
                 [class.active]="accueilViewMode() === 'form'"
                 [attr.aria-selected]="accueilViewMode() === 'form'"
-                [attr.tabindex]="accueilViewMode() === 'form' ? 0 : -1"
                 aria-controls="panel-form"
                 (click)="accueilViewMode.set('form')">
           ✏ Modifier l'accueil
@@ -38,7 +37,6 @@ interface HomeAdminItem {
         <button type="button" role="tab" id="tab-preview" class="admin-mode-tab"
                 [class.active]="accueilViewMode() === 'preview'"
                 [attr.aria-selected]="accueilViewMode() === 'preview'"
-                [attr.tabindex]="accueilViewMode() === 'preview' ? 0 : -1"
                 aria-controls="panel-preview"
                 (click)="accueilViewMode.set('preview')">
           👁 Aperçu
@@ -81,8 +79,10 @@ interface HomeAdminItem {
 
       @if (accueilViewMode() === 'preview') {
         <aside class="admin-preview" id="panel-preview"
-               role="tabpanel" aria-labelledby="tab-preview"
                [class.fullscreen]="previewFullscreen()"
+               [attr.role]="previewFullscreen() ? 'dialog' : 'tabpanel'"
+               [attr.aria-labelledby]="previewFullscreen() ? null : 'tab-preview'"
+               [attr.aria-label]="previewFullscreen() ? previewDialogLabel : null"
                [attr.aria-modal]="previewFullscreen() ? 'true' : null"
                [cdkTrapFocus]="previewFullscreen()"
                [cdkTrapFocusAutoCapture]="previewFullscreen()">
@@ -272,6 +272,8 @@ export class AccueilComponent {
   protected previewFullscreenLabel(): string {
     return this.previewFullscreen() ? 'Réduire l\'aperçu' : 'Aperçu plein écran';
   }
+  /** Label aria du dialog plein écran (apostrophe interdite en binding template inline). */
+  protected readonly previewDialogLabel = 'Aperçu de l’accueil';
 
   protected onPreviewFeedReorder(order: number[]): void {
     const current = this.homeItems();
