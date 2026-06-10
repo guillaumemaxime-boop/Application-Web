@@ -65,11 +65,11 @@ export interface CoverFieldLike {
 }
 
 export interface GalleryPreviewHandlers {
-  onCoverEdit(action: 'crop' | 'replace'): void;
-  onGalleryItemEdit(e: { index: number; action: 'crop' | 'replace' | 'remove' }): void;
-  onGalleryAdd(): void;
-  onGalleryReorder(order: number[]): void;
-  onGalleryItemResize(e: { index: number; colSpan: number; rowSpan: number }): void;
+  onCoverEdit: (action: 'crop' | 'replace') => void;
+  onGalleryItemEdit: (e: { index: number; action: 'crop' | 'replace' | 'remove' }) => void;
+  onGalleryAdd: () => void;
+  onGalleryReorder: (order: number[]) => void;
+  onGalleryItemResize: (e: { index: number; colSpan: number; rowSpan: number }) => void;
 }
 
 /**
@@ -84,11 +84,11 @@ export function createGalleryPreviewHandlers(opts: {
 }): GalleryPreviewHandlers {
   const { gallery, galleryEditor, coverField } = opts;
   return {
-    onCoverEdit(action) {
+    onCoverEdit: (action) => {
       if (action === 'crop') coverField()?.openCrop();
       else coverField()?.openPicker();
     },
-    onGalleryItemEdit(e) {
+    onGalleryItemEdit: (e) => {
       if (e.action === 'remove') {
         gallery.update(arr => arr.filter((_, i) => i !== e.index));
         return;
@@ -96,14 +96,14 @@ export function createGalleryPreviewHandlers(opts: {
       if (e.action === 'crop') galleryEditor()?.openCropFor(e.index);
       else galleryEditor()?.openReplaceFor(e.index);
     },
-    onGalleryAdd() {
+    onGalleryAdd: () => {
       galleryEditor()?.openPicker();
     },
-    onGalleryReorder(order) {
+    onGalleryReorder: (order) => {
       const items = gallery();
       gallery.set(order.map(i => items[i]));
     },
-    onGalleryItemResize(e) {
+    onGalleryItemResize: (e) => {
       gallery.update(arr => arr.map((it, i) =>
         i === e.index ? { ...it, colSpan: e.colSpan, rowSpan: e.rowSpan } : it
       ));

@@ -16,6 +16,7 @@ import { FurniturePreviewComponent } from './preview/furniture-preview.component
 import { enrichSlides } from '../../../utils/display-slides';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
 import { createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, formTickSignal } from '../shared/preview-page-helpers';
+import { EditableTextField } from '../../../components/furniture-detail-view/furniture-detail-view.component';
 
 @Component({
   selector: 'app-mobilier',
@@ -352,8 +353,11 @@ export class MobilierComponent {
     tags: this.fb.control<string[]>([], { nonNullable: true }),
   });
 
+  // — Câblage preview WYSIWYG (shell + composables, voir preview-page-helpers) —
+  // Les champs onPreview*/focusField préservent les noms historiques testés par la spec.
+
   /** Whitelist des champs admissibles depuis le preview (défense en profondeur). */
-  private static readonly FOCUSABLE_FIELDS = new Set([
+  private static readonly FOCUSABLE_FIELDS = new Set<EditableTextField>([
     'title', 'category', 'material', 'shortDescription', 'description',
   ]);
 
@@ -363,19 +367,19 @@ export class MobilierComponent {
 
   private readonly _formTick = formTickSignal(this.furnitureForm, inject(DestroyRef));
 
-  focusField = createFieldFocus(MobilierComponent.FOCUSABLE_FIELDS);
-  onPreviewTextFieldEdit = createTextFieldEditHandler(this.furnitureForm, MobilierComponent.FOCUSABLE_FIELDS);
+  protected readonly focusField = createFieldFocus(MobilierComponent.FOCUSABLE_FIELDS);
+  protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(this.furnitureForm, MobilierComponent.FOCUSABLE_FIELDS);
 
   private readonly galleryHandlers = createGalleryPreviewHandlers({
     gallery: this.furnitureGallery,
     galleryEditor: () => this.galleryEditor,
     coverField: () => this.coverImageField,
   });
-  onPreviewCoverEdit = this.galleryHandlers.onCoverEdit;
-  onPreviewGalleryItemEdit = this.galleryHandlers.onGalleryItemEdit;
-  onPreviewGalleryAdd = this.galleryHandlers.onGalleryAdd;
-  onPreviewGalleryReorder = this.galleryHandlers.onGalleryReorder;
-  onPreviewGalleryItemResize = this.galleryHandlers.onGalleryItemResize;
+  protected readonly onPreviewCoverEdit = this.galleryHandlers.onCoverEdit;
+  protected readonly onPreviewGalleryItemEdit = this.galleryHandlers.onGalleryItemEdit;
+  protected readonly onPreviewGalleryAdd = this.galleryHandlers.onGalleryAdd;
+  protected readonly onPreviewGalleryReorder = this.galleryHandlers.onGalleryReorder;
+  protected readonly onPreviewGalleryItemResize = this.galleryHandlers.onGalleryItemResize;
 
   protected readonly previewDisplaySlides = computed(() => {
     this._formTick(); // dépendance signal — force recompute sur valueChanges
