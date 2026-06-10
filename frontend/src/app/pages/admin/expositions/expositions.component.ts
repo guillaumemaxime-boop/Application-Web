@@ -57,6 +57,7 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
         [showSave]="true"
         [saveDisabled]="exhibitionForm.invalid"
         [saving]="saving()"
+        [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen()"
         (save)="saveExhibition()">
         <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
           <div class="form-head">

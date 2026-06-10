@@ -43,7 +43,7 @@ export class ShellPreviewDirective {
 
       <section class="admin-form" id="panel-form" role="tabpanel" aria-labelledby="tab-form"
                [class.is-hidden]="active() && viewMode() !== 'form'"
-               [attr.inert]="active() && viewMode() !== 'form' ? '' : null">
+               [attr.inert]="active() && viewMode() !== 'form' && !formModalOpen() ? '' : null">
         <ng-content />
       </section>
 
@@ -129,6 +129,16 @@ export class AdminPreviewShellComponent {
   readonly saving = input(false);
   /** Préserve le comportement mobilier : preview masqué ≤768px. */
   readonly hidePreviewOnMobile = input(false);
+  /**
+   * Vrai quand une modale form-side (photo picker, crop picker) est ouverte.
+   * Suspend l'`inert` du panel form pendant ce temps : ces modales sont des
+   * descendantes DOM du panel, et `inert` les rendrait infocusables et
+   * incliquables (l'override `pointer-events` de styles.css ne vainc pas
+   * `inert`). Leçon du commit 7075927, réintroduite par 887ef14. `is-hidden`
+   * reste appliqué : le form demeure hors-écran, seule la modale
+   * `position: fixed` est interactive.
+   */
+  readonly formModalOpen = input(false);
   readonly viewMode = model<'form' | 'preview'>('form');
   readonly save = output<void>();
 

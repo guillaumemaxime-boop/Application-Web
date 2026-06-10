@@ -759,4 +759,31 @@ describe('MobilierComponent', () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
+  it('ouvrir le crop depuis le preview suspend inert sur le panel form (regression 7075927)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.newFurniture();
+    cmp.mobilierViewMode.set('preview');
+    fixture.detectChanges();
+    const panel: HTMLElement = fixture.nativeElement.querySelector('#panel-form');
+    expect(panel.hasAttribute('inert')).toBeTrue();
+
+    // Flux utilisateur : bouton Cadrer de l'overlay cover du preview
+    cmp.onPreviewCoverEdit('crop');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.crop-backdrop')).toBeTruthy();
+    // La modale est descendante du panel form : inert doit etre suspendu
+    // sinon elle est infocusable et incliquable (lecon du commit 7075927).
+    expect(panel.hasAttribute('inert')).toBeFalse();
+
+    // Fermeture de la modale : inert revient proteger le form cache
+    cmp.coverImageField.cropOpen.set(false);
+    fixture.detectChanges();
+    expect(panel.hasAttribute('inert')).toBeTrue();
+  });
+
 });

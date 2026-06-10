@@ -17,6 +17,7 @@ import { AdminPreviewShellComponent, ShellPreviewDirective } from './admin-previ
       [saveDisabled]="saveDisabled()"
       [saving]="saving()"
       [hidePreviewOnMobile]="hidePreviewMobile()"
+      [formModalOpen]="formModalOpen()"
       (save)="saveCount = saveCount + 1">
       <p class="form-marker">FORM</p>
       <ng-template shellPreview><p class="preview-marker">PREVIEW</p></ng-template>
@@ -30,6 +31,7 @@ class HostComponent {
   readonly saveDisabled = signal(false);
   readonly saving = signal(false);
   readonly hidePreviewMobile = signal(false);
+  readonly formModalOpen = signal(false);
   saveCount = 0;
 }
 
@@ -163,5 +165,22 @@ describe('AdminPreviewShellComponent', () => {
     fixture.componentInstance.hidePreviewMobile.set(true);
     fixture.detectChanges();
     expect(shellHost.nativeElement.classList.contains('hide-preview-mobile')).toBeTrue();
+  });
+
+  it('formModalOpen=true suspend inert sur le panel form (is-hidden conservé)', () => {
+    const fixture = create();
+    fixture.componentInstance.viewMode.set('preview');
+    fixture.detectChanges();
+    const panel = fixture.debugElement.query(By.css('#panel-form'));
+    expect(panel.nativeElement.hasAttribute('inert')).toBeTrue();
+
+    fixture.componentInstance.formModalOpen.set(true);
+    fixture.detectChanges();
+    expect(panel.nativeElement.hasAttribute('inert')).toBeFalse();
+    expect(panel.nativeElement.classList.contains('is-hidden')).toBeTrue();
+
+    fixture.componentInstance.formModalOpen.set(false);
+    fixture.detectChanges();
+    expect(panel.nativeElement.hasAttribute('inert')).toBeTrue();
   });
 });

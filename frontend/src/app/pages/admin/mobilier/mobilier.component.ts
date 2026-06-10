@@ -58,6 +58,7 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
         [saveDisabled]="furnitureForm.invalid"
         [saving]="saving()"
         [hidePreviewOnMobile]="true"
+        [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen()"
         (save)="saveFurniture()">
         <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
           <div class="form-head">

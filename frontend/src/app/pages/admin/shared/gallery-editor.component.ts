@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
 import { GalleryItem } from '../../../models/gallery-item.model';
@@ -119,6 +119,14 @@ export class GalleryEditorComponent {
   protected readonly photos = signal<Photo[]>([]);
   protected readonly cropOpenForIndex = signal<number | null>(null);
   private _replaceIndex: number | null = null;
+
+  /**
+   * Vrai quand une modale de l'éditeur (photo picker ou crop picker) est
+   * ouverte. Consommé par les pages preview WYSIWYG pour suspendre l'`inert`
+   * du panel form pendant que la modale est ouverte (sinon elle est
+   * infocusable et incliquable — voir commit 7075927).
+   */
+  readonly modalOpen = computed(() => this.pickerOpen() || this.cropOpenForIndex() !== null);
 
   openPicker(): void {
     this._replaceIndex = null;
