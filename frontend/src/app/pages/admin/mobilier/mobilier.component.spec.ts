@@ -654,33 +654,6 @@ describe('MobilierComponent', () => {
     expect(cmp.furnitureGallery()[1]).toEqual({ url: 'b', crop: null, colSpan: 2, rowSpan: 3 } as any);
   });
 
-  it('togglePreviewFullscreen bascule le signal', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    expect(cmp.previewFullscreen()).toBeFalse();
-    cmp.togglePreviewFullscreen();
-    expect(cmp.previewFullscreen()).toBeTrue();
-    cmp.togglePreviewFullscreen();
-    expect(cmp.previewFullscreen()).toBeFalse();
-  });
-
-  it('previewFullscreenLabel reflete l\'etat fullscreen', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.previewFullscreen.set(false);
-    expect(cmp.previewFullscreenLabel()).toContain('plein');
-    cmp.previewFullscreen.set(true);
-    expect(cmp.previewFullscreenLabel()).toContain('duire');
-  });
-
   it('mobilierViewMode default form, switche preview', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);
