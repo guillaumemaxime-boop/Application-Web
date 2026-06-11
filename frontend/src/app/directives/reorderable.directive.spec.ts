@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ReorderableDirective } from './reorderable.directive';
 
 @Component({
@@ -15,6 +15,27 @@ class HostComponent {
   items = ['a', 'b', 'c'];
   reordered: number[] | null = null;
   onReorder(order: number[]) { this.reordered = order; }
+}
+
+@Component({
+  standalone: true,
+  imports: [ReorderableDirective],
+  template: `
+    <ul appReorderable (reordered)="lastOrder = $event">
+      @for (it of items(); track it) {
+        <li class="row">{{ it }}</li>
+      }
+      <li data-no-drag class="add">+</li>
+    </ul>
+  `,
+})
+class HostWithNoDragComponent {
+  readonly items = signal(['a', 'b', 'c']);
+  lastOrder: number[] | null = null;
+}
+
+function dispatchDrag(el: HTMLElement, type: string): void {
+  el.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true }));
 }
 
 describe('ReorderableDirective', () => {
@@ -87,4 +108,76 @@ describe('ReorderableDirective', () => {
     expect(() => fixture.destroy()).not.toThrow();
   });
 
+});
+
+describe('ReorderableDirective — feedback visuel (classes drag)', () => {
+  function create() {
+    TestBed.configureTestingModule({ imports: [HostWithNoDragComponent] });
+    const fixture = TestBed.createComponent(HostWithNoDragComponent);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  function rows(fixture: ReturnType<typeof create>): HTMLElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('li.row'));
+  }
+
+  it('pose reorder-dragging sur la source au dragstart, retiree au dragend', () => {
+    const fixture = create();
+    const [a] = rows(fixture);
+    dispatchDrag(a, 'dragstart');
+    expect(a.classList.contains('reorder-dragging')).toBeTrue();
+    dispatchDrag(a, 'dragend');
+    expect(a.classList.contains('reorder-dragging')).toBeFalse();
+  });
+
+  it('pose reorder-drag-over sur la cible au dragenter, retiree au dragleave', () => {
+    const fixture = create();
+    const [a, b] = rows(fixture);
+    dispatchDrag(a, 'dragstart');
+    dispatchDrag(b, 'dragenter');
+    expect(b.classList.contains('reorder-drag-over')).toBeTrue();
+    dispatchDrag(b, 'dragleave');
+    expect(b.classList.contains('reorder-drag-over')).toBeFalse();
+    dispatchDrag(a, 'dragend');
+  });
+
+  it('dragenter/dragleave imbriques : la classe tient tant que le compteur > 0', () => {
+    const fixture = create();
+    const [a, b] = rows(fixture);
+    dispatchDrag(a, 'dragstart');
+    dispatchDrag(b, 'dragenter');
+    dispatchDrag(b, 'dragenter'); // enfant de b
+    dispatchDrag(b, 'dragleave');
+    expect(b.classList.contains('reorder-drag-over')).toBeTrue();
+    dispatchDrag(b, 'dragleave');
+    expect(b.classList.contains('reorder-drag-over')).toBeFalse();
+    dispatchDrag(a, 'dragend');
+  });
+
+  it('la source ne recoit pas reorder-drag-over', () => {
+    const fixture = create();
+    const [a] = rows(fixture);
+    dispatchDrag(a, 'dragstart');
+    dispatchDrag(a, 'dragenter');
+    expect(a.classList.contains('reorder-drag-over')).toBeFalse();
+    dispatchDrag(a, 'dragend');
+  });
+
+  it('drop emet le bon ordre et nettoie les classes', () => {
+    const fixture = create();
+    const [a, , c] = rows(fixture);
+    dispatchDrag(a, 'dragstart');
+    dispatchDrag(c, 'dragenter');
+    dispatchDrag(c, 'drop');
+    expect(fixture.componentInstance.lastOrder).toEqual([1, 2, 0]);
+    expect(a.classList.contains('reorder-dragging')).toBeFalse();
+    expect(c.classList.contains('reorder-drag-over')).toBeFalse();
+  });
+
+  it('la tuile data-no-drag n\'est pas draggable', () => {
+    const fixture = create();
+    const add: HTMLElement = fixture.nativeElement.querySelector('li.add');
+    expect(add.draggable).toBeFalse();
+  });
 });
