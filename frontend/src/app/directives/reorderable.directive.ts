@@ -79,6 +79,9 @@ export class ReorderableDirective implements AfterViewInit, OnDestroy {
 
   private onDragStart(e: DragEvent, index: number, el: HTMLElement) {
     this.dragSrcIndex = index;
+    // setData requis par certains navigateurs pour activer le drop.
+    // Ne PAS lire en retour via getData — l'index source fait foi dans
+    // this.dragSrcIndex (le dataTransfer peut etre ecrit par un tiers).
     e.dataTransfer?.setData('text/plain', String(index));
     el.classList.add('reorder-dragging');
   }
