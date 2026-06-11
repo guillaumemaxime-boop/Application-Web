@@ -211,6 +211,7 @@ export class AdminPreviewShellComponent {
   }
 
   protected previewFullscreenLabel(): string {
-    return this.previewFullscreen() ? "Réduire l'aperçu" : "Aperçu plein écran";
+    // Apostrophe typographique U+2019 voulue (libellé FR, cf. commits 7bef3e6/5a13457).
+    return this.previewFullscreen() ? 'Réduire l’aperçu' : 'Aperçu plein écran';
   }
 }
