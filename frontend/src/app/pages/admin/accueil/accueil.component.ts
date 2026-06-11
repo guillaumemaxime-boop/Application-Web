@@ -27,8 +27,8 @@ interface HomeAdminItem {
   template: `
     <app-admin-preview-shell
       [(viewMode)]="accueilViewMode"
-      modeBarAriaLabel="Mode d’édition de l’accueil"
-      formTabLabel="✏ Modifier l’accueil"
+      modeBarAriaLabel="Mode d'édition de l'accueil"
+      formTabLabel="✏ Modifier l'accueil"
       previewDialogLabel="Aperçu de l’accueil"
       [formModalOpen]="cropEditOpen()">
       <div class="home-editor">
