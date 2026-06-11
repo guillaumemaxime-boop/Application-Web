@@ -1,7 +1,7 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.7.0
-**Date** : 10/06/2026
+**Version** : 2.8.0
+**Date** : 11/06/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
 
@@ -807,6 +807,7 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
   - `onSliderEditRequested(zoneKey)` — bascule `accueilViewMode.set('form')` + `scrollIntoView` vers la section sliders correspondante.
 - **Auto-save inline texte hero** : blur ou Entrée → `portfolio.updateContent({ ...this.content(), [e.key]: e.value }).subscribe(...)`. Toast « Texte sauvegardé. » sur succès, revert + toast erreur sur échec.
 - **`saveFeed()`** : retourne un `Observable` (permet le chaînage lors des saves consécutifs).
+- **`[formModalOpen]="cropEditOpen()"`** : Échap ferme la modale crop sans réduire le plein écran. Résiduel connu : le story-viewer ouvert depuis le preview se ferme en même temps que le plein écran sur Échap.
 
 #### `MobilierComponent` (`/admin/mobilier`) — WYSIWYG preview
 
@@ -814,6 +815,7 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - **Handlers preview** : `focusField`/`onPreviewTextFieldEdit` (whitelist `FOCUSABLE_FIELDS` typée `EditableTextField`) et 5 handlers galerie créés via les composables `preview-page-helpers` (§5.5).
 - IDs déterministes `field-title`, `field-category`, `field-material`, `field-shortDescription`, `field-description` sur les inputs/textareas pour le click-to-focus.
 - **`saveFurniture()`** : recharge l'item depuis la réponse serveur (au lieu de reset du form) — préserve la fiche après save.
+- **Garde-fou dirty** : sélection liste / « + Nouvelle » passent par des wrappers gardés (`confirmIfDirty`) ; les flux internes (reload post-save, suppression, `?new=1`, « Annuler ») restent sans garde. Liste latérale `inert` quand l'aperçu est en plein écran (`fullscreenChange`).
 
 #### `ExpositionsComponent` (`/admin/expositions`) — WYSIWYG preview
 
@@ -821,6 +823,7 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - **Handlers preview** : `focusField`/`onPreviewTextFieldEdit` (whitelist `FOCUSABLE_FIELDS`) et `onPreviewDateFieldEdit` (whitelist `DATE_FIELDS = {startDate, endDate}`) via `createTextFieldEditHandler`, et 5 handlers galerie via composables `preview-page-helpers` (§5.5).
 - IDs déterministes `field-title`, `field-venue`, `field-city`, `field-country`, `field-startDate`, `field-endDate`, `field-curator`, `field-shortDescription`, `field-description` sur les inputs/textareas pour le click-to-focus.
 - **`saveExhibition()`** : recharge l'item depuis la réponse serveur (au lieu de reset du form) — préserve la fiche après save.
+- **Garde-fou dirty** : sélection liste / « + Nouvelle » passent par des wrappers gardés (`confirmIfDirty`) ; les flux internes (reload post-save, suppression, `?new=1`, « Annuler ») restent sans garde. Liste latérale `inert` quand l'aperçu est en plein écran (`fullscreenChange`).
 
 ### 5.5 Composants partagés
 
@@ -1058,6 +1061,8 @@ Chemin : `frontend/src/app/pages/admin/shared/admin-preview-shell.component.ts`
 
 Squelette partagé des 3 pages admin à preview WYSIWYG (accueil, mobilier, expositions). Possède : mode-bar `role=tablist` (✏/👁), panel form `#panel-form` projeté par `ng-content` (maintenu hors-écran `is-hidden` + `inert` en mode preview — préserve les `ViewChild` et les modales `position: fixed`), panel preview `#panel-preview` rendu par `ngTemplateOutlet` d'un `<ng-template shellPreview>` (directive marqueur `ShellPreviewDirective`, détruit/recréé au toggle), toolbar (💾 si `showSave`, ⤢/⤡), plein écran (`role=dialog` + `aria-modal` + `cdkTrapFocus`, z-index 1200), CSS partagé + media queries. Stack z-index : preview fullscreen 1200 · photo picker 1300 · crop picker 1400.
 
+Clavier & annonces (sous-projet 2/6) : tablist au pattern APG (roving tabindex, flèches ←/→ cycliques + Home/End, activation automatique) ; Ctrl+S/Cmd+S émet `save` quand `showSave` (preventDefault systématique ; neutralisé si `formModalOpen`) ; Échap réduit le plein écran et rend le focus au bouton ⤢ (inactif si `formModalOpen`) ; quitter le mode preview réinitialise le plein écran (pas de mode-bar inert fantôme) ; mode-bar `inert` en plein écran ; `aria-controls` du tab Aperçu conditionnel au panel rendu ; annonces `LiveAnnouncer` : « Mode aperçu/édition », « Aperçu plein écran/réduit ».
+
 | Membre | Type | Description |
 | --- | --- | --- |
 | `active` | input `boolean` (défaut `true`) | Affiche mode-bar et panel preview (item en édition) |
@@ -1067,6 +1072,7 @@ Squelette partagé des 3 pages admin à preview WYSIWYG (accueil, mobilier, expo
 | `formModalOpen` | input `boolean` | Suspend l'`inert` du panel form tant qu'une modale form-side (photo/crop picker, descendante DOM du panel) est ouverte — sinon elle est infocusable/incliquable. Alimenté par `coverField.modalOpen() \|\| galleryEditor.modalOpen()` (mobilier/expo) |
 | `viewMode` | `model<'form' \| 'preview'>` | Two-way avec le signal de la page |
 | `save` | output `void` | Clic 💾 |
+| `fullscreenChange` | output `boolean` | Entrée/sortie plein écran — les pages rendent `inert` leur liste latérale |
 
 #### Composables `preview-page-helpers.ts`
 
@@ -1076,8 +1082,16 @@ Chemin : `frontend/src/app/pages/admin/shared/preview-page-helpers.ts`
 - `createFieldFocus(whitelist)` — click-to-focus avec guard whitelist (généralisé à mobilier, qui ne l'avait pas).
 - `createTextFieldEditHandler(form, whitelist)` — patch + markAsDirty derrière whitelist (sert aussi `onPreviewDateFieldEdit` expo avec whitelist `{startDate, endDate}`).
 - `createGalleryPreviewHandlers({gallery, galleryEditor, coverField})` — les 5 handlers galerie communs mobilier/expo (getters pour les ViewChild, interfaces structurelles `GalleryEditorLike`/`CoverFieldLike`).
+- `confirmIfDirty(form, message)` — garde-fou perte de saisie (wrappers UI `onSelectFurniture`/`onNewFurniture` et équivalents expo ; `markAsPristine()` après save réussi).
+- Options `onMutate` (markAsDirty sur remove/reorder/resize galerie) et `announcer` (annonces SR reorder/resize, pluriel accordé ; reorder = heuristique « plus grand déplacement », ±1 sur déplacement adjacent) de `createGalleryPreviewHandlers`.
 
 ### 5.6 Utilitaires frontend
+
+#### `ReorderableDirective` (`frontend/src/app/directives/reorderable.directive.ts`)
+
+Directive standalone `[appReorderable]` : active le drag-reorder HTML5 sur les enfants d'un conteneur. Output `(reordered)` émet le tableau d'indices dans le nouvel ordre. Les enfants portant `data-no-drag` (ex. tuile « + Ajouter ») sont exclus du drag et de l'ordre émis.
+
+Feedback visuel (sous-projet 2/6) : classe `reorder-dragging` sur la source, `reorder-drag-over` sur la cible (compteur dragenter/dragleave), animation FLIP au drop (~180 ms, garde anti-rects périmés 300 ms, désactivée par `prefers-reduced-motion`), styles globaux dans `styles.css`.
 
 #### `cropTransform()` (`frontend/src/app/utils/crop-transform.ts`)
 
@@ -1426,3 +1440,4 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 2.5.0 | 09/06/2026 | Preview WYSIWYG fiche exposition — sous-projet 3/4 (ADR-0018) · Pattern page/view appliqué à exhibition-detail : `ExhibitionDetailViewComponent` extrait, `ExhibitionPreviewComponent` créé · `ExhibitionDetailComponent` refactoré (307 → 98 lignes) · `ExpositionsComponent` toggle Modifier/Aperçu, form hors-écran, 9 IDs `field-*`, handlers preview dont `onPreviewDateFieldEdit`, `saveExhibition()` reload · Eyebrow composite décomposé (3 spans + 2 séparateurs ARIA-hidden en mode editable) · Édition inline dates via swap `<input type="date">` · Type `EditableExhibitionField`, Output `dateFieldEdit` |
 | 2.6.0 | 09/06/2026 | Preview WYSIWYG accueil — sous-projet 4/4, clôture chantier (ADR-0018) · Changeset 030 : ADD `cover_crop_x/y/w/h` DOUBLE PRECISION nullable sur `home_feed` · `HomeFeedEntryEntity` étendu (4 champs + getters/setters) · `HomeFeedService.setCoverCrop` (@Transactional + @CacheEvict) + `replace` préserve les coverCrops existants via snapshot · `HomeService.buildFeedItem` : override coverCrop home si défini, sinon fallback fiche source · Endpoint `PUT /api/admin/home/feed/cover-crop` + DTO `HomeFeedCoverCropRequest(kind, slug, crop)` · `HomeFeedRepository.findByKindAndRefSlug` ajouté · Pattern page/view appliqué à home : `HomeViewComponent` extrait, `HomePreviewComponent` créé · `HomeComponent` refactoré (200 → 78 lignes) · `AccueilComponent` toggle Modifier/Aperçu, handlers preview (`onPreviewFeedReorder`, `onPreviewFeedItemToggleInclude`, `onPreviewTextFieldEdit`, `onPreviewFeedItemCropEdit`, `onSliderEditRequested`) · **Auto-save inline** texte hero (pas de FormGroup, PUT `updateContent` immédiat) · Pas de bouton 💾 dans toolbar preview · Cartouche `[i]` sliders navigation cross-mode · `saveFeed()` retourne Observable · `PortfolioService.updateHomeFeedCoverCrop` ajouté · Type `EditableHomeContentKey`, 7 Outputs `HomeViewComponent` |
 | 2.7.0 | 10/06/2026 | Socle factorisé previews WYSIWYG (chantier v2, sous-projet 1/6) : `<app-admin-preview-shell>` + composables `preview-page-helpers` · migration accueil/mobilier/expositions · whitelist focus généralisée à mobilier · previews adoptent `formTickSignal` |
+| 2.8.0 | 11/06/2026 | UX socle + a11y previews WYSIWYG (chantier v2, sous-projet 2/6) : garde-fou dirty (`confirmIfDirty` + pristine post-save) · Ctrl+S · roving tabindex APG · Échap plein écran + restitution focus · reset fullscreen hors preview · mode-bar/liste `inert` en fullscreen · annonces `LiveAnnouncer` (mode, fullscreen, galerie) · drag-reorder : classes + FLIP + reduced-motion · `formModalOpen` accueil |

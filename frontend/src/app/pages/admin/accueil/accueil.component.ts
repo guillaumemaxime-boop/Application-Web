@@ -29,7 +29,8 @@ interface HomeAdminItem {
       [(viewMode)]="accueilViewMode"
       modeBarAriaLabel="Mode d'édition de l'accueil"
       formTabLabel="✏ Modifier l'accueil"
-      previewDialogLabel="Aperçu de l’accueil">
+      previewDialogLabel="Aperçu de l’accueil"
+      [formModalOpen]="cropEditOpen()">
       <div class="home-editor">
         <h2>Ordre éditorial du masonry</h2>
         <p class="hint">Glisse pour réordonner. Décoche pour exclure du feed. Les modifications sont enregistrées automatiquement.</p>

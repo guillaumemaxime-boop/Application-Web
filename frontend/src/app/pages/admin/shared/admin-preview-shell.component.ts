@@ -1,6 +1,6 @@
-import { Component, Directive, TemplateRef, contentChild, inject, input, model, output, signal } from '@angular/core';
+import { Component, Directive, ElementRef, TemplateRef, contentChild, effect, inject, input, model, output, signal, untracked } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { A11yModule } from '@angular/cdk/a11y';
+import { A11yModule, LiveAnnouncer } from '@angular/cdk/a11y';
 
 /** Marqueur du template preview projeté dans le shell. */
 @Directive({ selector: 'ng-template[shellPreview]', standalone: true })
@@ -19,20 +19,27 @@ export class ShellPreviewDirective {
   selector: 'app-admin-preview-shell',
   standalone: true,
   imports: [A11yModule, NgTemplateOutlet],
-  host: { '[class.hide-preview-mobile]': 'hidePreviewOnMobile()' },
+  host: {
+    '[class.hide-preview-mobile]': 'hidePreviewOnMobile()',
+    '(document:keydown)': 'onDocumentKeydown($event)',
+  },
   template: `
     <div class="admin-split">
       @if (active()) {
-        <div class="admin-mode-bar" role="tablist" [attr.aria-label]="modeBarAriaLabel()">
+        <div class="admin-mode-bar" role="tablist" [attr.aria-label]="modeBarAriaLabel()"
+             (keydown)="onTablistKeydown($event)"
+             [attr.inert]="previewFullscreen() ? '' : null">
           <button type="button" role="tab" id="tab-form" class="admin-mode-tab"
                   aria-controls="panel-form"
+                  [attr.tabindex]="viewMode() === 'form' ? 0 : -1"
                   [class.active]="viewMode() === 'form'"
                   [attr.aria-selected]="viewMode() === 'form'"
                   (click)="viewMode.set('form')">
             {{ formTabLabel() }}
           </button>
           <button type="button" role="tab" id="tab-preview" class="admin-mode-tab"
-                  aria-controls="panel-preview"
+                  [attr.aria-controls]="viewMode() === 'preview' ? 'panel-preview' : null"
+                  [attr.tabindex]="viewMode() === 'preview' ? 0 : -1"
                   [class.active]="viewMode() === 'preview'"
                   [attr.aria-selected]="viewMode() === 'preview'"
                   (click)="viewMode.set('preview')">
@@ -143,15 +150,74 @@ export class AdminPreviewShellComponent {
   readonly formModalOpen = input(false);
   readonly viewMode = model<'form' | 'preview'>('form');
   readonly save = output<void>();
+  /** Émis à chaque entrée/sortie du plein écran. Les pages s'en servent
+   *  pour rendre `inert` leur liste latérale (neutralisation aria-modal). */
+  readonly fullscreenChange = output<boolean>();
+
+  private readonly announcer = inject(LiveAnnouncer);
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly previewTpl = contentChild(ShellPreviewDirective);
   protected readonly previewFullscreen = signal(false);
 
+  constructor() {
+    // Annonce SR du changement de mode (l'état initial n'est pas annoncé).
+    // Quitter le mode preview réinitialise aussi le plein écran : sinon la
+    // mode-bar resterait inert (impasse) et fullscreenChange ne serait pas émis.
+    let firstMode = true;
+    effect(() => {
+      const mode = this.viewMode();
+      if (mode !== 'preview') untracked(() => this.setFullscreen(false));
+      if (firstMode) { firstMode = false; return; }
+      this.announcer.announce(mode === 'preview' ? 'Mode aperçu' : 'Mode édition');
+    });
+  }
+
   protected togglePreviewFullscreen(): void {
-    this.previewFullscreen.update(v => !v);
+    this.setFullscreen(!this.previewFullscreen());
+  }
+
+  private setFullscreen(value: boolean): void {
+    if (this.previewFullscreen() === value) return;
+    this.previewFullscreen.set(value);
+    this.fullscreenChange.emit(value);
+    this.announcer.announce(value ? 'Aperçu plein écran' : 'Aperçu réduit');
+  }
+
+  /** Pattern APG Tabs : flèches cycliques + Home/End, activation automatique. */
+  protected onTablistKeydown(event: KeyboardEvent): void {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next: 'form' | 'preview' =
+      event.key === 'Home' ? 'form'
+      : event.key === 'End' ? 'preview'
+      : this.viewMode() === 'form' ? 'preview' : 'form';
+    if (next !== this.viewMode()) this.viewMode.set(next);
+    this.elementRef.nativeElement
+      .querySelector<HTMLButtonElement>(next === 'form' ? '#tab-form' : '#tab-preview')
+      ?.focus();
+  }
+
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 's') {
+      if (!this.showSave()) return;
+      event.preventDefault();
+      // Modale form-side ouverte : on bloque la boîte navigateur mais on ne
+      // sauvegarde pas sous la modale (feedback masqué, état partiel).
+      if (this.formModalOpen()) return;
+      if (!this.saveDisabled() && !this.saving()) this.save.emit();
+      return;
+    }
+    // Échap réduit le plein écran — sauf si une modale form-side est ouverte
+    // (son propre handler Escape la ferme ; le plein écran reste).
+    if (event.key === 'Escape' && this.previewFullscreen() && !this.formModalOpen()) {
+      this.setFullscreen(false);
+      this.elementRef.nativeElement.querySelector<HTMLButtonElement>('.btn-preview-toggle')?.focus();
+    }
   }
 
   protected previewFullscreenLabel(): string {
+    // Apostrophe typographique U+2019 voulue (libellé FR, cf. commits 7bef3e6/5a13457).
     return this.previewFullscreen() ? 'Réduire l’aperçu' : 'Aperçu plein écran';
   }
 }

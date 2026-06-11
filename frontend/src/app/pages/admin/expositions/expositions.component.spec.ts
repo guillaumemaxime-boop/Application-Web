@@ -737,6 +737,78 @@ describe('ExpositionsComponent', () => {
     expect(stub.openReplaceFor).toHaveBeenCalledWith(0);
   });
 
+  it('onSelectExhibition avec form dirty : confirm refusé = pas de chargement', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.exhibitionForm.patchValue({ title: 'Brouillon' });
+    cmp.exhibitionForm.markAsDirty();
+    const confirmSpy = spyOn(window, 'confirm').and.returnValue(false);
+    cmp.onSelectExhibition({ id: 'x', slug: 'salon', title: 'Salon' });
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(cmp.editingExhibitionSlug()).toBeNull();
+    expect(cmp.exhibitionForm.getRawValue().title).toBe('Brouillon');
+  });
+
+  it('onSelectExhibition avec form pristine : charge sans confirm', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const confirmSpy = spyOn(window, 'confirm');
+    cmp.onSelectExhibition({ id: 'x', slug: 'salon', title: 'Salon' });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(cmp.editingExhibitionSlug()).toBe('salon');
+  });
+
+  it('onNewExhibition avec form dirty : confirm accepté = form vierge', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.exhibitionForm.patchValue({ title: 'Brouillon' });
+    cmp.exhibitionForm.markAsDirty();
+    spyOn(window, 'confirm').and.returnValue(true);
+    cmp.onNewExhibition();
+    expect(cmp.exhibitionForm.getRawValue().title).toBe('');
+  });
+
+  it('saveExhibition marque le form pristine après succès', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.exhibitionForm.patchValue({ title: 'T', startDate: '2024-01-01', endDate: '2024-02-01' });
+    cmp.exhibitionForm.markAsDirty();
+    cmp.saveExhibition();
+    httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/exhibitions').flush(null);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    expect(cmp.exhibitionForm.dirty).toBeFalse();
+  });
+
+  it('les mutations galerie depuis le preview marquent le form dirty', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.exhibitionGallery.set([{ url: 'a.jpg' }, { url: 'b.jpg' }]);
+    expect(cmp.exhibitionForm.dirty).toBeFalse();
+    cmp.onPreviewGalleryReorder([1, 0]);
+    expect(cmp.exhibitionForm.dirty).toBeTrue();
+  });
+
   it('ouvrir le crop depuis le preview suspend inert sur le panel form (regression 7075927)', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);

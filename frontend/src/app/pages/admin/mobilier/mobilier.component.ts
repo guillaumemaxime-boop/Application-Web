@@ -1,4 +1,5 @@
 import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
@@ -15,7 +16,7 @@ import { Crop } from '../../../models/crop.model';
 import { FurniturePreviewComponent } from './preview/furniture-preview.component';
 import { enrichSlides } from '../../../utils/display-slides';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
-import { createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, formTickSignal } from '../shared/preview-page-helpers';
+import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, formTickSignal } from '../shared/preview-page-helpers';
 import { EditableTextField } from '../../../components/furniture-detail-view/furniture-detail-view.component';
 
 @Component({
@@ -24,10 +25,10 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
   imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent, AdminPreviewShellComponent, ShellPreviewDirective],
   template: `
     <div class="grid-admin">
-      <aside class="list">
+      <aside class="list" [attr.inert]="previewFullscreenActive() ? '' : null">
         <div class="list-head">
           <h2>Pièces existantes</h2>
-          <button type="button" class="btn-link" (click)="newFurniture()">+ Nouvelle pièce</button>
+          <button type="button" class="btn-link" (click)="onNewFurniture()">+ Nouvelle pièce</button>
         </div>
         @if (loadingFurniture()) {
           <p class="status">Chargement…</p>
@@ -37,7 +38,7 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
           <ul>
             @for (item of furniture(); track item.id) {
               <li [class.selected]="editingFurnitureSlug() === item.slug">
-                <button type="button" class="row" (click)="loadFurniture(item)">
+                <button type="button" class="row" (click)="onSelectFurniture(item)">
                   <span class="row-title">{{ item.title }}</span>
                   <span class="row-meta">{{ item.category }} · {{ item.year }}</span>
                 </button>
@@ -59,7 +60,8 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
         [saving]="saving()"
         [hidePreviewOnMobile]="true"
         [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen()"
-        (save)="saveFurniture()">
+        (save)="saveFurniture()"
+        (fullscreenChange)="previewFullscreenActive.set($event)">
         <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
           <div class="form-head">
             <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
@@ -113,7 +115,7 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
           <app-gallery-editor
             #galleryEditor
             [images]="furnitureGallery()"
-            (imagesChange)="furnitureGallery.set($event)" />
+            (imagesChange)="furnitureGallery.set($event); furnitureForm.markAsDirty()" />
 
           <fieldset class="dim-fieldset">
             <legend>Dimensions</legend>
@@ -314,6 +316,7 @@ export class MobilierComponent {
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
+  private readonly announcer = inject(LiveAnnouncer);
 
   @ViewChild('coverField') coverImageField?: ImageFieldComponent;
   @ViewChild('galleryEditor') galleryEditor?: GalleryEditorComponent;
@@ -333,6 +336,8 @@ export class MobilierComponent {
 
   protected readonly creatingFurniture = signal(false);
   protected readonly mobilierViewMode = signal<'form' | 'preview'>('form');
+  /** Reflète le plein écran du shell — rend la liste latérale inert (neutralisation aria-modal). */
+  protected readonly previewFullscreenActive = signal(false);
 
   protected readonly furnitureForm = this.fb.group({
     title: ['', Validators.required],
@@ -375,6 +380,8 @@ export class MobilierComponent {
     gallery: this.furnitureGallery,
     galleryEditor: () => this.galleryEditor,
     coverField: () => this.coverImageField,
+    onMutate: () => this.furnitureForm.markAsDirty(),
+    announcer: this.announcer,
   });
   protected readonly onPreviewCoverEdit = this.galleryHandlers.onCoverEdit;
   protected readonly onPreviewGalleryItemEdit = this.galleryHandlers.onGalleryItemEdit;
@@ -410,6 +417,21 @@ export class MobilierComponent {
       next: data => { this.furniture.set(data); this.loadingFurniture.set(false); },
       error: () => { this.loadingFurniture.set(false); this.toast.error('Impossible de charger les pièces.'); }
     });
+  }
+
+  /** Message du garde-fou perte de saisie. */
+  private static readonly DIRTY_MESSAGE = 'Des modifications ne sont pas enregistrées. Continuer sans enregistrer ?';
+
+  /** Wrapper UI gardé — le template l'appelle ; les flux internes appellent loadFurniture directement. */
+  protected onSelectFurniture(item: Furniture): void {
+    if (!confirmIfDirty(this.furnitureForm, MobilierComponent.DIRTY_MESSAGE)) return;
+    this.loadFurniture(item);
+  }
+
+  /** Wrapper UI gardé — idem pour « + Nouvelle pièce ». */
+  protected onNewFurniture(): void {
+    if (!confirmIfDirty(this.furnitureForm, MobilierComponent.DIRTY_MESSAGE)) return;
+    this.newFurniture();
   }
 
   newFurniture(): void {
@@ -456,6 +478,7 @@ export class MobilierComponent {
 
   protected onCoverCropChange(crop: Crop | null): void {
     this.furnitureForm.patchValue({ coverCrop: crop });
+    this.furnitureForm.markAsDirty();
   }
 
   private loadStoriesFor(furnitureId: string, fallbackTitle: string, fallbackCover: string): void {
@@ -655,6 +678,9 @@ export class MobilierComponent {
       next: (saved) => {
         this.saving.set(false);
         this.toast.success(slug ? 'Pièce mise à jour.' : 'Pièce créée.');
+        // L'état sauvegardé devient la référence : le garde-fou dirty
+        // ne doit pas se déclencher sur le reload post-save.
+        this.furnitureForm.markAsPristine();
         this.refreshFurniture();
         // Reste sur la fiche après save : recharge depuis la réponse serveur
         // (préserve form + preview, slug/id à jour pour les opérations suivantes)
