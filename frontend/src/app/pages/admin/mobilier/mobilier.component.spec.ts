@@ -759,6 +759,79 @@ describe('MobilierComponent', () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
+  it('onSelectFurniture avec form dirty : confirm refusé = pas de chargement', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.furnitureForm.patchValue({ title: 'Brouillon' });
+    cmp.furnitureForm.markAsDirty();
+    const confirmSpy = spyOn(window, 'confirm').and.returnValue(false);
+    cmp.onSelectFurniture({ id: 'x', slug: 'chaise', title: 'Chaise' });
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(cmp.editingFurnitureSlug()).toBeNull();
+    expect(cmp.furnitureForm.getRawValue().title).toBe('Brouillon');
+  });
+
+  it('onSelectFurniture avec form pristine : charge sans confirm', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const confirmSpy = spyOn(window, 'confirm');
+    cmp.onSelectFurniture({ id: 'x', slug: 'chaise', title: 'Chaise' });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(cmp.editingFurnitureSlug()).toBe('chaise');
+  });
+
+  it('onNewFurniture avec form dirty : confirm accepté = form vierge', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.furnitureForm.patchValue({ title: 'Brouillon' });
+    cmp.furnitureForm.markAsDirty();
+    spyOn(window, 'confirm').and.returnValue(true);
+    cmp.onNewFurniture();
+    expect(cmp.furnitureForm.getRawValue().title).toBe('');
+  });
+
+  it('saveFurniture marque le form pristine après succès', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.furnitureForm.patchValue({ title: 'T', category: 'C', year: 2024 });
+    cmp.furnitureForm.markAsDirty();
+    cmp.saveFurniture();
+    // flush(null) : pas de reload post-save, markAsPristine est le seul mécanisme testé
+    httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/furniture').flush(null);
+    httpMock.expectOne('/api/furniture').flush([]);
+    expect(cmp.furnitureForm.dirty).toBeFalse();
+  });
+
+  it('les mutations galerie depuis le preview marquent le form dirty', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.furnitureGallery.set([{ url: 'a.jpg' }, { url: 'b.jpg' }]);
+    expect(cmp.furnitureForm.dirty).toBeFalse();
+    cmp.onPreviewGalleryReorder([1, 0]);
+    expect(cmp.furnitureForm.dirty).toBeTrue();
+  });
+
   it('ouvrir le crop depuis le preview suspend inert sur le panel form (regression 7075927)', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);
