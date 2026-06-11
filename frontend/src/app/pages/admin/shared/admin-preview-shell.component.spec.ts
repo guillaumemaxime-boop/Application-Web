@@ -256,6 +256,16 @@ describe('AdminPreviewShellComponent', () => {
     expect(ev.defaultPrevented).toBeFalse();
   });
 
+  it('Ctrl+S est neutralisé (preventDefault sans émission) quand une modale form-side est ouverte', () => {
+    const fixture = create();
+    fixture.componentInstance.formModalOpen.set(true);
+    fixture.detectChanges();
+    const ev = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.saveCount).toBe(0);
+    expect(ev.defaultPrevented).toBeTrue();
+  });
+
   it('Échap réduit le plein écran, émet fullscreenChange et rend le focus au bouton ⤢', () => {
     const fixture = create();
     fixture.componentInstance.viewMode.set('preview');
@@ -269,6 +279,8 @@ describe('AdminPreviewShellComponent', () => {
     const aside = fixture.debugElement.query(By.css('#panel-preview'));
     expect(aside.nativeElement.classList.contains('fullscreen')).toBeFalse();
     expect(fixture.componentInstance.lastFullscreen).toBeFalse();
+    // NB : cdkTrapFocus ne restitue le focus qu'au destroy, pas à la désactivation —
+    // c'est bien notre querySelector().focus() qui est testé ici.
     expect(document.activeElement).toBe(toggle.nativeElement);
   });
 
@@ -303,6 +315,26 @@ describe('AdminPreviewShellComponent', () => {
     fixture.debugElement.query(By.css('.btn-preview-toggle')).nativeElement.click();
     fixture.detectChanges();
     expect(modeBar.nativeElement.hasAttribute('inert')).toBeTrue();
+  });
+
+  it('quitter le mode preview pendant le plein écran réinitialise fullscreen (mode-bar réactivée)', () => {
+    const fixture = create();
+    fixture.componentInstance.viewMode.set('preview');
+    fixture.detectChanges();
+    fixture.debugElement.query(By.css('.btn-preview-toggle')).nativeElement.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.lastFullscreen).toBeTrue();
+    // La page rebascule en mode form (ex. cartouche [i] des sliders accueil)
+    fixture.componentInstance.viewMode.set('form');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.lastFullscreen).toBeFalse();
+    const modeBar = fixture.debugElement.query(By.css('.admin-mode-bar'));
+    expect(modeBar.nativeElement.hasAttribute('inert')).toBeFalse();
+    // Retour en preview : pas de fullscreen fantôme
+    fixture.componentInstance.viewMode.set('preview');
+    fixture.detectChanges();
+    const aside = fixture.debugElement.query(By.css('#panel-preview'));
+    expect(aside.nativeElement.classList.contains('fullscreen')).toBeFalse();
   });
 
   it('annonce SR le changement de mode et le plein écran', () => {

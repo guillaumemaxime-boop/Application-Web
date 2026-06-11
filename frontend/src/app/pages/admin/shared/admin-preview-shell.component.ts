@@ -1,4 +1,4 @@
-import { Component, Directive, ElementRef, TemplateRef, contentChild, effect, inject, input, model, output, signal } from '@angular/core';
+import { Component, Directive, ElementRef, TemplateRef, contentChild, effect, inject, input, model, output, signal, untracked } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { A11yModule, LiveAnnouncer } from '@angular/cdk/a11y';
 
@@ -162,9 +162,12 @@ export class AdminPreviewShellComponent {
 
   constructor() {
     // Annonce SR du changement de mode (l'état initial n'est pas annoncé).
+    // Quitter le mode preview réinitialise aussi le plein écran : sinon la
+    // mode-bar resterait inert (impasse) et fullscreenChange ne serait pas émis.
     let firstMode = true;
     effect(() => {
       const mode = this.viewMode();
+      if (mode !== 'preview') untracked(() => this.setFullscreen(false));
       if (firstMode) { firstMode = false; return; }
       this.announcer.announce(mode === 'preview' ? 'Mode aperçu' : 'Mode édition');
     });
@@ -196,9 +199,12 @@ export class AdminPreviewShellComponent {
   }
 
   protected onDocumentKeydown(event: KeyboardEvent): void {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+    if ((event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 's') {
       if (!this.showSave()) return;
       event.preventDefault();
+      // Modale form-side ouverte : on bloque la boîte navigateur mais on ne
+      // sauvegarde pas sous la modale (feedback masqué, état partiel).
+      if (this.formModalOpen()) return;
       if (!this.saveDisabled() && !this.saving()) this.save.emit();
       return;
     }
