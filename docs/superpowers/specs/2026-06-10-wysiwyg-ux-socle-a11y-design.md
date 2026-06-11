@@ -1,7 +1,7 @@
 # UX socle + a11y des previews WYSIWYG — Spec
 
 **Date** : 2026-06-10
-**Statut** : Validé — prêt pour writing-plans
+**Statut** : Implémenté — feat/wysiwyg-ux-socle-a11y
 **Sous-projet** : 2/6 du chantier « Améliorations WYSIWYG v2 » (découpage : voir spec `2026-06-10-wysiwyg-socle-factorise-design.md`, section Contexte). S'appuie sur le sous-projet 1 (socle factorisé `<app-admin-preview-shell>` + `preview-page-helpers`), mergé sur main.
 
 ## Objectif
@@ -28,17 +28,18 @@ Note : Échap plein écran relève du volet a11y (dette RGAA), indépendamment d
 Toutes ces capacités s'implémentent dans le shell, les 3 pages en héritent sans modification (ou presque) :
 
 - **Roving tabindex (pattern APG Tabs)** : `[attr.tabindex]` 0/-1 selon l'onglet actif ; `keydown` flèches ←/→ (cycliques) + Home/End sur la tablist déplacent le focus **et activent l'onglet** (activation automatique — adaptée à 2 onglets au contenu instantané). Clic/Enter/Espace inchangés.
-- **Ctrl+S** : `document:keydown` (host listener) actif uniquement si `showSave()`. `preventDefault()` systématique quand `showSave()` (bloque la boîte « Enregistrer la page » du navigateur), puis `save.emit()` si `!saveDisabled() && !saving()`. Accueil (`showSave=false`) : non capturé (auto-save, rien à sauver).
+- **Ctrl+S** : `document:keydown` (host listener) actif uniquement si `showSave()`. `preventDefault()` systématique quand `showSave()` (bloque la boîte « Enregistrer la page » du navigateur), puis `save.emit()` si `!saveDisabled() && !saving()` ; neutralisé (preventDefault sans émission) quand `formModalOpen`. Accueil (`showSave=false`) : non capturé (auto-save, rien à sauver).
 - **Échap en plein écran** : si `previewFullscreen() && !formModalOpen()` → réduit l'aperçu et **rend le focus au bouton `.btn-preview-toggle`**. La garde `formModalOpen` laisse Échap aux modales crop/picker ouvertes au-dessus (leur handler `document:keydown.escape` existant ferme la modale).
 - **`aria-controls` conditionnel** : le tab Aperçu ne porte `aria-controls="panel-preview"` que si `viewMode() === 'preview'` (le panel n'existe pas sinon). Le tab Modifier garde `aria-controls="panel-form"` statique (panel toujours rendu).
 - **Neutralisation du plein écran** (dette `aria-modal` sans effet réel) :
   - le shell rend sa propre mode-bar `inert` quand `previewFullscreen()` ;
   - nouvel output `fullscreenChange: boolean` ; mobilier/expo/accueil posent `[attr.inert]` sur leur `<aside class="list">` (mobilier/expo — l'accueil n'a pas de liste, rien à faire) quand l'aperçu est en plein écran.
+- **Reset du plein écran hors mode preview** (ajout revue) : un `effect` réinitialise `previewFullscreen` quand `viewMode` quitte `preview` — sans lui, la mode-bar restait `inert` (impasse atteignable via la cartouche `[i]` des sliders accueil en plein écran).
 
 ### 2. Annonces lecteur d'écran (`LiveAnnouncer` de `@angular/cdk/a11y`)
 
 - **Shell** : à la bascule de `viewMode` → « Mode aperçu » / « Mode édition » ; au toggle plein écran → « Aperçu plein écran » / « Aperçu réduit ». Annonces `polite`.
-- **`createGalleryPreviewHandlers`** : `onGalleryReorder` → « Image déplacée en position {n} sur {total} » ; `onGalleryItemResize` → « Image redimensionnée : {c} colonnes sur {r} lignes ». L'announcer est passé en option au composable (les composables restent sans `inject()` interne, signature explicite comme `formTickSignal`).
+- **`createGalleryPreviewHandlers`** : `onGalleryReorder` → « Image déplacée en position {n} sur {total} » (heuristique « plus grand déplacement » ; limite : un déplacement adjacent est indiscernable dans `order`, l'annonce peut alors désigner l'image voisine ±1) ; `onGalleryItemResize` → « Image redimensionnée : {c} colonne(s) sur {r} ligne(s) » (pluriel accordé : singulier si la valeur est 1, pluriel sinon). L'announcer est passé en option au composable (les composables restent sans `inject()` interne, signature explicite comme `formTickSignal`).
 - **Déjà couvert, ne pas dupliquer** : sauvegardes et feed accueil — les toasts (`toasts.component.ts`) sont `aria-live="polite"` + `role="status"`.
 
 ### 3. Garde-fou dirty (mobilier/expo uniquement)
@@ -47,7 +48,7 @@ Toutes ces capacités s'implémentent dans le shell, les 3 pages en héritent sa
 - **Branché dans des wrappers UI** appelés par le template uniquement : `(click)` des items de la liste et de « + Nouvelle pièce/exposition ». Les flux internes appellent les méthodes existantes **sans garde** : reload post-save (`saveFurniture` → `loadFurniture(saved)`), suppression de l'item édité (`removeFurniture` → `newFurniture()`), `?new=1`.
 - **`markAsPristine()` après save réussi** (dans le `next` du subscribe, avant le reload) — sinon le reload post-save déclencherait le confirm. Effet collatéral souhaitable : l'état dirty redevient fiable après sauvegarde.
 - Le signal galerie n'est pas couvert par `form.dirty` : les modifications de galerie depuis le preview (reorder/resize/remove) ne marquent pas le form dirty aujourd'hui. Pour que le garde-fou les couvre, `createGalleryPreviewHandlers` gagne une option `onMutate?: () => void`, invoquée par les handlers mutateurs (`remove`/`reorder`/`resize`) ; les pages passent `() => this.furnitureForm.markAsDirty()`. Côté form-side, le binding `(imagesChange)` des pages ajoute le même `markAsDirty()`.
-- Accueil : non concerné (auto-save immédiat).
+- Accueil : pas de garde-fou dirty (auto-save immédiat, pas de FormGroup). En revanche, `[formModalOpen]="cropEditOpen()"` a été ajouté (ajout revue) pour qu'Échap ferme la modale crop sans réduire le plein écran. Résiduel connu : le story-viewer ouvert depuis le preview accueil se ferme toujours en même temps que le plein écran sur Échap (non gardé).
 
 ### 4. Drag : placeholder + transitions FLIP (`ReorderableDirective`)
 
