@@ -1,4 +1,5 @@
 import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
@@ -15,7 +16,7 @@ import { Crop } from '../../../models/crop.model';
 import { ExhibitionPreviewComponent } from './preview/exhibition-preview.component';
 import { enrichSlides } from '../../../utils/display-slides';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
-import { createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, formTickSignal } from '../shared/preview-page-helpers';
+import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, formTickSignal } from '../shared/preview-page-helpers';
 import { EditableExhibitionField } from '../../../components/exhibition-detail-view/exhibition-detail-view.component';
 
 @Component({
@@ -24,10 +25,10 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
   imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent, AdminPreviewShellComponent, ShellPreviewDirective],
   template: `
     <div class="grid-admin">
-      <aside class="list">
+      <aside class="list" [attr.inert]="previewFullscreenActive() ? '' : null">
         <div class="list-head">
           <h2>Expositions existantes</h2>
-          <button type="button" class="btn-link" (click)="newExhibition()">+ Nouvelle exposition</button>
+          <button type="button" class="btn-link" (click)="onNewExhibition()">+ Nouvelle exposition</button>
         </div>
         @if (loadingExhibitions()) {
           <p class="status">Chargement…</p>
@@ -37,7 +38,7 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
           <ul>
             @for (item of exhibitions(); track item.id) {
               <li [class.selected]="editingExhibitionSlug() === item.slug">
-                <button type="button" class="row" (click)="loadExhibition(item)">
+                <button type="button" class="row" (click)="onSelectExhibition(item)">
                   <span class="row-title">{{ item.title }}</span>
                   <span class="row-meta">{{ item.venue }} · {{ item.city }}</span>
                 </button>
@@ -58,7 +59,8 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
         [saveDisabled]="exhibitionForm.invalid"
         [saving]="saving()"
         [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen()"
-        (save)="saveExhibition()">
+        (save)="saveExhibition()"
+        (fullscreenChange)="previewFullscreenActive.set($event)">
         <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
           <div class="form-head">
             <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
@@ -93,7 +95,7 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
           <app-gallery-editor
             #galleryEditor
             [images]="exhibitionGallery()"
-            (imagesChange)="exhibitionGallery.set($event)" />
+            (imagesChange)="exhibitionGallery.set($event); exhibitionForm.markAsDirty()" />
 
           <label>
             <span>Tags</span>
@@ -245,6 +247,7 @@ export class ExpositionsComponent {
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
+  private readonly announcer = inject(LiveAnnouncer);
 
   @ViewChild('coverField') coverImageField?: ImageFieldComponent;
   @ViewChild('galleryEditor') galleryEditor?: GalleryEditorComponent;
@@ -264,6 +267,8 @@ export class ExpositionsComponent {
 
   protected readonly creatingExhibition = signal(false);
   protected readonly expoViewMode = signal<'form' | 'preview'>('form');
+  /** Reflète le plein écran du shell — rend la liste latérale inert (neutralisation aria-modal). */
+  protected readonly previewFullscreenActive = signal(false);
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -307,6 +312,8 @@ export class ExpositionsComponent {
     gallery: this.exhibitionGallery,
     galleryEditor: () => this.galleryEditor,
     coverField: () => this.coverImageField,
+    onMutate: () => this.exhibitionForm.markAsDirty(),
+    announcer: this.announcer,
   });
   protected readonly onPreviewCoverEdit = this.galleryHandlers.onCoverEdit;
   protected readonly onPreviewGalleryItemEdit = this.galleryHandlers.onGalleryItemEdit;
@@ -334,6 +341,21 @@ export class ExpositionsComponent {
     this.route.queryParamMap.subscribe(params => {
       if (params.get('new') === '1') this.newExhibition();
     });
+  }
+
+  /** Message du garde-fou perte de saisie. */
+  private static readonly DIRTY_MESSAGE = 'Des modifications ne sont pas enregistrées. Continuer sans enregistrer ?';
+
+  /** Wrapper UI gardé — le template l'appelle ; les flux internes appellent loadExhibition directement. */
+  protected onSelectExhibition(item: Exhibition): void {
+    if (!confirmIfDirty(this.exhibitionForm, ExpositionsComponent.DIRTY_MESSAGE)) return;
+    this.loadExhibition(item);
+  }
+
+  /** Wrapper UI gardé — idem pour « + Nouvelle exposition ». */
+  protected onNewExhibition(): void {
+    if (!confirmIfDirty(this.exhibitionForm, ExpositionsComponent.DIRTY_MESSAGE)) return;
+    this.newExhibition();
   }
 
   private refreshExhibitions(): void {
@@ -386,6 +408,7 @@ export class ExpositionsComponent {
 
   protected onCoverCropChange(crop: Crop | null): void {
     this.exhibitionForm.patchValue({ coverCrop: crop });
+    this.exhibitionForm.markAsDirty();
   }
 
   private loadStoriesFor(exhibitionId: string, fallbackTitle: string, fallbackCover: string): void {
@@ -545,6 +568,9 @@ export class ExpositionsComponent {
       next: (saved) => {
         this.saving.set(false);
         this.toast.success(slug ? 'Exposition mise à jour.' : 'Exposition créée.');
+        // L'état sauvegardé devient la référence : le garde-fou dirty
+        // ne doit pas se déclencher sur le reload post-save.
+        this.exhibitionForm.markAsPristine();
         this.refreshExhibitions();
         // Reste sur la fiche après save : recharge depuis la réponse serveur
         // (préserve form + preview, slug/id à jour pour les opérations suivantes)
