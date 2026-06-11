@@ -37,6 +37,22 @@ export function createFieldFocus(allowedFields: ReadonlySet<string>): (name: str
 }
 
 /**
+ * Garde-fou perte de saisie : true si le form n'a pas de modifications non
+ * enregistrées, sinon délègue à window.confirm. À appeler dans les wrappers
+ * UI (clic liste / « + Nouvelle ») — jamais dans les flux internes (reload
+ * post-save, suppression d'item), qui restent sans garde.
+ */
+export function confirmIfDirty(form: FormGroup, message: string): boolean {
+  if (!form.dirty) return true;
+  return window.confirm(message);
+}
+
+/** Vue structurelle de LiveAnnouncer (évite le couplage direct au CDK). */
+export interface AnnouncerLike {
+  announce(message: string): void | Promise<void>;
+}
+
+/**
  * Édition inline depuis le preview : patche le FormControl + markAsDirty,
  * derrière la même whitelist que le focus.
  */
@@ -81,8 +97,12 @@ export function createGalleryPreviewHandlers(opts: {
   gallery: WritableSignal<GalleryItem[]>;
   galleryEditor: () => GalleryEditorLike | undefined;
   coverField: () => CoverFieldLike | undefined;
+  /** Invoqué après chaque mutation du signal galerie (remove/reorder/resize) — ex. markAsDirty. */
+  onMutate?: () => void;
+  /** Annonces lecteur d'écran des opérations galerie (reorder/resize). */
+  announcer?: AnnouncerLike;
 }): GalleryPreviewHandlers {
-  const { gallery, galleryEditor, coverField } = opts;
+  const { gallery, galleryEditor, coverField, onMutate, announcer } = opts;
   return {
     onCoverEdit: (action) => {
       if (action === 'crop') coverField()?.openCrop();
@@ -91,6 +111,7 @@ export function createGalleryPreviewHandlers(opts: {
     onGalleryItemEdit: (e) => {
       if (e.action === 'remove') {
         gallery.update(arr => arr.filter((_, i) => i !== e.index));
+        onMutate?.();
         return;
       }
       if (e.action === 'crop') galleryEditor()?.openCropFor(e.index);
@@ -102,11 +123,25 @@ export function createGalleryPreviewHandlers(opts: {
     onGalleryReorder: (order) => {
       const items = gallery();
       gallery.set(order.map(i => items[i]));
+      onMutate?.();
+      if (announcer && order.length > 0) {
+        // L'item glissé = celui au plus grand déplacement (heuristique :
+        // pour un déplacement adjacent les deux candidats sont équivalents).
+        let newPos = 0;
+        let maxDelta = -1;
+        order.forEach((oldIdx, i) => {
+          const delta = Math.abs(oldIdx - i);
+          if (delta > maxDelta) { maxDelta = delta; newPos = i; }
+        });
+        announcer.announce(`Image déplacée en position ${newPos + 1} sur ${order.length}`);
+      }
     },
     onGalleryItemResize: (e) => {
       gallery.update(arr => arr.map((it, i) =>
         i === e.index ? { ...it, colSpan: e.colSpan, rowSpan: e.rowSpan } : it
       ));
+      onMutate?.();
+      announcer?.announce(`Image redimensionnée : ${e.colSpan} colonnes sur ${e.rowSpan} lignes`);
     },
   };
 }

@@ -2,8 +2,10 @@ import { DestroyRef, signal } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { GalleryItem } from '../../../models/gallery-item.model';
 import {
+  AnnouncerLike,
   CoverFieldLike,
   GalleryEditorLike,
+  confirmIfDirty,
   createFieldFocus,
   createGalleryPreviewHandlers,
   createTextFieldEditHandler,
@@ -166,6 +168,85 @@ describe('preview-page-helpers', () => {
         handlers.onGalleryItemEdit({ index: 0, action: 'crop' });
         handlers.onGalleryAdd();
       }).not.toThrow();
+    });
+  });
+
+  describe('confirmIfDirty', () => {
+    it('true sans confirm quand le form est pristine', () => {
+      const form = new FormBuilder().group({ title: [''] });
+      const confirmSpy = spyOn(window, 'confirm');
+      expect(confirmIfDirty(form, 'Continuer ?')).toBeTrue();
+      expect(confirmSpy).not.toHaveBeenCalled();
+    });
+
+    it('suit la réponse du confirm quand le form est dirty', () => {
+      const form = new FormBuilder().group({ title: [''] });
+      form.get('title')!.markAsDirty();
+      const confirmSpy = spyOn(window, 'confirm').and.returnValue(false);
+      expect(confirmIfDirty(form, 'Continuer ?')).toBeFalse();
+      expect(confirmSpy).toHaveBeenCalledWith('Continuer ?');
+      confirmSpy.and.returnValue(true);
+      expect(confirmIfDirty(form, 'Continuer ?')).toBeTrue();
+    });
+  });
+
+  describe('createGalleryPreviewHandlers — onMutate et announcer', () => {
+    function setupWithOptions() {
+      const gallery = signal<GalleryItem[]>([
+        { url: 'a.jpg' }, { url: 'b.jpg' }, { url: 'c.jpg' },
+      ]);
+      const onMutate = jasmine.createSpy('onMutate');
+      const announcer = jasmine.createSpyObj<AnnouncerLike>('AnnouncerLike', ['announce']);
+      const handlers = createGalleryPreviewHandlers({
+        gallery,
+        galleryEditor: () => undefined,
+        coverField: () => undefined,
+        onMutate,
+        announcer,
+      });
+      return { gallery, onMutate, announcer, handlers };
+    }
+
+    it('onMutate est invoqué par remove, reorder et resize', () => {
+      const { onMutate, handlers } = setupWithOptions();
+      handlers.onGalleryItemEdit({ index: 0, action: 'remove' });
+      handlers.onGalleryReorder([1, 0]);
+      handlers.onGalleryItemResize({ index: 0, colSpan: 2, rowSpan: 1 });
+      expect(onMutate).toHaveBeenCalledTimes(3);
+    });
+
+    it('onMutate n\'est PAS invoqué par crop/replace/add (ouvertures d\'éditeurs)', () => {
+      const { onMutate, handlers } = setupWithOptions();
+      handlers.onCoverEdit('crop');
+      handlers.onGalleryItemEdit({ index: 0, action: 'crop' });
+      handlers.onGalleryItemEdit({ index: 0, action: 'replace' });
+      handlers.onGalleryAdd();
+      expect(onMutate).not.toHaveBeenCalled();
+    });
+
+    it('reorder annonce la position du plus grand déplacement', () => {
+      const { announcer, handlers } = setupWithOptions();
+      // [2,0,1] : l'ancien item 2 arrive en position 1 (déplacement 2) → « position 1 sur 3 »
+      handlers.onGalleryReorder([2, 0, 1]);
+      expect(announcer.announce).toHaveBeenCalledWith('Image déplacée en position 1 sur 3');
+    });
+
+    it('resize annonce colonnes et lignes', () => {
+      const { announcer, handlers } = setupWithOptions();
+      handlers.onGalleryItemResize({ index: 1, colSpan: 2, rowSpan: 3 });
+      expect(announcer.announce).toHaveBeenCalledWith('Image redimensionnée : 2 colonnes sur 3 lignes');
+    });
+
+    it('sans options, les handlers restent silencieux et sans erreur', () => {
+      const gallery = signal<GalleryItem[]>([{ url: 'a.jpg' }, { url: 'b.jpg' }]);
+      const handlers = createGalleryPreviewHandlers({
+        gallery, galleryEditor: () => undefined, coverField: () => undefined,
+      });
+      expect(() => {
+        handlers.onGalleryReorder([1, 0]);
+        handlers.onGalleryItemResize({ index: 0, colSpan: 1, rowSpan: 1 });
+      }).not.toThrow();
+      expect(gallery()[0].url).toBe('b.jpg');
     });
   });
 });
