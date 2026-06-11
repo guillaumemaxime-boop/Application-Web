@@ -125,8 +125,10 @@ export function createGalleryPreviewHandlers(opts: {
       gallery.set(order.map(i => items[i]));
       onMutate?.();
       if (announcer && order.length > 0) {
-        // L'item glissé = celui au plus grand déplacement (heuristique :
-        // pour un déplacement adjacent les deux candidats sont équivalents).
+        // L'item glissé = celui au plus grand déplacement. Limite : un
+        // déplacement adjacent est indiscernable dans `order` (les deux
+        // permutations sont identiques) ; l'annonce peut alors désigner
+        // l'image voisine (±1).
         let newPos = 0;
         let maxDelta = -1;
         order.forEach((oldIdx, i) => {
@@ -141,7 +143,7 @@ export function createGalleryPreviewHandlers(opts: {
         i === e.index ? { ...it, colSpan: e.colSpan, rowSpan: e.rowSpan } : it
       ));
       onMutate?.();
-      announcer?.announce(`Image redimensionnée : ${e.colSpan} colonnes sur ${e.rowSpan} lignes`);
+      announcer?.announce(`Image redimensionnée : ${e.colSpan} colonne${e.colSpan > 1 ? 's' : ''} sur ${e.rowSpan} ligne${e.rowSpan > 1 ? 's' : ''}`);
     },
   };
 }

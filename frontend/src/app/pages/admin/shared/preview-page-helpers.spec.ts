@@ -237,6 +237,12 @@ describe('preview-page-helpers', () => {
       expect(announcer.announce).toHaveBeenCalledWith('Image redimensionnée : 2 colonnes sur 3 lignes');
     });
 
+    it('resize accorde le singulier dans l\'annonce', () => {
+      const { announcer, handlers } = setupWithOptions();
+      handlers.onGalleryItemResize({ index: 0, colSpan: 1, rowSpan: 1 });
+      expect(announcer.announce).toHaveBeenCalledWith('Image redimensionnée : 1 colonne sur 1 ligne');
+    });
+
     it('sans options, les handlers restent silencieux et sans erreur', () => {
       const gallery = signal<GalleryItem[]>([{ url: 'a.jpg' }, { url: 'b.jpg' }]);
       const handlers = createGalleryPreviewHandlers({
