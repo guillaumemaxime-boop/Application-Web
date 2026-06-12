@@ -294,6 +294,19 @@ describe('preview-page-helpers', () => {
       expect(history.canRedo()).toBeFalse();
     });
 
+    it('multi-step : undo après redo restaure les états intermédiaires', () => {
+      const { history, get, set } = setup();
+      history.record(); set(2);   // snapshot v=1
+      history.record(); set(3);   // snapshot v=2
+      history.undo();             // → v=2
+      history.undo();             // → v=1
+      history.redo();             // → v=2
+      history.redo();             // → v=3
+      expect(get().v).toBe(3);
+      expect(history.undo()).toBeTrue();   // → v=2 (et non v=1 ni v=3)
+      expect(get().v).toBe(2);
+    });
+
     it('la limite est appliquée en FIFO', () => {
       const { history, get, set } = setup({ limit: 2 });
       history.record(); set(2);   // snapshot v=1

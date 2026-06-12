@@ -66,10 +66,13 @@ export function createTextFieldEditHandler(
 ): (e: { field: string; value: string }) => void {
   return (e) => {
     if (!allowedFields.has(e.field)) return;
-    if (form.get(e.field)?.value === e.value) return;
+    // Contrôle absent (whitelist qui aurait dérivé du form) : ne rien faire,
+    // sinon on enregistrerait un snapshot d'historique pour un patch no-op.
+    const ctrl = form.get(e.field);
+    if (!ctrl || ctrl.value === e.value) return;
     opts?.onBeforeMutate?.();
     form.patchValue({ [e.field]: e.value });
-    form.get(e.field)?.markAsDirty();
+    ctrl.markAsDirty();
   };
 }
 
