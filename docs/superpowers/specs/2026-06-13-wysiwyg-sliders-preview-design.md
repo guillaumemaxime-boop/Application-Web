@@ -42,7 +42,7 @@ Pour chaque zone de `SLIDER_ZONES` (`home-top`/`home-middle`/`home-bottom`) :
   - **composition** : le badge `[i]` existant déclenche `sliderCompositionRequested(id)` (ouvre l'éditeur §2) ;
   - **suppression** : bouton `×` → `sliderDelete(id)` ;
   - **changement de zone** : sélecteur → `sliderZoneChange({ id, zoneKey: SliderZone | null })`. Le sélecteur propose une option **« Désactivé (hors accueil) »** (`value=""`) qui émet `zoneKey: null` — retire le slider de l'affichage public sans le supprimer (le slider reste éditable form-side et réactivable en rechoisissant une zone).
-- **Zone vide** → placeholder « + Créer un slider ici » → `sliderCreate(zoneKey)`.
+- **Zone vide** → placeholder offrant deux actions : (a) un `<select>` « Insérer un slider existant… » listant les sliders **désactivés** (`zoneKey == null`), affiché seulement s'il en existe → émet `sliderAssign({ id, zoneKey })` (réaffecte un slider désactivé à cette zone) ; (b) bouton « + Créer un slider ici » → `sliderCreate(zoneKey)`. Le `<select>` reçoit la liste via un input `disabledSliders: { id; title }[]`.
 - L'ancien output `sliderEditRequested` est **supprimé** (remplacé par `sliderCompositionRequested` + les nouveaux).
 - **Mode public (non-editable)** : rendu inchangé (carrousels `<app-news-slider>`, pas d'affordance).
 
@@ -55,6 +55,7 @@ Chaque handler : appel API → toast (succès/erreur) → re-fetch `getPublicSli
 - `onSliderDelete(id)` → `confirm(...)` → `deleteSlider(id)`.
 - `onSliderZoneChange({ id, zoneKey: SliderZone | null })` → si `zoneKey !== null` et la zone cible est déjà occupée par un autre slider, toast d'erreur sans appel (une zone = un slider) ; la garde d'occupation **ne s'applique pas à `null`** ; sinon `updateSlider(id, { title, zoneKey })`. Toast « Slider désactivé. » si `zoneKey === null`, « Zone du slider mise à jour. » sinon.
 - `onSliderCreate(zoneKey)` → `prompt()` titre (annule si vide) → `createSlider({ title, zoneKey })`.
+- `onSliderAssign({ id, zoneKey })` → réaffecte un slider désactivé à la zone : garde « zone déjà occupée » (toast erreur sans appel si un slider actif occupe déjà `zoneKey`) → `updateSlider(id, { title, zoneKey })` (titre lu dans `adminSliders()`, car le slider désactivé n'est pas dans la liste publique `sliders`) → toast « Slider inséré dans la zone. » + refresh. La liste des désactivés vient d'un signal `adminSliders` (chargé via `getAdminSliders()`), dérivée en computed `disabledSliders` (ceux à `zoneKey === null`). `refreshSliders()` re-fetche les **deux** listes (`getPublicSliders` pour l'affichage + `getAdminSliders` pour les désactivés) afin de garder les affordances synchronisées après chaque opération.
 
 Pas d'undo (accueil auto-save, cohérent SP1) ; pas de garde-fou dirty (pas de FormGroup côté accueil).
 
