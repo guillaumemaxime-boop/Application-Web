@@ -110,16 +110,6 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
           <label><span>Description courte</span><textarea rows="2" id="field-shortDescription" formControlName="shortDescription"></textarea></label>
           <label><span>Description longue</span><textarea rows="5" id="field-description" formControlName="description"></textarea></label>
 
-          <label class="checkbox">
-            <input type="checkbox" formControlName="showStoryLink" />
-            <span>Afficher le lien en fin de story</span>
-          </label>
-
-          <label class="checkbox">
-            <input type="checkbox" formControlName="showStoryButton" />
-            <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
-          </label>
-
           @if (editingExhibitionId()) {
             <section class="stories-block">
               <header class="stories-head">

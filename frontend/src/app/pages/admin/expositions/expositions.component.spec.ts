@@ -953,6 +953,16 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a').flush({ id: 'a', ownerKind: 'exhibition', ownerId: 'e1', title: 'Nouveau', coverImage: 'c.jpg', coverCrop: null, slug: 'a', position: 0, createdAt: '' });
   });
 
+  it('ne rend plus les cases showStoryLink/showStoryButton (obsolètes)', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('input[formcontrolname="showStoryLink"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('input[formcontrolname="showStoryButton"]')).toBeNull();
+  });
+
   it('créer une story la rend active dans le preview', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);
