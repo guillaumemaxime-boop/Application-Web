@@ -7,11 +7,12 @@ import { SliderCompositionEditorComponent } from './slider-composition-editor.co
   standalone: true,
   imports: [SliderCompositionEditorComponent],
   template: `<app-slider-composition-editor
-    [title]="title" [storyIds]="storyIds()" [allStories]="allStories"
+    [title]="title" [sliderId]="sliderId()" [storyIds]="storyIds()" [allStories]="allStories"
     (save)="saved = $event" (cancel)="cancelled = true" />`,
 })
 class HostComponent {
   title = 'Slider A';
+  readonly sliderId = signal<string | null>('sl-1');
   readonly storyIds = signal<string[]>(['s1']);
   allStories: Story[] = [
     { id: 's1', title: 'Story 1', ownerKind: 'furniture', ownerId: 'f1' } as Story,
@@ -91,5 +92,42 @@ describe('SliderCompositionEditorComponent', () => {
     fixture.detectChanges();
     (fixture.nativeElement.querySelector('.comp-save') as HTMLButtonElement).click();
     expect(host.saved).toEqual(['s2', 's1']);
+  });
+
+  it('moveDown réordonne la composition', () => {
+    const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    opt2.click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const down = pending()[0].querySelector('.comp-down') as HTMLButtonElement;
+    down.click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.comp-save') as HTMLButtonElement).click();
+    expect(host.saved).toEqual(['s2', 's1']);
+  });
+
+  it('storyTitle affiche l\'id quand la story est inconnue du catalogue', () => {
+    host.sliderId.set('sl-2');
+    host.storyIds.set(['fantome']);
+    host.allStories = [];
+    fixture.detectChanges();
+    expect(pending()[0].textContent).toContain('fantome');
+  });
+
+  it('ne réinitialise PAS la composition quand storyIds change sans changement d\'id (modifs préservées)', () => {
+    // l'utilisateur ajoute Story 2 à la compo
+    const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    opt2.click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(pending().length).toBe(2);
+    // le parent rafraîchit storyIds (nouvelle référence) SANS changer le sliderId
+    host.storyIds.set(['s1']);
+    fixture.detectChanges();
+    // les modifs pendantes ne sont pas écrasées
+    expect(pending().length).toBe(2);
+    expect(pending().map(e => e.textContent).join()).toContain('Story 2');
   });
 });

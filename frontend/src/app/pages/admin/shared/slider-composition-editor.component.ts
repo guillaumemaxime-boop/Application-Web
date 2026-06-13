@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { Story } from '../../../models/story.model';
@@ -76,6 +76,11 @@ export class SliderCompositionEditorComponent {
   readonly title = input<string>('');
   readonly storyIds = input<string[]>([]);
   readonly allStories = input<Story[]>([]);
+  /** Identité du slider en cours d'édition. L'éditeur ne réinitialise sa
+   *  composition pendante que lorsque cet id change (pas à chaque nouvelle
+   *  référence de `storyIds`), pour ne pas écraser les modifications en cours
+   *  si le parent rafraîchit ses données pendant l'édition. */
+  readonly sliderId = input<string | null>(null);
   readonly save = output<string[]>();
   readonly cancel = output<void>();
 
@@ -83,11 +88,15 @@ export class SliderCompositionEditorComponent {
   protected readonly selectedToAdd = signal<string[]>([]);
   protected storyFilter = '';
 
+  private lastSliderId: string | null | undefined = undefined;
+
   constructor() {
     effect(() => {
-      // Réinitialise la composition pendante sur la valeur d'entrée
-      // (ouverture sur un slider donné).
-      this.pendingStoryIds.set([...this.storyIds()]);
+      const id = this.sliderId();
+      if (id === this.lastSliderId) return;
+      this.lastSliderId = id;
+      // Lecture untracked : seul un changement d'id réinitialise la composition.
+      this.pendingStoryIds.set([...untracked(() => this.storyIds())]);
       this.selectedToAdd.set([]);
     });
   }

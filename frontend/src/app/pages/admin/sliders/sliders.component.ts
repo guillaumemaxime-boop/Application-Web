@@ -51,6 +51,7 @@ import { SliderCompositionEditorComponent } from '../shared/slider-composition-e
     @if (compositionOpen() && editingSlider(); as s) {
       <app-slider-composition-editor
         [title]="s.title"
+        [sliderId]="s.id"
         [storyIds]="s.storyIds"
         [allStories]="allStories()"
         (save)="onCompositionSave($event)"
