@@ -1,7 +1,7 @@
 # Undo/redo dans les previews WYSIWYG — Spec
 
 **Date** : 2026-06-11
-**Statut** : Validé — prêt pour writing-plans
+**Statut** : Implémenté — feat/wysiwyg-undo-redo
 **Sous-projet** : 3/6 du chantier « Améliorations WYSIWYG v2 » (découpage : voir spec `2026-06-10-wysiwyg-socle-factorise-design.md`, section Contexte). S'appuie sur les sous-projets 1 (socle shell + composables) et 2 (UX socle + a11y), mergés sur main.
 
 ## Objectif
@@ -49,8 +49,9 @@ Sans `inject()` interne (signature explicite, comme les autres composables du fi
 - **Nouvelle option `onBeforeMutate?: () => void`** sur :
   - `createGalleryPreviewHandlers` — invoquée AVANT les mutations remove/reorder/resize (contrairement à `onMutate` qui reste invoquée après, pour le marquage dirty) ;
   - `createTextFieldEditHandler` — invoquée avant le `patchValue` (couvre les éditions inline texte des deux pages ET les éditions de dates de l'expo, qui passent par le même composable avec la whitelist `DATE_FIELDS`). Garde anti-bruit : si la nouvelle valeur est identique à la valeur courante du contrôle, le handler ne fait rien (ni `record`, ni patch, ni dirty) — un blur sans modification ne crée pas d'entrée d'historique no-op.
-- `record()` explicite dans `onCoverCropChange` (avant le patch) et en tête du binding template `(imagesChange)` (l'ancienne galerie est encore dans le signal à cet instant — ordre : `history.record(); gallery.set($event); form.markAsDirty()`).
+- `record()` explicite dans `onCoverCropChange` (avant le patch) et en tête du binding template `(imagesChange)` (l'ancienne galerie est encore dans le signal à cet instant — ordre : `history.record(); gallery.set($event); form.markAsDirty()`). **Déviation d'implémentation** : `onCoverCropChange` intègre une garde no-op supplémentaire (`JSON.stringify` du crop courant vs nouveau) — un crop identique ne déclenche ni `record()`, ni patch, ni dirty. Cette garde n'était pas décrite explicitement dans la spec ; elle est cohérente avec la garde anti-bruit de `createTextFieldEditHandler`.
 - `clear()` dans `loadFurniture`/`newFurniture` (et équivalents expo) : l'historique ne traverse jamais un changement d'item. Il est **conservé après save** (un undo au-delà du point de save re-marque simplement le form dirty).
+- **Déviation d'implémentation** : `createTextFieldEditHandler` inclut une garde supplémentaire « contrôle absent » (`const ctrl = form.get(e.field); if (!ctrl || ...) return`) — si le champ existe dans la whitelist mais pas dans le FormGroup (whitelist ayant dérivé), aucun snapshot d'historique no-op n'est enregistré. Cette garde défensive complète la garde anti-bruit valeur identique.
 
 ### 4. Shell `<app-admin-preview-shell>`
 
