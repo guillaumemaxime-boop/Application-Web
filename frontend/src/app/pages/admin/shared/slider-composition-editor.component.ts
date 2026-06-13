@@ -22,6 +22,7 @@ import { Story } from '../../../models/story.model';
           <h3 id="composition-title">Composition de "{{ title() }}"</h3>
           <button type="button" class="comp-cancel" (click)="cancel.emit()" aria-label="Fermer">Fermer</button>
         </header>
+        <p class="comp-hint">Une story sans slide n'apparaît pas sur le site tant qu'elle n'a pas de contenu.</p>
         <div class="composition-grid">
           <aside class="available">
             <h4>Stories disponibles</h4>
@@ -70,6 +71,7 @@ import { Story } from '../../../models/story.model';
     button { padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-ink); cursor: pointer; font-size: 0.85rem; }
     button:disabled { opacity: 0.4; cursor: not-allowed; }
     button.primary { background: var(--color-ink); color: var(--color-bg); }
+    .comp-hint { margin: 12px 0 0; font-size: 0.82rem; color: var(--color-mute); font-style: italic; }
   `]
 })
 export class SliderCompositionEditorComponent {

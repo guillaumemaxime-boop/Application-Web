@@ -115,6 +115,12 @@ describe('SliderCompositionEditorComponent', () => {
     expect(pending()[0].textContent).toContain('fantome');
   });
 
+  it('affiche une note informative sur les stories sans slide', () => {
+    const hint = fixture.nativeElement.querySelector('.comp-hint');
+    expect(hint).toBeTruthy();
+    expect(hint.textContent).toContain('slide');
+  });
+
   it('ne réinitialise PAS la composition quand storyIds change sans changement d\'id (modifs préservées)', () => {
     // l'utilisateur ajoute Story 2 à la compo
     const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
