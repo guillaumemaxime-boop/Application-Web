@@ -308,4 +308,13 @@ describe('HomeViewComponent', () => {
     select.dispatchEvent(new Event('change'));
     expect(emitted as any).toEqual({ id: 'sl1', zoneKey: null });
   });
+
+  it('le sélecteur de zone est positionné sur la zone courante du slider', () => {
+    fixture.componentRef.setInput('data', mockData);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('sliders', [{ id: 'sl1', slug: 'a', title: 'Actus', zoneKey: 'home-middle', stories: [] }]);
+    fixture.detectChanges();
+    const select = fixture.nativeElement.querySelector('.slider-zone-select') as HTMLSelectElement;
+    expect(select.value).toBe('home-middle');
+  });
 });

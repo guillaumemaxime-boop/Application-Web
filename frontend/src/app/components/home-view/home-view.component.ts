@@ -60,9 +60,9 @@ export type EditableHomeContentKey =
                     (blur)="onSliderTitleBlur(s.id, $event)">{{ s.title }}</span>
               <button type="button" class="slider-compose-btn" (click)="sliderCompositionRequested.emit(s.id)">Composer</button>
               <select class="slider-zone-select" aria-label="Zone du slider"
-                      [value]="s.zoneKey ?? ''" (change)="onSliderZoneSelect(s.id, $event)">
-                <option value="">Désactivé (hors accueil)</option>
-                @for (z of editableZones; track z) { <option [value]="z">{{ z }}</option> }
+                    (change)="onSliderZoneSelect(s.id, $event)">
+                <option value="" [selected]="!s.zoneKey">Désactivé (hors accueil)</option>
+                @for (z of editableZones; track z) { <option [value]="z" [selected]="z === s.zoneKey">{{ z }}</option> }
               </select>
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
                       (click)="sliderDelete.emit(s.id)">×</button>
@@ -87,9 +87,9 @@ export type EditableHomeContentKey =
                     (blur)="onSliderTitleBlur(s.id, $event)">{{ s.title }}</span>
               <button type="button" class="slider-compose-btn" (click)="sliderCompositionRequested.emit(s.id)">Composer</button>
               <select class="slider-zone-select" aria-label="Zone du slider"
-                      [value]="s.zoneKey ?? ''" (change)="onSliderZoneSelect(s.id, $event)">
-                <option value="">Désactivé (hors accueil)</option>
-                @for (z of editableZones; track z) { <option [value]="z">{{ z }}</option> }
+                    (change)="onSliderZoneSelect(s.id, $event)">
+                <option value="" [selected]="!s.zoneKey">Désactivé (hors accueil)</option>
+                @for (z of editableZones; track z) { <option [value]="z" [selected]="z === s.zoneKey">{{ z }}</option> }
               </select>
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
                       (click)="sliderDelete.emit(s.id)">×</button>
@@ -176,9 +176,9 @@ export type EditableHomeContentKey =
                     (blur)="onSliderTitleBlur(s.id, $event)">{{ s.title }}</span>
               <button type="button" class="slider-compose-btn" (click)="sliderCompositionRequested.emit(s.id)">Composer</button>
               <select class="slider-zone-select" aria-label="Zone du slider"
-                      [value]="s.zoneKey ?? ''" (change)="onSliderZoneSelect(s.id, $event)">
-                <option value="">Désactivé (hors accueil)</option>
-                @for (z of editableZones; track z) { <option [value]="z">{{ z }}</option> }
+                    (change)="onSliderZoneSelect(s.id, $event)">
+                <option value="" [selected]="!s.zoneKey">Désactivé (hors accueil)</option>
+                @for (z of editableZones; track z) { <option [value]="z" [selected]="z === s.zoneKey">{{ z }}</option> }
               </select>
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
                       (click)="sliderDelete.emit(s.id)">×</button>
