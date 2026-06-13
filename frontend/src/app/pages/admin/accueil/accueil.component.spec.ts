@@ -13,6 +13,8 @@ type AccueilInternals = {
   homeData: { (): any; set: (v: any) => void };
   content: { (): any; set: (v: any) => void };
   sliders: { (): any[]; set: (v: any[]) => void };
+  editingSliderId: { (): string | null; set: (v: string | null) => void };
+  allStories: { (): any[]; set: (v: any[]) => void };
   includedSlugs: () => Set<string>;
   toggleIncluded: (item: HomeItem, event: Event) => void;
   onFeedReorder: (order: number[]) => void;
@@ -22,6 +24,11 @@ type AccueilInternals = {
   moveDown: (i: number) => void;
   onPreviewTextFieldEdit: (e: { key: string; value: string }) => void;
   onSliderCreate: (zone: 'home-top' | 'home-middle' | 'home-bottom') => void;
+  onSliderDelete: (id: string) => void;
+  onSliderTitleEdit: (e: { id: string; title: string }) => void;
+  onSliderZoneChange: (e: { id: string; zoneKey: 'home-top' | 'home-middle' | 'home-bottom' }) => void;
+  onSliderCompositionRequested: (id: string) => void;
+  onSliderCompositionSave: (storyIds: string[]) => void;
   onPreviewFeedReorder: (order: number[]) => void;
   onPreviewFeedItemToggleInclude: (e: { kind: 'furniture' | 'exhibition'; slug: string; included: boolean }) => void;
   cropEditOpen: { (): boolean; set: (v: boolean) => void };
@@ -400,7 +407,7 @@ describe('AccueilComponent', () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it('onSliderCreate switch mode + scroll', (done) => {
+  it('onSliderTitleEdit met à jour le slider via updateSlider et rafraîchit', () => {
     const fixture = TestBed.createComponent(AccueilComponent);
     fixture.detectChanges();
     httpMock.expectOne('/api/furniture').flush([]);
@@ -410,26 +417,137 @@ describe('AccueilComponent', () => {
     flushSliders(httpMock);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.sliders.set([{ id: 'sl1', slug: 'a', title: 'Vieux', zoneKey: 'home-top', stories: [] }]);
+    cmp.onSliderTitleEdit({ id: 'sl1', title: 'Neuf' });
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/sliders/sl1');
+    expect(req.request.body).toEqual({ title: 'Neuf', zoneKey: 'home-top' });
+    req.flush({ id: 'sl1', slug: 'a', title: 'Neuf', zoneKey: 'home-top', storyIds: [] });
+    httpMock.expectOne('/api/sliders').flush([]);
+  });
 
-    // Spy sur le prototype pour intercepter scrollIntoView quel que soit l'élément retourné
-    const scrollSpy = spyOn(HTMLElement.prototype, 'scrollIntoView');
+  it('onSliderZoneChange refuse une zone déjà occupée (toast erreur, pas d\'appel)', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    const toast = TestBed.inject(ToastService);
+    spyOn(toast, 'error');
+    cmp.sliders.set([
+      { id: 'sl1', slug: 'a', title: 'A', zoneKey: 'home-top', stories: [] },
+      { id: 'sl2', slug: 'b', title: 'B', zoneKey: 'home-bottom', stories: [] },
+    ]);
+    cmp.onSliderZoneChange({ id: 'sl1', zoneKey: 'home-bottom' });
+    expect(toast.error).toHaveBeenCalled();
+    httpMock.expectNone(r => r.url.startsWith('/api/admin/sliders/'));
+  });
 
-    // Ajoute un div id=admin-sliders-anchor pour que getElementById le trouve
-    const anchor = document.createElement('div');
-    anchor.id = 'admin-sliders-anchor';
-    document.body.appendChild(anchor);
+  it('onSliderZoneChange vers une zone libre appelle updateSlider', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.sliders.set([{ id: 'sl1', slug: 'a', title: 'A', zoneKey: 'home-top', stories: [] }]);
+    cmp.onSliderZoneChange({ id: 'sl1', zoneKey: 'home-bottom' });
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/sliders/sl1');
+    expect(req.request.body).toEqual({ title: 'A', zoneKey: 'home-bottom' });
+    req.flush({ id: 'sl1', slug: 'a', title: 'A', zoneKey: 'home-bottom', storyIds: [] });
+    httpMock.expectOne('/api/sliders').flush([]);
+  });
 
-    cmp.accueilViewMode.set('preview');
-    expect(cmp.accueilViewMode()).toBe('preview');
-    cmp.onSliderCreate('home-top');
-    expect(cmp.accueilViewMode()).toBe('form');
+  it('onSliderDelete confirmé appelle deleteSlider', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    spyOn(window, 'confirm').and.returnValue(true);
+    cmp.sliders.set([{ id: 'sl1', slug: 'a', title: 'A', zoneKey: 'home-top', stories: [] }]);
+    cmp.onSliderDelete('sl1');
+    httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/admin/sliders/sl1').flush(null);
+    httpMock.expectOne('/api/sliders').flush([]);
+  });
 
-    // queueMicrotask -> attendre la prochaine microtâche après celle du composant
-    queueMicrotask(() => {
-      expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth' });
-      document.body.removeChild(anchor);
-      done();
-    });
+  it('onSliderDelete refusé ne fait rien', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    spyOn(window, 'confirm').and.returnValue(false);
+    cmp.sliders.set([{ id: 'sl1', slug: 'a', title: 'A', zoneKey: 'home-top', stories: [] }]);
+    cmp.onSliderDelete('sl1');
+    httpMock.expectNone(r => r.url === '/api/admin/sliders/sl1');
+  });
+
+  it('onSliderCreate avec titre crée le slider', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    spyOn(window, 'prompt').and.returnValue('Nouveau');
+    cmp.onSliderCreate('home-middle');
+    const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/admin/sliders');
+    expect(req.request.body).toEqual({ title: 'Nouveau', zoneKey: 'home-middle' });
+    req.flush({ id: 'sl9', slug: 'n', title: 'Nouveau', zoneKey: 'home-middle', storyIds: [] });
+    httpMock.expectOne('/api/sliders').flush([]);
+  });
+
+  it('onSliderCreate sans titre (prompt annulé) ne fait rien', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    spyOn(window, 'prompt').and.returnValue(null);
+    cmp.onSliderCreate('home-middle');
+    httpMock.expectNone(r => r.method === 'POST' && r.url === '/api/admin/sliders');
+  });
+
+  it('composition : requested charge les stories et ouvre l\'éditeur ; save appelle replaceSliderStories', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.sliders.set([{ id: 'sl1', slug: 'a', title: 'A', zoneKey: 'home-top', stories: [{ id: 'st1' }] }]);
+    cmp.onSliderCompositionRequested('sl1');
+    httpMock.expectOne('/api/admin/stories/all').flush([{ id: 'st1', title: 'S1' }, { id: 'st2', title: 'S2' }]);
+    expect(cmp.editingSliderId()).toBe('sl1');
+    cmp.onSliderCompositionSave(['st1', 'st2']);
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/sliders/sl1/stories').flush({ id: 'sl1', storyIds: ['st1', 'st2'] });
+    httpMock.expectOne('/api/sliders').flush([]);
+    expect(cmp.editingSliderId()).toBeNull();
   });
 
   // ---- Tests Task 6bis.3 : crop card feed ----
