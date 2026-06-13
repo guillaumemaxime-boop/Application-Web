@@ -1,7 +1,7 @@
 # Sliders d'actualités éditables dans le preview accueil — Spec
 
 **Date** : 2026-06-13
-**Statut** : Validé — prêt pour writing-plans
+**Statut** : Implémenté — feat/wysiwyg-sliders-preview
 **Sous-projet** : 5/6 du chantier « Améliorations WYSIWYG v2 » (découpage : voir spec `2026-06-10-wysiwyg-socle-factorise-design.md`, section Contexte). S'appuie sur les sous-projets 1-4, mergés sur main.
 
 ## Objectif
@@ -27,7 +27,7 @@
 
 Chemin : `frontend/src/app/pages/admin/shared/slider-composition-editor.component.ts`. La modale de composition (liste « disponibles » + filtre + sélection, liste « composition courante » + ↑↓ + retrait) est extraite de `SlidersComponent` vers un composant réutilisable.
 
-- **Inputs** : `title: string`, `storyIds: string[]`, `allStories: Story[]`.
+- **Inputs** : `title: string`, `storyIds: string[]`, `allStories: Story[]`, `sliderId: string | null` (ajouté lors de l'implémentation — permet à l'`effect` interne de détecter le changement de slider et de réinitialiser la composition pendante sans écraser les modifications en cours).
 - **Outputs** : `save: string[]` (nouvelle liste ordonnée d'ids), `cancel: void`.
 - État interne en signaux (`pendingStoryIds`, `selectedToAdd`, `storyFilter`). Modale `role="dialog"` + `aria-modal` + `cdkTrapFocus` + Échap (repris de l'existant).
 - `SlidersComponent` se refactore pour l'utiliser (son spec existant reste le filet de sécurité du refactor).

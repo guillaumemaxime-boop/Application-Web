@@ -1,6 +1,6 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.10.0
+**Version** : 2.11.0
 **Date** : 13/06/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
@@ -799,12 +799,12 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 #### `AccueilComponent` (`/admin/accueil`) — WYSIWYG preview
 
 - **Squelette WYSIWYG** : délégué à `<app-admin-preview-shell>` (§5.5) — mode-bar tablist, panel form hors-écran, toolbar ⤢, plein écran. Inputs : `[(viewMode)]="accueilViewMode"`, pas de bouton 💾 (auto-save, `showSave` absent).
-- **Handlers preview** (propres à la page, inchangés) :
+- **Handlers preview** (feed + textes hero) :
   - `onPreviewFeedReorder(order)` — préserve les items exclus lors du réordonnancement, PUT `/api/admin/home/feed`.
   - `onPreviewFeedItemToggleInclude({ kind, slug, included })` — toggle inclusion d'un item, PUT feed.
   - `onPreviewTextFieldEdit({ key, value })` — **auto-save** immédiat via `updateContent` (pas de FormGroup, pas de bouton Enregistrer).
   - `onPreviewFeedItemCropEdit({ kind, slug })` — ouvre la modale `<app-image-crop-picker>` + sauvegarde via `PUT /api/admin/home/feed/cover-crop`.
-  - `onSliderEditRequested(zoneKey)` — bascule `accueilViewMode.set('form')` + `scrollIntoView` vers la section sliders correspondante.
+- **Sliders in-preview** : édition des sliders depuis le preview en auto-save — `onSliderTitleEdit`/`onSliderZoneChange`/`onSliderDelete`/`onSliderCreate` (appels `updateSlider`/`deleteSlider`/`createSlider` + re-fetch `getPublicSliders`) ; composition via `<app-slider-composition-editor>` en overlay (`onSliderCompositionRequested` charge `getAllAdminStories` en lazy, `onSliderCompositionSave` → `replaceSliderStories`). Garde « une zone = un slider » sur le changement de zone.
 - **Auto-save inline texte hero** : blur ou Entrée → `portfolio.updateContent({ ...this.content(), [e.key]: e.value }).subscribe(...)`. Toast « Texte sauvegardé. » sur succès, revert + toast erreur sur échec.
 - **`saveFeed()`** : retourne un `Observable` (permet le chaînage lors des saves consécutifs).
 - **`[formModalOpen]="cropEditOpen()"`** : Échap ferme la modale crop sans réduire le plein écran. Résiduel connu : le story-viewer ouvert depuis le preview se ferme en même temps que le plein écran sur Échap.
@@ -980,7 +980,11 @@ Composant standalone purement présentation, partagé entre la page publique (`H
 | `feedItemToggleInclude` | `{ kind: 'furniture' \| 'exhibition'; slug: string; included: boolean }` | Toggle inclusion d'un item |
 | `textFieldEdit` | `{ key: EditableHomeContentKey; value: string }` | Double-clic inline → valeur auto-save au blur |
 | `feedItemCropEdit` | `{ kind: 'furniture' \| 'exhibition'; slug: string }` | Clic overlay crop d'une card |
-| `sliderEditRequested` | `'home-top' \| 'home-middle' \| 'home-bottom'` | Clic cartouche `[i]` → navigation vers form sliders |
+| `sliderTitleEdit` | `{ id: string; title: string }` | Blur après édition inline du titre d'un slider |
+| `sliderCompositionRequested` | `string` | Clic bouton « Composer » → ouvre l'éditeur de composition en overlay |
+| `sliderDelete` | `string` | Clic bouton `×` → suppression du slider |
+| `sliderZoneChange` | `{ id: string; zoneKey: 'home-top' \| 'home-middle' \| 'home-bottom' }` | Changement de zone via sélecteur |
+| `sliderCreate` | `'home-top' \| 'home-middle' \| 'home-bottom'` | Clic placeholder « + Créer un slider ici » sur zone vide |
 | `storyOpen` | `SliderStoryRef` | Ouverture d'une story depuis un slider |
 | `viewerOpen` | `StoryItem[]` | Ouverture du story-viewer plein écran |
 
@@ -989,7 +993,7 @@ Composant standalone purement présentation, partagé entre la page publique (`H
 - **Hero texts** : hover → outline dashed sur eyebrow/title/lead ; double-clic → `[attr.contenteditable]="true"` + outline accent, blur émet `textFieldEdit`.
 - **Feed cards** : rendu en `<li>` (pas de `RouterLink`) + overlay hover avec checkbox Inclus et pastille drag `⋮⋮`. Cards exclues en opacité 0.35 + badge « Exclu ». Overlay crop card émet `feedItemCropEdit`.
 - **Drag-reorder feed** : `ReorderableDirective` HTML5 sur les cards, drop émet `feedReorder`.
-- **News-sliders** : lecture seule. Cartouche `[i]` (opacité 0.6 → 1 au hover) en haut-droite de chaque slider, clic émet `sliderEditRequested`.
+- **News-sliders** : barre d'édition par slider (titre éditable inline, bouton Composer, sélecteur de zone, bouton `×` supprimer) ; zone vide → placeholder « + Créer un slider ici » émettant `sliderCreate`. Rendu public (carrousels `<app-news-slider>`) inchangé — aucune affordance en mode non-editable.
 
 #### `<app-home-preview>` (`HomePreviewComponent`)
 
@@ -1021,6 +1025,12 @@ Chemin : `frontend/src/app/pages/admin/shared/tag-input.component.ts`
 - Wrapper `ControlValueAccessor` autour de `<app-tag-editor>` — toute la logique combobox/a11y vit dans `<app-tag-editor>` ; ce composant gère uniquement le contrat CVA (intégration `ReactiveFormsModule`).
 - `writeValue` alimente le signal interne `value` ; `onEditorChange` met à jour `value` + notifie le form via `onChangeFn`/`onTouchedFn`.
 - `@Input() suggestions: string[]` — liste d'autocomplétion injectée par le parent (ex. résultat de `GET /api/tags`).
+
+#### `<app-slider-composition-editor>` (`SliderCompositionEditorComponent`)
+
+Chemin : `frontend/src/app/pages/admin/shared/slider-composition-editor.component.ts`
+
+Modale de composition d'un slider d'actualités (liste « disponibles » filtrable + sélection, liste « composition courante » réordonnable ↑↓ + retrait). Extraite de `SlidersComponent` pour être partagée entre l'éditeur form-side et le preview accueil. Inputs : `sliderId`, `title`, `storyIds`, `allStories`. Outputs : `save` (liste d'ids ordonnée), `cancel`. La persistance (`replaceSliderStories`) est faite par le consommateur. Réinitialise sa composition pendante uniquement quand `sliderId` change (pas à chaque référence de `storyIds`), pour ne pas écraser les modifications en cours. Modale `role=dialog` + `aria-modal` + `cdkTrapFocus`.
 
 #### `<app-image-crop-picker>` (`ImageCropPickerComponent`)
 
@@ -1459,3 +1469,4 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 2.8.0 | 11/06/2026 | UX socle + a11y previews WYSIWYG (chantier v2, sous-projet 2/6) : garde-fou dirty (`confirmIfDirty` + pristine post-save) · Ctrl+S · roving tabindex APG · Échap plein écran + restitution focus · reset fullscreen hors preview · mode-bar/liste `inert` en fullscreen · annonces `LiveAnnouncer` (mode, fullscreen, galerie) · drag-reorder : classes + FLIP + reduced-motion · `formModalOpen` accueil |
 | 2.9.0 | 11/06/2026 | Undo/redo previews WYSIWYG (chantier v2, sous-projet 3/6) : `createUndoHistory` (snapshots form+galerie, limite 50) · option `onBeforeMutate` des composables · boutons ↶/↷ + Ctrl+Z/Ctrl+Y dans le shell (undo natif préservé dans les champs) · annonces SR « Action annulée/rétablie » · garde anti-bruit blur sans modification |
 | 2.10.0 | 13/06/2026 | Tags éditables in-preview (chantier v2, sous-projet 4/6) : extraction `<app-tag-editor>` pur (combobox partagé), `<app-tag-input>` devient wrapper CVA, édition des tags dans les previews mobilier/exposition avec autocomplétion + undo/redo |
+| 2.11.0 | 13/06/2026 | Sliders éditables in-preview accueil (chantier v2, sous-projet 5/6) : extraction `<app-slider-composition-editor>` (partagé form-side + preview), édition des sliders depuis le preview (titre, composition, créer/supprimer/zone) en auto-save, garde « une zone = un slider » |
