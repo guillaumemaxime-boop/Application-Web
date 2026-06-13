@@ -1,4 +1,4 @@
-import { DestroyRef, Signal, WritableSignal, signal } from '@angular/core';
+import { DestroyRef, Signal, WritableSignal, computed, signal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { GalleryItem } from '../../../models/gallery-item.model';
 
@@ -54,16 +54,25 @@ export interface AnnouncerLike {
 
 /**
  * Édition inline depuis le preview : patche le FormControl + markAsDirty,
- * derrière la même whitelist que le focus.
+ * derrière la même whitelist que le focus. `onBeforeMutate` (optionnel) est
+ * invoqué AVANT le patch — point d'enregistrement de l'historique undo.
+ * Garde anti-bruit : un blur sans modification ne fait rien (ni historique,
+ * ni patch, ni dirty).
  */
 export function createTextFieldEditHandler(
   form: FormGroup,
   allowedFields: ReadonlySet<string>,
+  opts?: { onBeforeMutate?: () => void },
 ): (e: { field: string; value: string }) => void {
   return (e) => {
     if (!allowedFields.has(e.field)) return;
+    // Contrôle absent (whitelist qui aurait dérivé du form) : ne rien faire,
+    // sinon on enregistrerait un snapshot d'historique pour un patch no-op.
+    const ctrl = form.get(e.field);
+    if (!ctrl || ctrl.value === e.value) return;
+    opts?.onBeforeMutate?.();
     form.patchValue({ [e.field]: e.value });
-    form.get(e.field)?.markAsDirty();
+    ctrl.markAsDirty();
   };
 }
 
@@ -101,8 +110,10 @@ export function createGalleryPreviewHandlers(opts: {
   onMutate?: () => void;
   /** Annonces lecteur d'écran des opérations galerie (reorder/resize). */
   announcer?: AnnouncerLike;
+  /** Invoqué AVANT chaque mutation du signal galerie (remove/reorder/resize) — point d'enregistrement de l'historique undo. */
+  onBeforeMutate?: () => void;
 }): GalleryPreviewHandlers {
-  const { gallery, galleryEditor, coverField, onMutate, announcer } = opts;
+  const { gallery, galleryEditor, coverField, onMutate, announcer, onBeforeMutate } = opts;
   return {
     onCoverEdit: (action) => {
       if (action === 'crop') coverField()?.openCrop();
@@ -110,6 +121,7 @@ export function createGalleryPreviewHandlers(opts: {
     },
     onGalleryItemEdit: (e) => {
       if (e.action === 'remove') {
+        onBeforeMutate?.();
         gallery.update(arr => arr.filter((_, i) => i !== e.index));
         onMutate?.();
         return;
@@ -121,6 +133,7 @@ export function createGalleryPreviewHandlers(opts: {
       galleryEditor()?.openPicker();
     },
     onGalleryReorder: (order) => {
+      onBeforeMutate?.();
       const items = gallery();
       gallery.set(order.map(i => items[i]));
       onMutate?.();
@@ -139,11 +152,78 @@ export function createGalleryPreviewHandlers(opts: {
       }
     },
     onGalleryItemResize: (e) => {
+      onBeforeMutate?.();
       gallery.update(arr => arr.map((it, i) =>
         i === e.index ? { ...it, colSpan: e.colSpan, rowSpan: e.rowSpan } : it
       ));
       onMutate?.();
       announcer?.announce(`Image redimensionnée : ${e.colSpan} colonne${e.colSpan > 1 ? 's' : ''} sur ${e.rowSpan} ligne${e.rowSpan > 1 ? 's' : ''}`);
     },
+  };
+}
+
+/** Contrat de l'historique undo/redo à snapshots. */
+export interface UndoHistory<S> {
+  /** Capture l'état courant AVANT une mutation ; vide la pile redo. */
+  record(): void;
+  /** Restaure le snapshot précédent. False si la pile est vide. */
+  undo(): boolean;
+  /** Rétablit le snapshot annulé. False si la pile est vide. */
+  redo(): boolean;
+  /** Vide les deux piles (changement d'item). */
+  clear(): void;
+  canUndo: Signal<boolean>;
+  canRedo: Signal<boolean>;
+}
+
+/**
+ * Historique undo/redo à snapshots (memento) : l'état complet est capturé
+ * avant chaque opération discrète et restauré tel quel. Pas d'inverse par
+ * type d'opération (voir spec 2026-06-11-wysiwyg-undo-redo-design.md).
+ */
+export function createUndoHistory<S>(opts: {
+  capture: () => S;
+  restore: (snapshot: S) => void;
+  limit?: number;
+  announcer?: AnnouncerLike;
+}): UndoHistory<S> {
+  const { capture, restore, announcer } = opts;
+  const limit = opts.limit ?? 50;
+  const undoStack = signal<S[]>([]);
+  const redoStack = signal<S[]>([]);
+  return {
+    record: () => {
+      undoStack.update(stack => {
+        const next = [...stack, capture()];
+        return next.length > limit ? next.slice(next.length - limit) : next;
+      });
+      redoStack.set([]);
+    },
+    undo: () => {
+      const stack = undoStack();
+      if (stack.length === 0) return false;
+      const snapshot = stack[stack.length - 1];
+      redoStack.update(r => [...r, capture()]);
+      undoStack.set(stack.slice(0, -1));
+      restore(snapshot);
+      announcer?.announce('Action annulée');
+      return true;
+    },
+    redo: () => {
+      const stack = redoStack();
+      if (stack.length === 0) return false;
+      const snapshot = stack[stack.length - 1];
+      undoStack.update(u => [...u, capture()]);
+      redoStack.set(stack.slice(0, -1));
+      restore(snapshot);
+      announcer?.announce('Action rétablie');
+      return true;
+    },
+    clear: () => {
+      undoStack.set([]);
+      redoStack.set([]);
+    },
+    canUndo: computed(() => undoStack().length > 0),
+    canRedo: computed(() => redoStack().length > 0),
   };
 }

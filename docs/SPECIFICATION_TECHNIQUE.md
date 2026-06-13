@@ -1,6 +1,6 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.8.0
+**Version** : 2.9.0
 **Date** : 11/06/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
@@ -816,6 +816,7 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - IDs déterministes `field-title`, `field-category`, `field-material`, `field-shortDescription`, `field-description` sur les inputs/textareas pour le click-to-focus.
 - **`saveFurniture()`** : recharge l'item depuis la réponse serveur (au lieu de reset du form) — préserve la fiche après save.
 - **Garde-fou dirty** : sélection liste / « + Nouvelle » passent par des wrappers gardés (`confirmIfDirty`) ; les flux internes (reload post-save, suppression, `?new=1`, « Annuler ») restent sans garde. Liste latérale `inert` quand l'aperçu est en plein écran (`fullscreenChange`).
+- **Undo/redo** : champ `history` (`createUndoHistory`), snapshots avant chaque opération discrète (galerie via `onBeforeMutate`, éditions inline, crop cover avec garde no-op, `imagesChange`), vidé au changement d'item, conservé après save (un undo au-delà du save re-marque dirty).
 
 #### `ExpositionsComponent` (`/admin/expositions`) — WYSIWYG preview
 
@@ -824,6 +825,7 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - IDs déterministes `field-title`, `field-venue`, `field-city`, `field-country`, `field-startDate`, `field-endDate`, `field-curator`, `field-shortDescription`, `field-description` sur les inputs/textareas pour le click-to-focus.
 - **`saveExhibition()`** : recharge l'item depuis la réponse serveur (au lieu de reset du form) — préserve la fiche après save.
 - **Garde-fou dirty** : sélection liste / « + Nouvelle » passent par des wrappers gardés (`confirmIfDirty`) ; les flux internes (reload post-save, suppression, `?new=1`, « Annuler ») restent sans garde. Liste latérale `inert` quand l'aperçu est en plein écran (`fullscreenChange`).
+- **Undo/redo** : champ `history` (`createUndoHistory`), snapshots avant chaque opération discrète (galerie via `onBeforeMutate`, éditions inline, crop cover avec garde no-op, `imagesChange`), vidé au changement d'item, conservé après save (un undo au-delà du save re-marque dirty).
 
 ### 5.5 Composants partagés
 
@@ -1061,7 +1063,7 @@ Chemin : `frontend/src/app/pages/admin/shared/admin-preview-shell.component.ts`
 
 Squelette partagé des 3 pages admin à preview WYSIWYG (accueil, mobilier, expositions). Possède : mode-bar `role=tablist` (✏/👁), panel form `#panel-form` projeté par `ng-content` (maintenu hors-écran `is-hidden` + `inert` en mode preview — préserve les `ViewChild` et les modales `position: fixed`), panel preview `#panel-preview` rendu par `ngTemplateOutlet` d'un `<ng-template shellPreview>` (directive marqueur `ShellPreviewDirective`, détruit/recréé au toggle), toolbar (💾 si `showSave`, ⤢/⤡), plein écran (`role=dialog` + `aria-modal` + `cdkTrapFocus`, z-index 1200), CSS partagé + media queries. Stack z-index : preview fullscreen 1200 · photo picker 1300 · crop picker 1400.
 
-Clavier & annonces (sous-projet 2/6) : tablist au pattern APG (roving tabindex, flèches ←/→ cycliques + Home/End, activation automatique) ; Ctrl+S/Cmd+S émet `save` quand `showSave` (preventDefault systématique ; neutralisé si `formModalOpen`) ; Échap réduit le plein écran et rend le focus au bouton ⤢ (inactif si `formModalOpen`) ; quitter le mode preview réinitialise le plein écran (pas de mode-bar inert fantôme) ; mode-bar `inert` en plein écran ; `aria-controls` du tab Aperçu conditionnel au panel rendu ; annonces `LiveAnnouncer` : « Mode aperçu/édition », « Aperçu plein écran/réduit ».
+Clavier & annonces (sous-projet 2/6) : tablist au pattern APG (roving tabindex, flèches ←/→ cycliques + Home/End, activation automatique) ; Ctrl+S/Cmd+S émet `save` quand `showSave` (preventDefault systématique ; neutralisé si `formModalOpen`) ; Échap réduit le plein écran et rend le focus au bouton ⤢ (inactif si `formModalOpen`) ; quitter le mode preview réinitialise le plein écran (pas de mode-bar inert fantôme) ; mode-bar `inert` en plein écran ; `aria-controls` du tab Aperçu conditionnel au panel rendu ; annonces `LiveAnnouncer` : « Mode aperçu/édition », « Aperçu plein écran/réduit ». Undo/redo (sous-projet 3/6) : Ctrl+Z → `undoRequested`, Ctrl+Shift+Z ou Ctrl+Y → `redoRequested`, uniquement si `historyEnabled`, hors modale (`formModalOpen`) et hors champ de saisie (input/textarea/contenteditable : l'undo natif du navigateur prime).
 
 | Membre | Type | Description |
 | --- | --- | --- |
@@ -1073,6 +1075,8 @@ Clavier & annonces (sous-projet 2/6) : tablist au pattern APG (roving tabindex, 
 | `viewMode` | `model<'form' \| 'preview'>` | Two-way avec le signal de la page |
 | `save` | output `void` | Clic 💾 |
 | `fullscreenChange` | output `boolean` | Entrée/sortie plein écran — les pages rendent `inert` leur liste latérale |
+| `historyEnabled` / `canUndo` / `canRedo` | input `boolean` | Boutons ↶/↷ + raccourcis Ctrl+Z/Ctrl+Y (mobilier/expo ; accueil sans historique) |
+| `undoRequested` / `redoRequested` | output `void` | Clic ↶/↷ ou raccourci clavier |
 
 #### Composables `preview-page-helpers.ts`
 
@@ -1084,6 +1088,8 @@ Chemin : `frontend/src/app/pages/admin/shared/preview-page-helpers.ts`
 - `createGalleryPreviewHandlers({gallery, galleryEditor, coverField})` — les 5 handlers galerie communs mobilier/expo (getters pour les ViewChild, interfaces structurelles `GalleryEditorLike`/`CoverFieldLike`).
 - `confirmIfDirty(form, message)` — garde-fou perte de saisie (wrappers UI `onSelectFurniture`/`onNewFurniture` et équivalents expo ; `markAsPristine()` après save réussi).
 - Options `onMutate` (markAsDirty sur remove/reorder/resize galerie) et `announcer` (annonces SR reorder/resize, pluriel accordé ; reorder = heuristique « plus grand déplacement », ±1 sur déplacement adjacent) de `createGalleryPreviewHandlers`.
+- `createUndoHistory({capture, restore, limit=50, announcer})` — historique undo/redo à snapshots (piles bornées FIFO, signaux `canUndo`/`canRedo`, annonces « Action annulée/rétablie »). Consommé par mobilier/expo : snapshot `{form, gallery}`, restore = patchValue + set + markAsDirty.
+- Option `onBeforeMutate` de `createGalleryPreviewHandlers` (avant remove/reorder/resize) et `createTextFieldEditHandler` (avant patch, avec garde anti-bruit : blur sans modification = no-op complet) — point d'enregistrement de l'historique.
 
 ### 5.6 Utilitaires frontend
 
@@ -1441,3 +1447,4 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 2.6.0 | 09/06/2026 | Preview WYSIWYG accueil — sous-projet 4/4, clôture chantier (ADR-0018) · Changeset 030 : ADD `cover_crop_x/y/w/h` DOUBLE PRECISION nullable sur `home_feed` · `HomeFeedEntryEntity` étendu (4 champs + getters/setters) · `HomeFeedService.setCoverCrop` (@Transactional + @CacheEvict) + `replace` préserve les coverCrops existants via snapshot · `HomeService.buildFeedItem` : override coverCrop home si défini, sinon fallback fiche source · Endpoint `PUT /api/admin/home/feed/cover-crop` + DTO `HomeFeedCoverCropRequest(kind, slug, crop)` · `HomeFeedRepository.findByKindAndRefSlug` ajouté · Pattern page/view appliqué à home : `HomeViewComponent` extrait, `HomePreviewComponent` créé · `HomeComponent` refactoré (200 → 78 lignes) · `AccueilComponent` toggle Modifier/Aperçu, handlers preview (`onPreviewFeedReorder`, `onPreviewFeedItemToggleInclude`, `onPreviewTextFieldEdit`, `onPreviewFeedItemCropEdit`, `onSliderEditRequested`) · **Auto-save inline** texte hero (pas de FormGroup, PUT `updateContent` immédiat) · Pas de bouton 💾 dans toolbar preview · Cartouche `[i]` sliders navigation cross-mode · `saveFeed()` retourne Observable · `PortfolioService.updateHomeFeedCoverCrop` ajouté · Type `EditableHomeContentKey`, 7 Outputs `HomeViewComponent` |
 | 2.7.0 | 10/06/2026 | Socle factorisé previews WYSIWYG (chantier v2, sous-projet 1/6) : `<app-admin-preview-shell>` + composables `preview-page-helpers` · migration accueil/mobilier/expositions · whitelist focus généralisée à mobilier · previews adoptent `formTickSignal` |
 | 2.8.0 | 11/06/2026 | UX socle + a11y previews WYSIWYG (chantier v2, sous-projet 2/6) : garde-fou dirty (`confirmIfDirty` + pristine post-save) · Ctrl+S · roving tabindex APG · Échap plein écran + restitution focus · reset fullscreen hors preview · mode-bar/liste `inert` en fullscreen · annonces `LiveAnnouncer` (mode, fullscreen, galerie) · drag-reorder : classes + FLIP + reduced-motion · `formModalOpen` accueil |
+| 2.9.0 | 11/06/2026 | Undo/redo previews WYSIWYG (chantier v2, sous-projet 3/6) : `createUndoHistory` (snapshots form+galerie, limite 50) · option `onBeforeMutate` des composables · boutons ↶/↷ + Ctrl+Z/Ctrl+Y dans le shell (undo natif préservé dans les champs) · annonces SR « Action annulée/rétablie » · garde anti-bruit blur sans modification |

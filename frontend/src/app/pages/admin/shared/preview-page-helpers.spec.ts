@@ -9,6 +9,7 @@ import {
   createFieldFocus,
   createGalleryPreviewHandlers,
   createTextFieldEditHandler,
+  createUndoHistory,
   formTickSignal,
 } from './preview-page-helpers';
 
@@ -253,6 +254,137 @@ describe('preview-page-helpers', () => {
         handlers.onGalleryItemResize({ index: 0, colSpan: 1, rowSpan: 1 });
       }).not.toThrow();
       expect(gallery()[0].url).toBe('b.jpg');
+    });
+  });
+
+  describe('createUndoHistory', () => {
+    interface S { v: number; }
+    function setup(opts: { limit?: number; withAnnouncer?: boolean } = {}) {
+      let state: S = { v: 1 };
+      const announcer = jasmine.createSpyObj<AnnouncerLike>('AnnouncerLike', ['announce']);
+      const history = createUndoHistory<S>({
+        capture: () => ({ ...state }),
+        restore: s => { state = { ...s }; },
+        limit: opts.limit,
+        announcer: opts.withAnnouncer ? announcer : undefined,
+      });
+      return { history, announcer, get: () => state, set: (v: number) => { state = { v }; } };
+    }
+
+    it('cycle nominal : record avant mutation, undo restaure, redo rétablit', () => {
+      const { history, get, set } = setup();
+      expect(history.canUndo()).toBeFalse();
+      history.record();   // snapshot v=1
+      set(2);
+      expect(history.canUndo()).toBeTrue();
+      expect(history.undo()).toBeTrue();
+      expect(get().v).toBe(1);
+      expect(history.canRedo()).toBeTrue();
+      expect(history.redo()).toBeTrue();
+      expect(get().v).toBe(2);
+      expect(history.canRedo()).toBeFalse();
+    });
+
+    it('un record vide la pile redo', () => {
+      const { history, set } = setup();
+      history.record(); set(2);
+      history.undo();
+      expect(history.canRedo()).toBeTrue();
+      history.record(); set(3);
+      expect(history.canRedo()).toBeFalse();
+    });
+
+    it('multi-step : undo après redo restaure les états intermédiaires', () => {
+      const { history, get, set } = setup();
+      history.record(); set(2);   // snapshot v=1
+      history.record(); set(3);   // snapshot v=2
+      history.undo();             // → v=2
+      history.undo();             // → v=1
+      history.redo();             // → v=2
+      history.redo();             // → v=3
+      expect(get().v).toBe(3);
+      expect(history.undo()).toBeTrue();   // → v=2 (et non v=1 ni v=3)
+      expect(get().v).toBe(2);
+    });
+
+    it('la limite est appliquée en FIFO', () => {
+      const { history, get, set } = setup({ limit: 2 });
+      history.record(); set(2);   // snapshot v=1
+      history.record(); set(3);   // snapshot v=2
+      history.record(); set(4);   // snapshot v=3 → v=1 éjecté
+      expect(history.undo()).toBeTrue();  // → v=3
+      expect(history.undo()).toBeTrue();  // → v=2
+      expect(history.canUndo()).toBeFalse();
+      expect(get().v).toBe(2);
+    });
+
+    it('clear vide les deux piles', () => {
+      const { history, set } = setup();
+      history.record(); set(2);
+      history.undo();
+      history.clear();
+      expect(history.canUndo()).toBeFalse();
+      expect(history.canRedo()).toBeFalse();
+    });
+
+    it('undo/redo sur piles vides : false et état intact', () => {
+      const { history, get } = setup();
+      expect(history.undo()).toBeFalse();
+      expect(history.redo()).toBeFalse();
+      expect(get().v).toBe(1);
+    });
+
+    it('annonce SR « Action annulée » / « Action rétablie »', () => {
+      const { history, announcer, set } = setup({ withAnnouncer: true });
+      history.record(); set(2);
+      history.undo();
+      expect(announcer.announce).toHaveBeenCalledWith('Action annulée');
+      history.redo();
+      expect(announcer.announce).toHaveBeenCalledWith('Action rétablie');
+    });
+
+    it('sans announcer : pas d\'erreur', () => {
+      const { history, set } = setup();
+      history.record(); set(2);
+      expect(() => { history.undo(); history.redo(); }).not.toThrow();
+    });
+  });
+
+  describe('onBeforeMutate', () => {
+    it('handlers galerie : invoqué AVANT la mutation, pour remove/reorder/resize', () => {
+      const gallery = signal<GalleryItem[]>([{ url: 'a.jpg' }, { url: 'b.jpg' }]);
+      const seen: string[][] = [];
+      const handlers = createGalleryPreviewHandlers({
+        gallery,
+        galleryEditor: () => undefined,
+        coverField: () => undefined,
+        onBeforeMutate: () => seen.push(gallery().map(g => g.url)),
+      });
+      handlers.onGalleryReorder([1, 0]);
+      expect(seen[0]).toEqual(['a.jpg', 'b.jpg']);   // état AVANT le reorder
+      handlers.onGalleryItemEdit({ index: 0, action: 'remove' });
+      handlers.onGalleryItemResize({ index: 0, colSpan: 2, rowSpan: 1 });
+      expect(seen.length).toBe(3);
+    });
+
+    it('édition texte : invoqué AVANT le patch, avec l\'ancienne valeur encore en place', () => {
+      const form = new FormBuilder().group({ title: ['Ancien'] });
+      const seen: unknown[] = [];
+      const handler = createTextFieldEditHandler(form, new Set(['title']), {
+        onBeforeMutate: () => seen.push(form.get('title')!.value),
+      });
+      handler({ field: 'title', value: 'Nouveau' });
+      expect(seen).toEqual(['Ancien']);
+      expect(form.value.title).toBe('Nouveau');
+    });
+
+    it('édition texte sans modification : ni onBeforeMutate, ni patch, ni dirty', () => {
+      const form = new FormBuilder().group({ title: ['Pareil'] });
+      const onBeforeMutate = jasmine.createSpy('onBeforeMutate');
+      const handler = createTextFieldEditHandler(form, new Set(['title']), { onBeforeMutate });
+      handler({ field: 'title', value: 'Pareil' });
+      expect(onBeforeMutate).not.toHaveBeenCalled();
+      expect(form.get('title')!.dirty).toBeFalse();
     });
   });
 });

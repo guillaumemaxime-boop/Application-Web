@@ -16,7 +16,7 @@ import { Crop } from '../../../models/crop.model';
 import { ExhibitionPreviewComponent } from './preview/exhibition-preview.component';
 import { enrichSlides } from '../../../utils/display-slides';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
-import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, formTickSignal } from '../shared/preview-page-helpers';
+import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory, formTickSignal } from '../shared/preview-page-helpers';
 import { EditableExhibitionField } from '../../../components/exhibition-detail-view/exhibition-detail-view.component';
 
 @Component({
@@ -60,7 +60,12 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
         [saving]="saving()"
         [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen()"
         (save)="saveExhibition()"
-        (fullscreenChange)="previewFullscreenActive.set($event)">
+        (fullscreenChange)="previewFullscreenActive.set($event)"
+        [historyEnabled]="true"
+        [canUndo]="history.canUndo()"
+        [canRedo]="history.canRedo()"
+        (undoRequested)="history.undo()"
+        (redoRequested)="history.redo()">
         <form class="form" [formGroup]="exhibitionForm" (ngSubmit)="saveExhibition()">
           <div class="form-head">
             <h2>{{ editingExhibitionSlug() ? 'Modifier l\'exposition' : 'Nouvelle exposition' }}</h2>
@@ -95,7 +100,7 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
           <app-gallery-editor
             #galleryEditor
             [images]="exhibitionGallery()"
-            (imagesChange)="exhibitionGallery.set($event); exhibitionForm.markAsDirty()" />
+            (imagesChange)="history.record(); exhibitionGallery.set($event); exhibitionForm.markAsDirty()" />
 
           <label>
             <span>Tags</span>
@@ -305,8 +310,8 @@ export class ExpositionsComponent {
   private readonly _formTick = formTickSignal(this.exhibitionForm, inject(DestroyRef));
 
   protected readonly focusField = createFieldFocus(ExpositionsComponent.FOCUSABLE_FIELDS);
-  protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(this.exhibitionForm, ExpositionsComponent.FOCUSABLE_FIELDS);
-  protected readonly onPreviewDateFieldEdit = createTextFieldEditHandler(this.exhibitionForm, ExpositionsComponent.DATE_FIELDS);
+  protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(this.exhibitionForm, ExpositionsComponent.FOCUSABLE_FIELDS, { onBeforeMutate: () => this.history.record() });
+  protected readonly onPreviewDateFieldEdit = createTextFieldEditHandler(this.exhibitionForm, ExpositionsComponent.DATE_FIELDS, { onBeforeMutate: () => this.history.record() });
 
   private readonly galleryHandlers = createGalleryPreviewHandlers({
     gallery: this.exhibitionGallery,
@@ -314,12 +319,30 @@ export class ExpositionsComponent {
     coverField: () => this.coverImageField,
     onMutate: () => this.exhibitionForm.markAsDirty(),
     announcer: this.announcer,
+    onBeforeMutate: () => this.history.record(),
   });
   protected readonly onPreviewCoverEdit = this.galleryHandlers.onCoverEdit;
   protected readonly onPreviewGalleryItemEdit = this.galleryHandlers.onGalleryItemEdit;
   protected readonly onPreviewGalleryAdd = this.galleryHandlers.onGalleryAdd;
   protected readonly onPreviewGalleryReorder = this.galleryHandlers.onGalleryReorder;
   protected readonly onPreviewGalleryItemResize = this.galleryHandlers.onGalleryItemResize;
+
+  /**
+   * Historique undo/redo des opérations WYSIWYG (snapshots form + galerie).
+   * Le snapshot aliase par référence les valeurs structurées du form (tags,
+   * coverCrop) et les items de galerie : sûr tant que ces valeurs sont
+   * remplacées immutablement (jamais mutées in-place) — convention respectée
+   * partout dans le projet.
+   */
+  readonly history = createUndoHistory({
+    capture: () => ({ form: this.exhibitionForm.getRawValue(), gallery: [...this.exhibitionGallery()] }),
+    restore: s => {
+      this.exhibitionForm.patchValue(s.form);
+      this.exhibitionGallery.set(s.gallery);
+      this.exhibitionForm.markAsDirty();
+    },
+    announcer: this.announcer,
+  });
 
   protected readonly previewDisplaySlides = computed(() => {
     this._formTick(); // dépendance signal — force recompute sur valueChanges
@@ -367,6 +390,7 @@ export class ExpositionsComponent {
   }
 
   newExhibition(): void {
+    this.history.clear();
     this.editingExhibitionSlug.set(null);
     this.editingExhibitionId.set(null);
     this.creatingExhibition.set(true);
@@ -385,6 +409,7 @@ export class ExpositionsComponent {
   }
 
   loadExhibition(item: Exhibition): void {
+    this.history.clear();
     this.editingExhibitionSlug.set(item.slug);
     this.editingExhibitionId.set(item.id ?? null);
     this.creatingExhibition.set(false);
@@ -407,6 +432,9 @@ export class ExpositionsComponent {
   }
 
   protected onCoverCropChange(crop: Crop | null): void {
+    const current = this.exhibitionForm.getRawValue().coverCrop ?? null;
+    if (JSON.stringify(crop ?? null) === JSON.stringify(current)) return;
+    this.history.record();
     this.exhibitionForm.patchValue({ coverCrop: crop });
     this.exhibitionForm.markAsDirty();
   }

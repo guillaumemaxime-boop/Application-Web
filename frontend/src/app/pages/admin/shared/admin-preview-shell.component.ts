@@ -68,6 +68,16 @@ export class ShellPreviewDirective {
           <div class="admin-preview-toolbar">
             <span class="admin-preview-label">Aperçu</span>
             <div class="admin-preview-actions">
+              @if (historyEnabled()) {
+                <button type="button" class="btn-preview-toggle btn-preview-undo"
+                        [disabled]="!canUndo()"
+                        aria-label="Annuler la dernière action"
+                        (click)="undoRequested.emit()">↶</button>
+                <button type="button" class="btn-preview-toggle btn-preview-redo"
+                        [disabled]="!canRedo()"
+                        aria-label="Rétablir l'action annulée"
+                        (click)="redoRequested.emit()">↷</button>
+              }
               @if (showSave()) {
                 <button type="button" class="btn-preview-save"
                         [disabled]="saveDisabled() || saving()"
@@ -75,7 +85,7 @@ export class ShellPreviewDirective {
                   @if (saving()) { Enregistrement… } @else { 💾 Enregistrer }
                 </button>
               }
-              <button type="button" class="btn-preview-toggle"
+              <button type="button" class="btn-preview-toggle btn-preview-fullscreen"
                       (click)="togglePreviewFullscreen()"
                       [attr.aria-label]="previewFullscreenLabel()">
                 @if (previewFullscreen()) { ⤡ Réduire } @else { ⤢ Plein écran }
@@ -111,6 +121,7 @@ export class ShellPreviewDirective {
     .btn-preview-save:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-preview-toggle { padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-line); color: var(--color-ink-soft); font-size: 0.78rem; cursor: pointer; font-family: inherit; }
     .btn-preview-toggle:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .btn-preview-toggle:disabled { opacity: 0.4; cursor: not-allowed; }
     .admin-preview.fullscreen { position: fixed; inset: 0; max-height: none; z-index: 1200; border: 0; padding: 24px 32px; }
     .admin-preview.fullscreen .admin-preview-toolbar { margin-top: 0; }
     @media (max-width: 1280px) {
@@ -148,11 +159,17 @@ export class AdminPreviewShellComponent {
    * `position: fixed` est interactive.
    */
   readonly formModalOpen = input(false);
+  /** Active les boutons ↶/↷ et les raccourcis Ctrl+Z / Ctrl+Y (mobilier/expo ; l'accueil reste sans historique). */
+  readonly historyEnabled = input(false);
+  readonly canUndo = input(false);
+  readonly canRedo = input(false);
   readonly viewMode = model<'form' | 'preview'>('form');
   readonly save = output<void>();
   /** Émis à chaque entrée/sortie du plein écran. Les pages s'en servent
    *  pour rendre `inert` leur liste latérale (neutralisation aria-modal). */
   readonly fullscreenChange = output<boolean>();
+  readonly undoRequested = output<void>();
+  readonly redoRequested = output<void>();
 
   private readonly announcer = inject(LiveAnnouncer);
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -208,12 +225,33 @@ export class AdminPreviewShellComponent {
       if (!this.saveDisabled() && !this.saving()) this.save.emit();
       return;
     }
+    // Undo/redo (Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y). Hors champ de saisie :
+    // l'undo natif du navigateur garde la main sur la frappe en cours.
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && this.historyEnabled()
+        && !this.formModalOpen() && !this.isEditableTarget()) {
+      const key = event.key.toLowerCase();
+      const isUndo = key === 'z' && !event.shiftKey;
+      const isRedo = (key === 'z' && event.shiftKey) || (key === 'y' && !event.shiftKey);
+      if (isUndo || isRedo) {
+        event.preventDefault();
+        if (isUndo) this.undoRequested.emit();
+        else this.redoRequested.emit();
+        return;
+      }
+    }
     // Échap réduit le plein écran — sauf si une modale form-side est ouverte
     // (son propre handler Escape la ferme ; le plein écran reste).
     if (event.key === 'Escape' && this.previewFullscreen() && !this.formModalOpen()) {
       this.setFullscreen(false);
-      this.elementRef.nativeElement.querySelector<HTMLButtonElement>('.btn-preview-toggle')?.focus();
+      this.elementRef.nativeElement.querySelector<HTMLButtonElement>('.btn-preview-fullscreen')?.focus();
     }
+  }
+
+  /** Vrai quand le focus est dans un champ de saisie (l'undo natif prime). */
+  private isEditableTarget(): boolean {
+    const el = document.activeElement as HTMLElement | null;
+    if (!el) return false;
+    return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable;
   }
 
   protected previewFullscreenLabel(): string {

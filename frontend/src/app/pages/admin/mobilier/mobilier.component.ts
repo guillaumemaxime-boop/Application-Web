@@ -16,7 +16,7 @@ import { Crop } from '../../../models/crop.model';
 import { FurniturePreviewComponent } from './preview/furniture-preview.component';
 import { enrichSlides } from '../../../utils/display-slides';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
-import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, formTickSignal } from '../shared/preview-page-helpers';
+import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory, formTickSignal } from '../shared/preview-page-helpers';
 import { EditableTextField } from '../../../components/furniture-detail-view/furniture-detail-view.component';
 
 @Component({
@@ -61,7 +61,12 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
         [hidePreviewOnMobile]="true"
         [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen()"
         (save)="saveFurniture()"
-        (fullscreenChange)="previewFullscreenActive.set($event)">
+        (fullscreenChange)="previewFullscreenActive.set($event)"
+        [historyEnabled]="true"
+        [canUndo]="history.canUndo()"
+        [canRedo]="history.canRedo()"
+        (undoRequested)="history.undo()"
+        (redoRequested)="history.redo()">
         <form class="form" [formGroup]="furnitureForm" (ngSubmit)="saveFurniture()">
           <div class="form-head">
             <h2>{{ editingFurnitureSlug() ? 'Modifier la pièce' : 'Nouvelle pièce' }}</h2>
@@ -115,7 +120,7 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
           <app-gallery-editor
             #galleryEditor
             [images]="furnitureGallery()"
-            (imagesChange)="furnitureGallery.set($event); furnitureForm.markAsDirty()" />
+            (imagesChange)="history.record(); furnitureGallery.set($event); furnitureForm.markAsDirty()" />
 
           <fieldset class="dim-fieldset">
             <legend>Dimensions</legend>
@@ -374,7 +379,11 @@ export class MobilierComponent {
   private readonly _formTick = formTickSignal(this.furnitureForm, inject(DestroyRef));
 
   protected readonly focusField = createFieldFocus(MobilierComponent.FOCUSABLE_FIELDS);
-  protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(this.furnitureForm, MobilierComponent.FOCUSABLE_FIELDS);
+  protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(
+    this.furnitureForm,
+    MobilierComponent.FOCUSABLE_FIELDS,
+    { onBeforeMutate: () => this.history.record() },
+  );
 
   private readonly galleryHandlers = createGalleryPreviewHandlers({
     gallery: this.furnitureGallery,
@@ -382,12 +391,30 @@ export class MobilierComponent {
     coverField: () => this.coverImageField,
     onMutate: () => this.furnitureForm.markAsDirty(),
     announcer: this.announcer,
+    onBeforeMutate: () => this.history.record(),
   });
   protected readonly onPreviewCoverEdit = this.galleryHandlers.onCoverEdit;
   protected readonly onPreviewGalleryItemEdit = this.galleryHandlers.onGalleryItemEdit;
   protected readonly onPreviewGalleryAdd = this.galleryHandlers.onGalleryAdd;
   protected readonly onPreviewGalleryReorder = this.galleryHandlers.onGalleryReorder;
   protected readonly onPreviewGalleryItemResize = this.galleryHandlers.onGalleryItemResize;
+
+  /**
+   * Historique undo/redo des opérations WYSIWYG (snapshots form + galerie).
+   * Le snapshot aliase par référence les valeurs structurées du form (tags,
+   * coverCrop) et les items de galerie : sûr tant que ces valeurs sont
+   * remplacées immutablement (jamais mutées in-place) — convention respectée
+   * partout dans le projet.
+   */
+  readonly history = createUndoHistory({
+    capture: () => ({ form: this.furnitureForm.getRawValue(), gallery: [...this.furnitureGallery()] }),
+    restore: s => {
+      this.furnitureForm.patchValue(s.form);
+      this.furnitureGallery.set(s.gallery);
+      this.furnitureForm.markAsDirty();
+    },
+    announcer: this.announcer,
+  });
 
   protected readonly previewDisplaySlides = computed(() => {
     this._formTick(); // dépendance signal — force recompute sur valueChanges
@@ -435,6 +462,7 @@ export class MobilierComponent {
   }
 
   newFurniture(): void {
+    this.history.clear();
     this.editingFurnitureSlug.set(null);
     this.editingFurnitureId.set(null);
     this.creatingFurniture.set(true);
@@ -454,6 +482,7 @@ export class MobilierComponent {
   }
 
   loadFurniture(item: Furniture): void {
+    this.history.clear();
     this.editingFurnitureSlug.set(item.slug);
     this.editingFurnitureId.set(item.id ?? null);
     this.creatingFurniture.set(false);
@@ -477,6 +506,9 @@ export class MobilierComponent {
   }
 
   protected onCoverCropChange(crop: Crop | null): void {
+    const current = this.furnitureForm.getRawValue().coverCrop ?? null;
+    if (JSON.stringify(crop ?? null) === JSON.stringify(current)) return;
+    this.history.record();
     this.furnitureForm.patchValue({ coverCrop: crop });
     this.furnitureForm.markAsDirty();
   }

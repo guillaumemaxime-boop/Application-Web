@@ -859,4 +859,63 @@ describe('MobilierComponent', () => {
     expect(panel.hasAttribute('inert')).toBeTrue();
   });
 
+  function setupHistoryFixture() {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    return { fixture, cmp: fixture.componentInstance as any };
+  }
+
+  it('reorder galerie depuis le preview : undo restaure l\'ordre et marque dirty', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.furnitureGallery.set([{ url: 'a.jpg' }, { url: 'b.jpg' }]);
+    cmp.onPreviewGalleryReorder([1, 0]);
+    expect(cmp.furnitureGallery().map((g: { url: string }) => g.url)).toEqual(['b.jpg', 'a.jpg']);
+    expect(cmp.history.undo()).toBeTrue();
+    expect(cmp.furnitureGallery().map((g: { url: string }) => g.url)).toEqual(['a.jpg', 'b.jpg']);
+    expect(cmp.furnitureForm.dirty).toBeTrue();
+  });
+
+  it('édition inline : undo restaure la valeur, redo la rétablit', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onPreviewTextFieldEdit({ field: 'title', value: 'Nouveau titre' });
+    expect(cmp.furnitureForm.getRawValue().title).toBe('Nouveau titre');
+    cmp.history.undo();
+    expect(cmp.furnitureForm.getRawValue().title).toBe('');
+    cmp.history.redo();
+    expect(cmp.furnitureForm.getRawValue().title).toBe('Nouveau titre');
+  });
+
+  it('onCoverCropChange enregistre un snapshot (undo restaure le crop)', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onCoverCropChange({ x: 10, y: 10, w: 50, h: 50 });
+    expect(cmp.history.canUndo()).toBeTrue();
+    cmp.history.undo();
+    expect(cmp.furnitureForm.getRawValue().coverCrop).toBeNull();
+  });
+
+  it('onCoverCropChange sans changement réel : aucune entrée d\'historique', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onCoverCropChange(null);   // coverCrop est déjà null à l'init
+    expect(cmp.history.canUndo()).toBeFalse();
+  });
+
+  it('loadFurniture vide l\'historique', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onPreviewTextFieldEdit({ field: 'title', value: 'X' });
+    expect(cmp.history.canUndo()).toBeTrue();
+    cmp.loadFurniture({ id: 'id-1', slug: 'chaise', title: 'Chaise' });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
+    expect(cmp.history.canUndo()).toBeFalse();
+  });
+
+  it('édition inline sans modification : aucune entrée d\'historique', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onPreviewTextFieldEdit({ field: 'title', value: '' });
+    expect(cmp.history.canUndo()).toBeFalse();
+    expect(cmp.furnitureForm.dirty).toBeFalse();
+  });
+
 });

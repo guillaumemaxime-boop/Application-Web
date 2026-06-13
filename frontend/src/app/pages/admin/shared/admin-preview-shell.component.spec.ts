@@ -19,9 +19,17 @@ import { AdminPreviewShellComponent, ShellPreviewDirective } from './admin-previ
       [saving]="saving()"
       [hidePreviewOnMobile]="hidePreviewMobile()"
       [formModalOpen]="formModalOpen()"
+      [historyEnabled]="historyEnabled()"
+      [canUndo]="canUndo()"
+      [canRedo]="canRedo()"
       (save)="saveCount = saveCount + 1"
-      (fullscreenChange)="lastFullscreen = $event">
+      (fullscreenChange)="lastFullscreen = $event"
+      (undoRequested)="undoCount = undoCount + 1"
+      (redoRequested)="redoCount = redoCount + 1">
       <p class="form-marker">FORM</p>
+      <input class="form-input" />
+      <textarea class="form-textarea"></textarea>
+      <div class="form-ce" contenteditable="true"><span class="ce-child" tabindex="0">x</span></div>
       <ng-template shellPreview><p class="preview-marker">PREVIEW</p></ng-template>
     </app-admin-preview-shell>
   `,
@@ -34,8 +42,13 @@ class HostComponent {
   readonly saving = signal(false);
   readonly hidePreviewMobile = signal(false);
   readonly formModalOpen = signal(false);
+  readonly historyEnabled = signal(true);
+  readonly canUndo = signal(true);
+  readonly canRedo = signal(true);
   saveCount = 0;
   lastFullscreen: boolean | null = null;
+  undoCount = 0;
+  redoCount = 0;
 }
 
 describe('AdminPreviewShellComponent', () => {
@@ -124,7 +137,7 @@ describe('AdminPreviewShellComponent', () => {
     const fixture = create();
     fixture.componentInstance.viewMode.set('preview');
     fixture.detectChanges();
-    const toggle = fixture.debugElement.query(By.css('.btn-preview-toggle'));
+    const toggle = fixture.debugElement.query(By.css('.btn-preview-fullscreen'));
     toggle.nativeElement.click();
     fixture.detectChanges();
     const aside = fixture.debugElement.query(By.css('#panel-preview'));
@@ -270,7 +283,7 @@ describe('AdminPreviewShellComponent', () => {
     const fixture = create();
     fixture.componentInstance.viewMode.set('preview');
     fixture.detectChanges();
-    const toggle = fixture.debugElement.query(By.css('.btn-preview-toggle'));
+    const toggle = fixture.debugElement.query(By.css('.btn-preview-fullscreen'));
     toggle.nativeElement.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.lastFullscreen).toBeTrue();
@@ -288,7 +301,7 @@ describe('AdminPreviewShellComponent', () => {
     const fixture = create();
     fixture.componentInstance.viewMode.set('preview');
     fixture.detectChanges();
-    fixture.debugElement.query(By.css('.btn-preview-toggle')).nativeElement.click();
+    fixture.debugElement.query(By.css('.btn-preview-fullscreen')).nativeElement.click();
     fixture.componentInstance.formModalOpen.set(true);
     fixture.detectChanges();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
@@ -312,7 +325,7 @@ describe('AdminPreviewShellComponent', () => {
     fixture.detectChanges();
     const modeBar = fixture.debugElement.query(By.css('.admin-mode-bar'));
     expect(modeBar.nativeElement.hasAttribute('inert')).toBeFalse();
-    fixture.debugElement.query(By.css('.btn-preview-toggle')).nativeElement.click();
+    fixture.debugElement.query(By.css('.btn-preview-fullscreen')).nativeElement.click();
     fixture.detectChanges();
     expect(modeBar.nativeElement.hasAttribute('inert')).toBeTrue();
   });
@@ -321,7 +334,7 @@ describe('AdminPreviewShellComponent', () => {
     const fixture = create();
     fixture.componentInstance.viewMode.set('preview');
     fixture.detectChanges();
-    fixture.debugElement.query(By.css('.btn-preview-toggle')).nativeElement.click();
+    fixture.debugElement.query(By.css('.btn-preview-fullscreen')).nativeElement.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.lastFullscreen).toBeTrue();
     // La page rebascule en mode form (ex. cartouche [i] des sliders accueil)
@@ -347,10 +360,111 @@ describe('AdminPreviewShellComponent', () => {
     fixture.componentInstance.viewMode.set('preview');
     fixture.detectChanges();
     expect(announceSpy).toHaveBeenCalledWith('Mode aperçu');
-    fixture.debugElement.query(By.css('.btn-preview-toggle')).nativeElement.click();
+    fixture.debugElement.query(By.css('.btn-preview-fullscreen')).nativeElement.click();
     fixture.detectChanges();
     expect(announceSpy).toHaveBeenCalledWith('Aperçu plein écran');
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(announceSpy).toHaveBeenCalledWith('Aperçu réduit');
+  });
+
+  it('boutons undo/redo absents quand historyEnabled=false', () => {
+    const fixture = create();
+    fixture.componentInstance.historyEnabled.set(false);
+    fixture.componentInstance.viewMode.set('preview');
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('.btn-preview-undo'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.btn-preview-redo'))).toBeNull();
+  });
+
+  it('boutons undo/redo : disabled selon canUndo/canRedo, clic émet', () => {
+    const fixture = create();
+    fixture.componentInstance.viewMode.set('preview');
+    fixture.detectChanges();
+    const undoBtn = fixture.debugElement.query(By.css('.btn-preview-undo'));
+    const redoBtn = fixture.debugElement.query(By.css('.btn-preview-redo'));
+    expect(undoBtn.nativeElement.disabled).toBeFalse();
+    undoBtn.nativeElement.click();
+    redoBtn.nativeElement.click();
+    expect(fixture.componentInstance.undoCount).toBe(1);
+    expect(fixture.componentInstance.redoCount).toBe(1);
+    fixture.componentInstance.canUndo.set(false);
+    fixture.componentInstance.canRedo.set(false);
+    fixture.detectChanges();
+    expect(undoBtn.nativeElement.disabled).toBeTrue();
+    expect(redoBtn.nativeElement.disabled).toBeTrue();
+  });
+
+  it('Ctrl+Z hors champ de saisie émet undoRequested et preventDefault', () => {
+    const fixture = create();
+    const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.undoCount).toBe(1);
+    expect(ev.defaultPrevented).toBeTrue();
+  });
+
+  it('Ctrl+Z avec focus dans un input : non intercepté (undo natif)', () => {
+    const fixture = create();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.form-input');
+    input.focus();
+    const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.undoCount).toBe(0);
+    expect(ev.defaultPrevented).toBeFalse();
+  });
+
+  it('Ctrl+Z avec focus dans un textarea : non intercepté (undo natif)', () => {
+    const fixture = create();
+    const textarea: HTMLTextAreaElement = fixture.nativeElement.querySelector('.form-textarea');
+    textarea.focus();
+    const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.undoCount).toBe(0);
+    expect(ev.defaultPrevented).toBeFalse();
+  });
+
+  it('Ctrl+Z dans un enfant de [contenteditable] : non intercepté (héritage isContentEditable)', () => {
+    const fixture = create();
+    (fixture.nativeElement.querySelector('.ce-child') as HTMLElement).focus();
+    const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.undoCount).toBe(0);
+    expect(ev.defaultPrevented).toBeFalse();
+  });
+
+  it('Ctrl+Shift+Z émet redoRequested', () => {
+    const fixture = create();
+    const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.redoCount).toBe(1);
+    expect(fixture.componentInstance.undoCount).toBe(0);
+    expect(ev.defaultPrevented).toBeTrue();
+  });
+
+  it('Ctrl+Y émet redoRequested', () => {
+    const fixture = create();
+    const ev = new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.redoCount).toBe(1);
+    expect(ev.defaultPrevented).toBeTrue();
+  });
+
+  it('Ctrl+Z non intercepté quand une modale form-side est ouverte', () => {
+    const fixture = create();
+    fixture.componentInstance.formModalOpen.set(true);
+    fixture.detectChanges();
+    const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.undoCount).toBe(0);
+    expect(ev.defaultPrevented).toBeFalse();
+  });
+
+  it('Ctrl+Z non intercepté quand historyEnabled=false', () => {
+    const fixture = create();
+    fixture.componentInstance.historyEnabled.set(false);
+    fixture.detectChanges();
+    const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.undoCount).toBe(0);
+    expect(ev.defaultPrevented).toBeFalse();
   });
 });
