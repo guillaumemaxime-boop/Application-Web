@@ -49,11 +49,11 @@ describe('HomePreviewComponent', () => {
     expect(emitted).toEqual({ key: 'home.hero.title', value: 'X' });
   });
 
-  it('reemet sliderEditRequested', () => {
+  it('reemet sliderCreate', () => {
     setup({ feed: [] } as unknown as HomePageData);
     let emitted: any = null;
-    fixture.componentInstance.sliderEditRequested.subscribe(z => emitted = z);
-    (fixture.componentInstance as any).onSliderEditRequested('home-top');
+    fixture.componentInstance.sliderCreate.subscribe(z => emitted = z);
+    fixture.componentInstance.sliderCreate.emit('home-top');
     expect(emitted).toBe('home-top');
   });
 

@@ -18,7 +18,11 @@ import { EditableHomeContentKey, HomeViewComponent } from '../../../../component
       (feedReorder)="onFeedReorder($event)"
       (feedItemToggleInclude)="onFeedItemToggleInclude($event)"
       (textFieldEdit)="onTextFieldEdit($event)"
-      (sliderEditRequested)="onSliderEditRequested($event)"
+      (sliderTitleEdit)="sliderTitleEdit.emit($event)"
+      (sliderCompositionRequested)="sliderCompositionRequested.emit($event)"
+      (sliderDelete)="sliderDelete.emit($event)"
+      (sliderZoneChange)="sliderZoneChange.emit($event)"
+      (sliderCreate)="sliderCreate.emit($event)"
       (feedItemCropEdit)="onFeedItemCropEdit($event)" />
   `,
   styles: []
@@ -32,12 +36,15 @@ export class HomePreviewComponent {
   @Output() feedReorder = new EventEmitter<number[]>();
   @Output() feedItemToggleInclude = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string; included: boolean }>();
   @Output() textFieldEdit = new EventEmitter<{ key: EditableHomeContentKey; value: string }>();
-  @Output() sliderEditRequested = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
+  @Output() sliderTitleEdit = new EventEmitter<{ id: string; title: string }>();
+  @Output() sliderCompositionRequested = new EventEmitter<string>();
+  @Output() sliderDelete = new EventEmitter<string>();
+  @Output() sliderZoneChange = new EventEmitter<{ id: string; zoneKey: 'home-top' | 'home-middle' | 'home-bottom' }>();
+  @Output() sliderCreate = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
   @Output() feedItemCropEdit = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
 
   protected onFeedReorder(o: number[]): void { this.feedReorder.emit(o); }
   protected onFeedItemToggleInclude(e: { kind: 'furniture' | 'exhibition'; slug: string; included: boolean }): void { this.feedItemToggleInclude.emit(e); }
   protected onTextFieldEdit(e: { key: EditableHomeContentKey; value: string }): void { this.textFieldEdit.emit(e); }
-  protected onSliderEditRequested(z: 'home-top' | 'home-middle' | 'home-bottom'): void { this.sliderEditRequested.emit(z); }
   protected onFeedItemCropEdit(e: { kind: 'furniture' | 'exhibition'; slug: string }): void { this.feedItemCropEdit.emit(e); }
 }

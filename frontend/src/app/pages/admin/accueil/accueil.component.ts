@@ -68,7 +68,11 @@ interface HomeAdminItem {
           (feedReorder)="onPreviewFeedReorder($event)"
           (feedItemToggleInclude)="onPreviewFeedItemToggleInclude($event)"
           (textFieldEdit)="onPreviewTextFieldEdit($event)"
-          (sliderEditRequested)="onSliderEditRequested($event)"
+          (sliderCreate)="onSliderCreate($event)"
+          (sliderDelete)="onSliderDelete($event)"
+          (sliderTitleEdit)="onSliderTitleEdit($event)"
+          (sliderZoneChange)="onSliderZoneChange($event)"
+          (sliderCompositionRequested)="onSliderCompositionRequested($event)"
           (feedItemCropEdit)="onPreviewFeedItemCropEdit($event)" />
       </ng-template>
     </app-admin-preview-shell>
@@ -260,7 +264,27 @@ export class AccueilComponent {
     });
   }
 
-  protected onSliderEditRequested(zone: 'home-top' | 'home-middle' | 'home-bottom'): void {
+  protected onSliderCreate(_zone: 'home-top' | 'home-middle' | 'home-bottom'): void {
+    this.accueilViewMode.set('form');
+    queueMicrotask(() => {
+      const el = document.getElementById('admin-sliders-anchor');
+      el?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  protected onSliderDelete(_id: string): void {
+    // TODO SP3 : appel API suppression slider
+  }
+
+  protected onSliderTitleEdit(_e: { id: string; title: string }): void {
+    // TODO SP3 : appel API mise à jour titre slider
+  }
+
+  protected onSliderZoneChange(_e: { id: string; zoneKey: 'home-top' | 'home-middle' | 'home-bottom' }): void {
+    // TODO SP3 : appel API changement de zone slider
+  }
+
+  protected onSliderCompositionRequested(_id: string): void {
     this.accueilViewMode.set('form');
     queueMicrotask(() => {
       const el = document.getElementById('admin-sliders-anchor');

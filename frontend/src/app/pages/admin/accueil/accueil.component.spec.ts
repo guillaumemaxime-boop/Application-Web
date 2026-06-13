@@ -21,7 +21,7 @@ type AccueilInternals = {
   moveUp: (i: number) => void;
   moveDown: (i: number) => void;
   onPreviewTextFieldEdit: (e: { key: string; value: string }) => void;
-  onSliderEditRequested: (zone: 'home-top' | 'home-middle' | 'home-bottom') => void;
+  onSliderCreate: (zone: 'home-top' | 'home-middle' | 'home-bottom') => void;
   onPreviewFeedReorder: (order: number[]) => void;
   onPreviewFeedItemToggleInclude: (e: { kind: 'furniture' | 'exhibition'; slug: string; included: boolean }) => void;
   cropEditOpen: { (): boolean; set: (v: boolean) => void };
@@ -400,7 +400,7 @@ describe('AccueilComponent', () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it('onSliderEditRequested switch mode + scroll', (done) => {
+  it('onSliderCreate switch mode + scroll', (done) => {
     const fixture = TestBed.createComponent(AccueilComponent);
     fixture.detectChanges();
     httpMock.expectOne('/api/furniture').flush([]);
@@ -421,7 +421,7 @@ describe('AccueilComponent', () => {
 
     cmp.accueilViewMode.set('preview');
     expect(cmp.accueilViewMode()).toBe('preview');
-    cmp.onSliderEditRequested('home-top');
+    cmp.onSliderCreate('home-top');
     expect(cmp.accueilViewMode()).toBe('form');
 
     // queueMicrotask -> attendre la prochaine microtâche après celle du composant
