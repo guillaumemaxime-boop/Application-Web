@@ -6,7 +6,7 @@ import { SiteContent } from '../../models/site-content.model';
 import { roleStyle } from '../../utils/title-style';
 import { NewsSliderComponent } from '../news-slider/news-slider.component';
 import { StoryViewerComponent, StoryItem } from '../story-viewer/story-viewer.component';
-import { NewsSliderView, SLIDER_ZONES, SliderStoryRef } from '../../models/news-slider.model';
+import { NewsSliderView, SLIDER_ZONES, SliderStoryRef, SliderZone } from '../../models/news-slider.model';
 import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
 
@@ -54,25 +54,69 @@ export type EditableHomeContentKey =
       @if (sliderByZone()['home-top']; as s) {
         @if (editable) {
           <div class="slider-wrap editable">
+            <div class="slider-edit-bar">
+              <span class="slider-title-edit" contenteditable="true" role="textbox"
+                    aria-label="Titre du slider"
+                    (blur)="onSliderTitleBlur(s.id, $event)">{{ s.title }}</span>
+              <button type="button" class="slider-compose-btn" (click)="sliderCompositionRequested.emit(s.id)">Composer</button>
+              <select class="slider-zone-select" aria-label="Zone du slider"
+                    (change)="onSliderZoneSelect(s.id, $event)">
+                <option value="" [selected]="!s.zoneKey">Désactivé (hors accueil)</option>
+                @for (z of editableZones; track z) { <option [value]="z" [selected]="z === s.zoneKey">{{ z }}</option> }
+              </select>
+              <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
+                      (click)="sliderDelete.emit(s.id)">×</button>
+            </div>
             <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
-            <button type="button" class="slider-edit-badge" aria-label="Éditer ce slider (Sliders dans Modifier)"
-                    (click)="onSliderEditRequested('home-top')">i</button>
           </div>
         } @else {
           <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
         }
+      } @else if (editable) {
+        <div class="slider-create-placeholder">
+          @if (disabledSliders.length > 0) {
+            <select class="slider-insert-select" aria-label="Insérer un slider existant dans home-top"
+                    (change)="onSliderInsertSelect('home-top', $event)">
+              <option value="" selected>Insérer un slider existant…</option>
+              @for (d of disabledSliders; track d.id) { <option [value]="d.id">{{ d.title }}</option> }
+            </select>
+          }
+          <button type="button" class="slider-create-btn" (click)="sliderCreate.emit('home-top')">+ Créer un slider ici (home-top)</button>
+        </div>
       }
 
       @if (sliderByZone()['home-middle']; as s) {
         @if (editable) {
           <div class="slider-wrap editable">
+            <div class="slider-edit-bar">
+              <span class="slider-title-edit" contenteditable="true" role="textbox"
+                    aria-label="Titre du slider"
+                    (blur)="onSliderTitleBlur(s.id, $event)">{{ s.title }}</span>
+              <button type="button" class="slider-compose-btn" (click)="sliderCompositionRequested.emit(s.id)">Composer</button>
+              <select class="slider-zone-select" aria-label="Zone du slider"
+                    (change)="onSliderZoneSelect(s.id, $event)">
+                <option value="" [selected]="!s.zoneKey">Désactivé (hors accueil)</option>
+                @for (z of editableZones; track z) { <option [value]="z" [selected]="z === s.zoneKey">{{ z }}</option> }
+              </select>
+              <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
+                      (click)="sliderDelete.emit(s.id)">×</button>
+            </div>
             <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
-            <button type="button" class="slider-edit-badge" aria-label="Éditer ce slider (Sliders dans Modifier)"
-                    (click)="onSliderEditRequested('home-middle')">i</button>
           </div>
         } @else {
           <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
         }
+      } @else if (editable) {
+        <div class="slider-create-placeholder">
+          @if (disabledSliders.length > 0) {
+            <select class="slider-insert-select" aria-label="Insérer un slider existant dans home-middle"
+                    (change)="onSliderInsertSelect('home-middle', $event)">
+              <option value="" selected>Insérer un slider existant…</option>
+              @for (d of disabledSliders; track d.id) { <option [value]="d.id">{{ d.title }}</option> }
+            </select>
+          }
+          <button type="button" class="slider-create-btn" (click)="sliderCreate.emit('home-middle')">+ Créer un slider ici (home-middle)</button>
+        </div>
       }
 
       <section class="feed">
@@ -140,13 +184,35 @@ export type EditableHomeContentKey =
       @if (sliderByZone()['home-bottom']; as s) {
         @if (editable) {
           <div class="slider-wrap editable">
+            <div class="slider-edit-bar">
+              <span class="slider-title-edit" contenteditable="true" role="textbox"
+                    aria-label="Titre du slider"
+                    (blur)="onSliderTitleBlur(s.id, $event)">{{ s.title }}</span>
+              <button type="button" class="slider-compose-btn" (click)="sliderCompositionRequested.emit(s.id)">Composer</button>
+              <select class="slider-zone-select" aria-label="Zone du slider"
+                    (change)="onSliderZoneSelect(s.id, $event)">
+                <option value="" [selected]="!s.zoneKey">Désactivé (hors accueil)</option>
+                @for (z of editableZones; track z) { <option [value]="z" [selected]="z === s.zoneKey">{{ z }}</option> }
+              </select>
+              <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
+                      (click)="sliderDelete.emit(s.id)">×</button>
+            </div>
             <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
-            <button type="button" class="slider-edit-badge" aria-label="Éditer ce slider (Sliders dans Modifier)"
-                    (click)="onSliderEditRequested('home-bottom')">i</button>
           </div>
         } @else {
           <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
         }
+      } @else if (editable) {
+        <div class="slider-create-placeholder">
+          @if (disabledSliders.length > 0) {
+            <select class="slider-insert-select" aria-label="Insérer un slider existant dans home-bottom"
+                    (change)="onSliderInsertSelect('home-bottom', $event)">
+              <option value="" selected>Insérer un slider existant…</option>
+              @for (d of disabledSliders; track d.id) { <option [value]="d.id">{{ d.title }}</option> }
+            </select>
+          }
+          <button type="button" class="slider-create-btn" (click)="sliderCreate.emit('home-bottom')">+ Créer un slider ici (home-bottom)</button>
+        </div>
       }
 
       @if (viewerQueue.length > 0) {
@@ -196,15 +262,13 @@ export type EditableHomeContentKey =
     .editable-text[contenteditable="true"] { outline: 2px solid var(--color-accent, #2a9d8f); outline-offset: 4px; background: rgba(0,0,0,0.03); cursor: text; }
 
     .slider-wrap { position: relative; }
-    .slider-edit-badge {
-      position: absolute; top: 16px; right: 32px; z-index: 5;
-      width: 24px; height: 24px; border-radius: 50%;
-      background: var(--color-ink); color: var(--color-bg);
-      border: 0; font-family: serif; font-style: italic; font-weight: bold;
-      cursor: pointer; opacity: 0.6; transition: opacity 180ms ease, transform 180ms ease;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    .slider-edit-badge:hover { opacity: 1; transform: scale(1.1); }
+    .slider-edit-bar { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--color-bg-alt); border: 1px solid var(--color-line); margin-bottom: 8px; }
+    .slider-title-edit { flex: 1; padding: 2px 4px; outline: 1px dashed transparent; }
+    .slider-title-edit:hover, .slider-title-edit:focus { outline-color: var(--color-accent); }
+    .slider-edit-bar button, .slider-zone-select { padding: 4px 8px; font-size: 0.8rem; background: var(--color-bg); border: 1px solid var(--color-line); cursor: pointer; }
+    .slider-create-placeholder { padding: 16px; text-align: center; border: 1px dashed var(--color-line); margin: 12px 0; }
+    .slider-create-btn { padding: 8px 16px; background: var(--color-bg); border: 1px solid var(--color-ink); cursor: pointer; }
+    .slider-insert-select { padding: 6px 10px; margin-right: 8px; font-size: 0.85rem; background: var(--color-bg); border: 1px solid var(--color-line); cursor: pointer; }
 
     .grid.editable { list-style: none; padding: 0; }
     .grid.editable > li.card { position: relative; }
@@ -239,6 +303,7 @@ export class HomeViewComponent {
   @Input({ required: true }) data: HomePageData | null = null;
   @Input() content: SiteContent = {};
   @Input() sliders: NewsSliderView[] = [];
+  @Input() disabledSliders: { id: string; title: string }[] = [];
   @Input() viewerQueue: StoryItem[] = [];
   @Input() editable = false;
   @Input() includedSlugs: Set<string> = new Set();
@@ -248,7 +313,12 @@ export class HomeViewComponent {
   @Output() feedReorder = new EventEmitter<number[]>();
   @Output() feedItemToggleInclude = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string; included: boolean }>();
   @Output() textFieldEdit = new EventEmitter<{ key: EditableHomeContentKey; value: string }>();
-  @Output() sliderEditRequested = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
+  @Output() sliderTitleEdit = new EventEmitter<{ id: string; title: string }>();
+  @Output() sliderCompositionRequested = new EventEmitter<string>();
+  @Output() sliderDelete = new EventEmitter<string>();
+  @Output() sliderZoneChange = new EventEmitter<{ id: string; zoneKey: SliderZone | null }>();
+  @Output() sliderCreate = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
+  @Output() sliderAssign = new EventEmitter<{ id: string; zoneKey: SliderZone }>();
   @Output() feedItemCropEdit = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
 
   protected editingKey: EditableHomeContentKey | null = null;
@@ -335,8 +405,22 @@ export class HomeViewComponent {
     (ev.target as HTMLElement).blur();
   }
 
-  protected onSliderEditRequested(zone: 'home-top' | 'home-middle' | 'home-bottom'): void {
-    this.sliderEditRequested.emit(zone);
+  protected readonly editableZones: ('home-top' | 'home-middle' | 'home-bottom')[] = ['home-top', 'home-middle', 'home-bottom'];
+
+  protected onSliderTitleBlur(id: string, ev: Event): void {
+    const title = (ev.target as HTMLElement).textContent?.trim() ?? '';
+    if (title) this.sliderTitleEdit.emit({ id, title });
+  }
+
+  protected onSliderZoneSelect(id: string, ev: Event): void {
+    const value = (ev.target as HTMLSelectElement).value;
+    const zoneKey = value === '' ? null : (value as SliderZone);
+    this.sliderZoneChange.emit({ id, zoneKey });
+  }
+
+  protected onSliderInsertSelect(zoneKey: SliderZone, ev: Event): void {
+    const id = (ev.target as HTMLSelectElement).value;
+    if (id) this.sliderAssign.emit({ id, zoneKey });
   }
 
   protected onSliderStoryOpen(story: SliderStoryRef): void {

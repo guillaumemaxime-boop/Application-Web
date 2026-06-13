@@ -49,11 +49,11 @@ describe('HomePreviewComponent', () => {
     expect(emitted).toEqual({ key: 'home.hero.title', value: 'X' });
   });
 
-  it('reemet sliderEditRequested', () => {
+  it('reemet sliderCreate', () => {
     setup({ feed: [] } as unknown as HomePageData);
     let emitted: any = null;
-    fixture.componentInstance.sliderEditRequested.subscribe(z => emitted = z);
-    (fixture.componentInstance as any).onSliderEditRequested('home-top');
+    fixture.componentInstance.sliderCreate.subscribe(z => emitted = z);
+    fixture.componentInstance.sliderCreate.emit('home-top');
     expect(emitted).toBe('home-top');
   });
 
@@ -63,5 +63,22 @@ describe('HomePreviewComponent', () => {
     fixture.componentInstance.feedItemCropEdit.subscribe(e => emitted = e);
     (fixture.componentInstance as any).onFeedItemCropEdit({ kind: 'furniture', slug: 'chaise' });
     expect(emitted).toEqual({ kind: 'furniture', slug: 'chaise' });
+  });
+
+  // --- Tests TDD: relay disabledSliders + sliderAssign ---
+
+  it('accepte l\'input disabledSliders (Signal) sans erreur', () => {
+    setup({ feed: [] } as unknown as HomePageData);
+    const disabledSig = signal([{ id: 'sl9', title: 'Slider X' }]);
+    fixture.componentRef.setInput('disabledSliders', disabledSig.asReadonly());
+    expect(() => fixture.detectChanges()).not.toThrow();
+  });
+
+  it('reemet sliderAssign depuis home-view', () => {
+    setup({ feed: [] } as unknown as HomePageData);
+    let emitted: any = null;
+    fixture.componentInstance.sliderAssign.subscribe(e => emitted = e);
+    fixture.componentInstance.sliderAssign.emit({ id: 'sl9', zoneKey: 'home-top' });
+    expect(emitted).toEqual({ id: 'sl9', zoneKey: 'home-top' });
   });
 });

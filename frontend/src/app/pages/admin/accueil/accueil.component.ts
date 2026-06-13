@@ -1,10 +1,12 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { SliderCompositionEditorComponent } from '../shared/slider-composition-editor.component';
+import { Story } from '../../../models/story.model';
 import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { AdminFeedEntry, HomePageData } from '../../../models/home.model';
 import { Crop } from '../../../models/crop.model';
 import { SiteContent } from '../../../models/site-content.model';
-import { NewsSliderView } from '../../../models/news-slider.model';
+import { NewsSlider, NewsSliderView, SliderZone } from '../../../models/news-slider.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { ToastService } from '../shared/toast.service';
 import { SlidersComponent } from '../sliders/sliders.component';
@@ -23,7 +25,7 @@ interface HomeAdminItem {
 @Component({
   selector: 'app-accueil',
   standalone: true,
-  imports: [ReorderableDirective, SlidersComponent, HomePreviewComponent, ImageCropPickerComponent, AdminPreviewShellComponent, ShellPreviewDirective],
+  imports: [ReorderableDirective, SlidersComponent, HomePreviewComponent, ImageCropPickerComponent, AdminPreviewShellComponent, ShellPreviewDirective, SliderCompositionEditorComponent],
   template: `
     <app-admin-preview-shell
       [(viewMode)]="accueilViewMode"
@@ -64,11 +66,17 @@ interface HomeAdminItem {
           [data]="homeData"
           [content]="content"
           [sliders]="sliders"
+          [disabledSliders]="disabledSliders"
           [includedSlugs]="includedSlugs"
           (feedReorder)="onPreviewFeedReorder($event)"
           (feedItemToggleInclude)="onPreviewFeedItemToggleInclude($event)"
           (textFieldEdit)="onPreviewTextFieldEdit($event)"
-          (sliderEditRequested)="onSliderEditRequested($event)"
+          (sliderCreate)="onSliderCreate($event)"
+          (sliderDelete)="onSliderDelete($event)"
+          (sliderTitleEdit)="onSliderTitleEdit($event)"
+          (sliderZoneChange)="onSliderZoneChange($event)"
+          (sliderAssign)="onSliderAssign($event)"
+          (sliderCompositionRequested)="onSliderCompositionRequested($event)"
           (feedItemCropEdit)="onPreviewFeedItemCropEdit($event)" />
       </ng-template>
     </app-admin-preview-shell>
@@ -79,6 +87,16 @@ interface HomeAdminItem {
         [initialCrop]="ctx.initialCrop"
         (validated)="onCropEditSave($event)"
         (cancelled)="onCropEditCancel()" />
+    }
+
+    @if (editingSlider(); as s) {
+      <app-slider-composition-editor
+        [sliderId]="s.id"
+        [title]="s.title"
+        [storyIds]="editingStoryIds()"
+        [allStories]="allStories()"
+        (save)="onSliderCompositionSave($event)"
+        (cancel)="editingSliderId.set(null)" />
     }
   `,
   styles: [`
@@ -111,9 +129,24 @@ export class AccueilComponent {
   protected readonly homeData = signal<HomePageData | null>(null);
   protected readonly content = signal<SiteContent>({});
   protected readonly sliders = signal<NewsSliderView[]>([]);
+  protected readonly adminSliders = signal<NewsSlider[]>([]);
+  protected readonly disabledSliders = computed(() =>
+    this.adminSliders().filter(s => s.zoneKey === null).map(s => ({ id: s.id, title: s.title }))
+  );
 
   protected readonly cropEditOpen = signal(false);
   protected readonly cropEditItem = signal<{ kind: 'furniture' | 'exhibition'; slug: string; imageUrl: string; initialCrop: Crop | null } | null>(null);
+
+  protected readonly editingSliderId = signal<string | null>(null);
+  protected readonly allStories = signal<Story[]>([]);
+  private storiesLoaded = false;
+
+  protected readonly editingSlider = computed(() =>
+    this.sliders().find(s => s.id === this.editingSliderId()) ?? null
+  );
+  protected readonly editingStoryIds = computed(() =>
+    this.editingSlider()?.stories.map(s => s.id) ?? []
+  );
 
   protected readonly includedSlugs = computed(() => {
     const items = this.homeItems();
@@ -157,6 +190,8 @@ export class AccueilComponent {
       this.content.set(content);
       this.sliders.set(sliders);
     });
+
+    this.portfolio.getAdminSliders().subscribe(s => this.adminSliders.set(s));
   }
 
   onFeedReorder(order: number[]): void {
@@ -260,11 +295,85 @@ export class AccueilComponent {
     });
   }
 
-  protected onSliderEditRequested(zone: 'home-top' | 'home-middle' | 'home-bottom'): void {
-    this.accueilViewMode.set('form');
-    queueMicrotask(() => {
-      const el = document.getElementById('admin-sliders-anchor');
-      el?.scrollIntoView({ behavior: 'smooth' });
+  private refreshSliders(): void {
+    this.portfolio.getPublicSliders().subscribe(s => this.sliders.set(s));
+    this.portfolio.getAdminSliders().subscribe(s => this.adminSliders.set(s));
+  }
+
+  protected onSliderTitleEdit(e: { id: string; title: string }): void {
+    const slider = this.sliders().find(s => s.id === e.id);
+    if (!slider) return;
+    this.portfolio.updateSlider(e.id, { title: e.title, zoneKey: slider.zoneKey }).subscribe({
+      next: () => { this.toast.success('Slider renommé.'); this.refreshSliders(); },
+      error: () => this.toast.error('Erreur lors du renommage du slider.'),
+    });
+  }
+
+  protected onSliderZoneChange(e: { id: string; zoneKey: SliderZone | null }): void {
+    const slider = this.sliders().find(s => s.id === e.id);
+    if (!slider) return;
+    if (e.zoneKey !== null && this.sliders().some(s => s.id !== e.id && s.zoneKey === e.zoneKey)) {
+      this.toast.error('Cette zone est déjà occupée par un autre slider.');
+      return;
+    }
+    this.portfolio.updateSlider(e.id, { title: slider.title, zoneKey: e.zoneKey }).subscribe({
+      next: () => { this.toast.success(e.zoneKey === null ? 'Slider désactivé.' : 'Zone du slider mise à jour.'); this.refreshSliders(); },
+      error: () => this.toast.error('Erreur lors du changement de zone.'),
+    });
+  }
+
+  protected onSliderAssign(e: { id: string; zoneKey: SliderZone }): void {
+    const slider = this.adminSliders().find(s => s.id === e.id);
+    if (!slider) return;
+    if (this.sliders().some(s => s.zoneKey === e.zoneKey)) {
+      this.toast.error('Cette zone est déjà occupée par un autre slider.');
+      return;
+    }
+    this.portfolio.updateSlider(e.id, { title: slider.title, zoneKey: e.zoneKey }).subscribe({
+      next: () => { this.toast.success('Slider inséré dans la zone.'); this.refreshSliders(); },
+      error: () => this.toast.error('Erreur lors de l\'insertion du slider.'),
+    });
+  }
+
+  protected onSliderDelete(id: string): void {
+    const slider = this.sliders().find(s => s.id === id);
+    if (!slider) return;
+    if (!confirm(`Supprimer le slider "${slider.title}" ?`)) return;
+    this.portfolio.deleteSlider(id).subscribe({
+      next: () => { this.toast.success('Slider supprimé.'); this.refreshSliders(); },
+      error: () => this.toast.error('Erreur lors de la suppression du slider.'),
+    });
+  }
+
+  protected onSliderCreate(zoneKey: 'home-top' | 'home-middle' | 'home-bottom'): void {
+    const title = prompt('Titre du nouveau slider ?');
+    if (!title || !title.trim()) return;
+    this.portfolio.createSlider({ title: title.trim(), zoneKey }).subscribe({
+      next: () => { this.toast.success('Slider créé.'); this.refreshSliders(); },
+      error: () => this.toast.error('Erreur lors de la création du slider.'),
+    });
+  }
+
+  protected onSliderCompositionRequested(id: string): void {
+    if (!this.storiesLoaded) {
+      this.portfolio.getAllAdminStories().subscribe(s => { this.allStories.set(s); this.storiesLoaded = true; });
+    }
+    this.editingSliderId.set(id);
+  }
+
+  /** Échap ferme la modale de composition ouverte depuis le preview (cohérent
+   *  avec le form-side SlidersComponent). No-op si aucune modale ouverte. */
+  @HostListener('document:keydown.escape')
+  protected onEscapeKey(): void {
+    if (this.editingSliderId()) this.editingSliderId.set(null);
+  }
+
+  protected onSliderCompositionSave(storyIds: string[]): void {
+    const id = this.editingSliderId();
+    if (!id) return;
+    this.portfolio.replaceSliderStories(id, storyIds).subscribe({
+      next: () => { this.toast.success('Composition enregistrée.'); this.editingSliderId.set(null); this.refreshSliders(); },
+      error: () => this.toast.error('Erreur lors de l\'enregistrement de la composition.'),
     });
   }
 

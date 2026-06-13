@@ -1,15 +1,14 @@
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { A11yModule } from '@angular/cdk/a11y';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { NewsSlider, SliderZone, SLIDER_ZONES } from '../../../models/news-slider.model';
 import { Story } from '../../../models/story.model';
+import { SliderCompositionEditorComponent } from '../shared/slider-composition-editor.component';
 
 @Component({
   selector: 'app-admin-sliders',
   standalone: true,
-  imports: [CommonModule, FormsModule, A11yModule],
+  imports: [CommonModule, SliderCompositionEditorComponent],
   template: `
     <h2>Sliders d'actualités</h2>
 
@@ -50,41 +49,13 @@ import { Story } from '../../../models/story.model';
     </section>
 
     @if (compositionOpen() && editingSlider(); as s) {
-      <div class="composition-modal" role="dialog" aria-modal="true" aria-labelledby="composition-title"
-           cdkTrapFocus cdkTrapFocusAutoCapture>
-        <header>
-          <h3 id="composition-title">Composition de "{{ s.title }}"</h3>
-          <button type="button" (click)="closeComposition()" aria-label="Fermer">Fermer</button>
-        </header>
-        <div class="composition-grid">
-          <aside class="available">
-            <h4>Stories disponibles</h4>
-            <input type="text" [(ngModel)]="storyFilter" placeholder="Rechercher..." aria-label="Filtrer les stories" />
-            @for (story of filteredAvailable(); track story.id) {
-              <label class="story-option">
-                <input type="checkbox" [checked]="selectedToAdd().includes(story.id)" (change)="toggleSelect(story.id)" />
-                <span>{{ story.title }} <small>({{ story.ownerKind }} {{ story.ownerId }})</small></span>
-              </label>
-            }
-            <button type="button" (click)="addSelected()" [disabled]="selectedToAdd().length === 0">→ Ajouter</button>
-          </aside>
-          <aside class="composition">
-            <h4>Composition courante</h4>
-            @if (pendingStoryIds().length === 0) {
-              <p class="empty">Aucune story sélectionnée.</p>
-            }
-            @for (storyId of pendingStoryIds(); track storyId; let i = $index) {
-              <div class="comp-item">
-                <span>{{ storyTitle(storyId) }}</span>
-                <button type="button" (click)="moveUp(storyId)" [disabled]="i === 0">↑</button>
-                <button type="button" (click)="moveDown(storyId)" [disabled]="i === pendingStoryIds().length - 1">↓</button>
-                <button type="button" (click)="removeFromComposition(storyId)">← Retirer</button>
-              </div>
-            }
-            <button type="button" class="primary" (click)="saveComposition()">Enregistrer</button>
-          </aside>
-        </div>
-      </div>
+      <app-slider-composition-editor
+        [title]="s.title"
+        [sliderId]="s.id"
+        [storyIds]="s.storyIds"
+        [allStories]="allStories()"
+        (save)="onCompositionSave($event)"
+        (cancel)="closeComposition()" />
     }
   `,
   styles: [`
@@ -104,18 +75,6 @@ import { Story } from '../../../models/story.model';
     .title { font-weight: 600; flex: 1; }
     .zone { color: var(--color-mute); font-size: 0.85rem; }
     .count { color: var(--color-mute); font-size: 0.85rem; }
-
-    .composition-modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .composition-modal > * { width: 90%; max-width: 900px; max-height: 80vh; overflow: auto; background: var(--color-bg); padding: 24px; border: 1px solid var(--color-ink); }
-    .composition-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; }
-    .available, .composition { display: flex; flex-direction: column; gap: 8px; }
-    .story-option { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
-    .story-option small { color: var(--color-mute); }
-    .comp-item { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--color-line); }
-    .comp-item > span:first-child { flex: 1; }
   `],
 })
 export class SlidersComponent implements OnInit {
@@ -126,9 +85,6 @@ export class SlidersComponent implements OnInit {
   protected allStories = signal<Story[]>([]);
   protected compositionOpen = signal(false);
   protected editingSlider = signal<NewsSlider | null>(null);
-  protected pendingStoryIds = signal<string[]>([]);
-  protected selectedToAdd = signal<string[]>([]);
-  protected storyFilter = '';
   protected zones: SliderZone[] = SLIDER_ZONES;
 
   @HostListener('document:keydown.escape')
@@ -142,14 +98,6 @@ export class SlidersComponent implements OnInit {
       if (s.zoneKey && this.zones.includes(s.zoneKey)) map[s.zoneKey] = s;
     }
     return map;
-  });
-
-  protected filteredAvailable = computed(() => {
-    const pending = new Set(this.pendingStoryIds());
-    const q = this.storyFilter.toLowerCase();
-    return this.allStories()
-      .filter(s => !pending.has(s.id))
-      .filter(s => !q || s.title.toLowerCase().includes(q) || s.ownerId.toLowerCase().includes(q));
   });
 
   ngOnInit(): void {
@@ -168,8 +116,6 @@ export class SlidersComponent implements OnInit {
   openComposition(s: NewsSlider): void {
     this.triggerElement = document.activeElement as HTMLElement;
     this.editingSlider.set(s);
-    this.pendingStoryIds.set([...s.storyIds]);
-    this.selectedToAdd.set([]);
     this.compositionOpen.set(true);
   }
 
@@ -179,50 +125,13 @@ export class SlidersComponent implements OnInit {
     setTimeout(() => this.triggerElement?.focus(), 0);
   }
 
-  toggleSelect(id: string): void {
-    this.selectedToAdd.update(arr => arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id]);
-  }
-
-  addSelected(): void {
-    this.pendingStoryIds.update(arr => [...arr, ...this.selectedToAdd()]);
-    this.selectedToAdd.set([]);
-  }
-
-  removeFromComposition(id: string): void {
-    this.pendingStoryIds.update(arr => arr.filter(x => x !== id));
-  }
-
-  moveUp(id: string): void {
-    this.pendingStoryIds.update(arr => {
-      const i = arr.indexOf(id);
-      if (i <= 0) return arr;
-      const copy = [...arr];
-      [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
-      return copy;
-    });
-  }
-
-  moveDown(id: string): void {
-    this.pendingStoryIds.update(arr => {
-      const i = arr.indexOf(id);
-      if (i < 0 || i >= arr.length - 1) return arr;
-      const copy = [...arr];
-      [copy[i + 1], copy[i]] = [copy[i], copy[i + 1]];
-      return copy;
-    });
-  }
-
-  saveComposition(): void {
+  onCompositionSave(storyIds: string[]): void {
     const slider = this.editingSlider();
     if (!slider) return;
-    this.portfolio.replaceSliderStories(slider.id, this.pendingStoryIds()).subscribe(updated => {
+    this.portfolio.replaceSliderStories(slider.id, storyIds).subscribe(updated => {
       this.sliders.update(arr => arr.map(x => x.id === updated.id ? updated : x));
       this.closeComposition();
     });
-  }
-
-  storyTitle(id: string): string {
-    return this.allStories().find(s => s.id === id)?.title ?? id;
   }
 
   renameSlider(s: NewsSlider): void {
