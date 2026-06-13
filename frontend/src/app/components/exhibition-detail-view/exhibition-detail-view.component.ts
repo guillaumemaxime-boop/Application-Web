@@ -1,6 +1,7 @@
 import { Component, EventEmitter, inject, Input, NgZone, OnDestroy, Output, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { TagEditorComponent } from '../tag-editor/tag-editor.component';
 import { Exhibition } from '../../models/exhibition.model';
 import { DisplaySlide } from '../../models/display-slide.model';
 import { SiteContent } from '../../models/site-content.model';
@@ -17,7 +18,7 @@ export type EditableExhibitionField =
 @Component({
   selector: 'app-exhibition-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, ReorderableDirective, NgStyle, RouterLink],
+  imports: [CroppedImageCanvasComponent, ReorderableDirective, NgStyle, RouterLink, TagEditorComponent],
   template: `
     @if (item) {
       <article class="fade-in">
@@ -144,7 +145,14 @@ export type EditableExhibitionField =
               <p class="body">{{ item.description }}</p>
             }
 
-            @if (item.tags && item.tags.length > 0) {
+            @if (editable) {
+              <div class="tags-list editable">
+                <app-tag-editor
+                  [tags]="item.tags ?? []"
+                  [suggestions]="tagSuggestions"
+                  (tagsChange)="tagsChange.emit($event)" />
+              </div>
+            } @else if (item.tags && item.tags.length > 0) {
               <div class="tags-list">
                 @for (t of item.tags; track t) {
                   <a class="tag-chip" [routerLink]="['/creations']" [queryParams]="{ tags: t }">{{ t }}</a>
@@ -330,7 +338,9 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Input() displaySlides: DisplaySlide[] = [];
   @Input() content: SiteContent = {};
   @Input() editable = false;
+  @Input() tagSuggestions: string[] = [];
 
+  @Output() tagsChange = new EventEmitter<string[]>();
   @Output() viewerOpen = new EventEmitter<StoryItem[]>();
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();

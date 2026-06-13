@@ -45,6 +45,7 @@ type ExpoInternals = {
   onPreviewGalleryItemResize: (e: { index: number; colSpan: number; rowSpan: number }) => void;
   onPreviewTextFieldEdit: (e: { field: string; value: string }) => void;
   onPreviewDateFieldEdit: (e: { field: 'startDate' | 'endDate'; value: string }) => void;
+  onPreviewTagsChange: (tags: string[]) => void;
   history: { canUndo: () => boolean; canRedo: () => boolean; undo: () => boolean; redo: () => boolean; record: () => void; clear: () => void };
 };
 
@@ -894,6 +895,15 @@ describe('ExpositionsComponent', () => {
     cmp.onPreviewTextFieldEdit({ field: 'title', value: '' });
     expect(cmp.history.canUndo()).toBeFalse();
     expect(cmp.exhibitionForm.dirty).toBeFalse();
+  });
+
+  it('onPreviewTagsChange patche les tags, marque dirty et enregistre un snapshot undo', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onPreviewTagsChange(['design', 'moderne']);
+    expect(cmp.exhibitionForm.getRawValue().tags).toEqual(['design', 'moderne']);
+    expect(cmp.exhibitionForm.dirty).toBeTrue();
+    cmp.history.undo();
+    expect(cmp.exhibitionForm.getRawValue().tags).toEqual([]);
   });
 
 });

@@ -177,6 +177,8 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
             [gallery]="exhibitionGallery.asReadonly()"
             [story]="currentStories()[0] ?? null"
             [displaySlides]="previewDisplaySlides()"
+            [tagSuggestions]="allTags()"
+            (tagsChange)="onPreviewTagsChange($event)"
             (coverEdit)="onPreviewCoverEdit($event)"
             (galleryItemEdit)="onPreviewGalleryItemEdit($event)"
             (galleryReorder)="onPreviewGalleryReorder($event)"
@@ -326,6 +328,12 @@ export class ExpositionsComponent {
   protected readonly onPreviewGalleryAdd = this.galleryHandlers.onGalleryAdd;
   protected readonly onPreviewGalleryReorder = this.galleryHandlers.onGalleryReorder;
   protected readonly onPreviewGalleryItemResize = this.galleryHandlers.onGalleryItemResize;
+
+  protected onPreviewTagsChange(tags: string[]): void {
+    this.history.record();
+    this.exhibitionForm.patchValue({ tags });
+    this.exhibitionForm.markAsDirty();
+  }
 
   /**
    * Historique undo/redo des opérations WYSIWYG (snapshots form + galerie).
