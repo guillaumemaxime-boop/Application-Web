@@ -1,7 +1,7 @@
 # Tags éditables dans les previews WYSIWYG — Spec
 
 **Date** : 2026-06-13
-**Statut** : Validé — prêt pour writing-plans
+**Statut** : Implémenté — feat/wysiwyg-tags-preview
 **Sous-projet** : 4/6 du chantier « Améliorations WYSIWYG v2 » (découpage : voir spec `2026-06-10-wysiwyg-socle-factorise-design.md`, section Contexte). S'appuie sur les sous-projets 1 (socle), 2 (UX/a11y) et 3 (undo/redo), mergés sur main.
 
 ## Objectif

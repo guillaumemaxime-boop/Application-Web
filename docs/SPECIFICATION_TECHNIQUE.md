@@ -1,7 +1,7 @@
 # Spécification Technique — Milo GUILLAUME Design
 
-**Version** : 2.9.0
-**Date** : 11/06/2026
+**Version** : 2.10.0
+**Date** : 13/06/2026
 **Statut** : Vivant (mis à jour en continu)
 **Auteur** : Maxime Guillaume
 
@@ -817,6 +817,7 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - **`saveFurniture()`** : recharge l'item depuis la réponse serveur (au lieu de reset du form) — préserve la fiche après save.
 - **Garde-fou dirty** : sélection liste / « + Nouvelle » passent par des wrappers gardés (`confirmIfDirty`) ; les flux internes (reload post-save, suppression, `?new=1`, « Annuler ») restent sans garde. Liste latérale `inert` quand l'aperçu est en plein écran (`fullscreenChange`).
 - **Undo/redo** : champ `history` (`createUndoHistory`), snapshots avant chaque opération discrète (galerie via `onBeforeMutate`, éditions inline, crop cover avec garde no-op, `imagesChange`), vidé au changement d'item, conservé après save (un undo au-delà du save re-marque dirty).
+- **Tags in-preview** : `[tagSuggestions]="allTags()"` passé au preview ; `onPreviewTagsChange` → `history.record()` + `patchValue({ tags })` + `markAsDirty()` (édition des tags depuis la fiche sans repasser par le form).
 
 #### `ExpositionsComponent` (`/admin/expositions`) — WYSIWYG preview
 
@@ -826,6 +827,7 @@ Singleton (`providedIn: 'root'`). Gère le cycle de vie du token JWT.
 - **`saveExhibition()`** : recharge l'item depuis la réponse serveur (au lieu de reset du form) — préserve la fiche après save.
 - **Garde-fou dirty** : sélection liste / « + Nouvelle » passent par des wrappers gardés (`confirmIfDirty`) ; les flux internes (reload post-save, suppression, `?new=1`, « Annuler ») restent sans garde. Liste latérale `inert` quand l'aperçu est en plein écran (`fullscreenChange`).
 - **Undo/redo** : champ `history` (`createUndoHistory`), snapshots avant chaque opération discrète (galerie via `onBeforeMutate`, éditions inline, crop cover avec garde no-op, `imagesChange`), vidé au changement d'item, conservé après save (un undo au-delà du save re-marque dirty).
+- **Tags in-preview** : `[tagSuggestions]="allTags()"` passé au preview ; `onPreviewTagsChange` → `history.record()` + `patchValue({ tags })` + `markAsDirty()` (édition des tags depuis la fiche sans repasser par le form).
 
 ### 5.5 Composants partagés
 
@@ -844,6 +846,7 @@ Composant standalone purement présentation, partagé entre la page publique (`F
 | `displaySlides` | `DisplaySlide[]` | Slides à afficher dans le story-inline |
 | `content` | `SiteContent` | Contenu CMS (styles typographiques) |
 | `editable` | `boolean` | Active les overlays WYSIWYG (défaut `false`) |
+| `tagSuggestions` | `string[]` | Catalogue de tags pour l'autocomplétion (mode editable) |
 
 **Outputs :**
 
@@ -857,6 +860,7 @@ Composant standalone purement présentation, partagé entre la page publique (`F
 | `textFieldEdit` | `{ field: EditableTextField; value: string }` | Double-clic inline → valeur validée au blur |
 | `galleryItemResize` | `{ index, colSpan, rowSpan }` | Fin de resize WYSIWYG d'un item galerie |
 | `viewerOpen` | `StoryItem[]` | Ouverture du story-viewer plein écran |
+| `tagsChange` | `string[]` | Nouveau tableau de tags après ajout/retrait via `<app-tag-editor>` (mode editable) |
 
 **Type exporté :** `EditableTextField = 'title' | 'category' | 'material' | 'description' | 'shortDescription'`
 
@@ -903,6 +907,7 @@ Composant standalone purement présentation, partagé entre la page publique (`E
 | `displaySlides` | `DisplaySlide[]` | Slides à afficher dans le story-inline |
 | `content` | `SiteContent` | Contenu CMS (styles typographiques) |
 | `editable` | `boolean` | Active les overlays WYSIWYG (défaut `false`) |
+| `tagSuggestions` | `string[]` | Catalogue de tags pour l'autocomplétion (mode editable) |
 
 **Outputs :**
 
@@ -917,6 +922,7 @@ Composant standalone purement présentation, partagé entre la page publique (`E
 | `textFieldEdit` | `{ field: EditableExhibitionField; value: string }` | Double-clic inline → valeur validée au blur |
 | `dateFieldEdit` | `{ field: 'startDate' \| 'endDate'; value: string }` | Swap input date → valeur ISO au blur |
 | `viewerOpen` | `StoryItem[]` | Ouverture du story-viewer plein écran |
+| `tagsChange` | `string[]` | Nouveau tableau de tags après ajout/retrait via `<app-tag-editor>` (mode editable) |
 
 **Type exporté :** `EditableExhibitionField = 'title' | 'venue' | 'city' | 'country' | 'curator' | 'shortDescription' | 'description'`
 
@@ -1002,14 +1008,18 @@ Composant admin standalone qui wrap `<app-home-view>` en mode `editable=true`. R
 
 **Pattern de réactivité :** pas de tick intermédiaire (contrairement à FurniturePreviewComponent / ExhibitionPreviewComponent) — les Inputs sont des Signals consommés directement dans le template via `data()` et `content()`.
 
+#### `<app-tag-editor>` (`TagEditorComponent`)
+
+Chemin : `frontend/src/app/components/tag-editor/tag-editor.component.ts`
+
+Éditeur de tags présentation pur (combobox a11y : listbox, flèches ↑/↓, Enter/virgule pour ajouter, Backspace pour retirer le dernier, Échap, chips supprimables, autocomplétion filtrée). Aucune dépendance Router/HttpClient/forms (ADR-0018). Inputs : `tags`, `suggestions`, `disabled`, `placeholder`, `ariaLabel`. Output : `tagsChange` (tableau neuf immutable). Consommé par `<app-tag-input>` (wrapper CVA form-side) et par les vues détail mobilier/exposition en mode editable (édition des tags in-preview).
+
 #### `<app-tag-input>` (`TagInputComponent`)
 
 Chemin : `frontend/src/app/pages/admin/shared/tag-input.component.ts`
 
-- Implémente `ControlValueAccessor` — intégrable dans les formulaires `ReactiveFormsModule`.
-- Rendu en chips (tags actuels) + champ texte autocomplete.
-- WAI-ARIA combobox/listbox : `role="combobox"` sur l'input, `role="listbox"` sur la liste, `aria-activedescendant` sur l'option active.
-- Navigation clavier complète : flèches haut/bas pour parcourir les suggestions, Entrée pour valider, Échap pour fermer, virgule comme séparateur, Backspace sur champ vide pour retirer le dernier tag.
+- Wrapper `ControlValueAccessor` autour de `<app-tag-editor>` — toute la logique combobox/a11y vit dans `<app-tag-editor>` ; ce composant gère uniquement le contrat CVA (intégration `ReactiveFormsModule`).
+- `writeValue` alimente le signal interne `value` ; `onEditorChange` met à jour `value` + notifie le form via `onChangeFn`/`onTouchedFn`.
 - `@Input() suggestions: string[]` — liste d'autocomplétion injectée par le parent (ex. résultat de `GET /api/tags`).
 
 #### `<app-image-crop-picker>` (`ImageCropPickerComponent`)
@@ -1448,3 +1458,4 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 2.7.0 | 10/06/2026 | Socle factorisé previews WYSIWYG (chantier v2, sous-projet 1/6) : `<app-admin-preview-shell>` + composables `preview-page-helpers` · migration accueil/mobilier/expositions · whitelist focus généralisée à mobilier · previews adoptent `formTickSignal` |
 | 2.8.0 | 11/06/2026 | UX socle + a11y previews WYSIWYG (chantier v2, sous-projet 2/6) : garde-fou dirty (`confirmIfDirty` + pristine post-save) · Ctrl+S · roving tabindex APG · Échap plein écran + restitution focus · reset fullscreen hors preview · mode-bar/liste `inert` en fullscreen · annonces `LiveAnnouncer` (mode, fullscreen, galerie) · drag-reorder : classes + FLIP + reduced-motion · `formModalOpen` accueil |
 | 2.9.0 | 11/06/2026 | Undo/redo previews WYSIWYG (chantier v2, sous-projet 3/6) : `createUndoHistory` (snapshots form+galerie, limite 50) · option `onBeforeMutate` des composables · boutons ↶/↷ + Ctrl+Z/Ctrl+Y dans le shell (undo natif préservé dans les champs) · annonces SR « Action annulée/rétablie » · garde anti-bruit blur sans modification |
+| 2.10.0 | 13/06/2026 | Tags éditables in-preview (chantier v2, sous-projet 4/6) : extraction `<app-tag-editor>` pur (combobox partagé), `<app-tag-input>` devient wrapper CVA, édition des tags dans les previews mobilier/exposition avec autocomplétion + undo/redo |
