@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { SliderCompositionEditorComponent } from '../shared/slider-composition-editor.component';
 import { Story } from '../../../models/story.model';
 import { forkJoin } from 'rxjs';
@@ -359,6 +359,13 @@ export class AccueilComponent {
       this.portfolio.getAllAdminStories().subscribe(s => { this.allStories.set(s); this.storiesLoaded = true; });
     }
     this.editingSliderId.set(id);
+  }
+
+  /** Échap ferme la modale de composition ouverte depuis le preview (cohérent
+   *  avec le form-side SlidersComponent). No-op si aucune modale ouverte. */
+  @HostListener('document:keydown.escape')
+  protected onEscapeKey(): void {
+    if (this.editingSliderId()) this.editingSliderId.set(null);
   }
 
   protected onSliderCompositionSave(storyIds: string[]): void {

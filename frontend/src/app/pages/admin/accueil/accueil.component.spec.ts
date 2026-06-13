@@ -560,6 +560,22 @@ describe('AccueilComponent', () => {
     expect(cmp.editingSliderId()).toBeNull();
   });
 
+  it('Échap ferme la modale de composition ouverte depuis le preview', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as AccueilInternals;
+    cmp.editingSliderId.set('sl1');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(cmp.editingSliderId()).toBeNull();
+  });
+
   // ---- Tests Task 6bis.3 : crop card feed ----
 
   function setupWithFeed(httpMock: HttpTestingController): { fixture: any; cmp: AccueilInternals } {

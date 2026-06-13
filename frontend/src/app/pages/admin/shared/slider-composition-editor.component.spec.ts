@@ -121,6 +121,13 @@ describe('SliderCompositionEditorComponent', () => {
     expect(hint.textContent).toContain('slide');
   });
 
+  it('les boutons de réordonnancement ont un nom accessible (aria-label)', () => {
+    const up = pending()[0].querySelector('.comp-up') as HTMLButtonElement;
+    const down = pending()[0].querySelector('.comp-down') as HTMLButtonElement;
+    expect(up.getAttribute('aria-label')).toContain('Monter');
+    expect(down.getAttribute('aria-label')).toContain('Descendre');
+  });
+
   it('ne réinitialise PAS la composition quand storyIds change sans changement d\'id (modifs préservées)', () => {
     // l'utilisateur ajoute Story 2 à la compo
     const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;

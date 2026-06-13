@@ -43,8 +43,8 @@ import { Story } from '../../../models/story.model';
             @for (storyId of pendingStoryIds(); track storyId; let i = $index) {
               <div class="comp-item">
                 <span>{{ storyTitle(storyId) }}</span>
-                <button type="button" class="comp-up" (click)="moveUp(storyId)" [disabled]="i === 0">↑</button>
-                <button type="button" class="comp-down" (click)="moveDown(storyId)" [disabled]="i === pendingStoryIds().length - 1">↓</button>
+                <button type="button" class="comp-up" (click)="moveUp(storyId)" [disabled]="i === 0" aria-label="Monter la story dans l'ordre">↑</button>
+                <button type="button" class="comp-down" (click)="moveDown(storyId)" [disabled]="i === pendingStoryIds().length - 1" aria-label="Descendre la story dans l'ordre">↓</button>
                 <button type="button" class="comp-remove" (click)="removeFromComposition(storyId)">← Retirer</button>
               </div>
             }
