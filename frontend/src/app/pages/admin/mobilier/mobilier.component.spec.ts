@@ -46,6 +46,8 @@ type MobilierInternals = {
   onPreviewGalleryItemEdit: (e: { index: number; action: 'crop' | 'replace' | 'remove' }) => void;
   onPreviewGalleryReorder: (order: number[]) => void;
   onPreviewGalleryItemResize: (e: { index: number; colSpan: number; rowSpan: number }) => void;
+  onPreviewTagsChange: (tags: string[]) => void;
+  history: { undo: () => boolean; redo: () => boolean; canUndo: () => boolean; canRedo: () => boolean; record: () => void; clear: () => void };
 };
 
 describe('MobilierComponent', () => {
@@ -916,6 +918,15 @@ describe('MobilierComponent', () => {
     cmp.onPreviewTextFieldEdit({ field: 'title', value: '' });
     expect(cmp.history.canUndo()).toBeFalse();
     expect(cmp.furnitureForm.dirty).toBeFalse();
+  });
+
+  it('onPreviewTagsChange patche les tags, marque dirty et enregistre un snapshot undo', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onPreviewTagsChange(['bois', 'frene']);
+    expect(cmp.furnitureForm.getRawValue().tags).toEqual(['bois', 'frene']);
+    expect(cmp.furnitureForm.dirty).toBeTrue();
+    cmp.history.undo();
+    expect(cmp.furnitureForm.getRawValue().tags).toEqual([]);
   });
 
 });
