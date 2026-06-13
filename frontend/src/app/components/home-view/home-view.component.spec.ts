@@ -317,4 +317,59 @@ describe('HomeViewComponent', () => {
     const select = fixture.nativeElement.querySelector('.slider-zone-select') as HTMLSelectElement;
     expect(select.value).toBe('home-middle');
   });
+
+  // --- Tests TDD: insérer un slider désactivé dans une zone vide ---
+
+  it('zone vide editable avec disabledSliders : affiche un select.slider-insert-select avec option pour chaque slider désactivé', () => {
+    fixture.componentRef.setInput('data', mockData);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('sliders', []);
+    fixture.componentRef.setInput('disabledSliders', [{ id: 'sl9', title: 'Slider X' }]);
+    fixture.detectChanges();
+    const selects = fixture.nativeElement.querySelectorAll('select.slider-insert-select');
+    expect(selects.length).toBeGreaterThan(0);
+    const firstSelect = selects[0] as HTMLSelectElement;
+    const opt = firstSelect.querySelector('option[value="sl9"]');
+    expect(opt).toBeTruthy();
+    expect(opt!.textContent).toContain('Slider X');
+  });
+
+  it('zone vide editable sans disabledSliders : pas de select.slider-insert-select', () => {
+    fixture.componentRef.setInput('data', mockData);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('sliders', []);
+    fixture.componentRef.setInput('disabledSliders', []);
+    fixture.detectChanges();
+    const selects = fixture.nativeElement.querySelectorAll('select.slider-insert-select');
+    expect(selects.length).toBe(0);
+  });
+
+  it('choisir un slider désactivé dans home-top émet sliderAssign avec { id, zoneKey: "home-top" }', () => {
+    fixture.componentRef.setInput('data', mockData);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('sliders', []);
+    fixture.componentRef.setInput('disabledSliders', [{ id: 'sl9', title: 'Slider X' }]);
+    fixture.detectChanges();
+    let emitted: any = null;
+    fixture.componentInstance.sliderAssign.subscribe((v: any) => emitted = v);
+    const select = fixture.nativeElement.querySelector('select.slider-insert-select[aria-label*="home-top"]') as HTMLSelectElement;
+    expect(select).toBeTruthy();
+    select.value = 'sl9';
+    select.dispatchEvent(new Event('change'));
+    expect(emitted).toEqual({ id: 'sl9', zoneKey: 'home-top' });
+  });
+
+  it('choisir l\'option vide dans le select insert n\'émet pas sliderAssign', () => {
+    fixture.componentRef.setInput('data', mockData);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('sliders', []);
+    fixture.componentRef.setInput('disabledSliders', [{ id: 'sl9', title: 'Slider X' }]);
+    fixture.detectChanges();
+    let emitted: any = null;
+    fixture.componentInstance.sliderAssign.subscribe((v: any) => emitted = v);
+    const select = fixture.nativeElement.querySelector('select.slider-insert-select') as HTMLSelectElement;
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    expect(emitted).toBeNull();
+  });
 });

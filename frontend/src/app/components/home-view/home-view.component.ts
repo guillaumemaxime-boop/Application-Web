@@ -74,6 +74,13 @@ export type EditableHomeContentKey =
         }
       } @else if (editable) {
         <div class="slider-create-placeholder">
+          @if (disabledSliders.length > 0) {
+            <select class="slider-insert-select" aria-label="Insérer un slider existant dans home-top"
+                    (change)="onSliderInsertSelect('home-top', $event)">
+              <option value="" selected>Insérer un slider existant…</option>
+              @for (d of disabledSliders; track d.id) { <option [value]="d.id">{{ d.title }}</option> }
+            </select>
+          }
           <button type="button" class="slider-create-btn" (click)="sliderCreate.emit('home-top')">+ Créer un slider ici (home-top)</button>
         </div>
       }
@@ -101,6 +108,13 @@ export type EditableHomeContentKey =
         }
       } @else if (editable) {
         <div class="slider-create-placeholder">
+          @if (disabledSliders.length > 0) {
+            <select class="slider-insert-select" aria-label="Insérer un slider existant dans home-middle"
+                    (change)="onSliderInsertSelect('home-middle', $event)">
+              <option value="" selected>Insérer un slider existant…</option>
+              @for (d of disabledSliders; track d.id) { <option [value]="d.id">{{ d.title }}</option> }
+            </select>
+          }
           <button type="button" class="slider-create-btn" (click)="sliderCreate.emit('home-middle')">+ Créer un slider ici (home-middle)</button>
         </div>
       }
@@ -190,6 +204,13 @@ export type EditableHomeContentKey =
         }
       } @else if (editable) {
         <div class="slider-create-placeholder">
+          @if (disabledSliders.length > 0) {
+            <select class="slider-insert-select" aria-label="Insérer un slider existant dans home-bottom"
+                    (change)="onSliderInsertSelect('home-bottom', $event)">
+              <option value="" selected>Insérer un slider existant…</option>
+              @for (d of disabledSliders; track d.id) { <option [value]="d.id">{{ d.title }}</option> }
+            </select>
+          }
           <button type="button" class="slider-create-btn" (click)="sliderCreate.emit('home-bottom')">+ Créer un slider ici (home-bottom)</button>
         </div>
       }
@@ -247,6 +268,7 @@ export type EditableHomeContentKey =
     .slider-edit-bar button, .slider-zone-select { padding: 4px 8px; font-size: 0.8rem; background: var(--color-bg); border: 1px solid var(--color-line); cursor: pointer; }
     .slider-create-placeholder { padding: 16px; text-align: center; border: 1px dashed var(--color-line); margin: 12px 0; }
     .slider-create-btn { padding: 8px 16px; background: var(--color-bg); border: 1px solid var(--color-ink); cursor: pointer; }
+    .slider-insert-select { padding: 6px 10px; margin-right: 8px; font-size: 0.85rem; background: var(--color-bg); border: 1px solid var(--color-line); cursor: pointer; }
 
     .grid.editable { list-style: none; padding: 0; }
     .grid.editable > li.card { position: relative; }
@@ -281,6 +303,7 @@ export class HomeViewComponent {
   @Input({ required: true }) data: HomePageData | null = null;
   @Input() content: SiteContent = {};
   @Input() sliders: NewsSliderView[] = [];
+  @Input() disabledSliders: { id: string; title: string }[] = [];
   @Input() viewerQueue: StoryItem[] = [];
   @Input() editable = false;
   @Input() includedSlugs: Set<string> = new Set();
@@ -295,6 +318,7 @@ export class HomeViewComponent {
   @Output() sliderDelete = new EventEmitter<string>();
   @Output() sliderZoneChange = new EventEmitter<{ id: string; zoneKey: SliderZone | null }>();
   @Output() sliderCreate = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
+  @Output() sliderAssign = new EventEmitter<{ id: string; zoneKey: SliderZone }>();
   @Output() feedItemCropEdit = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
 
   protected editingKey: EditableHomeContentKey | null = null;
@@ -392,6 +416,11 @@ export class HomeViewComponent {
     const value = (ev.target as HTMLSelectElement).value;
     const zoneKey = value === '' ? null : (value as SliderZone);
     this.sliderZoneChange.emit({ id, zoneKey });
+  }
+
+  protected onSliderInsertSelect(zoneKey: SliderZone, ev: Event): void {
+    const id = (ev.target as HTMLSelectElement).value;
+    if (id) this.sliderAssign.emit({ id, zoneKey });
   }
 
   protected onSliderStoryOpen(story: SliderStoryRef): void {

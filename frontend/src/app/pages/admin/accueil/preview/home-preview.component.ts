@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, Signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, Signal, signal } from '@angular/core';
 import { HomePageData } from '../../../../models/home.model';
 import { SiteContent } from '../../../../models/site-content.model';
 import { NewsSliderView, SliderZone } from '../../../../models/news-slider.model';
@@ -13,6 +13,7 @@ import { EditableHomeContentKey, HomeViewComponent } from '../../../../component
       [data]="data()"
       [content]="content()"
       [sliders]="sliders()"
+      [disabledSliders]="disabledSliders()"
       [includedSlugs]="includedSlugs()"
       [editable]="true"
       (feedReorder)="onFeedReorder($event)"
@@ -23,6 +24,7 @@ import { EditableHomeContentKey, HomeViewComponent } from '../../../../component
       (sliderDelete)="sliderDelete.emit($event)"
       (sliderZoneChange)="sliderZoneChange.emit($event)"
       (sliderCreate)="sliderCreate.emit($event)"
+      (sliderAssign)="sliderAssign.emit($event)"
       (feedItemCropEdit)="onFeedItemCropEdit($event)" />
   `,
   styles: []
@@ -32,6 +34,7 @@ export class HomePreviewComponent {
   @Input({ required: true }) content!: Signal<SiteContent>;
   @Input({ required: true }) sliders!: Signal<NewsSliderView[]>;
   @Input({ required: true }) includedSlugs!: Signal<Set<string>>;
+  @Input() disabledSliders: Signal<{ id: string; title: string }[]> = signal([]).asReadonly();
 
   @Output() feedReorder = new EventEmitter<number[]>();
   @Output() feedItemToggleInclude = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string; included: boolean }>();
@@ -41,6 +44,7 @@ export class HomePreviewComponent {
   @Output() sliderDelete = new EventEmitter<string>();
   @Output() sliderZoneChange = new EventEmitter<{ id: string; zoneKey: SliderZone | null }>();
   @Output() sliderCreate = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
+  @Output() sliderAssign = new EventEmitter<{ id: string; zoneKey: SliderZone }>();
   @Output() feedItemCropEdit = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
 
   protected onFeedReorder(o: number[]): void { this.feedReorder.emit(o); }

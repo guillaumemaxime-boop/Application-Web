@@ -64,4 +64,21 @@ describe('HomePreviewComponent', () => {
     (fixture.componentInstance as any).onFeedItemCropEdit({ kind: 'furniture', slug: 'chaise' });
     expect(emitted).toEqual({ kind: 'furniture', slug: 'chaise' });
   });
+
+  // --- Tests TDD: relay disabledSliders + sliderAssign ---
+
+  it('accepte l\'input disabledSliders (Signal) sans erreur', () => {
+    setup({ feed: [] } as unknown as HomePageData);
+    const disabledSig = signal([{ id: 'sl9', title: 'Slider X' }]);
+    fixture.componentRef.setInput('disabledSliders', disabledSig.asReadonly());
+    expect(() => fixture.detectChanges()).not.toThrow();
+  });
+
+  it('reemet sliderAssign depuis home-view', () => {
+    setup({ feed: [] } as unknown as HomePageData);
+    let emitted: any = null;
+    fixture.componentInstance.sliderAssign.subscribe(e => emitted = e);
+    fixture.componentInstance.sliderAssign.emit({ id: 'sl9', zoneKey: 'home-top' });
+    expect(emitted).toEqual({ id: 'sl9', zoneKey: 'home-top' });
+  });
 });

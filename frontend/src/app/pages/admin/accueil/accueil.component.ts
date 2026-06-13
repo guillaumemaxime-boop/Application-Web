@@ -6,7 +6,7 @@ import { PortfolioService } from '../../../services/portfolio.service';
 import { AdminFeedEntry, HomePageData } from '../../../models/home.model';
 import { Crop } from '../../../models/crop.model';
 import { SiteContent } from '../../../models/site-content.model';
-import { NewsSliderView, SliderZone } from '../../../models/news-slider.model';
+import { NewsSlider, NewsSliderView, SliderZone } from '../../../models/news-slider.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { ToastService } from '../shared/toast.service';
 import { SlidersComponent } from '../sliders/sliders.component';
@@ -66,6 +66,7 @@ interface HomeAdminItem {
           [data]="homeData"
           [content]="content"
           [sliders]="sliders"
+          [disabledSliders]="disabledSliders"
           [includedSlugs]="includedSlugs"
           (feedReorder)="onPreviewFeedReorder($event)"
           (feedItemToggleInclude)="onPreviewFeedItemToggleInclude($event)"
@@ -74,6 +75,7 @@ interface HomeAdminItem {
           (sliderDelete)="onSliderDelete($event)"
           (sliderTitleEdit)="onSliderTitleEdit($event)"
           (sliderZoneChange)="onSliderZoneChange($event)"
+          (sliderAssign)="onSliderAssign($event)"
           (sliderCompositionRequested)="onSliderCompositionRequested($event)"
           (feedItemCropEdit)="onPreviewFeedItemCropEdit($event)" />
       </ng-template>
@@ -127,6 +129,10 @@ export class AccueilComponent {
   protected readonly homeData = signal<HomePageData | null>(null);
   protected readonly content = signal<SiteContent>({});
   protected readonly sliders = signal<NewsSliderView[]>([]);
+  protected readonly adminSliders = signal<NewsSlider[]>([]);
+  protected readonly disabledSliders = computed(() =>
+    this.adminSliders().filter(s => s.zoneKey === null).map(s => ({ id: s.id, title: s.title }))
+  );
 
   protected readonly cropEditOpen = signal(false);
   protected readonly cropEditItem = signal<{ kind: 'furniture' | 'exhibition'; slug: string; imageUrl: string; initialCrop: Crop | null } | null>(null);
@@ -184,6 +190,8 @@ export class AccueilComponent {
       this.content.set(content);
       this.sliders.set(sliders);
     });
+
+    this.portfolio.getAdminSliders().subscribe(s => this.adminSliders.set(s));
   }
 
   onFeedReorder(order: number[]): void {
@@ -289,6 +297,7 @@ export class AccueilComponent {
 
   private refreshSliders(): void {
     this.portfolio.getPublicSliders().subscribe(s => this.sliders.set(s));
+    this.portfolio.getAdminSliders().subscribe(s => this.adminSliders.set(s));
   }
 
   protected onSliderTitleEdit(e: { id: string; title: string }): void {
@@ -310,6 +319,19 @@ export class AccueilComponent {
     this.portfolio.updateSlider(e.id, { title: slider.title, zoneKey: e.zoneKey }).subscribe({
       next: () => { this.toast.success(e.zoneKey === null ? 'Slider désactivé.' : 'Zone du slider mise à jour.'); this.refreshSliders(); },
       error: () => this.toast.error('Erreur lors du changement de zone.'),
+    });
+  }
+
+  protected onSliderAssign(e: { id: string; zoneKey: SliderZone }): void {
+    const slider = this.adminSliders().find(s => s.id === e.id);
+    if (!slider) return;
+    if (this.sliders().some(s => s.zoneKey === e.zoneKey)) {
+      this.toast.error('Cette zone est déjà occupée par un autre slider.');
+      return;
+    }
+    this.portfolio.updateSlider(e.id, { title: slider.title, zoneKey: e.zoneKey }).subscribe({
+      next: () => { this.toast.success('Slider inséré dans la zone.'); this.refreshSliders(); },
+      error: () => this.toast.error('Erreur lors de l\'insertion du slider.'),
     });
   }
 
