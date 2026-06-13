@@ -28,6 +28,8 @@ import { AdminPreviewShellComponent, ShellPreviewDirective } from './admin-previ
       (redoRequested)="redoCount = redoCount + 1">
       <p class="form-marker">FORM</p>
       <input class="form-input" />
+      <textarea class="form-textarea"></textarea>
+      <div class="form-ce" contenteditable="true"><span class="ce-child" tabindex="0">x</span></div>
       <ng-template shellPreview><p class="preview-marker">PREVIEW</p></ng-template>
     </app-admin-preview-shell>
   `,
@@ -404,6 +406,25 @@ describe('AdminPreviewShellComponent', () => {
     const fixture = create();
     const input: HTMLInputElement = fixture.nativeElement.querySelector('.form-input');
     input.focus();
+    const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.undoCount).toBe(0);
+    expect(ev.defaultPrevented).toBeFalse();
+  });
+
+  it('Ctrl+Z avec focus dans un textarea : non intercepté (undo natif)', () => {
+    const fixture = create();
+    const textarea: HTMLTextAreaElement = fixture.nativeElement.querySelector('.form-textarea');
+    textarea.focus();
+    const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+    document.dispatchEvent(ev);
+    expect(fixture.componentInstance.undoCount).toBe(0);
+    expect(ev.defaultPrevented).toBeFalse();
+  });
+
+  it('Ctrl+Z dans un enfant de [contenteditable] : non intercepté (héritage isContentEditable)', () => {
+    const fixture = create();
+    (fixture.nativeElement.querySelector('.ce-child') as HTMLElement).focus();
     const ev = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
     document.dispatchEvent(ev);
     expect(fixture.componentInstance.undoCount).toBe(0);
