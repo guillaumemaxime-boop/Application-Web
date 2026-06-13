@@ -344,7 +344,7 @@ describe('MobilierComponent', () => {
     httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
     expect(cmp.currentStories().length).toBe(2);
     expect(cmp.currentStories()[0].id).toBe('st-1');
-    // Aucune story pré-sélectionnée
+    // editingStoryId reste null (la sélection preview passe par activeStoryId, non editingStoryId)
     expect(cmp.editingStoryId()).toBeNull();
   });
 
@@ -397,6 +397,7 @@ describe('MobilierComponent', () => {
     httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/admin/stories').flush({
       id: 'st-2', ownerKind: 'furniture', ownerId: 'f1', title: 'Ma nouvelle story', coverImage: '/c.jpg', slug: 'ma-nouvelle-story', position: 1, createdAt: '',
     });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-2/slides').flush([]);
     expect(cmp.currentStories().length).toBe(2);
     expect(cmp.editingStoryId()).toBe('st-2');
     expect(toast.success).toHaveBeenCalled();
@@ -974,6 +975,29 @@ describe('MobilierComponent', () => {
     cmp.currentStories.set([{ id: 'a', ownerKind: 'furniture', ownerId: 'f1', title: 'A', coverImage: 'c.jpg', coverCrop: null, slug: 'a', position: 0, createdAt: '' }]);
     cmp.onPreviewStoryRename({ id: 'a', title: 'Nouveau' });
     httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a').flush({ id: 'a', ownerKind: 'furniture', ownerId: 'f1', title: 'Nouveau', coverImage: 'c.jpg', coverCrop: null, slug: 'a', position: 0, createdAt: '' });
+  });
+
+  it('créer une story la rend active dans le preview', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial([
+      { id: 'f1', slug: 'chair', title: 'Chair', category: 'C', year: 2024, coverImage: '/c.jpg', dimensions: [], gallery: [], featured: false },
+    ]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.currentStories.set([{ id: 'old', ownerKind: 'furniture', ownerId: 'f1', title: 'Ancienne', coverImage: '', coverCrop: null, slug: 'old', position: 0, createdAt: '' }]);
+    cmp.editingFurnitureId.set('f1');
+    cmp.editingFurnitureSlug.set('chair');
+    cmp.activeStoryId.set('old');
+    spyOn(window, 'prompt').and.returnValue('Ma nouvelle story');
+    cmp.onPreviewStoryCreate();
+    const created = { id: 'new', ownerKind: 'furniture', ownerId: 'f1', title: 'Ma nouvelle story', coverImage: '', coverCrop: null, slug: 'new', position: 1, createdAt: '' };
+    httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/admin/stories').flush(created);
+    // la nouvelle story devient active
+    expect(cmp.activeStoryId()).toBe('new');
+    // ses slides sont (re)chargés
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/new/slides').flush([]);
   });
 
 });

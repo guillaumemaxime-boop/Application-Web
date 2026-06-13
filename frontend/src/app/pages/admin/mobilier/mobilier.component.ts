@@ -645,6 +645,8 @@ export class MobilierComponent {
       next: s => {
         this.currentStories.update(arr => [...arr, s]);
         this.editingStoryId.set(s.id);
+        this.activeStoryId.set(s.id);
+        this.loadActiveStorySlides(s.id);
         this.toast.success('Story créée.');
       },
       error: () => this.toast.error('Erreur lors de la création de la story.'),
