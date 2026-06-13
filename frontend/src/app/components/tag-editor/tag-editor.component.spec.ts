@@ -132,4 +132,32 @@ describe('TagEditorComponent', () => {
     expect(inputEl().disabled).toBeTrue();
     expect((chips()[0].querySelector('.chip-remove') as HTMLButtonElement).disabled).toBeTrue();
   });
+
+  it('Échap ferme le dropdown', () => {
+    inputEl().dispatchEvent(new Event('focus'));
+    type('b');
+    expect(inputEl().getAttribute('aria-expanded')).toBe('true');
+    key('Escape');
+    expect(inputEl().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('ArrowUp ne descend pas sous l\'index 0', () => {
+    inputEl().dispatchEvent(new Event('focus'));
+    type('b');                 // bois, boheme
+    key('ArrowDown');          // index 0
+    key('ArrowUp');            // reste à 0 (pas -1)
+    key('Enter');
+    expect(host.last && host.last.length).toBe(1);
+    expect(['bois', 'boheme']).toContain(host.last![0]);
+  });
+
+  it('ArrowDown est borné à la dernière suggestion', () => {
+    inputEl().dispatchEvent(new Event('focus'));
+    type('b');                 // 2 suggestions
+    key('ArrowDown');
+    key('ArrowDown');
+    key('ArrowDown');          // dépasse → clampé sur la dernière
+    key('Enter');
+    expect(host.last).toEqual(['boheme']);
+  });
 });
