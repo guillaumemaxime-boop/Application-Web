@@ -52,6 +52,7 @@ describe('SliderCompositionEditorComponent', () => {
   it('ajout : sélectionner puis Ajouter déplace la story vers la composition', () => {
     const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
     opt2.click();
+    fixture.detectChanges();        // ← flush le binding [disabled] avant de cliquer Ajouter
     (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(pending().map(e => e.textContent).join()).toContain('Story 2');
@@ -67,6 +68,7 @@ describe('SliderCompositionEditorComponent', () => {
   it('save émet la liste ordonnée courante', () => {
     const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
     opt2.click();
+    fixture.detectChanges();        // ← flush le binding [disabled] avant de cliquer Ajouter
     (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
     fixture.detectChanges();
     (fixture.nativeElement.querySelector('.comp-save') as HTMLButtonElement).click();
@@ -81,6 +83,7 @@ describe('SliderCompositionEditorComponent', () => {
   it('moveUp réordonne la composition', () => {
     const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
     opt2.click();
+    fixture.detectChanges();        // ← flush le binding [disabled] avant de cliquer Ajouter
     (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
     fixture.detectChanges();
     const up = pending()[1].querySelector('.comp-up') as HTMLButtonElement;

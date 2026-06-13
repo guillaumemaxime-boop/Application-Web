@@ -32,7 +32,7 @@ import { Story } from '../../../models/story.model';
                 <span>{{ story.title }} <small>({{ story.ownerKind }} {{ story.ownerId }})</small></span>
               </label>
             }
-            <button type="button" class="add-selected" (click)="addSelected()">→ Ajouter</button>
+            <button type="button" class="add-selected" (click)="addSelected()" [disabled]="selectedToAdd().length === 0">→ Ajouter</button>
           </aside>
           <aside class="composition">
             <h4>Composition courante</h4>

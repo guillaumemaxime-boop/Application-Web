@@ -182,6 +182,10 @@ describe('SlidersComponent', () => {
   });
 
   describe('Composition', () => {
+    // La logique de composition (toggle/add/remove/move/filter/storyTitle) est
+    // désormais dans <app-slider-composition-editor> et couverte par son spec
+    // (slider-composition-editor.component.spec.ts). Ici on ne teste que le
+    // point d'intégration conservé par SlidersComponent.
     beforeEach(() => {
       component['sliders'].set([SLIDER_FIXTURE]);
       fixture.detectChanges();
@@ -189,89 +193,21 @@ describe('SlidersComponent', () => {
       fixture.detectChanges();
     });
 
-    it('toggleSelect ajoute un id à selectedToAdd', () => {
-      component.toggleSelect('st-1');
-      expect(component['selectedToAdd']()).toContain('st-1');
+    it('ouvre l\'éditeur de composition extrait', () => {
+      expect(fixture.nativeElement.querySelector('app-slider-composition-editor')).toBeTruthy();
     });
 
-    it('toggleSelect retire un id déjà présent', () => {
-      component.toggleSelect('st-1');
-      component.toggleSelect('st-1');
-      expect(component['selectedToAdd']()).not.toContain('st-1');
-    });
-
-    it('addSelected déplace les sélectionnés vers pendingStoryIds', () => {
-      component.toggleSelect('st-1');
-      component.addSelected();
-      expect(component['pendingStoryIds']()).toContain('st-1');
-      expect(component['selectedToAdd']().length).toBe(0);
-    });
-
-    it('removeFromComposition retire un id de pendingStoryIds', () => {
-      component['pendingStoryIds'].set(['st-1', 'st-2']);
-      component.removeFromComposition('st-1');
-      expect(component['pendingStoryIds']()).toEqual(['st-2']);
-    });
-
-    it('moveUp échange les positions', () => {
-      component['pendingStoryIds'].set(['a', 'b', 'c']);
-      component.moveUp('b');
-      expect(component['pendingStoryIds']()).toEqual(['b', 'a', 'c']);
-    });
-
-    it('moveUp au premier index est sans effet', () => {
-      component['pendingStoryIds'].set(['a', 'b']);
-      component.moveUp('a');
-      expect(component['pendingStoryIds']()).toEqual(['a', 'b']);
-    });
-
-    it('moveDown échange les positions', () => {
-      component['pendingStoryIds'].set(['a', 'b', 'c']);
-      component.moveDown('b');
-      expect(component['pendingStoryIds']()).toEqual(['a', 'c', 'b']);
-    });
-
-    it('moveDown au dernier index est sans effet', () => {
-      component['pendingStoryIds'].set(['a', 'b']);
-      component.moveDown('b');
-      expect(component['pendingStoryIds']()).toEqual(['a', 'b']);
-    });
-
-    it('saveComposition PUT et ferme la modale', () => {
-      component['pendingStoryIds'].set(['st-1']);
-      component.saveComposition();
+    it('onCompositionSave PUT la composition et ferme la modale', () => {
+      component.onCompositionSave(['st-1']);
       const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/sliders/slider-1/stories');
       req.flush({ ...SLIDER_FIXTURE, storyIds: ['st-1'] });
       expect(component['compositionOpen']()).toBeFalse();
     });
 
-    it('saveComposition est no-op si editingSlider est null', () => {
+    it('onCompositionSave est no-op si editingSlider est null', () => {
       component['editingSlider'].set(null);
-      component.saveComposition();
+      component.onCompositionSave(['st-1']);
       httpMock.expectNone(r => r.method === 'PUT' && r.url.includes('/stories'));
-    });
-
-    it('storyTitle retourne le titre de la story', () => {
-      component['allStories'].set([
-        { id: 'st-1', title: 'Mon titre', ownerKind: 'furniture', ownerId: 'f-1', coverImage: '', slug: 's', position: 0, createdAt: '' },
-      ]);
-      expect(component.storyTitle('st-1')).toBe('Mon titre');
-    });
-
-    it('storyTitle retourne l\'id si la story est inconnue', () => {
-      component['allStories'].set([]);
-      expect(component.storyTitle('inconnu')).toBe('inconnu');
-    });
-
-    it('filteredAvailable filtre par storyFilter', () => {
-      component['allStories'].set([
-        { id: 'st-1', title: 'Onde', ownerKind: 'furniture', ownerId: 'f-1', coverImage: '', slug: 's1', position: 0, createdAt: '' },
-        { id: 'st-2', title: 'Salon', ownerKind: 'exhibition', ownerId: 'e-1', coverImage: '', slug: 's2', position: 0, createdAt: '' },
-      ]);
-      component['storyFilter'] = 'onde';
-      fixture.detectChanges();
-      expect(component['filteredAvailable']().length).toBe(1);
-      expect(component['filteredAvailable']()[0].id).toBe('st-1');
     });
   });
 });
