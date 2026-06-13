@@ -10,6 +10,8 @@ import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-im
 import { ReorderableDirective } from '../../directives/reorderable.directive';
 import { StoryItem } from '../story-viewer/story-viewer.component';
 import { roleStyle } from '../../utils/title-style';
+import { StoryManagerBarComponent } from '../story-manager-bar/story-manager-bar.component';
+import { StoryInlineComponent } from '../story-inline/story-inline.component';
 
 export type EditableExhibitionField =
   | 'title' | 'venue' | 'city' | 'country'
@@ -18,7 +20,7 @@ export type EditableExhibitionField =
 @Component({
   selector: 'app-exhibition-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, ReorderableDirective, NgStyle, RouterLink, TagEditorComponent],
+  imports: [CroppedImageCanvasComponent, ReorderableDirective, NgStyle, RouterLink, TagEditorComponent, StoryManagerBarComponent, StoryInlineComponent],
   template: `
     @if (item) {
       <article class="fade-in">
@@ -218,12 +220,27 @@ export type EditableExhibitionField =
           </section>
         }
 
-        @if (displaySlides.length > 0 && item.showStoryButton) {
-          <div class="container narrow viewer-link-wrap">
-            <button type="button" class="viewer-link" aria-label="Voir la story en plein écran" (click)="onViewerOpen()">
-              Voir la story →
-            </button>
-          </div>
+        @if (editable) {
+          <section class="section story-admin">
+            <div class="container narrow">
+              <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
+              <app-story-manager-bar
+                [stories]="stories"
+                [activeStoryId]="activeStoryId"
+                [editable]="true"
+                (select)="storySelect.emit($event)"
+                (create)="storyCreate.emit()"
+                (rename)="storyRename.emit($event)"
+                (delete)="storyDelete.emit($event)"
+                (move)="storyMove.emit($event)"
+                (coverEdit)="storyCoverEdit.emit($event)"
+                (slidesEdit)="storySlidesEdit.emit($event)"
+                (viewerPreview)="onViewerOpen()" />
+            </div>
+            @if (displaySlides.length > 0) {
+              <app-story-inline [slides]="displaySlides"></app-story-inline>
+            }
+          </section>
         }
       </article>
     }
@@ -260,6 +277,8 @@ export type EditableExhibitionField =
     .viewer-link-wrap { padding: 32px 0 80px; text-align: center; }
     .viewer-link { background: transparent; border: 1px solid var(--color-ink); padding: 12px 24px; color: var(--color-ink); cursor: pointer; font-family: inherit; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; }
     .viewer-link:hover { background: var(--color-ink); color: var(--color-bg); }
+    .story-admin { padding: 48px 0; border-top: 1px dashed var(--color-line); }
+    .story-admin-badge { margin: 0 0 12px; font-size: 0.78rem; color: var(--color-mute); font-style: italic; }
 
     .editable .hero-bg { cursor: pointer; outline: 1px dashed rgba(255,255,255,0.25); outline-offset: -2px; }
     .hero-bg .edit-overlay {
@@ -336,6 +355,8 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Input({ required: true }) item: Exhibition | null = null;
   @Input() story: Story | null = null;
   @Input() displaySlides: DisplaySlide[] = [];
+  @Input() stories: Story[] = [];
+  @Input() activeStoryId: string | null = null;
   @Input() content: SiteContent = {};
   @Input() editable = false;
   @Input() tagSuggestions: string[] = [];
@@ -350,6 +371,13 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Output() textFieldClick = new EventEmitter<EditableExhibitionField | 'startDate' | 'endDate'>();
   @Output() textFieldEdit = new EventEmitter<{ field: EditableExhibitionField; value: string }>();
   @Output() dateFieldEdit = new EventEmitter<{ field: 'startDate' | 'endDate'; value: string }>();
+  @Output() storySelect = new EventEmitter<string>();
+  @Output() storyCreate = new EventEmitter<void>();
+  @Output() storyRename = new EventEmitter<{ id: string; title: string }>();
+  @Output() storyDelete = new EventEmitter<string>();
+  @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
+  @Output() storyCoverEdit = new EventEmitter<string>();
+  @Output() storySlidesEdit = new EventEmitter<string>();
 
   protected editingField: EditableExhibitionField | null = null;
   protected editingDateField: 'startDate' | 'endDate' | null = null;

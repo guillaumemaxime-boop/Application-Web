@@ -87,31 +87,22 @@ describe('ExhibitionDetailViewComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.gallery figure').length).toBe(2);
   });
 
-  it('rend le bouton viewer quand displaySlides + showStoryButton', () => {
+  it('mode public ne rend pas de story (pas de bouton viewer)', () => {
     const e = { ...mockExhibition, showStoryButton: true };
     fixture.componentRef.setInput('item', e);
     fixture.componentRef.setInput('displaySlides', [{ kind: 'image' } as unknown as DisplaySlide]);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.viewer-link')).toBeTruthy();
-  });
-
-  it('ne rend pas le bouton viewer si showStoryButton=false', () => {
-    const e = { ...mockExhibition, showStoryButton: false };
-    fixture.componentRef.setInput('item', e);
-    fixture.componentRef.setInput('displaySlides', [{ kind: 'image' } as unknown as DisplaySlide]);
+    fixture.componentRef.setInput('editable', false);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.viewer-link')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeNull();
   });
 
-  it('emet viewerOpen au clic sur le bouton', () => {
-    const e = { ...mockExhibition, showStoryButton: true };
-    fixture.componentRef.setInput('item', e);
-    fixture.componentRef.setInput('displaySlides', [{ kind: 'image' } as unknown as DisplaySlide]);
+  it('mode editable rend le bloc d\'auteur (badge + story-manager-bar)', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
     fixture.detectChanges();
-    let emitted = false;
-    fixture.componentInstance.viewerOpen.subscribe(() => emitted = true);
-    (fixture.nativeElement.querySelector('.viewer-link') as HTMLButtonElement).click();
-    expect(emitted).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.story-admin-badge')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-story-manager-bar')).toBeTruthy();
   });
 
   // --- Tests Task 3 (9 tests) ---
