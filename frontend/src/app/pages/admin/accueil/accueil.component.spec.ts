@@ -26,7 +26,7 @@ type AccueilInternals = {
   onSliderCreate: (zone: 'home-top' | 'home-middle' | 'home-bottom') => void;
   onSliderDelete: (id: string) => void;
   onSliderTitleEdit: (e: { id: string; title: string }) => void;
-  onSliderZoneChange: (e: { id: string; zoneKey: 'home-top' | 'home-middle' | 'home-bottom' }) => void;
+  onSliderZoneChange: (e: { id: string; zoneKey: 'home-top' | 'home-middle' | 'home-bottom' | null }) => void;
   onSliderCompositionRequested: (id: string) => void;
   onSliderCompositionSave: (storyIds: string[]) => void;
   onPreviewFeedReorder: (order: number[]) => void;
@@ -615,6 +615,24 @@ describe('AccueilComponent', () => {
     cmp.onPreviewFeedItemCropEdit({ kind: 'furniture', slug: 'absent' });
     expect(cmp.cropEditOpen()).toBeFalse();
     expect(cmp.cropEditItem()).toBeNull();
+  });
+
+  it('onSliderZoneChange vers Désactivé (null) appelle updateSlider avec zoneKey null sans garde d\'occupation', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.sliders.set([{ id: 'sl1', slug: 'a', title: 'A', zoneKey: 'home-top', stories: [] }]);
+    cmp.onSliderZoneChange({ id: 'sl1', zoneKey: null });
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/sliders/sl1');
+    expect(req.request.body).toEqual({ title: 'A', zoneKey: null });
+    req.flush({ id: 'sl1', slug: 'a', title: 'A', zoneKey: null, storyIds: [] });
+    httpMock.expectOne('/api/sliders').flush([]);
   });
 
   it('onPreviewFeedReorder ne supprime pas les items exclus du homeItems', () => {

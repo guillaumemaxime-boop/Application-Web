@@ -284,4 +284,28 @@ describe('HomeViewComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.crop-btn')).toBeNull();
   });
+
+  it('le sélecteur de zone propose une option Désactivé (valeur vide)', () => {
+    fixture.componentRef.setInput('data', mockData);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('sliders', [{ id: 'sl1', slug: 'a', title: 'Actus', zoneKey: 'home-top', stories: [] }]);
+    fixture.detectChanges();
+    const options = Array.from(fixture.nativeElement.querySelectorAll('.slider-zone-select option')) as HTMLOptionElement[];
+    const disabledOpt = options.find(o => o.value === '');
+    expect(disabledOpt).toBeTruthy();
+    expect(disabledOpt!.textContent).toContain('ésactiv');   // « Désactivé »
+  });
+
+  it('choisir Désactivé émet sliderZoneChange avec zoneKey null', () => {
+    fixture.componentRef.setInput('data', mockData);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('sliders', [{ id: 'sl1', slug: 'a', title: 'Actus', zoneKey: 'home-top', stories: [] }]);
+    fixture.detectChanges();
+    let emitted: { id: string; zoneKey: string | null } | null = null;
+    fixture.componentInstance.sliderZoneChange.subscribe((v: any) => emitted = v);
+    const select = fixture.nativeElement.querySelector('.slider-zone-select') as HTMLSelectElement;
+    select.value = '';
+    select.dispatchEvent(new Event('change'));
+    expect(emitted as any).toEqual({ id: 'sl1', zoneKey: null });
+  });
 });

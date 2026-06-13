@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, Signal } from '@angular/core';
 import { HomePageData } from '../../../../models/home.model';
 import { SiteContent } from '../../../../models/site-content.model';
-import { NewsSliderView } from '../../../../models/news-slider.model';
+import { NewsSliderView, SliderZone } from '../../../../models/news-slider.model';
 import { EditableHomeContentKey, HomeViewComponent } from '../../../../components/home-view/home-view.component';
 
 @Component({
@@ -39,7 +39,7 @@ export class HomePreviewComponent {
   @Output() sliderTitleEdit = new EventEmitter<{ id: string; title: string }>();
   @Output() sliderCompositionRequested = new EventEmitter<string>();
   @Output() sliderDelete = new EventEmitter<string>();
-  @Output() sliderZoneChange = new EventEmitter<{ id: string; zoneKey: 'home-top' | 'home-middle' | 'home-bottom' }>();
+  @Output() sliderZoneChange = new EventEmitter<{ id: string; zoneKey: SliderZone | null }>();
   @Output() sliderCreate = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
   @Output() feedItemCropEdit = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
 

@@ -6,7 +6,7 @@ import { PortfolioService } from '../../../services/portfolio.service';
 import { AdminFeedEntry, HomePageData } from '../../../models/home.model';
 import { Crop } from '../../../models/crop.model';
 import { SiteContent } from '../../../models/site-content.model';
-import { NewsSliderView } from '../../../models/news-slider.model';
+import { NewsSliderView, SliderZone } from '../../../models/news-slider.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { ToastService } from '../shared/toast.service';
 import { SlidersComponent } from '../sliders/sliders.component';
@@ -300,13 +300,15 @@ export class AccueilComponent {
     });
   }
 
-  protected onSliderZoneChange(e: { id: string; zoneKey: 'home-top' | 'home-middle' | 'home-bottom' }): void {
+  protected onSliderZoneChange(e: { id: string; zoneKey: SliderZone | null }): void {
     const slider = this.sliders().find(s => s.id === e.id);
     if (!slider) return;
-    const occupied = this.sliders().some(s => s.id !== e.id && s.zoneKey === e.zoneKey);
-    if (occupied) { this.toast.error('Cette zone est déjà occupée par un autre slider.'); return; }
+    if (e.zoneKey !== null && this.sliders().some(s => s.id !== e.id && s.zoneKey === e.zoneKey)) {
+      this.toast.error('Cette zone est déjà occupée par un autre slider.');
+      return;
+    }
     this.portfolio.updateSlider(e.id, { title: slider.title, zoneKey: e.zoneKey }).subscribe({
-      next: () => { this.toast.success('Zone du slider mise à jour.'); this.refreshSliders(); },
+      next: () => { this.toast.success(e.zoneKey === null ? 'Slider désactivé.' : 'Zone du slider mise à jour.'); this.refreshSliders(); },
       error: () => this.toast.error('Erreur lors du changement de zone.'),
     });
   }

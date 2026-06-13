@@ -6,7 +6,7 @@ import { SiteContent } from '../../models/site-content.model';
 import { roleStyle } from '../../utils/title-style';
 import { NewsSliderComponent } from '../news-slider/news-slider.component';
 import { StoryViewerComponent, StoryItem } from '../story-viewer/story-viewer.component';
-import { NewsSliderView, SLIDER_ZONES, SliderStoryRef } from '../../models/news-slider.model';
+import { NewsSliderView, SLIDER_ZONES, SliderStoryRef, SliderZone } from '../../models/news-slider.model';
 import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
 
@@ -60,7 +60,8 @@ export type EditableHomeContentKey =
                     (blur)="onSliderTitleBlur(s.id, $event)">{{ s.title }}</span>
               <button type="button" class="slider-compose-btn" (click)="sliderCompositionRequested.emit(s.id)">Composer</button>
               <select class="slider-zone-select" aria-label="Zone du slider"
-                      [value]="s.zoneKey" (change)="onSliderZoneSelect(s.id, $event)">
+                      [value]="s.zoneKey ?? ''" (change)="onSliderZoneSelect(s.id, $event)">
+                <option value="">Désactivé (hors accueil)</option>
                 @for (z of editableZones; track z) { <option [value]="z">{{ z }}</option> }
               </select>
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
@@ -86,7 +87,8 @@ export type EditableHomeContentKey =
                     (blur)="onSliderTitleBlur(s.id, $event)">{{ s.title }}</span>
               <button type="button" class="slider-compose-btn" (click)="sliderCompositionRequested.emit(s.id)">Composer</button>
               <select class="slider-zone-select" aria-label="Zone du slider"
-                      [value]="s.zoneKey" (change)="onSliderZoneSelect(s.id, $event)">
+                      [value]="s.zoneKey ?? ''" (change)="onSliderZoneSelect(s.id, $event)">
+                <option value="">Désactivé (hors accueil)</option>
                 @for (z of editableZones; track z) { <option [value]="z">{{ z }}</option> }
               </select>
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
@@ -174,7 +176,8 @@ export type EditableHomeContentKey =
                     (blur)="onSliderTitleBlur(s.id, $event)">{{ s.title }}</span>
               <button type="button" class="slider-compose-btn" (click)="sliderCompositionRequested.emit(s.id)">Composer</button>
               <select class="slider-zone-select" aria-label="Zone du slider"
-                      [value]="s.zoneKey" (change)="onSliderZoneSelect(s.id, $event)">
+                      [value]="s.zoneKey ?? ''" (change)="onSliderZoneSelect(s.id, $event)">
+                <option value="">Désactivé (hors accueil)</option>
                 @for (z of editableZones; track z) { <option [value]="z">{{ z }}</option> }
               </select>
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
@@ -290,7 +293,7 @@ export class HomeViewComponent {
   @Output() sliderTitleEdit = new EventEmitter<{ id: string; title: string }>();
   @Output() sliderCompositionRequested = new EventEmitter<string>();
   @Output() sliderDelete = new EventEmitter<string>();
-  @Output() sliderZoneChange = new EventEmitter<{ id: string; zoneKey: 'home-top' | 'home-middle' | 'home-bottom' }>();
+  @Output() sliderZoneChange = new EventEmitter<{ id: string; zoneKey: SliderZone | null }>();
   @Output() sliderCreate = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
   @Output() feedItemCropEdit = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
 
@@ -386,7 +389,8 @@ export class HomeViewComponent {
   }
 
   protected onSliderZoneSelect(id: string, ev: Event): void {
-    const zoneKey = (ev.target as HTMLSelectElement).value as 'home-top' | 'home-middle' | 'home-bottom';
+    const value = (ev.target as HTMLSelectElement).value;
+    const zoneKey = value === '' ? null : (value as SliderZone);
     this.sliderZoneChange.emit({ id, zoneKey });
   }
 

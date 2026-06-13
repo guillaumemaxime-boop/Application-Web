@@ -41,7 +41,7 @@ Pour chaque zone de `SLIDER_ZONES` (`home-top`/`home-middle`/`home-bottom`) :
   - **titre éditable inline** : double-clic → `contenteditable` → blur émet `sliderTitleEdit({ id, title })` (pattern inline du chantier) ;
   - **composition** : le badge `[i]` existant déclenche `sliderCompositionRequested(id)` (ouvre l'éditeur §2) ;
   - **suppression** : bouton `×` → `sliderDelete(id)` ;
-  - **changement de zone** : sélecteur → `sliderZoneChange({ id, zoneKey })`.
+  - **changement de zone** : sélecteur → `sliderZoneChange({ id, zoneKey: SliderZone | null })`. Le sélecteur propose une option **« Désactivé (hors accueil) »** (`value=""`) qui émet `zoneKey: null` — retire le slider de l'affichage public sans le supprimer (le slider reste éditable form-side et réactivable en rechoisissant une zone).
 - **Zone vide** → placeholder « + Créer un slider ici » → `sliderCreate(zoneKey)`.
 - L'ancien output `sliderEditRequested` est **supprimé** (remplacé par `sliderCompositionRequested` + les nouveaux).
 - **Mode public (non-editable)** : rendu inchangé (carrousels `<app-news-slider>`, pas d'affordance).
@@ -53,7 +53,7 @@ Chaque handler : appel API → toast (succès/erreur) → re-fetch `getPublicSli
 - `onSliderTitleEdit({ id, title })` → `updateSlider(id, { title, zoneKey })` (zoneKey courant lu dans le `NewsSliderView`).
 - `onSliderCompositionRequested(id)` → charge `getAllAdminStories()` (lazy, mémoïsé) + `editingSliderId.set(id)` ; au `save(storyIds)` de l'éditeur → `replaceSliderStories(id, storyIds)` ; `cancel` → ferme.
 - `onSliderDelete(id)` → `confirm(...)` → `deleteSlider(id)`.
-- `onSliderZoneChange({ id, zoneKey })` → **garde** : si la zone cible est déjà occupée par un autre slider, toast d'erreur sans appel (une zone = un slider) ; sinon `updateSlider(id, { title, zoneKey })`.
+- `onSliderZoneChange({ id, zoneKey: SliderZone | null })` → si `zoneKey !== null` et la zone cible est déjà occupée par un autre slider, toast d'erreur sans appel (une zone = un slider) ; la garde d'occupation **ne s'applique pas à `null`** ; sinon `updateSlider(id, { title, zoneKey })`. Toast « Slider désactivé. » si `zoneKey === null`, « Zone du slider mise à jour. » sinon.
 - `onSliderCreate(zoneKey)` → `prompt()` titre (annule si vide) → `createSlider({ title, zoneKey })`.
 
 Pas d'undo (accueil auto-save, cohérent SP1) ; pas de garde-fou dirty (pas de FormGroup côté accueil).
