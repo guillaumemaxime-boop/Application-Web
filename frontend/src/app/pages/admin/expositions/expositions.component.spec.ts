@@ -45,6 +45,7 @@ type ExpoInternals = {
   onPreviewGalleryItemResize: (e: { index: number; colSpan: number; rowSpan: number }) => void;
   onPreviewTextFieldEdit: (e: { field: string; value: string }) => void;
   onPreviewDateFieldEdit: (e: { field: 'startDate' | 'endDate'; value: string }) => void;
+  history: { canUndo: () => boolean; canRedo: () => boolean; undo: () => boolean; redo: () => boolean; record: () => void; clear: () => void };
 };
 
 describe('ExpositionsComponent', () => {
@@ -834,6 +835,65 @@ describe('ExpositionsComponent', () => {
     cmp.coverImageField.cropOpen.set(false);
     fixture.detectChanges();
     expect(panel.hasAttribute('inert')).toBeTrue();
+  });
+
+  function setupHistoryFixture() {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    return { fixture, cmp: fixture.componentInstance as any };
+  }
+
+  it('reorder galerie depuis le preview : undo restaure l\'ordre et marque dirty', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.exhibitionGallery.set([{ url: 'a.jpg' }, { url: 'b.jpg' }]);
+    cmp.onPreviewGalleryReorder([1, 0]);
+    expect(cmp.exhibitionGallery().map((g: { url: string }) => g.url)).toEqual(['b.jpg', 'a.jpg']);
+    expect(cmp.history.undo()).toBeTrue();
+    expect(cmp.exhibitionGallery().map((g: { url: string }) => g.url)).toEqual(['a.jpg', 'b.jpg']);
+    expect(cmp.exhibitionForm.dirty).toBeTrue();
+  });
+
+  it('édition de date inline : undo restaure la valeur, redo la rétablit', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onPreviewDateFieldEdit({ field: 'startDate', value: '2026-03-01' });
+    expect(cmp.exhibitionForm.getRawValue().startDate).toBe('2026-03-01');
+    cmp.history.undo();
+    expect(cmp.exhibitionForm.getRawValue().startDate).toBe('');
+    cmp.history.redo();
+    expect(cmp.exhibitionForm.getRawValue().startDate).toBe('2026-03-01');
+  });
+
+  it('onCoverCropChange enregistre un snapshot (undo restaure le crop)', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onCoverCropChange({ x: 10, y: 10, w: 50, h: 50 });
+    expect(cmp.history.canUndo()).toBeTrue();
+    cmp.history.undo();
+    expect(cmp.exhibitionForm.getRawValue().coverCrop).toBeNull();
+  });
+
+  it('onCoverCropChange sans changement réel : aucune entrée d\'historique', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onCoverCropChange(null);   // coverCrop déjà null à l'init
+    expect(cmp.history.canUndo()).toBeFalse();
+  });
+
+  it('loadExhibition vide l\'historique', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onPreviewTextFieldEdit({ field: 'title', value: 'X' });
+    expect(cmp.history.canUndo()).toBeTrue();
+    cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon' });
+    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
+    expect(cmp.history.canUndo()).toBeFalse();
+  });
+
+  it('édition inline sans modification : aucune entrée d\'historique', () => {
+    const { cmp } = setupHistoryFixture();
+    cmp.onPreviewTextFieldEdit({ field: 'title', value: '' });
+    expect(cmp.history.canUndo()).toBeFalse();
+    expect(cmp.exhibitionForm.dirty).toBeFalse();
   });
 
 });
