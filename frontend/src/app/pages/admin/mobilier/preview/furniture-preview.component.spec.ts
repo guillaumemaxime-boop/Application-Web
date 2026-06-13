@@ -146,4 +146,16 @@ describe('FurniturePreviewComponent', () => {
     view.storySelect.emit('x');
     expect(emitted[0]).toBe('x');
   });
+
+  it('relaie viewerOpen depuis la vue détail', () => {
+    setup();
+    fixture.detectChanges();
+    const emitted: unknown[][] = [];
+    fixture.componentInstance.viewerOpen.subscribe((q: unknown[]) => emitted.push(q));
+    const view = fixture.debugElement.query(By.directive(FurnitureDetailViewComponent)).componentInstance as FurnitureDetailViewComponent;
+    const fakeQueue = [{ title: 'T', subtitle: 'S', slides: [] }] as any;
+    view.viewerOpen.emit(fakeQueue);
+    expect(emitted.length).toBe(1);
+    expect(emitted[0]).toBe(fakeQueue);
+  });
 });

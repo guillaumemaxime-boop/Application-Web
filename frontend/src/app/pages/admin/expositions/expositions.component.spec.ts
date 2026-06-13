@@ -984,5 +984,32 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/new/slides').flush([]);
   });
 
+  it('onPreviewViewerOpen remplit la file et onStoryViewerClosed la vide', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    const fakeQueue = [{ title: 'T', subtitle: 'S', slides: [] }];
+    cmp.onPreviewViewerOpen(fakeQueue);
+    expect(cmp.storyViewerQueue().length).toBe(1);
+    cmp.onStoryViewerClosed();
+    expect(cmp.storyViewerQueue().length).toBe(0);
+  });
+
+  it('storyViewerQueue non vide rend app-story-viewer dans le DOM', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeNull();
+    cmp.onPreviewViewerOpen([{ title: 'T', subtitle: 'S', slides: [] }]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeTruthy();
+  });
+
 });
 

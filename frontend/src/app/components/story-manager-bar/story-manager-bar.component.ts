@@ -14,7 +14,7 @@ import { Story } from '../../models/story.model';
   template: `
     @if (editable) {
       <div class="story-manager-bar">
-        <div class="smb-chips" role="tablist" aria-label="Stories de cette pièce">
+        <div class="smb-chips" role="tablist" aria-label="Stories rattachées">
           @for (s of stories; track s.id) {
             <button type="button" class="smb-chip" role="tab"
                     [class.active]="s.id === activeStoryId"

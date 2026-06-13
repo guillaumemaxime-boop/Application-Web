@@ -6,6 +6,7 @@ import { Story } from '../../../../models/story.model';
 import { SiteContent } from '../../../../models/site-content.model';
 import { DisplaySlide } from '../../../../models/display-slide.model';
 import { EditableTextField, FurnitureDetailViewComponent } from '../../../../components/furniture-detail-view/furniture-detail-view.component';
+import { StoryItem } from '../../../../components/story-viewer/story-viewer.component';
 import { formTickSignal } from '../../shared/preview-page-helpers';
 
 @Component({
@@ -36,7 +37,8 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (storyDelete)="storyDelete.emit($event)"
       (storyMove)="storyMove.emit($event)"
       (storyCoverEdit)="storyCoverEdit.emit($event)"
-      (storySlidesEdit)="storySlidesEdit.emit($event)" />
+      (storySlidesEdit)="storySlidesEdit.emit($event)"
+      (viewerOpen)="viewerOpen.emit($event)" />
   `,
   styles: []
 })
@@ -65,6 +67,7 @@ export class FurniturePreviewComponent implements OnInit {
   @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
   @Output() storyCoverEdit = new EventEmitter<string>();
   @Output() storySlidesEdit = new EventEmitter<string>();
+  @Output() viewerOpen = new EventEmitter<StoryItem[]>();
 
   private readonly destroyRef = inject(DestroyRef);
 

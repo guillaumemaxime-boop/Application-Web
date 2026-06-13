@@ -261,27 +261,6 @@ import { roleStyle } from '../../utils/title-style';
     }
     .tag-chip:hover { color: var(--color-ink); border-color: var(--color-ink); }
 
-    .viewer-link-wrap {
-      display: flex;
-      justify-content: center;
-      padding: 0 0 96px;
-    }
-    .viewer-link {
-      background: none;
-      border: 1px solid var(--color-ink);
-      color: var(--color-ink);
-      font-size: 0.78rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      padding: 14px 28px;
-      cursor: pointer;
-      transition: background var(--transition), color var(--transition);
-    }
-    .viewer-link:hover {
-      background: var(--color-ink);
-      color: var(--color-bg);
-    }
-
     .story-admin { padding: 48px 0; border-top: 1px dashed var(--color-line); }
     .story-admin-badge { margin: 0 0 12px; font-size: 0.78rem; color: var(--color-mute); font-style: italic; }
 

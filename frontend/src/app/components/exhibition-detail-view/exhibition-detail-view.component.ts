@@ -274,9 +274,6 @@ export type EditableExhibitionField =
     @media (max-width: 960px) { .gallery .g-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .gallery .g-grid { grid-template-columns: 1fr; } }
 
-    .viewer-link-wrap { padding: 32px 0 80px; text-align: center; }
-    .viewer-link { background: transparent; border: 1px solid var(--color-ink); padding: 12px 24px; color: var(--color-ink); cursor: pointer; font-family: inherit; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; }
-    .viewer-link:hover { background: var(--color-ink); color: var(--color-bg); }
     .story-admin { padding: 48px 0; border-top: 1px dashed var(--color-line); }
     .story-admin-badge { margin: 0 0 12px; font-size: 0.78rem; color: var(--color-mute); font-style: italic; }
 

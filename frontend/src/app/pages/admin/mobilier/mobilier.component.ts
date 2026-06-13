@@ -19,11 +19,12 @@ import { enrichSlides } from '../../../utils/display-slides';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
 import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory, formTickSignal } from '../shared/preview-page-helpers';
 import { EditableTextField } from '../../../components/furniture-detail-view/furniture-detail-view.component';
+import { StoryViewerComponent, StoryItem } from '../../../components/story-viewer/story-viewer.component';
 
 @Component({
   selector: 'app-mobilier',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent, AdminPreviewShellComponent, ShellPreviewDirective, A11yModule],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent, AdminPreviewShellComponent, ShellPreviewDirective, A11yModule, StoryViewerComponent],
   template: `
     <div class="grid-admin">
       <aside class="list" [attr.inert]="previewFullscreenActive() ? '' : null">
@@ -228,22 +229,27 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
             (storyDelete)="onPreviewStoryDelete($event)"
             (storyMove)="onPreviewStoryMove($event)"
             (storyCoverEdit)="onPreviewStoryCoverEdit($event)"
-            (storySlidesEdit)="onPreviewStorySlidesEdit($event)" />
+            (storySlidesEdit)="onPreviewStorySlidesEdit($event)"
+            (viewerOpen)="onPreviewViewerOpen($event)" />
         </ng-template>
       </app-admin-preview-shell>
     </div>
 
     @if (previewSlidesStoryId(); as sid) {
-      <div class="slides-modal-overlay" role="dialog" aria-modal="true" aria-label="Éditer les slides de la story"
+      <div class="slides-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="slides-modal-title"
            cdkTrapFocus cdkTrapFocusAutoCapture (keydown.escape)="onPreviewSlidesModalClose()">
         <div class="slides-modal-panel">
           <header class="slides-modal-head">
-            <h3>Éditer les slides</h3>
+            <h3 id="slides-modal-title">Éditer les slides</h3>
             <button type="button" (click)="onPreviewSlidesModalClose()" aria-label="Fermer">Fermer</button>
           </header>
           <app-slides-editor [storyId]="sid" [ownerSlug]="editingFurnitureSlug()" />
         </div>
       </div>
+    }
+
+    @if (storyViewerQueue().length > 0) {
+      <app-story-viewer [queue]="storyViewerQueue()" (closed)="onStoryViewerClosed()" />
     }
   `,
   styles: [`
@@ -363,6 +369,7 @@ export class MobilierComponent {
   protected readonly mobilierViewMode = signal<'form' | 'preview'>('form');
   /** Reflète le plein écran du shell — rend la liste latérale inert (neutralisation aria-modal). */
   protected readonly previewFullscreenActive = signal(false);
+  protected readonly storyViewerQueue = signal<StoryItem[]>([]);
 
   protected readonly furnitureForm = this.fb.group({
     title: ['', Validators.required],
@@ -477,6 +484,14 @@ export class MobilierComponent {
     const id = this.previewSlidesStoryId();
     this.previewSlidesStoryId.set(null);
     if (id) this.loadActiveStorySlides(id);
+  }
+
+  protected onPreviewViewerOpen(queue: StoryItem[]): void {
+    this.storyViewerQueue.set(queue);
+  }
+
+  protected onStoryViewerClosed(): void {
+    this.storyViewerQueue.set([]);
   }
 
   /**
