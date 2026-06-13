@@ -1,6 +1,7 @@
 import { ApplicationRef, ChangeDetectorRef, Component, EventEmitter, inject, Input, NgZone, OnDestroy, Output, signal } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { TagEditorComponent } from '../tag-editor/tag-editor.component';
 
 export type EditableTextField = 'title' | 'category' | 'material' | 'description' | 'shortDescription';
 import { Furniture } from '../../models/furniture.model';
@@ -16,7 +17,7 @@ import { roleStyle } from '../../utils/title-style';
 @Component({
   selector: 'app-furniture-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective, RouterLink, NgStyle],
+  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective, RouterLink, NgStyle, TagEditorComponent],
   template: `
     @if (item) {
       <article class="fade-in">
@@ -108,7 +109,14 @@ import { roleStyle } from '../../utils/title-style';
               </div>
             </dl>
 
-            @if (item.tags && item.tags.length > 0) {
+            @if (editable) {
+              <div class="tags-list editable">
+                <app-tag-editor
+                  [tags]="item.tags ?? []"
+                  [suggestions]="tagSuggestions"
+                  (tagsChange)="tagsChange.emit($event)" />
+              </div>
+            } @else if (item.tags && item.tags.length > 0) {
               <div class="tags-list">
                 @for (t of item.tags; track t) {
                   <a class="tag-chip" [routerLink]="['/creations']" [queryParams]="{ tags: t }">{{ t }}</a>
@@ -359,10 +367,12 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   @Input() displaySlides: DisplaySlide[] = [];
   @Input() content: SiteContent = {};
   @Input() editable = false;
+  @Input() tagSuggestions: string[] = [];
 
   protected eyebrowStyle(): Record<string, string> { return roleStyle(this.content, 'eyebrow'); }
   protected titleStyle():   Record<string, string> { return roleStyle(this.content, 'title'); }
 
+  @Output() tagsChange = new EventEmitter<string[]>();
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();

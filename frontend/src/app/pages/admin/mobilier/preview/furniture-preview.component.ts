@@ -19,6 +19,8 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       [displaySlides]="displaySlides"
       [content]="content"
       [editable]="true"
+      [tagSuggestions]="tagSuggestions"
+      (tagsChange)="tagsChange.emit($event)"
       (coverEdit)="onCoverEdit($event)"
       (galleryItemEdit)="onGalleryItemEdit($event)"
       (galleryReorder)="onGalleryReorder($event)"
@@ -35,7 +37,9 @@ export class FurniturePreviewComponent implements OnInit {
   @Input() story: Story | null = null;
   @Input() displaySlides: DisplaySlide[] = [];
   @Input() content: SiteContent = {};
+  @Input() tagSuggestions: string[] = [];
 
+  @Output() tagsChange = new EventEmitter<string[]>();
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();

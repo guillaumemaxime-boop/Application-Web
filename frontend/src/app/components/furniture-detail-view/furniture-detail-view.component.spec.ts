@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import { FurnitureDetailViewComponent } from './furniture-detail-view.component';
 import { Furniture } from '../../models/furniture.model';
 import { DisplaySlide } from '../../models/display-slide.model';
@@ -20,7 +22,10 @@ describe('FurnitureDetailViewComponent', () => {
   };
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [FurnitureDetailViewComponent] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [FurnitureDetailViewComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
     fixture = TestBed.createComponent(FurnitureDetailViewComponent);
   });
 
@@ -404,5 +409,40 @@ describe('FurnitureDetailViewComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.gallery')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.gallery-add-tile')).toBeTruthy();
+  });
+
+  it('mode editable : rend <app-tag-editor> au lieu des routerLinks', () => {
+    fixture.componentRef.setInput('item', { ...mockFurniture, tags: ['bois'] });
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-tag-editor')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.tags-list a.tag-chip')).toBeNull();
+  });
+
+  it('mode public : rend les routerLinks, pas de tag-editor', () => {
+    fixture.componentRef.setInput('item', { ...mockFurniture, tags: ['bois'] });
+    fixture.componentRef.setInput('editable', false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-tag-editor')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.tags-list a.tag-chip')).toBeTruthy();
+  });
+
+  it('mode editable : tag-editor visible même si tags vide', () => {
+    fixture.componentRef.setInput('item', { ...mockFurniture, tags: [] });
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-tag-editor')).toBeTruthy();
+  });
+
+  it('tagsChange du tag-editor est réémis par la vue', () => {
+    fixture.componentRef.setInput('item', { ...mockFurniture, tags: [] });
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let emitted: any = null;
+    fixture.componentInstance.tagsChange.subscribe((v: string[]) => emitted = v);
+    const editor = fixture.debugElement.query(By.css('app-tag-editor'));
+    editor.triggerEventHandler('tagsChange', ['neuf']);
+    expect(emitted).toEqual(['neuf']);
   });
 });

@@ -220,6 +220,8 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
             [gallery]="furnitureGallery.asReadonly()"
             [story]="currentStories()[0] ?? null"
             [displaySlides]="previewDisplaySlides()"
+            [tagSuggestions]="allTags()"
+            (tagsChange)="onPreviewTagsChange($event)"
             (coverEdit)="onPreviewCoverEdit($event)"
             (galleryItemEdit)="onPreviewGalleryItemEdit($event)"
             (galleryReorder)="onPreviewGalleryReorder($event)"
@@ -398,6 +400,12 @@ export class MobilierComponent {
   protected readonly onPreviewGalleryAdd = this.galleryHandlers.onGalleryAdd;
   protected readonly onPreviewGalleryReorder = this.galleryHandlers.onGalleryReorder;
   protected readonly onPreviewGalleryItemResize = this.galleryHandlers.onGalleryItemResize;
+
+  protected onPreviewTagsChange(tags: string[]): void {
+    this.history.record();
+    this.furnitureForm.patchValue({ tags });
+    this.furnitureForm.markAsDirty();
+  }
 
   /**
    * Historique undo/redo des opérations WYSIWYG (snapshots form + galerie).
