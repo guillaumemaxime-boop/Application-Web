@@ -77,17 +77,27 @@ describe('FurnitureDetailViewComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.gallery figure').length).toBe(2);
   });
 
-  it('rend story-inline quand displaySlides non vides', () => {
-    fixture.componentRef.setInput('item', mockFurniture);
+  it('mode public ne rend plus la story (story-inline ni bouton plein écran)', () => {
+    fixture.componentRef.setInput('item', { ...mockFurniture, showStoryButton: true });
     fixture.componentRef.setInput('displaySlides', [{ type: 'cover', id: 's1', position: 0, src: 'https://e.com/a.jpg' } as DisplaySlide]);
+    fixture.componentRef.setInput('editable', false);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.viewer-link')).toBeNull();
   });
 
   it('ne rend pas story-inline quand displaySlides est vide', () => {
     fixture.componentRef.setInput('item', mockFurniture);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-story-inline')).toBeNull();
+  });
+
+  it('mode editable rend le bloc d\'auteur (badge + story-manager-bar)', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.story-admin-badge')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-story-manager-bar')).toBeTruthy();
   });
 
   it('n\'affiche pas les overlays par defaut (editable=false)', () => {
