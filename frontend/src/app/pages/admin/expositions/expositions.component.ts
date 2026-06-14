@@ -1,10 +1,11 @@
 import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
-import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { A11yModule, LiveAnnouncer } from '@angular/cdk/a11y';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Exhibition } from '../../../models/exhibition.model';
 import { Story } from '../../../models/story.model';
+import { Slide } from '../../../models/slide.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
@@ -18,11 +19,12 @@ import { enrichSlides } from '../../../utils/display-slides';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
 import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory, formTickSignal } from '../shared/preview-page-helpers';
 import { EditableExhibitionField } from '../../../components/exhibition-detail-view/exhibition-detail-view.component';
+import { StoryViewerComponent, StoryItem } from '../../../components/story-viewer/story-viewer.component';
 
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent, AdminPreviewShellComponent, ShellPreviewDirective],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent, AdminPreviewShellComponent, ShellPreviewDirective, A11yModule, StoryViewerComponent],
   template: `
     <div class="grid-admin">
       <aside class="list" [attr.inert]="previewFullscreenActive() ? '' : null">
@@ -109,16 +111,6 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
           <label><span>Description courte</span><textarea rows="2" id="field-shortDescription" formControlName="shortDescription"></textarea></label>
           <label><span>Description longue</span><textarea rows="5" id="field-description" formControlName="description"></textarea></label>
 
-          <label class="checkbox">
-            <input type="checkbox" formControlName="showStoryLink" />
-            <span>Afficher le lien en fin de story</span>
-          </label>
-
-          <label class="checkbox">
-            <input type="checkbox" formControlName="showStoryButton" />
-            <span>Afficher le bouton "Voir en plein écran" sur la fiche publique</span>
-          </label>
-
           @if (editingExhibitionId()) {
             <section class="stories-block">
               <header class="stories-head">
@@ -176,6 +168,8 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
             [form]="exhibitionForm"
             [gallery]="exhibitionGallery.asReadonly()"
             [story]="currentStories()[0] ?? null"
+            [stories]="currentStories()"
+            [activeStoryId]="activeStoryId()"
             [displaySlides]="previewDisplaySlides()"
             [tagSuggestions]="allTags()"
             (tagsChange)="onPreviewTagsChange($event)"
@@ -186,11 +180,35 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
             (galleryItemResize)="onPreviewGalleryItemResize($event)"
             (textFieldClick)="focusField($event)"
             (textFieldEdit)="onPreviewTextFieldEdit($event)"
-            (dateFieldEdit)="onPreviewDateFieldEdit($event)" />
+            (dateFieldEdit)="onPreviewDateFieldEdit($event)"
+            (storySelect)="onPreviewStorySelect($event)"
+            (storyCreate)="onPreviewStoryCreate()"
+            (storyRename)="onPreviewStoryRename($event)"
+            (storyDelete)="onPreviewStoryDelete($event)"
+            (storyMove)="onPreviewStoryMove($event)"
+            (storyCoverEdit)="onPreviewStoryCoverEdit($event)"
+            (storySlidesEdit)="onPreviewStorySlidesEdit($event)"
+            (viewerOpen)="onPreviewViewerOpen($event)" />
         </ng-template>
       </app-admin-preview-shell>
     </div>
 
+    @if (previewSlidesStoryId(); as sid) {
+      <div class="slides-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="slides-modal-title"
+           cdkTrapFocus cdkTrapFocusAutoCapture (keydown.escape)="onPreviewSlidesModalClose()">
+        <div class="slides-modal-panel">
+          <header class="slides-modal-head">
+            <h3 id="slides-modal-title">Éditer les slides</h3>
+            <button type="button" (click)="onPreviewSlidesModalClose()" aria-label="Fermer">Fermer</button>
+          </header>
+          <app-slides-editor [storyId]="sid" [ownerSlug]="editingExhibitionSlug()" />
+        </div>
+      </div>
+    }
+
+    @if (storyViewerQueue().length > 0) {
+      <app-story-viewer [queue]="storyViewerQueue()" (closed)="onStoryViewerClosed()" />
+    }
   `,
   styles: [`
     .grid-admin { display: grid; grid-template-columns: 320px 1fr; gap: 48px; align-items: start; }
@@ -247,6 +265,9 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
       .list { position: static; max-height: none; }
       .row-2 { grid-template-columns: 1fr; }
     }
+    .slides-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1300; display: flex; align-items: center; justify-content: center; }
+    .slides-modal-panel { width: 92%; max-width: 920px; max-height: 86vh; overflow: auto; background: var(--color-bg); padding: 20px; border: 1px solid var(--color-ink); }
+    .slides-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   `]
 })
 export class ExpositionsComponent {
@@ -271,11 +292,15 @@ export class ExpositionsComponent {
   protected readonly editingCoverStoryId = signal<string | null>(null);
   protected readonly coverEditCtrl = new FormControl('');
   protected readonly editingStoryCoverCrop = signal<Crop | null>(null);
+  protected readonly activeStoryId = signal<string | null>(null);
+  protected readonly activeStorySlides = signal<Slide[]>([]);
+  protected readonly previewSlidesStoryId = signal<string | null>(null);
 
   protected readonly creatingExhibition = signal(false);
   protected readonly expoViewMode = signal<'form' | 'preview'>('form');
   /** Reflète le plein écran du shell — rend la liste latérale inert (neutralisation aria-modal). */
   protected readonly previewFullscreenActive = signal(false);
+  protected readonly storyViewerQueue = signal<StoryItem[]>([]);
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -335,6 +360,68 @@ export class ExpositionsComponent {
     this.exhibitionForm.markAsDirty();
   }
 
+  private loadActiveStorySlides(id: string | null): void {
+    if (!id) { this.activeStorySlides.set([]); return; }
+    this.portfolio.getStorySlides(id).subscribe(slides => this.activeStorySlides.set(slides));
+  }
+
+  protected onPreviewStorySelect(id: string): void {
+    this.activeStoryId.set(id);
+    this.loadActiveStorySlides(id);
+  }
+
+  protected onPreviewStoryCreate(): void { this.newStory(); }
+
+  protected onPreviewStoryRename(e: { id: string; title: string }): void {
+    const story = this.currentStories().find(s => s.id === e.id);
+    if (!story) return;
+    this.portfolio.updateStory(story.id, {
+      ownerKind: story.ownerKind, ownerId: story.ownerId,
+      title: e.title, coverImage: story.coverImage,
+    }).subscribe({
+      next: updated => {
+        this.currentStories.update(arr => arr.map(s => s.id === updated.id ? updated : s));
+        this.toast.success('Story renommée.');
+      },
+      error: () => this.toast.error('Erreur lors du renommage de la story.'),
+    });
+  }
+
+  protected onPreviewStoryDelete(id: string): void {
+    const story = this.currentStories().find(s => s.id === id);
+    if (story) this.deleteStory(story);
+  }
+
+  protected onPreviewStoryMove(e: { id: string; dir: 'up' | 'down' }): void {
+    const story = this.currentStories().find(s => s.id === e.id);
+    if (!story) return;
+    if (e.dir === 'up') this.moveStoryUp(story); else this.moveStoryDown(story);
+  }
+
+  protected onPreviewStoryCoverEdit(id: string): void {
+    const story = this.currentStories().find(s => s.id === id);
+    if (story) this.openCoverEditor(story);
+  }
+
+  protected onPreviewStorySlidesEdit(id: string): void {
+    this.activeStoryId.set(id);
+    this.previewSlidesStoryId.set(id);
+  }
+
+  protected onPreviewSlidesModalClose(): void {
+    const id = this.previewSlidesStoryId();
+    this.previewSlidesStoryId.set(null);
+    if (id) this.loadActiveStorySlides(id);
+  }
+
+  protected onPreviewViewerOpen(queue: StoryItem[]): void {
+    this.storyViewerQueue.set(queue);
+  }
+
+  protected onStoryViewerClosed(): void {
+    this.storyViewerQueue.set([]);
+  }
+
   /**
    * Historique undo/redo des opérations WYSIWYG (snapshots form + galerie).
    * Le snapshot aliase par référence les valeurs structurées du form (tags,
@@ -354,14 +441,15 @@ export class ExpositionsComponent {
 
   protected readonly previewDisplaySlides = computed(() => {
     this._formTick(); // dépendance signal — force recompute sur valueChanges
-    const story = this.currentStories()[0];
-    if (!story) return [];
+    const stories = this.currentStories();
+    const active = stories.find(s => s.id === this.activeStoryId()) ?? stories[0];
+    if (!active) return [];
     const v = this.exhibitionForm.getRawValue();
     return enrichSlides({
       slug: v.slug ?? '',
       coverImage: v.coverImage ?? null,
       coverCrop: v.coverCrop ?? null,
-      slides: [],
+      slides: this.activeStorySlides(),
       showStoryLink: v.showStoryLink ?? true,
     }, 'exhibition');
   });
@@ -458,9 +546,14 @@ export class ExpositionsComponent {
         }).subscribe(s => {
           this.currentStories.set([s]);
           this.editingStoryId.set(s.id);
+          this.activeStoryId.set(s.id);
+          this.loadActiveStorySlides(s.id);
         });
+      } else {
+        const first = this.currentStories()[0];
+        this.activeStoryId.set(first ? first.id : null);
+        this.loadActiveStorySlides(first ? first.id : null);
       }
-      // Sinon, on ne pré-sélectionne rien : l'admin choisit explicitement.
     });
   }
 
@@ -483,6 +576,8 @@ export class ExpositionsComponent {
       next: s => {
         this.currentStories.update(arr => [...arr, s]);
         this.editingStoryId.set(s.id);
+        this.activeStoryId.set(s.id);
+        this.loadActiveStorySlides(s.id);
         this.toast.success('Story créée.');
       },
       error: () => this.toast.error('Erreur lors de la création de la story.'),

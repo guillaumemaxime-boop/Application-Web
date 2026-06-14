@@ -53,7 +53,7 @@
 - Expositions : liste chronologique, fiche détaillée
 - **Page Créations** (`/creations`) : catalogue agrégé mobilier + expositions, filtres type / années / tags, deep-link via query params
 - Studio : profil, biographie, presse, distinctions
-- **Stories éditoriales** : N stories par pièce/exposition, slides visuels, viewer plein écran
+- **Stories éditoriales** : N stories par pièce/exposition, slides visuels, viewer plein écran. Depuis le sous-projet 6a, la story **n'est plus rendue sur la fiche publique** (mobilier/expo) — elle est consommée publiquement uniquement via les sliders d'actualités de l'accueil. La gestion des stories (créer/renommer/supprimer/réordonner/cover + édition des slides via modale) est disponible dans le **preview admin** des fiches via le composant pur `<app-story-manager-bar>` (`components/story-manager-bar/`), en plus du panneau form-side. **Aucun changement backend** : réutilise les endpoints `/api/admin/stories/**` existants.
 - **Sliders d'actualités** : carrousels composés de stories assignés à 3 zones de la home (`news.primary/.secondary/.tertiary`)
 - Administration : CRUD complet mobilier & expositions, page Accueil (masonry + sliders), navigation CMS, tags
 - Authentification : login JWT via `POST /api/auth/login`, garde Angular (`authGuard`), intercepteur HTTP

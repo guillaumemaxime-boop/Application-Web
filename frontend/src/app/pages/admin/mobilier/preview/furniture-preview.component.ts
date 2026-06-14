@@ -6,6 +6,7 @@ import { Story } from '../../../../models/story.model';
 import { SiteContent } from '../../../../models/site-content.model';
 import { DisplaySlide } from '../../../../models/display-slide.model';
 import { EditableTextField, FurnitureDetailViewComponent } from '../../../../components/furniture-detail-view/furniture-detail-view.component';
+import { StoryItem } from '../../../../components/story-viewer/story-viewer.component';
 import { formTickSignal } from '../../shared/preview-page-helpers';
 
 @Component({
@@ -16,6 +17,8 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
     <app-furniture-detail-view
       [item]="previewItem()"
       [story]="story"
+      [stories]="stories"
+      [activeStoryId]="activeStoryId"
       [displaySlides]="displaySlides"
       [content]="content"
       [editable]="true"
@@ -27,7 +30,15 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (galleryAdd)="onGalleryAdd()"
       (textFieldClick)="onTextFieldClick($event)"
       (textFieldEdit)="onTextFieldEdit($event)"
-      (galleryItemResize)="onGalleryItemResize($event)" />
+      (galleryItemResize)="onGalleryItemResize($event)"
+      (storySelect)="storySelect.emit($event)"
+      (storyCreate)="storyCreate.emit()"
+      (storyRename)="storyRename.emit($event)"
+      (storyDelete)="storyDelete.emit($event)"
+      (storyMove)="storyMove.emit($event)"
+      (storyCoverEdit)="storyCoverEdit.emit($event)"
+      (storySlidesEdit)="storySlidesEdit.emit($event)"
+      (viewerOpen)="viewerOpen.emit($event)" />
   `,
   styles: []
 })
@@ -35,6 +46,8 @@ export class FurniturePreviewComponent implements OnInit {
   @Input({ required: true }) form!: FormGroup;
   @Input({ required: true }) gallery!: Signal<GalleryItem[]>;
   @Input() story: Story | null = null;
+  @Input() stories: Story[] = [];
+  @Input() activeStoryId: string | null = null;
   @Input() displaySlides: DisplaySlide[] = [];
   @Input() content: SiteContent = {};
   @Input() tagSuggestions: string[] = [];
@@ -47,6 +60,14 @@ export class FurniturePreviewComponent implements OnInit {
   @Output() textFieldClick = new EventEmitter<EditableTextField>();
   @Output() textFieldEdit = new EventEmitter<{ field: EditableTextField; value: string }>();
   @Output() galleryItemResize = new EventEmitter<{ index: number; colSpan: number; rowSpan: number }>();
+  @Output() storySelect = new EventEmitter<string>();
+  @Output() storyCreate = new EventEmitter<void>();
+  @Output() storyRename = new EventEmitter<{ id: string; title: string }>();
+  @Output() storyDelete = new EventEmitter<string>();
+  @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
+  @Output() storyCoverEdit = new EventEmitter<string>();
+  @Output() storySlidesEdit = new EventEmitter<string>();
+  @Output() viewerOpen = new EventEmitter<StoryItem[]>();
 
   private readonly destroyRef = inject(DestroyRef);
 

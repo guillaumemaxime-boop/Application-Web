@@ -6,6 +6,7 @@ import { Story } from '../../../../models/story.model';
 import { SiteContent } from '../../../../models/site-content.model';
 import { DisplaySlide } from '../../../../models/display-slide.model';
 import { EditableExhibitionField, ExhibitionDetailViewComponent } from '../../../../components/exhibition-detail-view/exhibition-detail-view.component';
+import { StoryItem } from '../../../../components/story-viewer/story-viewer.component';
 import { formTickSignal } from '../../shared/preview-page-helpers';
 
 @Component({
@@ -17,6 +18,8 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       [item]="previewItem()"
       [story]="story"
       [displaySlides]="displaySlides"
+      [stories]="stories"
+      [activeStoryId]="activeStoryId"
       [content]="content"
       [editable]="true"
       [tagSuggestions]="tagSuggestions"
@@ -28,7 +31,15 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (galleryItemResize)="onGalleryItemResize($event)"
       (textFieldClick)="onTextFieldClick($event)"
       (textFieldEdit)="onTextFieldEdit($event)"
-      (dateFieldEdit)="onDateFieldEdit($event)" />
+      (dateFieldEdit)="onDateFieldEdit($event)"
+      (storySelect)="storySelect.emit($event)"
+      (storyCreate)="storyCreate.emit()"
+      (storyRename)="storyRename.emit($event)"
+      (storyDelete)="storyDelete.emit($event)"
+      (storyMove)="storyMove.emit($event)"
+      (storyCoverEdit)="storyCoverEdit.emit($event)"
+      (storySlidesEdit)="storySlidesEdit.emit($event)"
+      (viewerOpen)="viewerOpen.emit($event)" />
   `,
   styles: []
 })
@@ -37,11 +48,21 @@ export class ExhibitionPreviewComponent implements OnInit {
   @Input({ required: true }) gallery!: Signal<GalleryItem[]>;
   @Input() story: Story | null = null;
   @Input() displaySlides: DisplaySlide[] = [];
+  @Input() stories: Story[] = [];
+  @Input() activeStoryId: string | null = null;
   @Input() content: SiteContent = {};
   @Input() tagSuggestions: string[] = [];
 
   @Output() tagsChange = new EventEmitter<string[]>();
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
+  @Output() storySelect = new EventEmitter<string>();
+  @Output() storyCreate = new EventEmitter<void>();
+  @Output() storyRename = new EventEmitter<{ id: string; title: string }>();
+  @Output() storyDelete = new EventEmitter<string>();
+  @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
+  @Output() storyCoverEdit = new EventEmitter<string>();
+  @Output() storySlidesEdit = new EventEmitter<string>();
+  @Output() viewerOpen = new EventEmitter<StoryItem[]>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();
   @Output() galleryAdd = new EventEmitter<void>();

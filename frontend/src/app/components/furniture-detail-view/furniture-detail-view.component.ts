@@ -2,6 +2,7 @@ import { ApplicationRef, ChangeDetectorRef, Component, EventEmitter, inject, Inp
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TagEditorComponent } from '../tag-editor/tag-editor.component';
+import { StoryManagerBarComponent } from '../story-manager-bar/story-manager-bar.component';
 
 export type EditableTextField = 'title' | 'category' | 'material' | 'description' | 'shortDescription';
 import { Furniture } from '../../models/furniture.model';
@@ -17,7 +18,7 @@ import { roleStyle } from '../../utils/title-style';
 @Component({
   selector: 'app-furniture-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective, RouterLink, NgStyle, TagEditorComponent],
+  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective, RouterLink, NgStyle, TagEditorComponent, StoryManagerBarComponent],
   template: `
     @if (item) {
       <article class="fade-in">
@@ -126,16 +127,27 @@ import { roleStyle } from '../../utils/title-style';
           </div>
         </section>
 
-        @if (displaySlides.length > 0) {
-          <app-story-inline [slides]="displaySlides"></app-story-inline>
-
-          @if (item.showStoryButton) {
-            <div class="container narrow viewer-link-wrap">
-              <button type="button" class="viewer-link" aria-label="Voir en plein écran" (click)="onViewerOpen()">
-                Voir en plein écran →
-              </button>
+        @if (editable) {
+          <section class="section story-admin">
+            <div class="container narrow">
+              <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
+              <app-story-manager-bar
+                [stories]="stories"
+                [activeStoryId]="activeStoryId"
+                [editable]="true"
+                (select)="storySelect.emit($event)"
+                (create)="storyCreate.emit()"
+                (rename)="storyRename.emit($event)"
+                (delete)="storyDelete.emit($event)"
+                (move)="storyMove.emit($event)"
+                (coverEdit)="storyCoverEdit.emit($event)"
+                (slidesEdit)="storySlidesEdit.emit($event)"
+                (viewerPreview)="onViewerOpen()" />
             </div>
-          }
+            @if (displaySlides.length > 0) {
+              <app-story-inline [slides]="displaySlides"></app-story-inline>
+            }
+          </section>
         }
 
         @if (item.gallery.length > 0 || editable) {
@@ -249,26 +261,8 @@ import { roleStyle } from '../../utils/title-style';
     }
     .tag-chip:hover { color: var(--color-ink); border-color: var(--color-ink); }
 
-    .viewer-link-wrap {
-      display: flex;
-      justify-content: center;
-      padding: 0 0 96px;
-    }
-    .viewer-link {
-      background: none;
-      border: 1px solid var(--color-ink);
-      color: var(--color-ink);
-      font-size: 0.78rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      padding: 14px 28px;
-      cursor: pointer;
-      transition: background var(--transition), color var(--transition);
-    }
-    .viewer-link:hover {
-      background: var(--color-ink);
-      color: var(--color-bg);
-    }
+    .story-admin { padding: 48px 0; border-top: 1px dashed var(--color-line); }
+    .story-admin-badge { margin: 0 0 12px; font-size: 0.78rem; color: var(--color-mute); font-style: italic; }
 
     @media (max-width: 960px) {
       .gallery .g-grid { grid-template-columns: repeat(2, 1fr); }
@@ -365,6 +359,8 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   @Input({ required: true }) item: Furniture | null = null;
   @Input() story: Story | null = null;
   @Input() displaySlides: DisplaySlide[] = [];
+  @Input() stories: Story[] = [];
+  @Input() activeStoryId: string | null = null;
   @Input() content: SiteContent = {};
   @Input() editable = false;
   @Input() tagSuggestions: string[] = [];
@@ -381,6 +377,13 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   @Output() textFieldEdit = new EventEmitter<{ field: EditableTextField; value: string }>();
   @Output() viewerOpen = new EventEmitter<StoryItem[]>();
   @Output() galleryItemResize = new EventEmitter<{ index: number; colSpan: number; rowSpan: number }>();
+  @Output() storySelect = new EventEmitter<string>();
+  @Output() storyCreate = new EventEmitter<void>();
+  @Output() storyRename = new EventEmitter<{ id: string; title: string }>();
+  @Output() storyDelete = new EventEmitter<string>();
+  @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
+  @Output() storyCoverEdit = new EventEmitter<string>();
+  @Output() storySlidesEdit = new EventEmitter<string>();
 
   protected editingField: EditableTextField | null = null;
 
