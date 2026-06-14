@@ -112,4 +112,73 @@ describe('StoryInlineComponent', () => {
     expect(iframe).not.toBeNull();
     expect(iframe.src).toContain('player.vimeo.com/video/123456789');
   });
+
+  // ── Mode éditable ──────────────────────────────────────────────────────────
+
+  function rawSlides(): any[] {
+    return [
+      { id: 's1', type: 'quote', position: 0, body: 'Bonjour', cite: null },
+      { id: 's2', type: 'image', position: 1, src: '/a.jpg', caption: 'A' },
+    ];
+  }
+
+  it('mode lecture seule : pas d\'affordance d\'édition', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = false;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.slide-edit-block')).toBeNull();
+  });
+
+  it('mode éditable : un bloc éditable par slide avec poignée drag + supprimer', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = true;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.slide-edit-block').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.slide-drag').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.slide-del').length).toBe(2);
+  });
+
+  it('supprimer un slide émet slidesChange sans ce slide', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = true;
+    fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (fixture.nativeElement.querySelectorAll('.slide-del')[0] as HTMLButtonElement).click();
+    expect(emitted!.map(s => s.id)).toEqual(['s2']);
+  });
+
+  it('réordonnancement via onReorder émet slidesChange ordonné', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = true;
+    fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (component as any).onReorder([1, 0]);
+    expect(emitted!.map(s => s.id)).toEqual(['s2', 's1']);
+  });
+
+  it('un nouvel input slides réinitialise la working-copy', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = true;
+    fixture.detectChanges();
+    component.slides = [{ id: 'x', type: 'quote', position: 0, body: 'X', cite: null } as any];
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.slide-edit-block').length).toBe(1);
+  });
 });
