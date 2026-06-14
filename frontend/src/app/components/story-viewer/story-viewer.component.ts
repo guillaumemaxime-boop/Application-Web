@@ -6,6 +6,7 @@ import { A11yModule } from '@angular/cdk/a11y';
 import { CoverDisplaySlide, DisplaySlide } from '../../models/display-slide.model';
 import { parseVideoUrl } from '../../utils/video-url';
 import { cropTransform, CropStyle } from '../../utils/crop-transform';
+import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
 
 export interface StoryItem {
   title: string;
@@ -20,7 +21,7 @@ const SLIDE_DURATION_MS = 5000;
 @Component({
   selector: 'app-story-viewer',
   standalone: true,
-  imports: [CommonModule, A11yModule],
+  imports: [CommonModule, A11yModule, CroppedImageCanvasComponent],
   template: `
     <div class="backdrop"
          role="dialog"
@@ -68,9 +69,12 @@ const SLIDE_DURATION_MS = 5000;
                    [style.transform-origin]="coverCropStyle().transformOrigin" />
             }
             @case ('image')  {
-              <img [src]="$any(currentSlide()).src" alt=""
-                   [style.transform]="imageCropStyle().transform"
-                   [style.transform-origin]="imageCropStyle().transformOrigin" />
+              <app-cropped-image-canvas
+                [imageUrl]="$any(currentSlide()).src"
+                [crop]="$any(currentSlide()).crop ?? null"
+                mode="fit"
+                alt=""
+                class="slide-img-fit" />
               @if ($any(currentSlide()).caption) {
                 <div class="caption">{{ $any(currentSlide()).caption }}</div>
               }
@@ -154,6 +158,7 @@ const SLIDE_DURATION_MS = 5000;
     .close { margin-left: auto; pointer-events: auto; background: none; border: none; color: inherit; font-size: 1rem; opacity: 0.8; cursor: pointer; }
     .body { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; background: #000; overflow: hidden; }
     .body img { width: 100%; height: 100%; object-fit: cover; }
+    .body .slide-img-fit { max-width: 100%; max-height: 100%; }
     .body .caption { position: absolute; bottom: 24px; left: 24px; right: 24px; font-family: var(--serif); font-size: 1.05rem; line-height: 1.4; text-shadow: 0 1px 8px rgba(0,0,0,0.5); pointer-events: none; }
     .body.cream { background: var(--bg); color: var(--ink); }
     .slide-spec, .slide-quote, .slide-link { width: 100%; height: 100%; padding: 80px 36px 56px; display: flex; flex-direction: column; justify-content: center; position: relative; }
@@ -220,12 +225,6 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
     const slide = this.currentSlide();
     if (!slide || slide.type !== 'cover') return { transform: 'none', transformOrigin: '0% 0%' };
     return cropTransform((slide as CoverDisplaySlide).coverCrop);
-  });
-
-  protected imageCropStyle = computed<CropStyle>(() => {
-    const slide = this.currentSlide();
-    if (!slide || slide.type !== 'image') return { transform: 'none', transformOrigin: '0% 0%' };
-    return cropTransform((slide as any).crop);
   });
 
   protected linkHref = computed<string | null>(() => {

@@ -40,7 +40,7 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
               @switch (s.type) {
                 @case ('image') {
                   <figure class="block image">
-                    <app-cropped-image-canvas [imageUrl]="$any(s).src" [crop]="$any(s).crop ?? null" mode="cover" [alt]="$any(s).caption ?? ''" />
+                    <app-cropped-image-canvas [imageUrl]="$any(s).src" [crop]="$any(s).crop ?? null" mode="fit" [alt]="$any(s).caption ?? ''" />
                     <button type="button" class="slide-img-replace" (click)="imageReplaceRequest.emit(s.id)">🖼 Remplacer l'image</button>
                     <button type="button" class="slide-img-crop" (click)="imageCropRequest.emit(s.id)">✂ Cadrer</button>
                     <figcaption class="container narrow slide-caption" contenteditable="true" role="textbox"
@@ -254,7 +254,7 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
     .slide-edit-block [contenteditable]:hover, .slide-edit-block [contenteditable]:focus { outline: 1px dashed var(--color-accent); outline-offset: 2px; }
     .slide-video-url { width: 100%; padding: 6px 8px; border: 1px solid var(--color-line); margin: 8px 0; font: inherit; }
     .spec-row-del, .spec-add { background: transparent; border: 1px solid var(--color-line); cursor: pointer; padding: 2px 8px; font-size: 0.78rem; }
-    .slide-edit-block .image app-cropped-image-canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: var(--color-bg-alt); }
+    .slide-edit-block .image app-cropped-image-canvas { display: block; max-height: 70vh; background: var(--color-bg-alt); }
     .slide-img-replace { display: inline-block; margin: 8px 16px; padding: 4px 10px; background: var(--color-bg); border: 1px solid var(--color-line); cursor: pointer; font-size: 0.8rem; }
     .slide-insert-point { text-align: center; min-height: 8px; position: relative; margin-bottom: 6px; }
     .insert-btn { opacity: 0; background: var(--color-bg); border: 1px solid var(--color-line); border-radius: 999px; cursor: pointer; padding: 0 8px; }
