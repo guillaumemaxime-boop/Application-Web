@@ -3,6 +3,7 @@ import { FormGroup } from '@angular/forms';
 import { Exhibition } from '../../../../models/exhibition.model';
 import { GalleryItem } from '../../../../models/gallery-item.model';
 import { Story } from '../../../../models/story.model';
+import { Slide } from '../../../../models/slide.model';
 import { SiteContent } from '../../../../models/site-content.model';
 import { DisplaySlide } from '../../../../models/display-slide.model';
 import { EditableExhibitionField, ExhibitionDetailViewComponent } from '../../../../components/exhibition-detail-view/exhibition-detail-view.component';
@@ -39,6 +40,8 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (storyMove)="storyMove.emit($event)"
       (storyCoverEdit)="storyCoverEdit.emit($event)"
       (storySlidesEdit)="storySlidesEdit.emit($event)"
+      (storySlidesChange)="storySlidesChange.emit($event)"
+      (storyImageReplaceRequest)="storyImageReplaceRequest.emit($event)"
       (viewerOpen)="viewerOpen.emit($event)" />
   `,
   styles: []
@@ -62,6 +65,8 @@ export class ExhibitionPreviewComponent implements OnInit {
   @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
   @Output() storyCoverEdit = new EventEmitter<string>();
   @Output() storySlidesEdit = new EventEmitter<string>();
+  @Output() storySlidesChange = new EventEmitter<Slide[]>();
+  @Output() storyImageReplaceRequest = new EventEmitter<string>();
   @Output() viewerOpen = new EventEmitter<StoryItem[]>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();

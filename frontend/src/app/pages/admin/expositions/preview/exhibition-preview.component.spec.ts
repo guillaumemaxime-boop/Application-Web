@@ -8,6 +8,7 @@ import { GalleryItem } from '../../../../models/gallery-item.model';
 
 describe('ExhibitionPreviewComponent', () => {
   let fixture: ComponentFixture<ExhibitionPreviewComponent>;
+  let component: ExhibitionPreviewComponent;
 
   function setup(formValues: Record<string, unknown> = {}, gallery: GalleryItem[] = []) {
     const fb = new FormBuilder();
@@ -22,6 +23,7 @@ describe('ExhibitionPreviewComponent', () => {
     const gallerySig = signal<GalleryItem[]>(gallery);
     TestBed.configureTestingModule({ imports: [ExhibitionPreviewComponent] }).compileComponents();
     fixture = TestBed.createComponent(ExhibitionPreviewComponent);
+    component = fixture.componentInstance;
     fixture.componentRef.setInput('form', form);
     fixture.componentRef.setInput('gallery', gallerySig.asReadonly());
     fixture.detectChanges();
@@ -109,5 +111,25 @@ describe('ExhibitionPreviewComponent', () => {
     view.viewerOpen.emit(fakeQueue);
     expect(emitted.length).toBe(1);
     expect(emitted[0]).toBe(fakeQueue);
+  });
+
+  it('relaie storySlidesChange', () => {
+    setup();
+    fixture.detectChanges();
+    const emitted: any[] = [];
+    component.storySlidesChange.subscribe((s: any) => emitted.push(s));
+    const view = fixture.debugElement.query(By.directive(ExhibitionDetailViewComponent)).componentInstance as ExhibitionDetailViewComponent;
+    view.storySlidesChange.emit([{ id: 'x' } as any]);
+    expect(emitted.length).toBe(1);
+  });
+
+  it('relaie storyImageReplaceRequest', () => {
+    setup();
+    fixture.detectChanges();
+    const emitted: string[] = [];
+    component.storyImageReplaceRequest.subscribe((v: string) => emitted.push(v));
+    const view = fixture.debugElement.query(By.directive(ExhibitionDetailViewComponent)).componentInstance as ExhibitionDetailViewComponent;
+    view.storyImageReplaceRequest.emit('s1');
+    expect(emitted).toEqual(['s1']);
   });
 });
