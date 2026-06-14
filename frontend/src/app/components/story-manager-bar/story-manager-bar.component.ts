@@ -14,11 +14,11 @@ import { Story } from '../../models/story.model';
   template: `
     @if (editable) {
       <div class="story-manager-bar">
-        <div class="smb-chips" role="tablist" aria-label="Stories rattachées">
+        <div class="smb-chips" role="group" aria-label="Stories rattachées">
           @for (s of stories; track s.id) {
-            <button type="button" class="smb-chip" role="tab"
+            <button type="button" class="smb-chip"
                     [class.active]="s.id === activeStoryId"
-                    [attr.aria-selected]="s.id === activeStoryId"
+                    [attr.aria-pressed]="s.id === activeStoryId"
                     (click)="select.emit(s.id)">{{ s.title }}</button>
           }
           <button type="button" class="smb-new" (click)="create.emit()">+ Nouvelle</button>
@@ -58,7 +58,7 @@ import { Story } from '../../models/story.model';
     .smb-act:hover:not(:disabled) { border-color: var(--color-ink); }
     .smb-act:disabled { opacity: 0.4; cursor: not-allowed; }
     .smb-act.danger:hover { color: #b1532a; border-color: #b1532a; }
-    .smb-empty { margin: 0; color: var(--color-mute); font-size: 0.85rem; font-style: italic; }
+    .smb-empty { margin: 0; color: var(--color-ink-soft); font-size: 0.85rem; font-style: italic; }
   `]
 })
 export class StoryManagerBarComponent {
