@@ -1054,6 +1054,32 @@ describe('ExpositionsComponent', () => {
     expect(cmp.activeStorySlides()[0].crop).toEqual({ x: 10, y: 20, w: 50, h: 60 });
   });
 
+  it('onStorySlidesChange ne persiste PAS un slide incomplet (quote vide) et n\'erreure pas', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    cmp.onStorySlidesChange([{ id: 's1', type: 'quote', position: 0, body: '', cite: null }]);
+    httpMock.expectNone(r => r.url === '/api/admin/stories/a/slides');
+    expect(cmp.slidesSaveState()).not.toBe('error');
+  });
+
+  it('onStorySlidesChange persiste quand tous les slides sont valides', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    cmp.onStorySlidesChange([{ id: 's1', type: 'quote', position: 0, body: 'Texte', cite: null }]);
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
+    expect(cmp.slidesSaveState()).toBe('saved');
+  });
+
   it('previewDisplaySlides enrichit la story active (cover + lien)', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);

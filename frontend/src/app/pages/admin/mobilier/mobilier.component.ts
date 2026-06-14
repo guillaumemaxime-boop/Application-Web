@@ -521,9 +521,26 @@ export class MobilierComponent {
     announcer: this.announcer,
   });
 
+  private allSlidesPersistable(slides: Slide[]): boolean {
+    return slides.every(s => {
+      switch (s.type) {
+        case 'image':
+        case 'video': return !!s.src && s.src.trim().length > 0;
+        case 'quote': return !!s.body && s.body.trim().length > 0;
+        case 'spec':  return (s as any).specs.length > 0;
+        default: return true;
+      }
+    });
+  }
+
   protected onStorySlidesChange(slides: Slide[]): void {
     const id = this.activeStoryId();
     if (!id) return;
+    if (!this.allSlidesPersistable(slides)) {
+      // slide incomplet (nouveau/vide) : on ne persiste pas, pas d'erreur ; sera enregistré une fois complété
+      this.slidesSaveState.set('idle');
+      return;
+    }
     this.activeStorySlides.set(slides);
     this.slidesSaveState.set('saving');
     this.portfolio.replaceStorySlides(id, slides).subscribe({
