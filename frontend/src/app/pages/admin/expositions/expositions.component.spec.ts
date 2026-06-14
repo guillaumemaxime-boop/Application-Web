@@ -1011,5 +1011,31 @@ describe('ExpositionsComponent', () => {
     expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeTruthy();
   });
 
+  it('onStorySlidesChange persiste via replaceStorySlides et passe par saving puis saved', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    cmp.onStorySlidesChange([{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null }]);
+    expect(cmp.slidesSaveState()).toBe('saving');
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
+    expect(cmp.slidesSaveState()).toBe('saved');
+  });
+
+  it('onStoryImageReplaceRequest ouvre le photo-picker', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.onStoryImageReplaceRequest('s1');
+    expect(cmp.replacingImageSlideId()).toBe('s1');
+    httpMock.expectOne('/api/photos').flush([]);
+  });
+
 });
 
