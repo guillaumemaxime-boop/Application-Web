@@ -261,6 +261,18 @@ describe('StoryInlineComponent', () => {
     expect(req).toBe('s1');
   });
 
+  it('le bouton Cadrer image émet imageCropRequest avec l\'id', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null } as any];
+    component.editable = true; fixture.detectChanges();
+    let req: string | undefined;
+    component.imageCropRequest.subscribe((id: string) => req = id);
+    (fixture.nativeElement.querySelector('.slide-img-crop') as HTMLButtonElement).click();
+    expect(req).toBe('s1');
+  });
+
   // ── Ajout de slides ────────────────────────────────────────────────────────
 
   it('barre de fin : + Image ajoute un slide image en fin', () => {

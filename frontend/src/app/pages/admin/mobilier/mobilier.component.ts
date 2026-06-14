@@ -17,6 +17,7 @@ import { GalleryItem } from '../../../models/gallery-item.model';
 import { Crop } from '../../../models/crop.model';
 import { FurniturePreviewComponent } from './preview/furniture-preview.component';
 import { PhotoPickerComponent } from '../shared/photo-picker.component';
+import { ImageCropPickerComponent } from '../shared/image-crop-picker.component';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
 import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory } from '../shared/preview-page-helpers';
 import { EditableTextField } from '../../../components/furniture-detail-view/furniture-detail-view.component';
@@ -26,7 +27,7 @@ import { enrichSlides } from '../../../utils/display-slides';
 @Component({
   selector: 'app-mobilier',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent, PhotoPickerComponent, AdminPreviewShellComponent, ShellPreviewDirective, StoryViewerComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent, PhotoPickerComponent, AdminPreviewShellComponent, ShellPreviewDirective, StoryViewerComponent, ImageCropPickerComponent],
   template: `
     <div class="grid-admin">
       <aside class="list" [attr.inert]="previewFullscreenActive() ? '' : null">
@@ -63,7 +64,7 @@ import { enrichSlides } from '../../../utils/display-slides';
         [saveDisabled]="furnitureForm.invalid"
         [saving]="saving()"
         [hidePreviewOnMobile]="true"
-        [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen() || replacingImageSlideId() !== null"
+        [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen() || replacingImageSlideId() !== null || croppingImageSlideId() !== null"
         (save)="saveFurniture()"
         (fullscreenChange)="previewFullscreenActive.set($event)"
         [historyEnabled]="true"
@@ -233,6 +234,7 @@ import { enrichSlides } from '../../../utils/display-slides';
             (storyCoverEdit)="onPreviewStoryCoverEdit($event)"
             (storySlidesChange)="onStorySlidesChange($event)"
             (storyImageReplaceRequest)="onStoryImageReplaceRequest($event)"
+            (storyImageCropRequest)="onStoryImageCropRequest($event)"
             (viewerOpen)="onPreviewViewerOpen($event)" />
         </ng-template>
       </app-admin-preview-shell>
@@ -254,6 +256,10 @@ import { enrichSlides } from '../../../utils/display-slides';
     @if (replacingImageSlideId()) {
       <app-photo-picker target="cover" [photos]="pickerPhotos()"
         (selected)="onSlideImageSelected($event)" (closed)="onSlidePickerClosed()" />
+    }
+    @if (croppingImageSlide(); as ctx) {
+      <app-image-crop-picker [imageUrl]="ctx.src" [initialCrop]="ctx.crop"
+        (validated)="onSlideCropValidated($event)" (cancelled)="onSlideCropCancelled()" />
     }
   `,
   styles: [`
@@ -373,6 +379,7 @@ export class MobilierComponent {
   protected readonly storyViewerQueue = signal<StoryItem[]>([]);
   protected readonly slidesSaveState = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
   protected readonly replacingImageSlideId = signal<string | null>(null);
+  protected readonly croppingImageSlideId = signal<string | null>(null);
   protected readonly pickerPhotos = signal<Photo[]>([]);
 
   protected readonly furnitureForm = this.fb.group({
@@ -545,6 +552,24 @@ export class MobilierComponent {
   }
 
   protected onSlidePickerClosed(): void { this.replacingImageSlideId.set(null); }
+
+  protected onStoryImageCropRequest(slideId: string): void { this.croppingImageSlideId.set(slideId); }
+
+  protected onSlideCropValidated(crop: Crop): void {
+    const slideId = this.croppingImageSlideId();
+    this.croppingImageSlideId.set(null);
+    if (!slideId) return;
+    const next = this.activeStorySlides().map(s => s.id === slideId && s.type === 'image' ? { ...s, crop } : s);
+    this.onStorySlidesChange(next);
+  }
+
+  protected onSlideCropCancelled(): void { this.croppingImageSlideId.set(null); }
+
+  protected croppingImageSlide(): { src: string; crop: Crop | null } | null {
+    const id = this.croppingImageSlideId();
+    const s = this.activeStorySlides().find(x => x.id === id);
+    return s && s.type === 'image' ? { src: s.src, crop: (s as any).crop ?? null } : null;
+  }
 
   constructor() {
     this.refreshFurniture();

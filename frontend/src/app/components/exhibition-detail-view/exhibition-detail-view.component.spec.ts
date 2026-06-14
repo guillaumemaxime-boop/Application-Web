@@ -272,4 +272,17 @@ describe('ExhibitionDetailViewComponent', () => {
     si.imageReplaceRequest.emit('s1');
     expect(id).toBe('s1');
   });
+
+  it('relaie imageCropRequest depuis story-inline via storyImageCropRequest', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('displaySlides', [{ type: 'image', id: 's1', position: 0, src: 'https://e.com/a.jpg', caption: null } as DisplaySlide]);
+    fixture.detectChanges();
+    const si = fixture.debugElement.query(By.directive(StoryInlineComponent)).componentInstance as StoryInlineComponent;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let id: any = null;
+    (fixture.componentInstance as any).storyImageCropRequest.subscribe((v: string) => id = v);
+    si.imageCropRequest.emit('s1');
+    expect(id).toBe('s1');
+  });
 });

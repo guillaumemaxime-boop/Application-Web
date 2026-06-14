@@ -240,7 +240,8 @@ export type EditableExhibitionField =
             @if (editable || displaySlides.length > 0) {
               <app-story-inline [slides]="displaySlides" [editable]="true"
                 (slidesChange)="storySlidesChange.emit($event)"
-                (imageReplaceRequest)="storyImageReplaceRequest.emit($event)"></app-story-inline>
+                (imageReplaceRequest)="storyImageReplaceRequest.emit($event)"
+                (imageCropRequest)="storyImageCropRequest.emit($event)"></app-story-inline>
             }
           </section>
         }
@@ -378,6 +379,7 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Output() storyCoverEdit = new EventEmitter<string>();
   @Output() storySlidesChange = new EventEmitter<Slide[]>();
   @Output() storyImageReplaceRequest = new EventEmitter<string>();
+  @Output() storyImageCropRequest = new EventEmitter<string>();
 
   protected editingField: EditableExhibitionField | null = null;
   protected editingDateField: 'startDate' | 'endDate' | null = null;

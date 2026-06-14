@@ -1027,6 +1027,33 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne('/api/photos').flush([]);
   });
 
+  it('onStoryImageCropRequest ouvre le crop-picker pour le slide', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStorySlides.set([{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null, crop: null }]);
+    cmp.onStoryImageCropRequest('s1');
+    expect(cmp.croppingImageSlideId()).toBe('s1');
+  });
+
+  it('onSlideCropValidated applique le crop au slide et persiste', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    cmp.activeStorySlides.set([{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null, crop: null }]);
+    cmp.croppingImageSlideId.set('s1');
+    cmp.onSlideCropValidated({ x: 10, y: 20, w: 50, h: 60 });
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
+    expect(cmp.activeStorySlides()[0].crop).toEqual({ x: 10, y: 20, w: 50, h: 60 });
+  });
+
   it('previewDisplaySlides enrichit la story active (cover + lien)', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);

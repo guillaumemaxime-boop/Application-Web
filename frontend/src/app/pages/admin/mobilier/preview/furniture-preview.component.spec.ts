@@ -180,4 +180,14 @@ describe('FurniturePreviewComponent', () => {
     view.storyImageReplaceRequest.emit('s1');
     expect(emitted).toEqual(['s1']);
   });
+
+  it('relaie storyImageCropRequest depuis la vue détail', () => {
+    setup();
+    fixture.detectChanges();
+    const emitted: string[] = [];
+    (component as any).storyImageCropRequest.subscribe((v: string) => emitted.push(v));
+    const view = fixture.debugElement.query(By.directive(FurnitureDetailViewComponent)).componentInstance as FurnitureDetailViewComponent;
+    (view as any).storyImageCropRequest.emit('s1');
+    expect(emitted).toEqual(['s1']);
+  });
 });

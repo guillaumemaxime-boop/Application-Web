@@ -5,13 +5,14 @@ import { Slide, ImageSlide, VideoSlide, SpecSlide, QuoteSlide } from '../../mode
 import { DisplaySlide } from '../../models/display-slide.model';
 import { parseVideoUrl } from '../../utils/video-url';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
+import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
 
 type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
 
 @Component({
   selector: 'app-story-inline',
   standalone: true,
-  imports: [CommonModule, ReorderableDirective],
+  imports: [CommonModule, ReorderableDirective, CroppedImageCanvasComponent],
   template: `
     @if (editable) {
       <section class="story-inline editable">
@@ -39,8 +40,9 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
               @switch (s.type) {
                 @case ('image') {
                   <figure class="block image">
-                    <img [src]="$any(s).src" [alt]="$any(s).caption ?? ''" />
+                    <app-cropped-image-canvas [imageUrl]="$any(s).src" [crop]="$any(s).crop ?? null" mode="cover" [alt]="$any(s).caption ?? ''" />
                     <button type="button" class="slide-img-replace" (click)="imageReplaceRequest.emit(s.id)">🖼 Remplacer l'image</button>
+                    <button type="button" class="slide-img-crop" (click)="imageCropRequest.emit(s.id)">✂ Cadrer</button>
                     <figcaption class="container narrow slide-caption" contenteditable="true" role="textbox"
                                 aria-label="Légende de l'image" (blur)="onCaptionBlur(s.id, $event)">{{ $any(s).caption }}</figcaption>
                   </figure>
@@ -269,6 +271,7 @@ export class StoryInlineComponent {
   @Input() editable = false;
   @Output() slidesChange = new EventEmitter<Slide[]>();
   @Output() imageReplaceRequest = new EventEmitter<string>();
+  @Output() imageCropRequest = new EventEmitter<string>();
 
   @Input({ required: true })
   set slides(value: DisplaySlide[]) {
