@@ -464,12 +464,12 @@ export class ExpositionsComponent {
   protected onStorySlidesChange(slides: Slide[]): void {
     const id = this.activeStoryId();
     if (!id) return;
+    this.activeStorySlides.set(slides); // TOUJOURS synchroniser (handlers image/crop lisent activeStorySlides)
     if (!this.allSlidesPersistable(slides)) {
       // slide incomplet (nouveau/vide) : on ne persiste pas, pas d'erreur ; sera enregistré une fois complété
       this.slidesSaveState.set('idle');
       return;
     }
-    this.activeStorySlides.set(slides);
     this.slidesSaveState.set('saving');
     this.portfolio.replaceStorySlides(id, slides).subscribe({
       next: () => {

@@ -1122,4 +1122,38 @@ describe('MobilierComponent', () => {
     expect(cmp.slidesSaveState()).toBe('saved');
   });
 
+  it('onStorySlidesChange met TOUJOURS a jour activeStorySlides (meme si incomplet, pour ne pas perdre le slide)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    const slides = [{ id: 's-new', type: 'image', position: 0, src: '', caption: null, crop: null }];
+    cmp.onStorySlidesChange(slides);
+    httpMock.expectNone(r => r.url === '/api/admin/stories/a/slides'); // pas de persist (invalide)
+    expect(cmp.activeStorySlides().length).toBe(1);
+    expect(cmp.activeStorySlides()[0].id).toBe('s-new'); // mais le slide est bien tracke
+  });
+
+  it('remplacer l\'image d\'un slide tout juste ajoute applique bien le src puis persiste', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    // simule l'ajout d'une image vide (invalide : trackee mais non persistee)
+    cmp.onStorySlidesChange([{ id: 's-new', type: 'image', position: 0, src: '', caption: null, crop: null }]);
+    // l'utilisateur ouvre la mediatheque pour ce slide puis selectionne une photo
+    cmp.onStoryImageReplaceRequest('s-new');
+    httpMock.expectOne('/api/photos').flush([]); // getPhotos
+    cmp.onSlideImageSelected({ url: '/chosen.jpg' });
+    // maintenant le slide a un src -> persiste
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
+    expect(cmp.activeStorySlides()[0].src).toBe('/chosen.jpg');
+  });
+
 });
