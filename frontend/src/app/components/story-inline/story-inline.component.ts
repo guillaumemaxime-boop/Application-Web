@@ -19,6 +19,18 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
         <ul class="slides-edit-list" appReorderable (reordered)="onReorder($event)">
           @for (s of workingSlides(); track s.id; let i = $index) {
             <li class="slide-edit-block">
+              <div class="slide-insert-point">
+                <button type="button" class="insert-btn" aria-label="Insérer un slide avant celui-ci"
+                        (click)="insertMenuAt.set(insertMenuAt() === i ? null : i)">＋</button>
+                @if (insertMenuAt() === i) {
+                  <div class="insert-menu">
+                    <button type="button" (click)="insertSlide(i, 'image')">Image</button>
+                    <button type="button" (click)="insertSlide(i, 'video')">Vidéo</button>
+                    <button type="button" (click)="insertSlide(i, 'spec')">Spec</button>
+                    <button type="button" (click)="insertSlide(i, 'quote')">Citation</button>
+                  </div>
+                }
+              </div>
               <div class="slide-edit-toolbar">
                 <span class="slide-drag" title="Glisser pour réordonner" aria-hidden="true">⋮⋮</span>
                 <span class="slide-type">{{ s.type }}</span>
@@ -73,6 +85,12 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
             </li>
           }
         </ul>
+        <div class="add-bar">
+          <button type="button" class="add-bar-image" (click)="addSlide('image')">+ Image</button>
+          <button type="button" class="add-bar-video" (click)="addSlide('video')">+ Vidéo</button>
+          <button type="button" class="add-bar-spec" (click)="addSlide('spec')">+ Spec</button>
+          <button type="button" class="add-bar-quote" (click)="addSlide('quote')">+ Citation</button>
+        </div>
       </section>
     } @else {
       @if (sections().length > 0) {
@@ -235,6 +253,13 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
     .slide-video-url { width: 100%; padding: 6px 8px; border: 1px solid var(--color-line); margin: 8px 0; font: inherit; }
     .spec-row-del, .spec-add { background: transparent; border: 1px solid var(--color-line); cursor: pointer; padding: 2px 8px; font-size: 0.78rem; }
     .slide-img-replace { display: inline-block; margin: 8px 16px; padding: 4px 10px; background: var(--color-bg); border: 1px solid var(--color-line); cursor: pointer; font-size: 0.8rem; }
+    .slide-insert-point { text-align: center; min-height: 8px; position: relative; margin-bottom: 6px; }
+    .insert-btn { opacity: 0; background: var(--color-bg); border: 1px solid var(--color-line); border-radius: 999px; cursor: pointer; padding: 0 8px; }
+    .slide-insert-point:hover .insert-btn, .insert-btn:focus { opacity: 1; }
+    .insert-menu { display: inline-flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+    .insert-menu button { background: var(--color-bg); border: 1px solid var(--color-line); cursor: pointer; padding: 2px 8px; font-size: 0.78rem; }
+    .add-bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 16px; border-top: 1px dashed var(--color-line); margin: 0 16px; }
+    .add-bar button { background: var(--color-bg); border: 1px solid var(--color-ink); cursor: pointer; padding: 6px 14px; font-size: 0.85rem; }
   `]
 })
 export class StoryInlineComponent {
@@ -313,6 +338,29 @@ export class StoryInlineComponent {
     this.commit(this.workingSlides().map(s =>
       s.id === id && s.type === 'spec' ? { ...s, specs: s.specs.filter((_, i) => i !== idx) } : s));
   }
+
+  private newSlide(type: Slide['type']): Slide {
+    const id = 'tmp-' + Math.random().toString(36).slice(2, 8);
+    switch (type) {
+      case 'image': return { id, type, position: 0, src: '', caption: null };
+      case 'video': return { id, type, position: 0, src: '', caption: null };
+      case 'spec':  return { id, type, position: 0, specs: [{ label: '', value: '' }] };
+      case 'quote': return { id, type, position: 0, body: '', cite: null };
+    }
+  }
+
+  protected addSlide(type: Slide['type']): void {
+    this.commit([...this.workingSlides(), this.newSlide(type)]);
+  }
+
+  protected insertSlide(index: number, type: Slide['type']): void {
+    const next = [...this.workingSlides()];
+    next.splice(index, 0, this.newSlide(type));
+    this.commit(next);
+    this.insertMenuAt.set(null);
+  }
+
+  protected readonly insertMenuAt = signal<number | null>(null);
 
   protected videoEmbedUrl(src: string): SafeResourceUrl | null {
     const parsed = parseVideoUrl(src);

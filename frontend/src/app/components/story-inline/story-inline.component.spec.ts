@@ -260,4 +260,48 @@ describe('StoryInlineComponent', () => {
     (fixture.nativeElement.querySelector('.slide-img-replace') as HTMLButtonElement).click();
     expect(req).toBe('s1');
   });
+
+  // ── Ajout de slides ────────────────────────────────────────────────────────
+
+  it('barre de fin : + Image ajoute un slide image en fin', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null } as any];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (fixture.nativeElement.querySelector('.add-bar-image') as HTMLButtonElement).click();
+    expect(emitted!.length).toBe(2);
+    expect(emitted![1].type).toBe('image');
+  });
+
+  it('point d\'insertion : insère un slide spec à la position donnée', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [
+      { id: 's1', type: 'quote', position: 0, body: 'B', cite: null },
+      { id: 's2', type: 'quote', position: 1, body: 'C', cite: null },
+    ] as any[];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (component as any).insertSlide(1, 'spec'); // entre s1 et s2
+    expect(emitted!.map((s: any) => s.type)).toEqual(['quote', 'spec', 'quote']);
+  });
+
+  it('un slide ajouté a un id non vide et des valeurs par défaut', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [] as any[];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (fixture.nativeElement.querySelector('.add-bar-spec') as HTMLButtonElement).click();
+    expect(emitted![0].id).toBeTruthy();
+    expect(emitted![0].type).toBe('spec');
+    expect(emitted![0].specs.length).toBe(1);
+  });
 });
