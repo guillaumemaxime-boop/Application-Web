@@ -128,31 +128,6 @@ import { roleStyle } from '../../utils/title-style';
           </div>
         </section>
 
-        @if (editable) {
-          <section class="section story-admin">
-            <div class="container narrow">
-              <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
-              <app-story-manager-bar
-                [stories]="stories"
-                [activeStoryId]="activeStoryId"
-                [editable]="true"
-                (select)="storySelect.emit($event)"
-                (create)="storyCreate.emit()"
-                (rename)="storyRename.emit($event)"
-                (delete)="storyDelete.emit($event)"
-                (move)="storyMove.emit($event)"
-                (coverEdit)="storyCoverEdit.emit($event)"
-                (viewerPreview)="onViewerOpen()" />
-            </div>
-            @if (editable || displaySlides.length > 0) {
-              <app-story-inline [slides]="displaySlides" [editable]="true"
-                (slidesChange)="storySlidesChange.emit($event)"
-                (imageReplaceRequest)="storyImageReplaceRequest.emit($event)"
-                (imageCropRequest)="storyImageCropRequest.emit($event)"></app-story-inline>
-            }
-          </section>
-        }
-
         @if (item.gallery.length > 0 || editable) {
           <section class="section gallery">
             <div class="container">
@@ -210,6 +185,31 @@ import { roleStyle } from '../../utils/title-style';
                 </div>
               }
             </div>
+          </section>
+        }
+
+        @if (editable) {
+          <section class="section story-admin">
+            <div class="container narrow">
+              <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
+              <app-story-manager-bar
+                [stories]="stories"
+                [activeStoryId]="activeStoryId"
+                [editable]="true"
+                (select)="storySelect.emit($event)"
+                (create)="storyCreate.emit()"
+                (rename)="storyRename.emit($event)"
+                (delete)="storyDelete.emit($event)"
+                (move)="storyMove.emit($event)"
+                (coverEdit)="storyCoverEdit.emit($event)"
+                (viewerPreview)="onViewerOpen()" />
+            </div>
+            @if (editable || displaySlides.length > 0) {
+              <app-story-inline [slides]="displaySlides" [editable]="true"
+                (slidesChange)="storySlidesChange.emit($event)"
+                (imageReplaceRequest)="storyImageReplaceRequest.emit($event)"
+                (imageCropRequest)="storyImageCropRequest.emit($event)"></app-story-inline>
+            }
           </section>
         }
 
