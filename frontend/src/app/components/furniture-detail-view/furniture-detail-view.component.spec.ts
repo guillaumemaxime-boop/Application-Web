@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { FurnitureDetailViewComponent } from './furniture-detail-view.component';
 import { Furniture } from '../../models/furniture.model';
 import { DisplaySlide } from '../../models/display-slide.model';
+import { StoryInlineComponent } from '../story-inline/story-inline.component';
 
 describe('FurnitureDetailViewComponent', () => {
   let fixture: ComponentFixture<FurnitureDetailViewComponent>;
@@ -454,5 +455,32 @@ describe('FurnitureDetailViewComponent', () => {
     const editor = fixture.debugElement.query(By.css('app-tag-editor'));
     editor.triggerEventHandler('tagsChange', ['neuf']);
     expect(emitted).toEqual(['neuf']);
+  });
+
+  it('le bloc story-inline est en mode editable et relaie slidesChange', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('displaySlides', [{ type: 'image', id: 's1', position: 0, src: 'https://e.com/a.jpg', caption: null } as DisplaySlide]);
+    fixture.detectChanges();
+    const si = fixture.debugElement.query(By.directive(StoryInlineComponent)).componentInstance as StoryInlineComponent;
+    expect(si.editable).toBeTrue();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let received: any = null;
+    fixture.componentInstance.storySlidesChange.subscribe((s: any[]) => received = s);
+    si.slidesChange.emit([{ id: 'x' } as any]);
+    expect(received).toEqual([{ id: 'x' }]);
+  });
+
+  it('relaie imageReplaceRequest depuis story-inline', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('displaySlides', [{ type: 'image', id: 's1', position: 0, src: 'https://e.com/a.jpg', caption: null } as DisplaySlide]);
+    fixture.detectChanges();
+    const si = fixture.debugElement.query(By.directive(StoryInlineComponent)).componentInstance as StoryInlineComponent;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let id: any = null;
+    fixture.componentInstance.storyImageReplaceRequest.subscribe((v: string) => id = v);
+    si.imageReplaceRequest.emit('s1');
+    expect(id).toBe('s1');
   });
 });
