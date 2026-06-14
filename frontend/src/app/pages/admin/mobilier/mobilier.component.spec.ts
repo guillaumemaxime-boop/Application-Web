@@ -1000,6 +1000,22 @@ describe('MobilierComponent', () => {
     httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/new/slides').flush([]);
   });
 
+  it('previewDisplaySlides enrichit la story active (cover + lien)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.currentStories.set([{ id: 'a', ownerKind: 'furniture', ownerId: 'f1', title: 'A', coverImage: '/c.jpg', coverCrop: null, slug: 'a', position: 0, createdAt: '' }]);
+    cmp.activeStoryId.set('a');
+    cmp.activeStorySlides.set([{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null }]);
+    cmp.furnitureForm.patchValue({ slug: 'chaise', coverImage: '/c.jpg', showStoryLink: true });
+    const ds = cmp.previewDisplaySlides();
+    expect(ds[0].type).toBe('cover');
+    expect(ds[ds.length - 1].type).toBe('link');
+  });
+
   it('onPreviewViewerOpen remplit la file et onStoryViewerClosed la vide', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);

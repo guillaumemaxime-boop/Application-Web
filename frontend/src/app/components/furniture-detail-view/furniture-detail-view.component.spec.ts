@@ -87,10 +87,19 @@ describe('FurnitureDetailViewComponent', () => {
     expect(fixture.nativeElement.querySelector('.viewer-link')).toBeNull();
   });
 
-  it('ne rend pas story-inline quand displaySlides est vide', () => {
+  it('ne rend pas story-inline quand displaySlides est vide (mode non-editable)', () => {
     fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', false);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-story-inline')).toBeNull();
+  });
+
+  it('mode editable rend le bloc story-inline même sans slide (pour pouvoir ajouter)', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('displaySlides', []);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeTruthy();
   });
 
   it('mode editable rend le bloc d\'auteur (badge + story-manager-bar)', () => {

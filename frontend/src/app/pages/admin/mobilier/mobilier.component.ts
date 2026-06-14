@@ -21,6 +21,7 @@ import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/adm
 import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory } from '../shared/preview-page-helpers';
 import { EditableTextField } from '../../../components/furniture-detail-view/furniture-detail-view.component';
 import { StoryViewerComponent, StoryItem } from '../../../components/story-viewer/story-viewer.component';
+import { enrichSlides } from '../../../utils/display-slides';
 
 @Component({
   selector: 'app-mobilier',
@@ -214,7 +215,7 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
             [story]="currentStories()[0] ?? null"
             [stories]="currentStories()"
             [activeStoryId]="activeStoryId()"
-            [displaySlides]="activeStorySlides()"
+            [displaySlides]="previewDisplaySlides()"
             [tagSuggestions]="allTags()"
             (tagsChange)="onPreviewTagsChange($event)"
             (coverEdit)="onPreviewCoverEdit($event)"
@@ -405,6 +406,18 @@ export class MobilierComponent {
   protected readonly previewActive = computed(() =>
     this.editingFurnitureSlug() !== null || this.editingFurnitureId() !== null || this.creatingFurniture()
   );
+
+  /** Slides enrichis (cover + narratifs + lien fiche) destinés au preview et au viewer. */
+  protected readonly previewDisplaySlides = computed(() => {
+    const v = this.furnitureForm.getRawValue();
+    return enrichSlides({
+      slug: v.slug ?? '',
+      coverImage: v.coverImage ?? null,
+      coverCrop: v.coverCrop ?? null,
+      slides: this.activeStorySlides(),
+      showStoryLink: v.showStoryLink ?? true,
+    }, 'furniture');
+  });
 
   protected readonly focusField = createFieldFocus(MobilierComponent.FOCUSABLE_FIELDS);
   protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(

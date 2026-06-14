@@ -237,7 +237,7 @@ export type EditableExhibitionField =
                 (coverEdit)="storyCoverEdit.emit($event)"
                 (viewerPreview)="onViewerOpen()" />
             </div>
-            @if (displaySlides.length > 0) {
+            @if (editable || displaySlides.length > 0) {
               <app-story-inline [slides]="displaySlides" [editable]="true"
                 (slidesChange)="storySlidesChange.emit($event)"
                 (imageReplaceRequest)="storyImageReplaceRequest.emit($event)"></app-story-inline>

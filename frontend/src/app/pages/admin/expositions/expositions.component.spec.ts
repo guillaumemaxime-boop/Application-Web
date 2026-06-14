@@ -1027,5 +1027,21 @@ describe('ExpositionsComponent', () => {
     httpMock.expectOne('/api/photos').flush([]);
   });
 
+  it('previewDisplaySlides enrichit la story active (cover + lien)', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.currentStories.set([{ id: 'a', ownerKind: 'exhibition', ownerId: 'e1', title: 'A', coverImage: '/c.jpg', coverCrop: null, slug: 'a', position: 0, createdAt: '' }]);
+    cmp.activeStoryId.set('a');
+    cmp.activeStorySlides.set([{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null }]);
+    cmp.exhibitionForm.patchValue({ slug: 'salon', coverImage: '/c.jpg', showStoryLink: true });
+    const ds = cmp.previewDisplaySlides();
+    expect(ds[0].type).toBe('cover');
+    expect(ds[ds.length - 1].type).toBe('link');
+  });
+
 });
 

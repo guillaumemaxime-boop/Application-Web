@@ -106,6 +106,14 @@ describe('ExhibitionDetailViewComponent', () => {
     expect(fixture.nativeElement.querySelector('app-story-manager-bar')).toBeTruthy();
   });
 
+  it('mode editable rend le bloc story-inline même sans slide (pour pouvoir ajouter)', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('displaySlides', []);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeTruthy();
+  });
+
   // --- Tests Task 3 (9 tests) ---
 
   it('decompose l\'eyebrow en 3 spans editable en mode editable', () => {

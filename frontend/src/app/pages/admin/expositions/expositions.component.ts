@@ -21,6 +21,7 @@ import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/adm
 import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory } from '../shared/preview-page-helpers';
 import { EditableExhibitionField } from '../../../components/exhibition-detail-view/exhibition-detail-view.component';
 import { StoryViewerComponent, StoryItem } from '../../../components/story-viewer/story-viewer.component';
+import { enrichSlides } from '../../../utils/display-slides';
 
 @Component({
   selector: 'app-expositions',
@@ -171,7 +172,7 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
             [story]="currentStories()[0] ?? null"
             [stories]="currentStories()"
             [activeStoryId]="activeStoryId()"
-            [displaySlides]="activeStorySlides()"
+            [displaySlides]="previewDisplaySlides()"
             [tagSuggestions]="allTags()"
             (tagsChange)="onPreviewTagsChange($event)"
             (coverEdit)="onPreviewCoverEdit($event)"
@@ -336,6 +337,18 @@ export class ExpositionsComponent {
   protected readonly previewActive = computed(() =>
     this.editingExhibitionSlug() !== null || this.editingExhibitionId() !== null || this.creatingExhibition()
   );
+
+  /** Slides enrichis (cover + narratifs + lien fiche) destinés au preview et au viewer. */
+  protected readonly previewDisplaySlides = computed(() => {
+    const v = this.exhibitionForm.getRawValue();
+    return enrichSlides({
+      slug: v.slug ?? '',
+      coverImage: v.coverImage ?? null,
+      coverCrop: v.coverCrop ?? null,
+      slides: this.activeStorySlides(),
+      showStoryLink: v.showStoryLink ?? true,
+    }, 'exhibition');
+  });
 
   protected readonly focusField = createFieldFocus(ExpositionsComponent.FOCUSABLE_FIELDS);
   protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(this.exhibitionForm, ExpositionsComponent.FOCUSABLE_FIELDS, { onBeforeMutate: () => this.history.record() });
