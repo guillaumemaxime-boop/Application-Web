@@ -1,5 +1,5 @@
 import { Component, ViewChild, inject, signal, computed } from '@angular/core';
-import { A11yModule, LiveAnnouncer } from '@angular/cdk/a11y';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
@@ -25,7 +25,7 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
 @Component({
   selector: 'app-mobilier',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent, PhotoPickerComponent, AdminPreviewShellComponent, ShellPreviewDirective, A11yModule, StoryViewerComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, FurniturePreviewComponent, PhotoPickerComponent, AdminPreviewShellComponent, ShellPreviewDirective, StoryViewerComponent],
   template: `
     <div class="grid-admin">
       <aside class="list" [attr.inert]="previewFullscreenActive() ? '' : null">
@@ -230,26 +230,12 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
             (storyDelete)="onPreviewStoryDelete($event)"
             (storyMove)="onPreviewStoryMove($event)"
             (storyCoverEdit)="onPreviewStoryCoverEdit($event)"
-            (storySlidesEdit)="onPreviewStorySlidesEdit($event)"
             (storySlidesChange)="onStorySlidesChange($event)"
             (storyImageReplaceRequest)="onStoryImageReplaceRequest($event)"
             (viewerOpen)="onPreviewViewerOpen($event)" />
         </ng-template>
       </app-admin-preview-shell>
     </div>
-
-    @if (previewSlidesStoryId(); as sid) {
-      <div class="slides-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="slides-modal-title"
-           cdkTrapFocus cdkTrapFocusAutoCapture (keydown.escape)="onPreviewSlidesModalClose()">
-        <div class="slides-modal-panel">
-          <header class="slides-modal-head">
-            <h3 id="slides-modal-title">Éditer les slides</h3>
-            <button type="button" (click)="onPreviewSlidesModalClose()" aria-label="Fermer">Fermer</button>
-          </header>
-          <app-slides-editor [storyId]="sid" [ownerSlug]="editingFurnitureSlug()" />
-        </div>
-      </div>
-    }
 
     @if (storyViewerQueue().length > 0) {
       <app-story-viewer [queue]="storyViewerQueue()" (closed)="onStoryViewerClosed()" />
@@ -351,9 +337,6 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
     @media (max-width: 600px) {
       .dim-grid { grid-template-columns: 1fr; }
     }
-    .slides-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1300; display: flex; align-items: center; justify-content: center; }
-    .slides-modal-panel { width: 92%; max-width: 920px; max-height: 86vh; overflow: auto; background: var(--color-bg); padding: 20px; border: 1px solid var(--color-ink); }
-    .slides-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .slides-save-state { position: fixed; bottom: 16px; right: 16px; z-index: 1200; background: var(--color-ink); color: var(--color-bg); padding: 6px 14px; font-size: 0.8rem; border-radius: 4px; }
   `]
 })
@@ -381,7 +364,6 @@ export class MobilierComponent {
   protected readonly allTags = signal<string[]>([]);
   protected readonly activeStoryId = signal<string | null>(null);
   protected readonly activeStorySlides = signal<Slide[]>([]);
-  protected readonly previewSlidesStoryId = signal<string | null>(null);
 
   protected readonly creatingFurniture = signal(false);
   protected readonly mobilierViewMode = signal<'form' | 'preview'>('form');
@@ -492,17 +474,6 @@ export class MobilierComponent {
   protected onPreviewStoryCoverEdit(id: string): void {
     const story = this.currentStories().find(s => s.id === id);
     if (story) this.openCoverEditor(story);
-  }
-
-  protected onPreviewStorySlidesEdit(id: string): void {
-    this.activeStoryId.set(id);
-    this.previewSlidesStoryId.set(id);
-  }
-
-  protected onPreviewSlidesModalClose(): void {
-    const id = this.previewSlidesStoryId();
-    this.previewSlidesStoryId.set(null);
-    if (id) this.loadActiveStorySlides(id);
   }
 
   protected onPreviewViewerOpen(queue: StoryItem[]): void {

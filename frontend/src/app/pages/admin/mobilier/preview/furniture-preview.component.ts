@@ -38,7 +38,6 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (storyDelete)="storyDelete.emit($event)"
       (storyMove)="storyMove.emit($event)"
       (storyCoverEdit)="storyCoverEdit.emit($event)"
-      (storySlidesEdit)="storySlidesEdit.emit($event)"
       (storySlidesChange)="storySlidesChange.emit($event)"
       (storyImageReplaceRequest)="storyImageReplaceRequest.emit($event)"
       (viewerOpen)="viewerOpen.emit($event)" />
@@ -69,7 +68,6 @@ export class FurniturePreviewComponent implements OnInit {
   @Output() storyDelete = new EventEmitter<string>();
   @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
   @Output() storyCoverEdit = new EventEmitter<string>();
-  @Output() storySlidesEdit = new EventEmitter<string>();
   @Output() storySlidesChange = new EventEmitter<Slide[]>();
   @Output() storyImageReplaceRequest = new EventEmitter<string>();
   @Output() viewerOpen = new EventEmitter<StoryItem[]>();

@@ -235,7 +235,6 @@ export type EditableExhibitionField =
                 (delete)="storyDelete.emit($event)"
                 (move)="storyMove.emit($event)"
                 (coverEdit)="storyCoverEdit.emit($event)"
-                (slidesEdit)="storySlidesEdit.emit($event)"
                 (viewerPreview)="onViewerOpen()" />
             </div>
             @if (displaySlides.length > 0) {
@@ -377,7 +376,6 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Output() storyDelete = new EventEmitter<string>();
   @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
   @Output() storyCoverEdit = new EventEmitter<string>();
-  @Output() storySlidesEdit = new EventEmitter<string>();
   @Output() storySlidesChange = new EventEmitter<Slide[]>();
   @Output() storyImageReplaceRequest = new EventEmitter<string>();
 

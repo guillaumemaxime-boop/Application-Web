@@ -34,7 +34,6 @@ import { Story } from '../../models/story.model';
             <button type="button" class="smb-act smb-down" (click)="move.emit({ id: a.id, dir: 'down' })"
                     [disabled]="isLast()" aria-label="Descendre la story dans l'ordre">↓</button>
             <button type="button" class="smb-act smb-cover" (click)="coverEdit.emit(a.id)">Cover</button>
-            <button type="button" class="smb-act smb-slides" (click)="slidesEdit.emit(a.id)">⚙ Éditer slides</button>
             <button type="button" class="smb-act smb-viewer" (click)="viewerPreview.emit(a.id)">🔍 Aperçu</button>
             <button type="button" class="smb-act danger smb-delete" (click)="delete.emit(a.id)"
                     aria-label="Supprimer la story active">🗑</button>
@@ -72,7 +71,6 @@ export class StoryManagerBarComponent {
   @Output() delete = new EventEmitter<string>();
   @Output() move = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
   @Output() coverEdit = new EventEmitter<string>();
-  @Output() slidesEdit = new EventEmitter<string>();
   @Output() viewerPreview = new EventEmitter<string>();
 
   protected active(): Story | null {

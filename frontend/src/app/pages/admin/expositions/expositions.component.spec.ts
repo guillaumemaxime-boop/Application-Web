@@ -930,16 +930,6 @@ describe('ExpositionsComponent', () => {
     expect(cmp.activeStoryId()).toBe('a');
   });
 
-  it('onPreviewStorySlidesEdit ouvre la modale slides', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.onPreviewStorySlidesEdit('a');
-    expect(cmp.previewSlidesStoryId()).toBe('a');
-  });
 
   it('onPreviewStoryRename appelle updateStory', () => {
     configure();

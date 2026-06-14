@@ -954,16 +954,6 @@ describe('MobilierComponent', () => {
     expect(cmp.activeStoryId()).toBe('a');
   });
 
-  it('onPreviewStorySlidesEdit ouvre la modale slides (previewSlidesStoryId)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MobilierComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.onPreviewStorySlidesEdit('a');
-    expect(cmp.previewSlidesStoryId()).toBe('a');
-  });
 
   it('onPreviewStoryRename appelle updateStory', () => {
     configure();
