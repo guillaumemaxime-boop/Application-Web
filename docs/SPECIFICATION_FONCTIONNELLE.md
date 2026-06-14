@@ -120,7 +120,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Hero** : image de couverture + bloc de spécifications (matière, designer, dimensions). Si un crop est défini, seule la zone cadrée est affichée (rendu CSS transform pixel-perfect) ; sinon, rendu natif `object-fit: cover`.
 - **Description longue** : texte éditorial de la pièce.
 - **Tags** : mots-clés thématiques associés à la pièce (cliquables → `/creations?tags=...`).
-- **Stories** : si la pièce possède des stories éditoriaux, un bouton "Voir la story" ouvre le viewer plein écran. Le crop du cover de story est appliqué dans le viewer et dans les cards de news-slider.
+- **Stories** : la story **n'est plus affichée sur la fiche publique** (depuis le sous-projet 6a). Les stories restent rattachées à la pièce (contexte d'auteur) et sont consommées publiquement **uniquement via les sliders d'actualités de l'accueil** (clic → viewer plein écran). Le crop du cover de story est appliqué dans le viewer et dans les cards de news-slider.
 - **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item affiche son crop si défini.
 - **CTA** : lien de contact par e-mail.
 - Gestion 404 si le slug n'existe pas.
@@ -136,6 +136,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Description** : texte éditorial.
 - **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item est rendu via `<app-cropped-image-canvas>` (crop appliqué si défini).
 - **Tags** associés à l'exposition.
+- **Stories** : comme pour le mobilier, la story n'est plus affichée sur la fiche publique (sous-projet 6a) ; consommée via les sliders de l'accueil.
 - Gestion 404 si le slug n'existe pas.
 
 #### Studio (`/studio`)
@@ -165,7 +166,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Champ Tags** : composant `<app-tag-input>` avec autocomplétion depuis `GET /api/tags`, chips + navigation clavier (WAI-ARIA combobox/listbox).
 - **Outil de cadrage de la cover** : bouton « Cadrer » à côté du sélecteur d'image. Ouvre une modale avec Cropper.js (sélecteur d'aspect ratio : Libre / 16:9 / 4:5 / 1:1, coordonnées live en %, boutons Réinitialiser / Annuler / Valider). Une vignette de prévisualisation affiche le rendu pixel-perfect du crop sous le champ.
 - **Galerie** : chaque vignette dispose d'un bouton ✂ ouvrant la même modale de cadrage. Un badge `✂ LxH` sur la vignette indique qu'un crop est défini.
-- **Bloc Stories** : liste des stories de la pièce, CRUD stories, éditeur de slides par story. Le cover de chaque story dispose également d'un bouton « Cadrer ».
+- **Bloc Stories** : liste des stories de la pièce, CRUD stories, éditeur de slides par story. Le cover de chaque story dispose également d'un bouton « Cadrer ». Depuis le sous-projet 6a, la gestion des stories est **aussi disponible dans le preview** (voir ci-après) ; le form-side est conservé (double accès). Les cases « Afficher le lien/le bouton de story » ont été retirées du formulaire (la story n'est plus rendue sur la fiche publique).
 - **Preview WYSIWYG** (sous-projet 2/4) : voir section dédiée ci-après.
 
 **Page Expositions (`/admin/expositions`)** :
@@ -174,7 +175,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Champ Tags** : même composant `<app-tag-input>`.
 - **Outil de cadrage de la cover** : identique à la page Mobilier.
 - **Galerie** : même comportement que Mobilier (bouton ✂ par vignette, badge crop).
-- **Bloc Stories** : idem mobilier, avec cadrage du cover de story.
+- **Bloc Stories** : idem mobilier, avec cadrage du cover de story. Gestion aussi disponible dans le preview (sous-projet 6a) ; cases « Afficher le lien/le bouton de story » retirées.
 - **Preview WYSIWYG** (sous-projet 3/4) : voir section dédiée ci-après.
 
 **Page Navigation (`/admin/navigation`)** :
@@ -182,7 +183,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - Toggle CMS pour chaque entrée de menu (visible / masqué).
 - L'entrée **Créations** est configurable depuis cette page.
 
-> **Hors portée (reporté)** : fallback clavier pour drag/resize ; édition inline du champ catégorie ; édition des slides de story depuis le preview ; édition inline du contenu des news-sliders et des cards depuis l'accueil ; application à d'autres pages (about, contact). Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
+> **Hors portée (reporté)** : fallback clavier pour drag/resize ; édition inline du champ catégorie ; **édition des slides de story EN PLACE dans le preview** (sous-projet 6b à venir ; en 6a, la gestion des stories et l'édition des slides via modale sont disponibles dans le preview) ; application à d'autres pages (about, contact). Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
 
 ---
 
@@ -205,7 +206,7 @@ Le layout adopte un **split 50/50** en desktop (≥ 1280 px), empilé en tablett
 | **Cover hero** | Hover → boutons **✂ Cadrer** et **🖼 Remplacer** (même modales que le form). |
 | **Item de galerie** | Hover → boutons **✂ Cadrer**, **🖼 Remplacer**, **× Retirer**. Pastille **⋮⋮** (top-left) → drag&drop pour réordonner. Pastille **⤡** (bottom-right) → drag pour redimensionner (1–3 colonnes × 1–4 lignes) avec badge live `N × M`. |
 | **Tuile « + Ajouter une image »** | En fin de galerie → ouvre la médiathèque. |
-| **Story-inline** | Rendu lecture seule (données DB au dernier chargement). |
+| **Bloc d'auteur Stories** (sous-projet 6a) | Visible en mode édition uniquement, badgé « non affiché publiquement ». Barre `<app-story-manager-bar>` : chips des stories (active surlignée), renommage inline, **+ Nouvelle**, ↑↓, **Cover**, **⚙ Éditer slides** (ouvre l'éditeur de slides en modale), **🔍 Aperçu** (viewer plein écran), **🗑**. La story active est rendue via `<app-story-inline>` (lecture seule en 6a). Auto-save des opérations story. |
 | **CTA contact** | Rendu visuel uniquement, pas de soumission depuis le preview. |
 
 #### Toolbar du preview
@@ -265,7 +266,7 @@ Contrairement au mobilier (split 50/50), le layout expositions utilise un **togg
 | **Cover hero** | Hover → boutons **✂ Cadrer** et **🖼 Remplacer** (même modales que le form). |
 | **Item de galerie** | Hover → boutons **✂ Cadrer**, **🖼 Remplacer**, **× Retirer**. Pastille **⋮⋮** (top-left) → drag&drop pour réordonner. Pastille **⤡** (bottom-right) → drag pour redimensionner (1–3 colonnes × 1–4 lignes) avec badge live `N × M`. |
 | **Tuile « + Ajouter une image »** | En fin de galerie → ouvre la médiathèque. |
-| **Bouton « Voir la story »** | Rendu conditionnel si `displaySlides.length > 0`. Lecture seule (ouvre le viewer). |
+| **Bloc d'auteur Stories** (sous-projet 6a) | Identique au mobilier : `<app-story-manager-bar>` (chips + renommage inline + créer/supprimer/réordonner/cover/éditer-slides-en-modale/aperçu), story active rendue via `<app-story-inline>`, auto-save. Visible en mode édition uniquement, badgé « non affiché publiquement ». L'ancien bouton public « Voir la story » a été retiré (la story n'est plus sur la fiche publique). |
 
 #### Toolbar du preview — Exposition
 
@@ -297,7 +298,7 @@ La galerie de la fiche exposition publique est migrée de `<img + style.transfor
 
 #### Hors portée — Exposition (reporté)
 
-- Sélecteur de story dans le preview (toujours `currentStories()[0]`).
+- Édition des slides **en place** dans le preview (sous-projet 6b ; la sélection de story active et l'édition des slides via modale sont disponibles depuis 6a).
 - Validation cross-field dates côté frontend (start ≤ end) — backend reste responsable.
 - Fallback clavier pour drag/resize.
 
