@@ -49,7 +49,7 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
                 }
                 @case ('video') {
                   <figure class="block video">
-                    <div class="video-frame">@if (videoEmbedUrl($any(s).src); as url) {<iframe [src]="url" title="Vidéo"></iframe>}</div>
+                    <div class="video-frame">@if (videoEmbedUrl($any(s).src); as url) {<iframe [src]="url" [title]="'Vidéo — ' + ($any(s).caption || 'sans titre')"></iframe>}</div>
                     <div class="container narrow">
                       <input type="url" class="slide-video-url" [value]="$any(s).src" placeholder="URL YouTube ou Vimeo"
                              aria-label="URL de la vidéo" (change)="onVideoUrlChange(s.id, $event)" />

@@ -455,7 +455,7 @@ export class ExpositionsComponent {
         case 'image':
         case 'video': return !!s.src && s.src.trim().length > 0;
         case 'quote': return !!s.body && s.body.trim().length > 0;
-        case 'spec':  return (s as any).specs.length > 0;
+        case 'spec':  return s.specs.length > 0;
         default: return true;
       }
     });
