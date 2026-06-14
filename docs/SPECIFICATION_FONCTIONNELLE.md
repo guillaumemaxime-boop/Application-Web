@@ -183,7 +183,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - Toggle CMS pour chaque entrée de menu (visible / masqué).
 - L'entrée **Créations** est configurable depuis cette page.
 
-> **Hors portée (reporté)** : fallback clavier pour drag/resize ; édition inline du champ catégorie ; **édition des slides de story EN PLACE dans le preview** (sous-projet 6b à venir ; en 6a, la gestion des stories et l'édition des slides via modale sont disponibles dans le preview) ; application à d'autres pages (about, contact). Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
+> **Hors portée (reporté)** : fallback clavier pour drag/resize des galeries et des slides ; édition inline du champ catégorie ; application à d'autres pages (about, contact). (L'**édition des slides de story EN PLACE dans le preview** est faite — sous-projet 6b : voir blocs d'auteur ci-dessous.) Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
 
 ---
 
@@ -206,7 +206,7 @@ Le layout adopte un **split 50/50** en desktop (≥ 1280 px), empilé en tablett
 | **Cover hero** | Hover → boutons **✂ Cadrer** et **🖼 Remplacer** (même modales que le form). |
 | **Item de galerie** | Hover → boutons **✂ Cadrer**, **🖼 Remplacer**, **× Retirer**. Pastille **⋮⋮** (top-left) → drag&drop pour réordonner. Pastille **⤡** (bottom-right) → drag pour redimensionner (1–3 colonnes × 1–4 lignes) avec badge live `N × M`. |
 | **Tuile « + Ajouter une image »** | En fin de galerie → ouvre la médiathèque. |
-| **Bloc d'auteur Stories** (sous-projet 6a) | Visible en mode édition uniquement, badgé « non affiché publiquement ». Barre `<app-story-manager-bar>` : chips des stories (active surlignée), renommage inline, **+ Nouvelle**, ↑↓, **Cover**, **⚙ Éditer slides** (ouvre l'éditeur de slides en modale), **🔍 Aperçu** (viewer plein écran), **🗑**. La story active est rendue via `<app-story-inline>` (lecture seule en 6a). Auto-save des opérations story. |
+| **Bloc d'auteur Stories** (sous-projets 6a/6b, **placé en bas de la fiche**) | Visible en mode édition uniquement, badgé « non affiché publiquement ». Barre `<app-story-manager-bar>` : chips des stories (active surlignée), renommage inline, **+ Nouvelle**, ↑↓, **Cover**, **🔍 Aperçu** (viewer plein écran), **🗑**. La story active est rendue via `<app-story-inline>` en **mode éditable EN PLACE (6b)** : édition inline des 4 types de slides (image : **🖼 Remplacer** via médiathèque + **✂ Cadrer** + légende ; vidéo : URL + légende ; spec : cellules + ＋/× lignes ; citation : corps + source), réordonnancement par drag, suppression, **ajout** via barre de fin **et** points d'insertion entre slides. Auto-save (indicateur « Enregistré ✓ », slides incomplets non envoyés). Plus de modale « Éditer slides » (édition directe). |
 | **CTA contact** | Rendu visuel uniquement, pas de soumission depuis le preview. |
 
 #### Toolbar du preview
@@ -266,7 +266,7 @@ Contrairement au mobilier (split 50/50), le layout expositions utilise un **togg
 | **Cover hero** | Hover → boutons **✂ Cadrer** et **🖼 Remplacer** (même modales que le form). |
 | **Item de galerie** | Hover → boutons **✂ Cadrer**, **🖼 Remplacer**, **× Retirer**. Pastille **⋮⋮** (top-left) → drag&drop pour réordonner. Pastille **⤡** (bottom-right) → drag pour redimensionner (1–3 colonnes × 1–4 lignes) avec badge live `N × M`. |
 | **Tuile « + Ajouter une image »** | En fin de galerie → ouvre la médiathèque. |
-| **Bloc d'auteur Stories** (sous-projet 6a) | Identique au mobilier : `<app-story-manager-bar>` (chips + renommage inline + créer/supprimer/réordonner/cover/éditer-slides-en-modale/aperçu), story active rendue via `<app-story-inline>`, auto-save. Visible en mode édition uniquement, badgé « non affiché publiquement ». L'ancien bouton public « Voir la story » a été retiré (la story n'est plus sur la fiche publique). |
+| **Bloc d'auteur Stories** (sous-projets 6a/6b, **en bas de la fiche**) | Identique au mobilier : `<app-story-manager-bar>` (chips + renommage inline + créer/supprimer/réordonner/cover/aperçu) + `<app-story-inline>` en **édition EN PLACE des slides (6b)** : 4 types éditables inline (image Remplacer/Cadrer/légende, vidéo URL/légende, spec, citation), drag-reorder, suppression, ajout (barre de fin + points d'insertion), auto-save. Visible en mode édition uniquement, badgé « non affiché publiquement ». L'ancien bouton public « Voir la story » a été retiré (la story n'est plus sur la fiche publique). |
 
 #### Toolbar du preview — Exposition
 
@@ -298,7 +298,7 @@ La galerie de la fiche exposition publique est migrée de `<img + style.transfor
 
 #### Hors portée — Exposition (reporté)
 
-- Édition des slides **en place** dans le preview (sous-projet 6b ; la sélection de story active et l'édition des slides via modale sont disponibles depuis 6a).
+- (Fait au sous-projet 6b : édition des slides **en place** dans le preview, y compris crop des images de slide.)
 - Validation cross-field dates côté frontend (start ≤ end) — backend reste responsable.
 - Fallback clavier pour drag/resize.
 
