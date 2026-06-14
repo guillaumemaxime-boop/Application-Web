@@ -248,4 +248,16 @@ describe('StoryInlineComponent', () => {
     body.textContent = 'Nouveau'; body.dispatchEvent(new Event('blur'));
     expect(emitted![0].body).toBe('Nouveau');
   });
+
+  it('le bouton Remplacer image émet imageReplaceRequest avec l\'id', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null } as any];
+    component.editable = true; fixture.detectChanges();
+    let req: string | undefined;
+    component.imageReplaceRequest.subscribe((id: string) => req = id);
+    (fixture.nativeElement.querySelector('.slide-img-replace') as HTMLButtonElement).click();
+    expect(req).toBe('s1');
+  });
 });

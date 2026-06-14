@@ -28,6 +28,7 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
                 @case ('image') {
                   <figure class="block image">
                     <img [src]="$any(s).src" [alt]="$any(s).caption ?? ''" />
+                    <button type="button" class="slide-img-replace" (click)="imageReplaceRequest.emit(s.id)">🖼 Remplacer l'image</button>
                     <figcaption class="container narrow slide-caption" contenteditable="true" role="textbox"
                                 aria-label="Légende de l'image" (blur)="onCaptionBlur(s.id, $event)">{{ $any(s).caption }}</figcaption>
                   </figure>
@@ -233,6 +234,7 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
     .slide-edit-block [contenteditable]:hover, .slide-edit-block [contenteditable]:focus { outline: 1px dashed var(--color-accent); outline-offset: 2px; }
     .slide-video-url { width: 100%; padding: 6px 8px; border: 1px solid var(--color-line); margin: 8px 0; font: inherit; }
     .spec-row-del, .spec-add { background: transparent; border: 1px solid var(--color-line); cursor: pointer; padding: 2px 8px; font-size: 0.78rem; }
+    .slide-img-replace { display: inline-block; margin: 8px 16px; padding: 4px 10px; background: var(--color-bg); border: 1px solid var(--color-line); cursor: pointer; font-size: 0.8rem; }
   `]
 })
 export class StoryInlineComponent {
