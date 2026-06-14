@@ -1,4 +1,5 @@
 import { Component, EventEmitter, inject, Input, NgZone, OnDestroy, Output, signal } from '@angular/core';
+import { Slide } from '../../models/slide.model';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TagEditorComponent } from '../tag-editor/tag-editor.component';
@@ -234,11 +235,13 @@ export type EditableExhibitionField =
                 (delete)="storyDelete.emit($event)"
                 (move)="storyMove.emit($event)"
                 (coverEdit)="storyCoverEdit.emit($event)"
-                (slidesEdit)="storySlidesEdit.emit($event)"
                 (viewerPreview)="onViewerOpen()" />
             </div>
-            @if (displaySlides.length > 0) {
-              <app-story-inline [slides]="displaySlides"></app-story-inline>
+            @if (editable || displaySlides.length > 0) {
+              <app-story-inline [slides]="displaySlides" [editable]="true"
+                (slidesChange)="storySlidesChange.emit($event)"
+                (imageReplaceRequest)="storyImageReplaceRequest.emit($event)"
+                (imageCropRequest)="storyImageCropRequest.emit($event)"></app-story-inline>
             }
           </section>
         }
@@ -374,7 +377,9 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Output() storyDelete = new EventEmitter<string>();
   @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
   @Output() storyCoverEdit = new EventEmitter<string>();
-  @Output() storySlidesEdit = new EventEmitter<string>();
+  @Output() storySlidesChange = new EventEmitter<Slide[]>();
+  @Output() storyImageReplaceRequest = new EventEmitter<string>();
+  @Output() storyImageCropRequest = new EventEmitter<string>();
 
   protected editingField: EditableExhibitionField | null = null;
   protected editingDateField: 'startDate' | 'endDate' | null = null;

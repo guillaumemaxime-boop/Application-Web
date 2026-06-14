@@ -1,4 +1,5 @@
 import { ApplicationRef, ChangeDetectorRef, Component, EventEmitter, inject, Input, NgZone, OnDestroy, Output, signal } from '@angular/core';
+import { Slide } from '../../models/slide.model';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TagEditorComponent } from '../tag-editor/tag-editor.component';
@@ -127,29 +128,6 @@ import { roleStyle } from '../../utils/title-style';
           </div>
         </section>
 
-        @if (editable) {
-          <section class="section story-admin">
-            <div class="container narrow">
-              <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
-              <app-story-manager-bar
-                [stories]="stories"
-                [activeStoryId]="activeStoryId"
-                [editable]="true"
-                (select)="storySelect.emit($event)"
-                (create)="storyCreate.emit()"
-                (rename)="storyRename.emit($event)"
-                (delete)="storyDelete.emit($event)"
-                (move)="storyMove.emit($event)"
-                (coverEdit)="storyCoverEdit.emit($event)"
-                (slidesEdit)="storySlidesEdit.emit($event)"
-                (viewerPreview)="onViewerOpen()" />
-            </div>
-            @if (displaySlides.length > 0) {
-              <app-story-inline [slides]="displaySlides"></app-story-inline>
-            }
-          </section>
-        }
-
         @if (item.gallery.length > 0 || editable) {
           <section class="section gallery">
             <div class="container">
@@ -207,6 +185,31 @@ import { roleStyle } from '../../utils/title-style';
                 </div>
               }
             </div>
+          </section>
+        }
+
+        @if (editable) {
+          <section class="section story-admin">
+            <div class="container narrow">
+              <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
+              <app-story-manager-bar
+                [stories]="stories"
+                [activeStoryId]="activeStoryId"
+                [editable]="true"
+                (select)="storySelect.emit($event)"
+                (create)="storyCreate.emit()"
+                (rename)="storyRename.emit($event)"
+                (delete)="storyDelete.emit($event)"
+                (move)="storyMove.emit($event)"
+                (coverEdit)="storyCoverEdit.emit($event)"
+                (viewerPreview)="onViewerOpen()" />
+            </div>
+            @if (editable || displaySlides.length > 0) {
+              <app-story-inline [slides]="displaySlides" [editable]="true"
+                (slidesChange)="storySlidesChange.emit($event)"
+                (imageReplaceRequest)="storyImageReplaceRequest.emit($event)"
+                (imageCropRequest)="storyImageCropRequest.emit($event)"></app-story-inline>
+            }
           </section>
         }
 
@@ -383,7 +386,9 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   @Output() storyDelete = new EventEmitter<string>();
   @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
   @Output() storyCoverEdit = new EventEmitter<string>();
-  @Output() storySlidesEdit = new EventEmitter<string>();
+  @Output() storySlidesChange = new EventEmitter<Slide[]>();
+  @Output() storyImageReplaceRequest = new EventEmitter<string>();
+  @Output() storyImageCropRequest = new EventEmitter<string>();
 
   protected editingField: EditableTextField | null = null;
 

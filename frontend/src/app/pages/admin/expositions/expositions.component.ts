@@ -1,11 +1,12 @@
-import { Component, DestroyRef, ViewChild, computed, inject, signal } from '@angular/core';
-import { A11yModule, LiveAnnouncer } from '@angular/cdk/a11y';
+import { Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Exhibition } from '../../../models/exhibition.model';
 import { Story } from '../../../models/story.model';
 import { Slide } from '../../../models/slide.model';
+import { Photo } from '../../../models/photo.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
@@ -15,16 +16,18 @@ import { ToastService } from '../shared/toast.service';
 import { GalleryItem } from '../../../models/gallery-item.model';
 import { Crop } from '../../../models/crop.model';
 import { ExhibitionPreviewComponent } from './preview/exhibition-preview.component';
-import { enrichSlides } from '../../../utils/display-slides';
+import { PhotoPickerComponent } from '../shared/photo-picker.component';
+import { ImageCropPickerComponent } from '../shared/image-crop-picker.component';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
-import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory, formTickSignal } from '../shared/preview-page-helpers';
+import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory } from '../shared/preview-page-helpers';
 import { EditableExhibitionField } from '../../../components/exhibition-detail-view/exhibition-detail-view.component';
 import { StoryViewerComponent, StoryItem } from '../../../components/story-viewer/story-viewer.component';
+import { enrichSlides } from '../../../utils/display-slides';
 
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent, AdminPreviewShellComponent, ShellPreviewDirective, A11yModule, StoryViewerComponent],
+  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent, PhotoPickerComponent, AdminPreviewShellComponent, ShellPreviewDirective, StoryViewerComponent, ImageCropPickerComponent],
   template: `
     <div class="grid-admin">
       <aside class="list" [attr.inert]="previewFullscreenActive() ? '' : null">
@@ -60,7 +63,7 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
         [showSave]="true"
         [saveDisabled]="exhibitionForm.invalid"
         [saving]="saving()"
-        [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen()"
+        [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen() || replacingImageSlideId() !== null || croppingImageSlideId() !== null"
         (save)="saveExhibition()"
         (fullscreenChange)="previewFullscreenActive.set($event)"
         [historyEnabled]="true"
@@ -187,27 +190,34 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
             (storyDelete)="onPreviewStoryDelete($event)"
             (storyMove)="onPreviewStoryMove($event)"
             (storyCoverEdit)="onPreviewStoryCoverEdit($event)"
-            (storySlidesEdit)="onPreviewStorySlidesEdit($event)"
+            (storySlidesChange)="onStorySlidesChange($event)"
+            (storyImageReplaceRequest)="onStoryImageReplaceRequest($event)"
+            (storyImageCropRequest)="onStoryImageCropRequest($event)"
             (viewerOpen)="onPreviewViewerOpen($event)" />
         </ng-template>
       </app-admin-preview-shell>
     </div>
 
-    @if (previewSlidesStoryId(); as sid) {
-      <div class="slides-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="slides-modal-title"
-           cdkTrapFocus cdkTrapFocusAutoCapture (keydown.escape)="onPreviewSlidesModalClose()">
-        <div class="slides-modal-panel">
-          <header class="slides-modal-head">
-            <h3 id="slides-modal-title">Éditer les slides</h3>
-            <button type="button" (click)="onPreviewSlidesModalClose()" aria-label="Fermer">Fermer</button>
-          </header>
-          <app-slides-editor [storyId]="sid" [ownerSlug]="editingExhibitionSlug()" />
-        </div>
-      </div>
-    }
-
     @if (storyViewerQueue().length > 0) {
       <app-story-viewer [queue]="storyViewerQueue()" (closed)="onStoryViewerClosed()" />
+    }
+
+    @if (slidesSaveState() !== 'idle') {
+      <div class="slides-save-state" aria-live="polite">
+        @switch (slidesSaveState()) {
+          @case ('saving') { Enregistrement… }
+          @case ('saved') { Enregistré ✓ }
+          @case ('error') { Erreur d'enregistrement }
+        }
+      </div>
+    }
+    @if (replacingImageSlideId()) {
+      <app-photo-picker target="cover" [photos]="pickerPhotos()"
+        (selected)="onSlideImageSelected($event)" (closed)="onSlidePickerClosed()" />
+    }
+    @if (croppingImageSlide(); as ctx) {
+      <app-image-crop-picker [imageUrl]="ctx.src" [initialCrop]="ctx.crop"
+        (validated)="onSlideCropValidated($event)" (cancelled)="onSlideCropCancelled()" />
     }
   `,
   styles: [`
@@ -265,9 +275,7 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
       .list { position: static; max-height: none; }
       .row-2 { grid-template-columns: 1fr; }
     }
-    .slides-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1300; display: flex; align-items: center; justify-content: center; }
-    .slides-modal-panel { width: 92%; max-width: 920px; max-height: 86vh; overflow: auto; background: var(--color-bg); padding: 20px; border: 1px solid var(--color-ink); }
-    .slides-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .slides-save-state { position: fixed; bottom: 16px; right: 16px; z-index: 1200; background: var(--color-ink); color: var(--color-bg); padding: 6px 14px; font-size: 0.8rem; border-radius: 4px; }
   `]
 })
 export class ExpositionsComponent {
@@ -294,13 +302,16 @@ export class ExpositionsComponent {
   protected readonly editingStoryCoverCrop = signal<Crop | null>(null);
   protected readonly activeStoryId = signal<string | null>(null);
   protected readonly activeStorySlides = signal<Slide[]>([]);
-  protected readonly previewSlidesStoryId = signal<string | null>(null);
 
   protected readonly creatingExhibition = signal(false);
   protected readonly expoViewMode = signal<'form' | 'preview'>('form');
   /** Reflète le plein écran du shell — rend la liste latérale inert (neutralisation aria-modal). */
   protected readonly previewFullscreenActive = signal(false);
   protected readonly storyViewerQueue = signal<StoryItem[]>([]);
+  protected readonly slidesSaveState = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  protected readonly replacingImageSlideId = signal<string | null>(null);
+  protected readonly croppingImageSlideId = signal<string | null>(null);
+  protected readonly pickerPhotos = signal<Photo[]>([]);
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -334,7 +345,17 @@ export class ExpositionsComponent {
     this.editingExhibitionSlug() !== null || this.editingExhibitionId() !== null || this.creatingExhibition()
   );
 
-  private readonly _formTick = formTickSignal(this.exhibitionForm, inject(DestroyRef));
+  /** Slides enrichis (cover + narratifs + lien fiche) destinés au preview et au viewer. */
+  protected readonly previewDisplaySlides = computed(() => {
+    const v = this.exhibitionForm.getRawValue();
+    return enrichSlides({
+      slug: v.slug ?? '',
+      coverImage: v.coverImage ?? null,
+      coverCrop: v.coverCrop ?? null,
+      slides: this.activeStorySlides(),
+      showStoryLink: v.showStoryLink ?? true,
+    }, 'exhibition');
+  });
 
   protected readonly focusField = createFieldFocus(ExpositionsComponent.FOCUSABLE_FIELDS);
   protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(this.exhibitionForm, ExpositionsComponent.FOCUSABLE_FIELDS, { onBeforeMutate: () => this.history.record() });
@@ -403,17 +424,6 @@ export class ExpositionsComponent {
     if (story) this.openCoverEditor(story);
   }
 
-  protected onPreviewStorySlidesEdit(id: string): void {
-    this.activeStoryId.set(id);
-    this.previewSlidesStoryId.set(id);
-  }
-
-  protected onPreviewSlidesModalClose(): void {
-    const id = this.previewSlidesStoryId();
-    this.previewSlidesStoryId.set(null);
-    if (id) this.loadActiveStorySlides(id);
-  }
-
   protected onPreviewViewerOpen(queue: StoryItem[]): void {
     this.storyViewerQueue.set(queue);
   }
@@ -439,20 +449,72 @@ export class ExpositionsComponent {
     announcer: this.announcer,
   });
 
-  protected readonly previewDisplaySlides = computed(() => {
-    this._formTick(); // dépendance signal — force recompute sur valueChanges
-    const stories = this.currentStories();
-    const active = stories.find(s => s.id === this.activeStoryId()) ?? stories[0];
-    if (!active) return [];
-    const v = this.exhibitionForm.getRawValue();
-    return enrichSlides({
-      slug: v.slug ?? '',
-      coverImage: v.coverImage ?? null,
-      coverCrop: v.coverCrop ?? null,
-      slides: this.activeStorySlides(),
-      showStoryLink: v.showStoryLink ?? true,
-    }, 'exhibition');
-  });
+  private allSlidesPersistable(slides: Slide[]): boolean {
+    return slides.every(s => {
+      switch (s.type) {
+        case 'image':
+        case 'video': return !!s.src && s.src.trim().length > 0;
+        case 'quote': return !!s.body && s.body.trim().length > 0;
+        case 'spec':  return s.specs.length > 0;
+        default: return true;
+      }
+    });
+  }
+
+  protected onStorySlidesChange(slides: Slide[]): void {
+    const id = this.activeStoryId();
+    if (!id) return;
+    this.activeStorySlides.set(slides); // TOUJOURS synchroniser (handlers image/crop lisent activeStorySlides)
+    if (!this.allSlidesPersistable(slides)) {
+      // slide incomplet (nouveau/vide) : on ne persiste pas, pas d'erreur ; sera enregistré une fois complété
+      this.slidesSaveState.set('idle');
+      return;
+    }
+    this.slidesSaveState.set('saving');
+    this.portfolio.replaceStorySlides(id, slides).subscribe({
+      next: () => {
+        this.slidesSaveState.set('saved');
+        setTimeout(() => { if (this.slidesSaveState() === 'saved') this.slidesSaveState.set('idle'); }, 2000);
+      },
+      error: () => {
+        this.slidesSaveState.set('error');
+        this.toast.error('Erreur lors de l\'enregistrement des slides.');
+      },
+    });
+  }
+
+  protected onStoryImageReplaceRequest(slideId: string): void {
+    this.replacingImageSlideId.set(slideId);
+    this.portfolio.getPhotos().subscribe(p => this.pickerPhotos.set(p));
+  }
+
+  protected onSlideImageSelected(photo: Photo): void {
+    const slideId = this.replacingImageSlideId();
+    this.replacingImageSlideId.set(null);
+    if (!slideId) return;
+    const next = this.activeStorySlides().map(s => s.id === slideId && s.type === 'image' ? { ...s, src: photo.url } : s);
+    this.onStorySlidesChange(next);
+  }
+
+  protected onSlidePickerClosed(): void { this.replacingImageSlideId.set(null); }
+
+  protected onStoryImageCropRequest(slideId: string): void { this.croppingImageSlideId.set(slideId); }
+
+  protected onSlideCropValidated(crop: Crop): void {
+    const slideId = this.croppingImageSlideId();
+    this.croppingImageSlideId.set(null);
+    if (!slideId) return;
+    const next = this.activeStorySlides().map(s => s.id === slideId && s.type === 'image' ? { ...s, crop } : s);
+    this.onStorySlidesChange(next);
+  }
+
+  protected onSlideCropCancelled(): void { this.croppingImageSlideId.set(null); }
+
+  protected croppingImageSlide(): { src: string; crop: Crop | null } | null {
+    const id = this.croppingImageSlideId();
+    const s = this.activeStorySlides().find(x => x.id === id);
+    return s && s.type === 'image' ? { src: s.src, crop: (s as any).crop ?? null } : null;
+  }
 
   constructor() {
     this.refreshExhibitions();

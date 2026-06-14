@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { ExhibitionDetailViewComponent } from './exhibition-detail-view.component';
 import { Exhibition } from '../../models/exhibition.model';
 import { DisplaySlide } from '../../models/display-slide.model';
+import { StoryInlineComponent } from '../story-inline/story-inline.component';
 
 describe('ExhibitionDetailViewComponent', () => {
   let fixture: ComponentFixture<ExhibitionDetailViewComponent>;
@@ -103,6 +104,14 @@ describe('ExhibitionDetailViewComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.story-admin-badge')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-story-manager-bar')).toBeTruthy();
+  });
+
+  it('mode editable rend le bloc story-inline même sans slide (pour pouvoir ajouter)', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('displaySlides', []);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-story-inline')).toBeTruthy();
   });
 
   // --- Tests Task 3 (9 tests) ---
@@ -235,5 +244,45 @@ describe('ExhibitionDetailViewComponent', () => {
     const editor = fixture.debugElement.query(By.css('app-tag-editor'));
     editor.triggerEventHandler('tagsChange', ['neuf']);
     expect(emitted).toEqual(['neuf']);
+  });
+
+  it('le bloc story-inline est en mode editable et relaie slidesChange', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('displaySlides', [{ type: 'image', id: 's1', position: 0, src: 'https://e.com/a.jpg', caption: null } as DisplaySlide]);
+    fixture.detectChanges();
+    const si = fixture.debugElement.query(By.directive(StoryInlineComponent)).componentInstance as StoryInlineComponent;
+    expect(si.editable).toBeTrue();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let received: any = null;
+    fixture.componentInstance.storySlidesChange.subscribe((s: any[]) => received = s);
+    si.slidesChange.emit([{ id: 'x' } as any]);
+    expect(received).toEqual([{ id: 'x' }]);
+  });
+
+  it('relaie imageReplaceRequest depuis story-inline', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('displaySlides', [{ type: 'image', id: 's1', position: 0, src: 'https://e.com/a.jpg', caption: null } as DisplaySlide]);
+    fixture.detectChanges();
+    const si = fixture.debugElement.query(By.directive(StoryInlineComponent)).componentInstance as StoryInlineComponent;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let id: any = null;
+    fixture.componentInstance.storyImageReplaceRequest.subscribe((v: string) => id = v);
+    si.imageReplaceRequest.emit('s1');
+    expect(id).toBe('s1');
+  });
+
+  it('relaie imageCropRequest depuis story-inline via storyImageCropRequest', () => {
+    fixture.componentRef.setInput('item', mockExhibition);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('displaySlides', [{ type: 'image', id: 's1', position: 0, src: 'https://e.com/a.jpg', caption: null } as DisplaySlide]);
+    fixture.detectChanges();
+    const si = fixture.debugElement.query(By.directive(StoryInlineComponent)).componentInstance as StoryInlineComponent;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let id: any = null;
+    (fixture.componentInstance as any).storyImageCropRequest.subscribe((v: string) => id = v);
+    si.imageCropRequest.emit('s1');
+    expect(id).toBe('s1');
   });
 });

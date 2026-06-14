@@ -11,7 +11,7 @@ import { StoryManagerBarComponent } from './story-manager-bar.component';
     (select)="lastSelect = $event" (create)="created = true"
     (rename)="lastRename = $event" (delete)="lastDelete = $event"
     (move)="lastMove = $event" (coverEdit)="lastCover = $event"
-    (slidesEdit)="lastSlides = $event" (viewerPreview)="lastViewer = $event" />`,
+    (viewerPreview)="lastViewer = $event" />`,
 })
 class HostComponent {
   readonly stories = signal<Story[]>([
@@ -26,7 +26,6 @@ class HostComponent {
   lastDelete: string | null = null;
   lastMove: { id: string; dir: 'up' | 'down' } | null = null;
   lastCover: string | null = null;
-  lastSlides: string | null = null;
   lastViewer: string | null = null;
 }
 
@@ -78,15 +77,17 @@ describe('StoryManagerBarComponent', () => {
     expect(host.lastMove).toEqual({ id: 'a', dir: 'down' });
   });
 
-  it('cover / slides / aperçu / suppression émettent l\'id de l\'active', () => {
+  it('cover / aperçu / suppression émettent l\'id de l\'active', () => {
     (fixture.nativeElement.querySelector('.smb-cover') as HTMLButtonElement).click();
-    (fixture.nativeElement.querySelector('.smb-slides') as HTMLButtonElement).click();
     (fixture.nativeElement.querySelector('.smb-viewer') as HTMLButtonElement).click();
     (fixture.nativeElement.querySelector('.smb-delete') as HTMLButtonElement).click();
     expect(host.lastCover).toBe('a');
-    expect(host.lastSlides).toBe('a');
     expect(host.lastViewer).toBe('a');
     expect(host.lastDelete).toBe('a');
+  });
+
+  it('ne rend plus le bouton Éditer slides (édition désormais en place)', () => {
+    expect(fixture.nativeElement.querySelector('.smb-slides')).toBeNull();
   });
 
   it('affiche un message quand aucune story', () => {

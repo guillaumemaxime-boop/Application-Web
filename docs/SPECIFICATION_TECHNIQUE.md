@@ -244,7 +244,11 @@ id            VARCHAR(50)  PK
 story_id      FK → story(id) CASCADE
 type          VARCHAR(20)  NOT NULL   "image" | "video" | "quote" | ...
 position      INTEGER      NOT NULL
-(+ colonnes métadonnées selon type : image_url, caption, quote_text, etc.)
+image_crop_x  DOUBLE       nullable  (% 0–100, cadrage des slides image — sous-projet 6b)
+image_crop_y  DOUBLE       nullable
+image_crop_w  DOUBLE       nullable
+image_crop_h  DOUBLE       nullable
+(+ colonnes métadonnées selon type : src, caption, quote_body, quote_cite, link_*, table story_slide_spec)
 Index : idx_story_slide_story_pos(story_id, position)
 
 news_slider
@@ -302,6 +306,7 @@ Index : idx_home_feed_kind_slug(kind, ref_slug) UNIQUE
 | `028-replace-focal-point-with-crop.yaml` | DROP `cover_focal_x/y` sur `furniture` + `exhibition` ; ADD `cover_crop_x/y/w/h` (DOUBLE nullable) sur `furniture`, `exhibition`, `story` ; ADD `crop_x/y/w/h` (DOUBLE nullable) sur `furniture_gallery` + `exhibition_gallery` |
 | `029-add-gallery-item-spans.yaml` | ADD `col_span` + `row_span` INT NOT NULL DEFAULT 1 sur `furniture_gallery` et `exhibition_gallery` (spans grille WYSIWYG) |
 | `030-add-home-feed-cover-crop.yaml` | ADD `cover_crop_x/y/w/h` DOUBLE PRECISION nullable sur `home_feed` (cadrage cover par item de feed, override de la fiche source) |
+| `031-add-story-slide-image-crop.yaml` | ADD `image_crop_x/y/w/h` DOUBLE nullable sur `story_slide` (cadrage des slides de type image, édité en place dans le preview — sous-projet 6b) |
 
 ### 3.3 Records Java (DTOs)
 
@@ -1048,10 +1053,11 @@ Chemin : `frontend/src/app/pages/admin/shared/image-crop-picker.component.ts`
 Chemin : `frontend/src/app/pages/admin/shared/cropped-image-canvas.component.ts`
 
 - Rendu pixel-perfect d'une image cadrée via `<canvas>` + `drawImage()`.
-- Deux modes :
+- Trois modes :
   - `adaptive` — le canvas adapte sa largeur à l'aspect du crop (preview unique).
   - `cover` — canvas à taille fixe CSS avec cover-fit (grille de vignettes).
-- Utilise `ResizeObserver` (mode cover) et un cache d'image en mémoire.
+  - `fit` (sous-projet 6b) — la box adopte le **ratio pixel du crop** (calculé depuis les dimensions naturelles de l'image), largeur 100% responsive ; la région cropée est rendue **exactement** (pas de recadrage supplémentaire). Utilisé pour les images de slide (éditeur in-place + `story-viewer`) afin que « ce qui est cropé = ce qui est affiché ».
+- Utilise `ResizeObserver` (modes cover et fit) et un cache d'image en mémoire.
 - `role="img"` + `aria-label` pour l'accessibilité ; `crossOrigin="anonymous"` pour éviter le canvas tainted.
 
 #### `<app-image-field>` (extension)

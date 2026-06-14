@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 031-add-story-slide-image-crop
+      author: atelier-lumen
+      changes:
+        - addColumn:
+            tableName: story_slide
+            columns:
+              - column: { name: image_crop_x, type: double }
+              - column: { name: image_crop_y, type: double }
+              - column: { name: image_crop_w, type: double }
+              - column: { name: image_crop_h, type: double }

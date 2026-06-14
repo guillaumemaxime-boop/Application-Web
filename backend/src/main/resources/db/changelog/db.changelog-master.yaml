@@ -89,3 +89,6 @@ databaseChangeLog:
   - include:
       file: changes/030-add-home-feed-cover-crop.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/031-add-story-slide-image-crop.yaml
+      relativeToChangelogFile: true

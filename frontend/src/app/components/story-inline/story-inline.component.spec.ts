@@ -112,4 +112,208 @@ describe('StoryInlineComponent', () => {
     expect(iframe).not.toBeNull();
     expect(iframe.src).toContain('player.vimeo.com/video/123456789');
   });
+
+  // ── Mode éditable ──────────────────────────────────────────────────────────
+
+  function rawSlides(): any[] {
+    return [
+      { id: 's1', type: 'quote', position: 0, body: 'Bonjour', cite: null },
+      { id: 's2', type: 'image', position: 1, src: '/a.jpg', caption: 'A' },
+    ];
+  }
+
+  it('mode lecture seule : pas d\'affordance d\'édition', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = false;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.slide-edit-block')).toBeNull();
+  });
+
+  it('mode éditable : un bloc éditable par slide avec poignée drag + supprimer', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = true;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.slide-edit-block').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.slide-drag').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.slide-del').length).toBe(2);
+  });
+
+  it('supprimer un slide émet slidesChange sans ce slide', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = true;
+    fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (fixture.nativeElement.querySelectorAll('.slide-del')[0] as HTMLButtonElement).click();
+    expect(emitted!.map(s => s.id)).toEqual(['s2']);
+  });
+
+  it('réordonnancement via onReorder émet slidesChange ordonné', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = true;
+    fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (component as any).onReorder([1, 0]);
+    expect(emitted!.map(s => s.id)).toEqual(['s2', 's1']);
+  });
+
+  it('un nouvel input slides réinitialise la working-copy', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = rawSlides();
+    component.editable = true;
+    fixture.detectChanges();
+    component.slides = [{ id: 'x', type: 'quote', position: 0, body: 'X', cite: null } as any];
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.slide-edit-block').length).toBe(1);
+  });
+
+  it('éditer la légende image (blur) émet slidesChange', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: 'A' } as any];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    const cap = fixture.nativeElement.querySelector('.slide-caption') as HTMLElement;
+    cap.textContent = 'Nouvelle légende'; cap.dispatchEvent(new Event('blur'));
+    expect(emitted![0].caption).toBe('Nouvelle légende');
+  });
+
+  it('éditer l\'URL vidéo (change) émet slidesChange', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'video', position: 0, src: '', caption: null } as any];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    const input = fixture.nativeElement.querySelector('.slide-video-url') as HTMLInputElement;
+    input.value = 'https://youtu.be/abc'; input.dispatchEvent(new Event('change'));
+    expect(emitted![0].src).toBe('https://youtu.be/abc');
+  });
+
+  it('éditer une cellule spec (blur) émet slidesChange', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'spec', position: 0, specs: [{ label: 'L', value: 'V' }] } as any];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    const dd = fixture.nativeElement.querySelector('.spec-value') as HTMLElement;
+    dd.textContent = 'V2'; dd.dispatchEvent(new Event('blur'));
+    expect(emitted![0].specs[0].value).toBe('V2');
+  });
+
+  it('ajouter / retirer une ligne de spec émet slidesChange', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'spec', position: 0, specs: [{ label: 'L', value: 'V' }] } as any];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (fixture.nativeElement.querySelector('.spec-add') as HTMLButtonElement).click();
+    expect(emitted![0].specs.length).toBe(2);
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelectorAll('.spec-row-del')[1] as HTMLButtonElement).click();
+    expect(emitted![0].specs.length).toBe(1);
+  });
+
+  it('éditer le corps d\'une citation (blur) émet slidesChange', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null } as any];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    const body = fixture.nativeElement.querySelector('.quote-body') as HTMLElement;
+    body.textContent = 'Nouveau'; body.dispatchEvent(new Event('blur'));
+    expect(emitted![0].body).toBe('Nouveau');
+  });
+
+  it('le bouton Remplacer image émet imageReplaceRequest avec l\'id', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null } as any];
+    component.editable = true; fixture.detectChanges();
+    let req: string | undefined;
+    component.imageReplaceRequest.subscribe((id: string) => req = id);
+    (fixture.nativeElement.querySelector('.slide-img-replace') as HTMLButtonElement).click();
+    expect(req).toBe('s1');
+  });
+
+  it('le bouton Cadrer image émet imageCropRequest avec l\'id', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null } as any];
+    component.editable = true; fixture.detectChanges();
+    let req: string | undefined;
+    component.imageCropRequest.subscribe((id: string) => req = id);
+    (fixture.nativeElement.querySelector('.slide-img-crop') as HTMLButtonElement).click();
+    expect(req).toBe('s1');
+  });
+
+  // ── Ajout de slides ────────────────────────────────────────────────────────
+
+  it('barre de fin : + Image ajoute un slide image en fin', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null } as any];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (fixture.nativeElement.querySelector('.add-bar-image') as HTMLButtonElement).click();
+    expect(emitted!.length).toBe(2);
+    expect(emitted![1].type).toBe('image');
+  });
+
+  it('point d\'insertion : insère un slide spec à la position donnée', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [
+      { id: 's1', type: 'quote', position: 0, body: 'B', cite: null },
+      { id: 's2', type: 'quote', position: 1, body: 'C', cite: null },
+    ] as any[];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (component as any).insertSlide(1, 'spec'); // entre s1 et s2
+    expect(emitted!.map((s: any) => s.type)).toEqual(['quote', 'spec', 'quote']);
+  });
+
+  it('un slide ajouté a un id non vide et des valeurs par défaut', () => {
+    TestBed.configureTestingModule({ imports: [StoryInlineComponent] });
+    const fixture = TestBed.createComponent(StoryInlineComponent);
+    const component = fixture.componentInstance;
+    component.slides = [] as any[];
+    component.editable = true; fixture.detectChanges();
+    let emitted: any[] | null = null;
+    component.slidesChange.subscribe((s: any[]) => emitted = s);
+    (fixture.nativeElement.querySelector('.add-bar-spec') as HTMLButtonElement).click();
+    expect(emitted![0].id).toBeTruthy();
+    expect(emitted![0].type).toBe('spec');
+    expect(emitted![0].specs.length).toBe(1);
+  });
 });

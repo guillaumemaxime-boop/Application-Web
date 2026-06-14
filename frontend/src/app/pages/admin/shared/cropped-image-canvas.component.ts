@@ -6,11 +6,14 @@ import { Crop } from '../../../models/crop.model';
  * à drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh) qui clippe exactement la
  * region source vers la cible.
  *
- * Deux modes :
+ * Trois modes :
  * - `adaptive` : le canvas adapte sa largeur a l'aspect du crop (le canvas
  *   change de taille). Bon pour une preview unique (ex. cover).
  * - `cover` : le canvas garde une taille fixe et la zone croppée est
  *   cover-fittée. Bon pour une grille de vignettes (gallery).
+ * - `fit` : la box adopte le ratio pixel du crop (responsive, width:100%),
+ *   la region croppée remplit exactement sans recadrage ni distorsion.
+ *   Ideal pour les images de slide (editeur + viewer).
  */
 @Component({
   selector: 'app-cropped-image-canvas',
@@ -26,8 +29,8 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
   @Input({ required: true }) imageUrl!: string;
   @Input() crop: Crop | null | undefined = null;
   @Input() alt = '';
-  /** 'adaptive' = canvas s'ajuste a l'aspect du crop. 'cover' = taille fixe (CSS), cover-fit. */
-  @Input() mode: 'adaptive' | 'cover' = 'cover';
+  /** 'adaptive' = canvas s'ajuste a l'aspect du crop. 'cover' = taille fixe (CSS), cover-fit. 'fit' = box au ratio du crop, region exacte. */
+  @Input() mode: 'adaptive' | 'cover' | 'fit' = 'cover';
   /** Pour mode 'adaptive' : hauteur cible en pixels. */
   @Input() targetHeight = 140;
   /** Pour mode 'adaptive' : largeur max en pixels (clamp si crop tres large). */
@@ -38,10 +41,10 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
 
   ngAfterViewInit(): void {
     this.render();
-    // En mode cover, le canvas doit se redessiner quand son conteneur change
+    // En mode cover/fit, le canvas doit se redessiner quand son conteneur change
     // de taille (resize fenetre, etc.). Pas necessaire en mode adaptive ou la
     // taille du canvas est pilotee par le code, pas par le CSS du parent.
-    if (this.mode === 'cover' && this.canvasRef && typeof ResizeObserver !== 'undefined') {
+    if ((this.mode === 'cover' || this.mode === 'fit') && this.canvasRef && typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.render());
       this.resizeObserver.observe(this.canvasRef.nativeElement);
     }
@@ -81,6 +84,8 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
   private draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, img: HTMLImageElement): void {
     if (this.mode === 'adaptive') {
       this.renderAdaptive(ctx, canvas, img);
+    } else if (this.mode === 'fit') {
+      this.renderFit(ctx, canvas, img);
     } else {
       this.renderCoverFit(ctx, canvas, img);
     }
@@ -107,6 +112,42 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
     canvas.width = Math.min(TH * cropAspect, MW);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  }
+
+  private renderFit(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, img: HTMLImageElement): void {
+    // Mode "fit" : la box adopte le ratio pixel du crop, width:100% responsive.
+    // La region croppee remplit exactement - pas de recadrage supplementaire,
+    // pas de distorsion.
+    const c = this.crop;
+    const nW = img.naturalWidth;
+    const nH = img.naturalHeight;
+    let aspect: number;
+    if (c && c.w && c.h) {
+      aspect = ((c.w / 100) * nW) / ((c.h / 100) * nH) || 1;
+    } else {
+      aspect = (nW / nH) || 1;
+    }
+    if (aspect <= 0) aspect = 1;
+    // Style inline : surcharge le CSS .cropped-image-canvas { height:100% }
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.style.aspectRatio = String(aspect);
+    const rect = canvas.getBoundingClientRect();
+    const W = Math.max(1, Math.round(rect.width));
+    const H = Math.max(1, Math.round(W / aspect));
+    canvas.width = W;
+    canvas.height = H;
+    ctx.clearRect(0, 0, W, H);
+    if (c && c.w && c.h) {
+      const sx = (c.x / 100) * nW;
+      const sy = (c.y / 100) * nH;
+      const sw = (c.w / 100) * nW;
+      const sh = (c.h / 100) * nH;
+      // W/H ont exactement le ratio sw/sh -> pas de distorsion
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
+    } else {
+      ctx.drawImage(img, 0, 0, W, H);
+    }
   }
 
   private renderCoverFit(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, img: HTMLImageElement): void {

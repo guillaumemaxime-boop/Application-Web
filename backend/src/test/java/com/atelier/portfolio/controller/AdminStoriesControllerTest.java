@@ -80,7 +80,7 @@ class AdminStoriesControllerTest {
 
     @Test
     void getSlides_returnsSlidesForStory() {
-        Slide.ImageSlide image = new Slide.ImageSlide("s1", 0, "img.jpg", "Detail");
+        Slide.ImageSlide image = new Slide.ImageSlide("s1", 0, "img.jpg", "Detail", null);
         when(service.findSlidesByStoryId("st-1")).thenReturn(List.of(image));
 
         List<Slide> result = controller.getSlides("st-1");
@@ -91,8 +91,8 @@ class AdminStoriesControllerTest {
 
     @Test
     void replaceSlides_delegatesToServiceAndReturnsUpdatedSlides() {
-        List<Slide> input = List.of(new Slide.ImageSlide(null, 0, "new.jpg", "Apercu"));
-        Slide.ImageSlide saved = new Slide.ImageSlide("s2", 0, "new.jpg", "Apercu");
+        List<Slide> input = List.of(new Slide.ImageSlide(null, 0, "new.jpg", "Apercu", null));
+        Slide.ImageSlide saved = new Slide.ImageSlide("s2", 0, "new.jpg", "Apercu", null);
         when(service.replaceSlides("st-1", input)).thenReturn(List.of(saved));
 
         var response = controller.replaceSlides("st-1", input);

@@ -3,6 +3,7 @@ import { FormGroup } from '@angular/forms';
 import { Furniture } from '../../../../models/furniture.model';
 import { GalleryItem } from '../../../../models/gallery-item.model';
 import { Story } from '../../../../models/story.model';
+import { Slide } from '../../../../models/slide.model';
 import { SiteContent } from '../../../../models/site-content.model';
 import { DisplaySlide } from '../../../../models/display-slide.model';
 import { EditableTextField, FurnitureDetailViewComponent } from '../../../../components/furniture-detail-view/furniture-detail-view.component';
@@ -37,7 +38,9 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (storyDelete)="storyDelete.emit($event)"
       (storyMove)="storyMove.emit($event)"
       (storyCoverEdit)="storyCoverEdit.emit($event)"
-      (storySlidesEdit)="storySlidesEdit.emit($event)"
+      (storySlidesChange)="storySlidesChange.emit($event)"
+      (storyImageReplaceRequest)="storyImageReplaceRequest.emit($event)"
+      (storyImageCropRequest)="storyImageCropRequest.emit($event)"
       (viewerOpen)="viewerOpen.emit($event)" />
   `,
   styles: []
@@ -66,7 +69,9 @@ export class FurniturePreviewComponent implements OnInit {
   @Output() storyDelete = new EventEmitter<string>();
   @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
   @Output() storyCoverEdit = new EventEmitter<string>();
-  @Output() storySlidesEdit = new EventEmitter<string>();
+  @Output() storySlidesChange = new EventEmitter<Slide[]>();
+  @Output() storyImageReplaceRequest = new EventEmitter<string>();
+  @Output() storyImageCropRequest = new EventEmitter<string>();
   @Output() viewerOpen = new EventEmitter<StoryItem[]>();
 
   private readonly destroyRef = inject(DestroyRef);

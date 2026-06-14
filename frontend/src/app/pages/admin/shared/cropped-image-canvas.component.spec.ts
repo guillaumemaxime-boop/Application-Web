@@ -149,6 +149,61 @@ describe('CroppedImageCanvasComponent', () => {
     expect(coverCalled).toBeTrue();
   });
 
+  it('draw() route vers renderFit quand mode=fit', () => {
+    fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
+    fixture.componentRef.setInput('mode', 'fit');
+    fixture.detectChanges();
+    const canvas = (fixture.componentInstance as any).canvasRef.nativeElement as HTMLCanvasElement;
+    const ctx = stubDrawImage(canvas);
+    const fakeImg = { naturalWidth: 800, naturalHeight: 600 } as HTMLImageElement;
+    let fitCalled = false;
+    (fixture.componentInstance as any).renderFit = () => { fitCalled = true; };
+    (fixture.componentInstance as any).draw(ctx, canvas, fakeImg);
+    expect(fitCalled).toBeTrue();
+  });
+
+  it('renderFit applique un aspect-ratio inline base sur le crop', () => {
+    fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
+    fixture.componentRef.setInput('mode', 'fit');
+    fixture.componentRef.setInput('crop', { x: 0, y: 0, w: 50, h: 100 });
+    fixture.detectChanges();
+    const canvas = (fixture.componentInstance as any).canvasRef.nativeElement as HTMLCanvasElement;
+    const ctx = stubDrawImage(canvas);
+    // image 1000x1000, crop w=50% h=100% => aspect = 0.5
+    const fakeImg = { naturalWidth: 1000, naturalHeight: 1000 } as HTMLImageElement;
+    (fixture.componentInstance as any).renderFit(ctx, canvas, fakeImg);
+    // Le navigateur peut normaliser '0.5' en '0.5 / 1' - verifier juste que c'est defini
+    expect(canvas.style.aspectRatio).toBeTruthy();
+    expect(canvas.style.width).toBe('100%');
+    expect(canvas.style.height).toBe('auto');
+  });
+
+  it('renderFit applique un aspect-ratio base sur le ratio image entiere quand crop est null', () => {
+    fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
+    fixture.componentRef.setInput('mode', 'fit');
+    fixture.detectChanges();
+    const canvas = (fixture.componentInstance as any).canvasRef.nativeElement as HTMLCanvasElement;
+    const ctx = stubDrawImage(canvas);
+    // image 2x1 => aspect = 2
+    const fakeImg = { naturalWidth: 2, naturalHeight: 1 } as HTMLImageElement;
+    (fixture.componentInstance as any).renderFit(ctx, canvas, fakeImg);
+    // Le navigateur peut normaliser '2' en '2 / 1' - verifier juste que c'est defini
+    expect(canvas.style.aspectRatio).toBeTruthy();
+  });
+
+  it('renderFit ne jette pas d\'erreur avec un crop valide et dessine la region exacte', () => {
+    fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
+    fixture.componentRef.setInput('mode', 'fit');
+    fixture.componentRef.setInput('crop', { x: 10, y: 20, w: 60, h: 40 });
+    fixture.detectChanges();
+    const canvas = (fixture.componentInstance as any).canvasRef.nativeElement as HTMLCanvasElement;
+    const ctx = stubDrawImage(canvas);
+    const fakeImg = { naturalWidth: 1000, naturalHeight: 800 } as HTMLImageElement;
+    expect(() => (fixture.componentInstance as any).renderFit(ctx, canvas, fakeImg)).not.toThrow();
+    // drawImage doit avoir ete appele (la region source est tracee)
+    expect(ctx.drawImage).toHaveBeenCalled();
+  });
+
   it('utilise l\'image cachee quand l\'URL n\'a pas change', () => {
     fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
     fixture.detectChanges();

@@ -930,16 +930,6 @@ describe('ExpositionsComponent', () => {
     expect(cmp.activeStoryId()).toBe('a');
   });
 
-  it('onPreviewStorySlidesEdit ouvre la modale slides', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.onPreviewStorySlidesEdit('a');
-    expect(cmp.previewSlidesStoryId()).toBe('a');
-  });
 
   it('onPreviewStoryRename appelle updateStory', () => {
     configure();
@@ -1009,6 +999,135 @@ describe('ExpositionsComponent', () => {
     cmp.onPreviewViewerOpen([{ title: 'T', subtitle: 'S', slides: [] }]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeTruthy();
+  });
+
+  it('onStorySlidesChange persiste via replaceStorySlides et passe par saving puis saved', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    cmp.onStorySlidesChange([{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null }]);
+    expect(cmp.slidesSaveState()).toBe('saving');
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
+    expect(cmp.slidesSaveState()).toBe('saved');
+  });
+
+  it('onStoryImageReplaceRequest ouvre le photo-picker', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.onStoryImageReplaceRequest('s1');
+    expect(cmp.replacingImageSlideId()).toBe('s1');
+    httpMock.expectOne('/api/photos').flush([]);
+  });
+
+  it('onStoryImageCropRequest ouvre le crop-picker pour le slide', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStorySlides.set([{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null, crop: null }]);
+    cmp.onStoryImageCropRequest('s1');
+    expect(cmp.croppingImageSlideId()).toBe('s1');
+  });
+
+  it('onSlideCropValidated applique le crop au slide et persiste', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    cmp.activeStorySlides.set([{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null, crop: null }]);
+    cmp.croppingImageSlideId.set('s1');
+    cmp.onSlideCropValidated({ x: 10, y: 20, w: 50, h: 60 });
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
+    expect(cmp.activeStorySlides()[0].crop).toEqual({ x: 10, y: 20, w: 50, h: 60 });
+  });
+
+  it('onStorySlidesChange ne persiste PAS un slide incomplet (quote vide) et n\'erreure pas', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    cmp.onStorySlidesChange([{ id: 's1', type: 'quote', position: 0, body: '', cite: null }]);
+    httpMock.expectNone(r => r.url === '/api/admin/stories/a/slides');
+    expect(cmp.slidesSaveState()).not.toBe('error');
+  });
+
+  it('onStorySlidesChange persiste quand tous les slides sont valides', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    cmp.onStorySlidesChange([{ id: 's1', type: 'quote', position: 0, body: 'Texte', cite: null }]);
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
+    expect(cmp.slidesSaveState()).toBe('saved');
+  });
+
+  it('onStorySlidesChange met TOUJOURS a jour activeStorySlides (meme si incomplet, pour ne pas perdre le slide)', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    const slides = [{ id: 's-new', type: 'image', position: 0, src: '', caption: null, crop: null }];
+    cmp.onStorySlidesChange(slides);
+    httpMock.expectNone(r => r.url === '/api/admin/stories/a/slides'); // pas de persist (invalide)
+    expect(cmp.activeStorySlides().length).toBe(1);
+    expect(cmp.activeStorySlides()[0].id).toBe('s-new'); // mais le slide est bien tracke
+  });
+
+  it('remplacer l\'image d\'un slide tout juste ajoute applique bien le src puis persiste', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.activeStoryId.set('a');
+    // simule l'ajout d'une image vide (invalide : trackee mais non persistee)
+    cmp.onStorySlidesChange([{ id: 's-new', type: 'image', position: 0, src: '', caption: null, crop: null }]);
+    // l'utilisateur ouvre la mediatheque pour ce slide puis selectionne une photo
+    cmp.onStoryImageReplaceRequest('s-new');
+    httpMock.expectOne('/api/photos').flush([]); // getPhotos
+    cmp.onSlideImageSelected({ url: '/chosen.jpg' });
+    // maintenant le slide a un src -> persiste
+    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
+    expect(cmp.activeStorySlides()[0].src).toBe('/chosen.jpg');
+  });
+
+  it('previewDisplaySlides enrichit la story active (cover + lien)', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.currentStories.set([{ id: 'a', ownerKind: 'exhibition', ownerId: 'e1', title: 'A', coverImage: '/c.jpg', coverCrop: null, slug: 'a', position: 0, createdAt: '' }]);
+    cmp.activeStoryId.set('a');
+    cmp.activeStorySlides.set([{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null }]);
+    cmp.exhibitionForm.patchValue({ slug: 'salon', coverImage: '/c.jpg', showStoryLink: true });
+    const ds = cmp.previewDisplaySlides();
+    expect(ds[0].type).toBe('cover');
+    expect(ds[ds.length - 1].type).toBe('link');
   });
 
 });
