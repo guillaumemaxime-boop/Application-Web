@@ -294,6 +294,17 @@ describe('StoryViewerComponent', () => {
     expect(style.transform).toBe('translate(-50%, -50%) scale(2)');
   });
 
+  it('applique le crop de l\'image de slide (transform) dans le viewer', () => {
+    const imageSlide: DisplaySlide = {
+      type: 'image', id: 's1', position: 0, src: '/a.jpg', caption: null,
+      crop: { x: 10, y: 20, w: 50, h: 60 }
+    } as any;
+    setQueue([{ title: 'T', subtitle: 'S', slides: [imageSlide] }]);
+    const img = fixture.nativeElement.querySelector('.body img') as HTMLImageElement;
+    expect(img).toBeTruthy();
+    expect(img.style.transform).toContain('scale');
+  });
+
   it('coverCropStyle retourne transform none pour une slide cover sans coverCrop', () => {
     setQueue([{ title: 'T', subtitle: 's', slides: [cover()] }]);
     const style = (component as any).coverCropStyle();

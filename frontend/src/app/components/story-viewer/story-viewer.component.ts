@@ -68,7 +68,9 @@ const SLIDE_DURATION_MS = 5000;
                    [style.transform-origin]="coverCropStyle().transformOrigin" />
             }
             @case ('image')  {
-              <img [src]="$any(currentSlide()).src" alt="" />
+              <img [src]="$any(currentSlide()).src" alt=""
+                   [style.transform]="imageCropStyle().transform"
+                   [style.transform-origin]="imageCropStyle().transformOrigin" />
               @if ($any(currentSlide()).caption) {
                 <div class="caption">{{ $any(currentSlide()).caption }}</div>
               }
@@ -218,6 +220,12 @@ export class StoryViewerComponent implements OnInit, OnDestroy {
     const slide = this.currentSlide();
     if (!slide || slide.type !== 'cover') return { transform: 'none', transformOrigin: '0% 0%' };
     return cropTransform((slide as CoverDisplaySlide).coverCrop);
+  });
+
+  protected imageCropStyle = computed<CropStyle>(() => {
+    const slide = this.currentSlide();
+    if (!slide || slide.type !== 'image') return { transform: 'none', transformOrigin: '0% 0%' };
+    return cropTransform((slide as any).crop);
   });
 
   protected linkHref = computed<string | null>(() => {
