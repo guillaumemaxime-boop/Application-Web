@@ -53,6 +53,18 @@ public class StorySlideEntity {
     @Column(name = "link_href", length = 500)
     private String linkHref;
 
+    @Column(name = "image_crop_x")
+    private Double imageCropX;
+
+    @Column(name = "image_crop_y")
+    private Double imageCropY;
+
+    @Column(name = "image_crop_w")
+    private Double imageCropW;
+
+    @Column(name = "image_crop_h")
+    private Double imageCropH;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "story_slide_spec", joinColumns = @JoinColumn(name = "story_slide_id"))
     @OrderColumn(name = "position")
@@ -90,6 +102,18 @@ public class StorySlideEntity {
 
     public String getLinkHref() { return linkHref; }
     public void setLinkHref(String linkHref) { this.linkHref = linkHref; }
+
+    public Double getImageCropX() { return imageCropX; }
+    public void setImageCropX(Double imageCropX) { this.imageCropX = imageCropX; }
+
+    public Double getImageCropY() { return imageCropY; }
+    public void setImageCropY(Double imageCropY) { this.imageCropY = imageCropY; }
+
+    public Double getImageCropW() { return imageCropW; }
+    public void setImageCropW(Double imageCropW) { this.imageCropW = imageCropW; }
+
+    public Double getImageCropH() { return imageCropH; }
+    public void setImageCropH(Double imageCropH) { this.imageCropH = imageCropH; }
 
     public List<StorySlideSpecEntry> getSpecs() { return specs; }
     public void setSpecs(List<StorySlideSpecEntry> specs) { this.specs = specs; }

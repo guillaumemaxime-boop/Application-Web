@@ -2,6 +2,7 @@ package com.atelier.portfolio.model;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -24,7 +25,8 @@ public sealed interface Slide
             @Size(max = 50) String id,
             int position,
             @NotBlank @Size(max = 500) String src,
-            @Size(max = 500) String caption
+            @Size(max = 500) String caption,
+            @Valid ImageCrop crop
     ) implements Slide {}
 
     record VideoSlide(

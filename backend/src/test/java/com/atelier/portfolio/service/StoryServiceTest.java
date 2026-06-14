@@ -56,8 +56,8 @@ class StoryServiceTest {
     void replaceSlidesAttachesSlidesToStory() {
         Story s = service.create(new StoryInput("furniture", "f-001", "Test", "https://example.com/c.jpg", null));
         service.replaceSlides(s.id(), List.of(
-                new Slide.ImageSlide(null, 0, "https://example.com/1.jpg", "Caption 1"),
-                new Slide.ImageSlide(null, 1, "https://example.com/2.jpg", "Caption 2")
+                new Slide.ImageSlide(null, 0, "https://example.com/1.jpg", "Caption 1", null),
+                new Slide.ImageSlide(null, 1, "https://example.com/2.jpg", "Caption 2", null)
         ));
         StoryWithSlides loaded = service.findBySlugWithSlides(s.slug()).orElseThrow();
         assertThat(loaded.slides()).hasSize(2);
@@ -66,7 +66,7 @@ class StoryServiceTest {
     @Test
     void deleteStoryRemovesItAndCascadesSlides() {
         Story s = service.create(new StoryInput("furniture", "f-001", "Tmp", "https://example.com/c.jpg", null));
-        service.replaceSlides(s.id(), List.of(new Slide.ImageSlide(null, 0, "https://example.com/x.jpg", null)));
+        service.replaceSlides(s.id(), List.of(new Slide.ImageSlide(null, 0, "https://example.com/x.jpg", null, null)));
         service.delete(s.id());
         assertThatThrownBy(() -> service.update(s.id(), new StoryInput("furniture", "f-001", "X", "https://example.com/c.jpg", null)))
                 .isInstanceOf(RuntimeException.class);
@@ -133,5 +133,17 @@ class StoryServiceTest {
         assertThat(reloaded.story().coverCrop()).isNotNull();
         assertThat(reloaded.story().coverCrop().w()).isEqualTo(80.0);
         assertThat(reloaded.story().coverCrop().x()).isEqualTo(5.0);
+    }
+
+    @Test
+    void replaceSlides_persists_image_crop() {
+        Story story = service.create(new StoryInput("furniture", "f-001", "Crop slide test", "https://example.com/c.jpg", null));
+        var crop = new ImageCrop(10.0, 20.0, 50.0, 60.0);
+        var img = new Slide.ImageSlide("sl-img", 0, "/img.jpg", "leg", crop);
+        service.replaceSlides(story.id(), java.util.List.of(img));
+        var reloaded = service.findSlidesByStoryId(story.id());
+        assertThat(reloaded).hasSize(1);
+        var first = (Slide.ImageSlide) reloaded.get(0);
+        assertThat(first.crop()).isEqualTo(crop);
     }
 }

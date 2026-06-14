@@ -184,7 +184,8 @@ public class StoryService {
 
     private static Slide toSlideDto(StorySlideEntity e) {
         return switch (e.getType()) {
-            case "image" -> new Slide.ImageSlide(e.getId(), e.getPosition(), e.getSrc(), e.getCaption());
+            case "image" -> new Slide.ImageSlide(e.getId(), e.getPosition(), e.getSrc(), e.getCaption(),
+                    ImageCrop.ofNullable(e.getImageCropX(), e.getImageCropY(), e.getImageCropW(), e.getImageCropH()));
             case "video" -> new Slide.VideoSlide(e.getId(), e.getPosition(), e.getSrc(), e.getCaption());
             case "spec"  -> new Slide.SpecSlide(e.getId(), e.getPosition(),
                     e.getSpecs().stream().map(s -> new SpecEntry(s.getLabel(), s.getValue())).toList());
@@ -199,7 +200,14 @@ public class StoryService {
         e.setStory(story);
         e.setPosition(position);
         switch (slide) {
-            case Slide.ImageSlide i -> { e.setType("image"); e.setSrc(i.src()); e.setCaption(i.caption()); }
+            case Slide.ImageSlide i -> {
+                e.setType("image"); e.setSrc(i.src()); e.setCaption(i.caption());
+                ImageCrop c = i.crop();
+                e.setImageCropX(c != null ? c.x() : null);
+                e.setImageCropY(c != null ? c.y() : null);
+                e.setImageCropW(c != null ? c.w() : null);
+                e.setImageCropH(c != null ? c.h() : null);
+            }
             case Slide.VideoSlide v -> { e.setType("video"); e.setSrc(v.src()); e.setCaption(v.caption()); }
             case Slide.SpecSlide s -> {
                 e.setType("spec");
