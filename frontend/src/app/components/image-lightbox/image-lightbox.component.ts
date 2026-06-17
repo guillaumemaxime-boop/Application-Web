@@ -48,8 +48,10 @@ export interface LightboxImage {
     .lb-img { display: block; max-width: 100%; max-height: 100%; }
     .lb-close { position: absolute; top: 18px; right: 22px; background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer; opacity: 0.85; padding: 6px 10px; }
     .lb-close:hover, .lb-close:focus-visible { opacity: 1; }
+    .lb-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
     .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.25); color: #fff; width: 48px; height: 48px; border-radius: 50%; font-size: 1.8rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .lb-nav:hover, .lb-nav:focus-visible { background: rgba(0,0,0,0.7); }
+    .lb-nav:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
     .lb-prev { left: 20px; } .lb-next { right: 20px; }
     .lb-counter { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 0.78rem; letter-spacing: 0.14em; opacity: 0.8; }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
