@@ -285,4 +285,32 @@ describe('ExhibitionDetailViewComponent', () => {
     si.imageCropRequest.emit('s1');
     expect(id).toBe('s1');
   });
+
+  // --- Tests Task lightbox galerie expo ---
+
+  it('galerie publique : chaque image est un bouton qui émet galleryImageOpen avec l\'index', () => {
+    const e = { ...mockExhibition, gallery: [
+      { url: 'https://e.com/a.jpg', crop: null },
+      { url: 'https://e.com/b.jpg', crop: null },
+    ]};
+    fixture.componentRef.setInput('item', e);
+    fixture.componentRef.setInput('editable', false);
+    fixture.detectChanges();
+    const btns = fixture.nativeElement.querySelectorAll('.gallery-open-btn');
+    expect(btns.length).toBe(2);
+    let received: any = null;
+    fixture.componentInstance.galleryImageOpen.subscribe((i: number) => received = i);
+    (btns[1] as HTMLButtonElement).click();
+    expect(received).toBe(1);
+  });
+
+  it('mode editable : pas de bouton lightbox', () => {
+    const e = { ...mockExhibition, gallery: [
+      { url: 'https://e.com/a.jpg', crop: null },
+    ]};
+    fixture.componentRef.setInput('item', e);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.gallery-open-btn')).toBeNull();
+  });
 });

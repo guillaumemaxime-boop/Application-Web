@@ -208,11 +208,11 @@ export type EditableExhibitionField =
                   @for (img of item.gallery; track img.url; let i = $index) {
                     <figure [style.grid-column]="'span ' + (img.colSpan ?? 1)"
                             [style.grid-row]="'span ' + (img.rowSpan ?? 1)">
-                      <div class="gallery-img-wrap">
-                        <app-cropped-image-canvas
-                          [imageUrl]="img.url" [crop]="img.crop ?? null"
-                          [alt]="item.title + ' — vue ' + (i + 1)" mode="cover" />
-                      </div>
+                      <button type="button" class="gallery-open-btn" [attr.aria-label]="'Agrandir la vue ' + (i + 1)" (click)="galleryImageOpen.emit(i)">
+                        <div class="gallery-img-wrap">
+                          <app-cropped-image-canvas [imageUrl]="img.url" [crop]="img.crop ?? null" [alt]="item.title + ' — vue ' + (i + 1)" mode="cover" />
+                        </div>
+                      </button>
                     </figure>
                   }
                 </div>
@@ -273,6 +273,8 @@ export type EditableExhibitionField =
     .gallery .g-grid figure { margin: 0; overflow: hidden; height: 100%; }
     .gallery-img-wrap { position: relative; overflow: hidden; width: 100%; height: 100%; }
     .gallery-img-wrap app-cropped-image-canvas { display: block; width: 100%; height: 100%; }
+    .gallery-open-btn { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+    .gallery-open-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 
     @media (max-width: 960px) { .gallery .g-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .gallery .g-grid { grid-template-columns: 1fr; } }
@@ -380,6 +382,7 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Output() storySlidesChange = new EventEmitter<Slide[]>();
   @Output() storyImageReplaceRequest = new EventEmitter<string>();
   @Output() storyImageCropRequest = new EventEmitter<string>();
+  @Output() galleryImageOpen = new EventEmitter<number>();
 
   protected editingField: EditableExhibitionField | null = null;
   protected editingDateField: 'startDate' | 'endDate' | null = null;
