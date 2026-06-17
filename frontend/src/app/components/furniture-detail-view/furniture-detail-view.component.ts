@@ -173,13 +173,15 @@ import { roleStyle } from '../../utils/title-style';
                   @for (img of item.gallery; track img.url; let i = $index) {
                     <figure [style.grid-column]="'span ' + (img.colSpan ?? 1)"
                             [style.grid-row]="'span ' + (img.rowSpan ?? 1)">
-                      <div class="gallery-img-wrap">
-                        <app-cropped-image-canvas
-                          [imageUrl]="img.url"
-                          [crop]="img.crop ?? null"
-                          [alt]="item.title + ' — vue ' + (i + 1)"
-                          mode="cover" />
-                      </div>
+                      <button type="button" class="gallery-open-btn" [attr.aria-label]="'Agrandir la vue ' + (i + 1)" (click)="galleryImageOpen.emit(i)">
+                        <div class="gallery-img-wrap">
+                          <app-cropped-image-canvas
+                            [imageUrl]="img.url"
+                            [crop]="img.crop ?? null"
+                            [alt]="item.title + ' — vue ' + (i + 1)"
+                            mode="cover" />
+                        </div>
+                      </button>
                     </figure>
                   }
                 </div>
@@ -256,6 +258,9 @@ import { roleStyle } from '../../utils/title-style';
     figure { overflow: hidden; background: var(--color-bg-alt); }
     .gallery-img-wrap { position: relative; overflow: hidden; width: 100%; height: 100%; }
     .gallery-img-wrap app-cropped-image-canvas { display: block; width: 100%; height: 100%; }
+
+    .gallery-open-btn { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+    .gallery-open-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
 
     .tags-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 24px; }
     .tag-chip {
@@ -371,6 +376,7 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   protected eyebrowStyle(): Record<string, string> { return roleStyle(this.content, 'eyebrow'); }
   protected titleStyle():   Record<string, string> { return roleStyle(this.content, 'title'); }
 
+  @Output() galleryImageOpen = new EventEmitter<number>();
   @Output() tagsChange = new EventEmitter<string[]>();
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
