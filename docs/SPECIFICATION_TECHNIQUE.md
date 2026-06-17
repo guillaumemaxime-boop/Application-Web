@@ -1053,12 +1053,21 @@ Chemin : `frontend/src/app/pages/admin/shared/image-crop-picker.component.ts`
 Chemin : `frontend/src/app/pages/admin/shared/cropped-image-canvas.component.ts`
 
 - Rendu pixel-perfect d'une image cadrée via `<canvas>` + `drawImage()`.
-- Trois modes :
+- Quatre modes :
   - `adaptive` — le canvas adapte sa largeur à l'aspect du crop (preview unique).
   - `cover` — canvas à taille fixe CSS avec cover-fit (grille de vignettes).
   - `fit` (sous-projet 6b) — la box adopte le **ratio pixel du crop** (calculé depuis les dimensions naturelles de l'image), largeur 100% responsive ; la région cropée est rendue **exactement** (pas de recadrage supplémentaire). Utilisé pour les images de slide (éditeur in-place + `story-viewer`) afin que « ce qui est cropé = ce qui est affiché ».
-- Utilise `ResizeObserver` (modes cover et fit) et un cache d'image en mémoire.
+  - `contain` (lightbox) — le canvas est dessiné à la **résolution native** de la région cropée puis mis à l'échelle en CSS (`width:auto; max-width/max-height:100%`) pour tenir dans son conteneur en préservant le ratio. Utilisé par `<app-image-lightbox>` (box `92vw × 88vh`).
+- Utilise `ResizeObserver` (modes cover et fit) et un cache d'image en mémoire. Au chargement asynchrone, un **garde anti-rendu-périmé** (`requestedUrl !== this.imageUrl`) ignore le `onload` d'une image dont l'URL a changé entre-temps (évite un mauvais couple image/crop lors de changements rapides d'input, ex. navigation lightbox).
 - `role="img"` + `aria-label` pour l'accessibilité ; `crossOrigin="anonymous"` pour éviter le canvas tainted.
+
+#### `<app-image-lightbox>` (`ImageLightboxComponent`)
+
+Chemin : `frontend/src/app/components/image-lightbox/image-lightbox.component.ts`
+
+- Overlay plein écran générique (lightbox) pour parcourir une liste d'images. Inputs `images: LightboxImage[]` (`{ url; crop?; alt }`), `startIndex` ; output `closed`. Composant pur (n'émet que `closed`).
+- Affiche la région cropée via `<app-cropped-image-canvas mode="contain">` ; navigation circulaire ‹ › + flèches clavier ← → + compteur ; `role="dialog"` + `aria-modal` + `cdkTrapFocus` + Échap + clic backdrop ; restitution du focus au déclencheur (`ngOnDestroy`).
+- Utilisé par les pages publiques `furniture-detail`/`exhibition-detail` (signal `lightboxIndex` + `computed galleryImages()`), déclenché par `(galleryImageOpen)` des vues détail en mode public. Hors admin/preview.
 
 #### `<app-image-field>` (extension)
 

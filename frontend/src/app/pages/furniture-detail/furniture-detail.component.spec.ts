@@ -217,6 +217,35 @@ describe('FurnitureDetailComponent', () => {
     expect((display[display.length - 1] as any).href).toBe('/mobilier/chaise-bois');
   });
 
+  it('galleryImageOpen ouvre la lightbox avec les images mappées et le bon startIndex', () => {
+    const furnitureWithGallery: Furniture = {
+      ...mockFurniture,
+      gallery: [{ url: '/a.jpg', crop: null }, { url: '/b.jpg', crop: null }],
+    };
+    setup('onde', of(furnitureWithGallery));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.onGalleryImageOpen(1);
+    fixture.detectChanges();
+    expect(cmp.lightboxIndex()).toBe(1);
+    expect(fixture.nativeElement.querySelector('app-image-lightbox')).toBeTruthy();
+    expect(cmp.galleryImages().length).toBe(2);
+    expect(cmp.galleryImages()[0].alt).toContain('vue 1');
+  });
+
+  it('closed referme la lightbox', () => {
+    setup('onde', of(mockFurniture));
+    const fixture = TestBed.createComponent(FurnitureDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.lightboxIndex.set(0);
+    fixture.detectChanges();
+    cmp.lightboxIndex.set(null);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-image-lightbox')).toBeNull();
+  });
+
   it('filtre les slides legacy de type cover/link recues de l API', () => {
     const furniture: Furniture = {
       ...mockFurniture,

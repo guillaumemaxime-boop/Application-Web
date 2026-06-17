@@ -6,7 +6,7 @@ import { Crop } from '../../../models/crop.model';
  * à drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh) qui clippe exactement la
  * region source vers la cible.
  *
- * Trois modes :
+ * Quatre modes :
  * - `adaptive` : le canvas adapte sa largeur a l'aspect du crop (le canvas
  *   change de taille). Bon pour une preview unique (ex. cover).
  * - `cover` : le canvas garde une taille fixe et la zone croppée est
@@ -14,6 +14,10 @@ import { Crop } from '../../../models/crop.model';
  * - `fit` : la box adopte le ratio pixel du crop (responsive, width:100%),
  *   la region croppée remplit exactement sans recadrage ni distorsion.
  *   Ideal pour les images de slide (editeur + viewer).
+ * - `contain` : canvas aux dimensions natives de la region croppée, stylé
+ *   width:auto/height:auto/max-width:100%/max-height:100% — le CSS contain
+ *   le met a l'echelle dans le parent en preservant le ratio. Ideal pour la
+ *   lightbox plein ecran ou le conteneur a une taille viewport definie.
  */
 @Component({
   selector: 'app-cropped-image-canvas',
@@ -29,8 +33,8 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
   @Input({ required: true }) imageUrl!: string;
   @Input() crop: Crop | null | undefined = null;
   @Input() alt = '';
-  /** 'adaptive' = canvas s'ajuste a l'aspect du crop. 'cover' = taille fixe (CSS), cover-fit. 'fit' = box au ratio du crop, region exacte. */
-  @Input() mode: 'adaptive' | 'cover' | 'fit' = 'cover';
+  /** 'adaptive' = canvas s'ajuste a l'aspect du crop. 'cover' = taille fixe (CSS), cover-fit. 'fit' = box au ratio du crop, region exacte. 'contain' = canvas natif + CSS contain dans le parent. */
+  @Input() mode: 'adaptive' | 'cover' | 'fit' | 'contain' = 'cover';
   /** Pour mode 'adaptive' : hauteur cible en pixels. */
   @Input() targetHeight = 140;
   /** Pour mode 'adaptive' : largeur max en pixels (clamp si crop tres large). */
@@ -44,6 +48,8 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
     // En mode cover/fit, le canvas doit se redessiner quand son conteneur change
     // de taille (resize fenetre, etc.). Pas necessaire en mode adaptive ou la
     // taille du canvas est pilotee par le code, pas par le CSS du parent.
+    // Le mode contain n'en a pas besoin non plus : c'est le CSS qui gere la mise
+    // a l'echelle, le canvas est toujours a la resolution native.
     if ((this.mode === 'cover' || this.mode === 'fit') && this.canvasRef && typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.render());
       this.resizeObserver.observe(this.canvasRef.nativeElement);
@@ -71,11 +77,14 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
     }
     const img = new Image();
     img.crossOrigin = 'anonymous';  // permet getImageData() ulterieur sans tainted canvas
+    const requestedUrl = this.imageUrl;
     img.onload = () => {
+      if (requestedUrl !== this.imageUrl) return;  // rendu perime : l'input a change depuis
       this.cachedImage = img;
       this.draw(ctx, canvas, img);
     };
     img.onerror = () => {
+      if (requestedUrl !== this.imageUrl) return;
       canvas.width = canvas.width;  // clears the canvas
     };
     img.src = this.imageUrl;
@@ -86,6 +95,8 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
       this.renderAdaptive(ctx, canvas, img);
     } else if (this.mode === 'fit') {
       this.renderFit(ctx, canvas, img);
+    } else if (this.mode === 'contain') {
+      this.renderContain(ctx, canvas, img);
     } else {
       this.renderCoverFit(ctx, canvas, img);
     }
@@ -148,6 +159,30 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
     } else {
       ctx.drawImage(img, 0, 0, W, H);
     }
+  }
+
+  private renderContain(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, img: HTMLImageElement): void {
+    // Canvas a la resolution native de la region ; CSS "contain" dans le parent (ratio preservé).
+    canvas.style.width = 'auto';
+    canvas.style.height = 'auto';
+    canvas.style.maxWidth = '100%';
+    canvas.style.maxHeight = '100%';
+    const c = this.crop;
+    if (!c || !c.w || !c.h) {
+      canvas.width = Math.max(1, img.naturalWidth);
+      canvas.height = Math.max(1, img.naturalHeight);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      return;
+    }
+    const sx = (c.x / 100) * img.naturalWidth;
+    const sy = (c.y / 100) * img.naturalHeight;
+    const sw = (c.w / 100) * img.naturalWidth;
+    const sh = (c.h / 100) * img.naturalHeight;
+    canvas.width = Math.max(1, Math.round(sw));
+    canvas.height = Math.max(1, Math.round(sh));
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
   }
 
   private renderCoverFit(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, img: HTMLImageElement): void {
