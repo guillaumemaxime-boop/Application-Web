@@ -19,7 +19,7 @@ describe('ExhibitionDetailComponent', () => {
     startDate: '2025-03-14',
     endDate: '2025-05-18',
     coverImage: 'https://example.com/m.jpg',
-    gallery: [{ url: 'https://example.com/m-1.jpg' }],
+    gallery: [{ url: 'https://example.com/m-1.jpg', crop: null }, { url: 'https://example.com/m-2.jpg', crop: null }],
     curator: 'Léa Bornand',
     shortDescription: 's',
     description: 'd',
@@ -145,6 +145,31 @@ describe('ExhibitionDetailComponent', () => {
     expect(display.length).toBe(3);
     expect(display.filter((s: DisplaySlide) => s.type === 'cover').length).toBe(1);
     expect((display[0] as any).src).toBe('/c.jpg');
+  });
+
+  it('galleryImageOpen ouvre la lightbox avec les images mappées et le bon startIndex', () => {
+    setup('matieres-silencieuses', of(mockExhibition));
+    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.onGalleryImageOpen(1);
+    fixture.detectChanges();
+    expect(cmp.lightboxIndex()).toBe(1);
+    expect(fixture.nativeElement.querySelector('app-image-lightbox')).toBeTruthy();
+    expect(cmp.galleryImages().length).toBe(2);
+    expect(cmp.galleryImages()[0].alt).toContain('vue 1');
+  });
+
+  it('closed referme la lightbox', () => {
+    setup('matieres-silencieuses', of(mockExhibition));
+    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.lightboxIndex.set(0);
+    fixture.detectChanges();
+    cmp.lightboxIndex.set(null);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-image-lightbox')).toBeNull();
   });
 
 });
