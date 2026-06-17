@@ -12,11 +12,12 @@ import { enrichSlides } from '../../utils/display-slides';
 import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
 import { FurnitureDetailViewComponent } from '../../components/furniture-detail-view/furniture-detail-view.component';
+import { ImageLightboxComponent, LightboxImage } from '../../components/image-lightbox/image-lightbox.component';
 
 @Component({
   selector: 'app-furniture-detail',
   standalone: true,
-  imports: [NgStyle, RouterLink, FurnitureDetailViewComponent, StoryViewerComponent, ContactFormComponent],
+  imports: [NgStyle, RouterLink, FurnitureDetailViewComponent, StoryViewerComponent, ContactFormComponent, ImageLightboxComponent],
   template: `
     @if (loading()) {
       <div class="container section"><p class="status">Chargement…</p></div>
@@ -30,7 +31,8 @@ import { FurnitureDetailViewComponent } from '../../components/furniture-detail-
         [item]="f"
         [displaySlides]="displaySlides()"
         [content]="content()"
-        (viewerOpen)="onViewerOpen($event)">
+        (viewerOpen)="onViewerOpen($event)"
+        (galleryImageOpen)="onGalleryImageOpen($event)">
         <section class="section cta" ctaSlot>
           <div class="container">
             <h2 [ngStyle]="sectionTitleStyle()">Une pièce vous intéresse ?</h2>
@@ -42,6 +44,10 @@ import { FurnitureDetailViewComponent } from '../../components/furniture-detail-
 
       @if (viewerQueue().length > 0) {
         <app-story-viewer [queue]="viewerQueue()" (closed)="closeViewer()"></app-story-viewer>
+      }
+
+      @if (lightboxIndex() !== null) {
+        <app-image-lightbox [images]="galleryImages()" [startIndex]="lightboxIndex()!" (closed)="lightboxIndex.set(null)" />
       }
 
       @if (contactOpen()) {
@@ -79,6 +85,7 @@ export class FurnitureDetailComponent {
   protected readonly viewerQueue = signal<StoryItem[]>([]);
   protected readonly contactOpen = signal(false);
   protected readonly content = signal<SiteContent>({});
+  protected readonly lightboxIndex = signal<number | null>(null);
 
   protected readonly displaySlides = computed<DisplaySlide[]>(() => {
     const f = this.item();
@@ -93,6 +100,16 @@ export class FurnitureDetailComponent {
   });
 
   protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
+
+  protected readonly galleryImages = computed<LightboxImage[]>(() => {
+    const f = this.item();
+    if (!f) return [];
+    return (f.gallery ?? []).map((img, i) => ({
+      url: img.url,
+      crop: img.crop ?? null,
+      alt: f.title + ' — vue ' + (i + 1),
+    }));
+  });
 
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
@@ -124,6 +141,10 @@ export class FurnitureDetailComponent {
 
   protected closeViewer(): void {
     this.viewerQueue.set([]);
+  }
+
+  protected onGalleryImageOpen(i: number): void {
+    this.lightboxIndex.set(i);
   }
 
   protected openContact(): void {
