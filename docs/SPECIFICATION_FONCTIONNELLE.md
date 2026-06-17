@@ -121,7 +121,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Description longue** : texte éditorial de la pièce.
 - **Tags** : mots-clés thématiques associés à la pièce (cliquables → `/creations?tags=...`).
 - **Stories** : la story **n'est plus affichée sur la fiche publique** (depuis le sous-projet 6a). Les stories restent rattachées à la pièce (contexte d'auteur) et sont consommées publiquement **uniquement via les sliders d'actualités de l'accueil** (clic → viewer plein écran). Le crop du cover de story est appliqué dans le viewer et dans les cards de news-slider.
-- **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item affiche son crop si défini.
+- **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item affiche son crop si défini. **Clic sur une image → lightbox plein écran** (`<app-image-lightbox>`) : région cropée agrandie, navigation précédent/suivant (boutons ‹ › + flèches clavier, circulaire) + compteur, fermeture par Échap / ✕ / clic sur le fond. La cover hero n'ouvre pas la lightbox.
 - **CTA** : lien de contact par e-mail.
 - Gestion 404 si le slug n'existe pas.
 
@@ -134,7 +134,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Bannière** : image principale. Si un crop est défini, seule la zone cadrée est affichée (rendu CSS transform pixel-perfect) ; sinon, rendu natif `object-fit: cover`.
 - **Détails** : titre, lieu (`venue · city, country`), dates, commissaire.
 - **Description** : texte éditorial.
-- **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item est rendu via `<app-cropped-image-canvas>` (crop appliqué si défini).
+- **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item est rendu via `<app-cropped-image-canvas>` (crop appliqué si défini). **Clic sur une image → lightbox plein écran** (`<app-image-lightbox>`, identique à la fiche mobilier : région cropée, navigation circulaire, Échap/✕/clic-fond).
 - **Tags** associés à l'exposition.
 - **Stories** : comme pour le mobilier, la story n'est plus affichée sur la fiche publique (sous-projet 6a) ; consommée via les sliders de l'accueil.
 - Gestion 404 si le slug n'existe pas.
