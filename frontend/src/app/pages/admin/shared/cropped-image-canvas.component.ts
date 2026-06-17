@@ -77,11 +77,14 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
     }
     const img = new Image();
     img.crossOrigin = 'anonymous';  // permet getImageData() ulterieur sans tainted canvas
+    const requestedUrl = this.imageUrl;
     img.onload = () => {
+      if (requestedUrl !== this.imageUrl) return;  // rendu perime : l'input a change depuis
       this.cachedImage = img;
       this.draw(ctx, canvas, img);
     };
     img.onerror = () => {
+      if (requestedUrl !== this.imageUrl) return;
       canvas.width = canvas.width;  // clears the canvas
     };
     img.src = this.imageUrl;

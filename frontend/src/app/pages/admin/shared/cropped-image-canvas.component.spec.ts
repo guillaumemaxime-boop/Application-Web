@@ -289,4 +289,42 @@ describe('CroppedImageCanvasComponent', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.mode).toBe('fit');
   });
+
+  it('ignore un onload perime (imageUrl a change entre-temps)', () => {
+    fixture.componentRef.setInput('imageUrl', '/a.jpg');
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+
+    // Supprimer le cache pour forcer la creation d'une nouvelle Image dans render()
+    cmp.cachedImage = undefined;
+
+    // Espionner draw() pour detecter tout appel de rendu non desire
+    let drawCallCount = 0;
+    cmp.draw = () => { drawCallCount++; };
+
+    // Intercepter la creation d'Image pour capturer le onload enregistre par render()
+    let capturedOnload: (() => void) | null = null;
+    const OriginalImage = (window as any).Image;
+    const fakeImageInstance = { crossOrigin: '', src: '' } as any;
+    spyOn(window as any, 'Image').and.returnValue(fakeImageInstance);
+
+    // Declencher render() avec imageUrl = '/a.jpg'
+    // => render() cree une Image, enregistre img.onload, puis assigne img.src = '/a.jpg'
+    cmp.imageUrl = '/a.jpg';
+    cmp.render();
+
+    // Capturer le onload enregistre par render()
+    capturedOnload = fakeImageInstance.onload;
+    expect(capturedOnload).toBeTruthy();  // render() doit avoir enregistre un onload
+
+    // Simuler la navigation : imageUrl change AVANT que le onload se declenche
+    cmp.imageUrl = '/b.jpg';
+
+    // Declencher le onload tardif de '/a.jpg'
+    if (capturedOnload) capturedOnload();
+
+    // La garde doit avoir bloque draw() et ne pas avoir mis en cache l'image perimee
+    expect(drawCallCount).toBe(0);
+    expect(cmp.cachedImage).toBeUndefined();
+  });
 });
