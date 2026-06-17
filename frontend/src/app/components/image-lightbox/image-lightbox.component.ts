@@ -11,7 +11,7 @@ export interface LightboxImage {
 
 /**
  * Lightbox plein écran générique : parcourt une liste d'images (région cropée
- * via <app-cropped-image-canvas mode="fit">), navigation circulaire, flèches
+ * via <app-cropped-image-canvas mode="contain">), navigation circulaire, flèches
  * clavier, Échap, clic backdrop. Composant pur : émet `closed`.
  */
 @Component({
@@ -33,7 +33,7 @@ export interface LightboxImage {
       }
 
       <figure class="lb-figure">
-        <app-cropped-image-canvas class="lb-img" mode="fit"
+        <app-cropped-image-canvas class="lb-img" mode="contain"
           [imageUrl]="current().url" [crop]="current().crop ?? null" [alt]="current().alt" />
       </figure>
 
@@ -44,8 +44,8 @@ export interface LightboxImage {
   `,
   styles: [`
     .lb-backdrop { position: fixed; inset: 0; z-index: 300; background: rgba(10,10,10,0.95); display: flex; align-items: center; justify-content: center; }
-    .lb-figure { margin: 0; max-width: 92vw; max-height: 88vh; display: flex; align-items: center; justify-content: center; }
-    .lb-img { display: block; max-width: 92vw; max-height: 88vh; }
+    .lb-figure { margin: 0; width: 92vw; height: 88vh; display: flex; align-items: center; justify-content: center; }
+    .lb-img { display: block; max-width: 100%; max-height: 100%; }
     .lb-close { position: absolute; top: 18px; right: 22px; background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer; opacity: 0.85; padding: 6px 10px; }
     .lb-close:hover, .lb-close:focus-visible { opacity: 1; }
     .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.25); color: #fff; width: 48px; height: 48px; border-radius: 50%; font-size: 1.8rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }

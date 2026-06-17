@@ -215,4 +215,78 @@ describe('CroppedImageCanvasComponent', () => {
     cmp.render();
     expect(drawCalled).toBeTrue();
   });
+
+  it('draw() route vers renderContain quand mode=contain', () => {
+    fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
+    fixture.componentRef.setInput('mode', 'contain');
+    fixture.detectChanges();
+    const canvas = (fixture.componentInstance as any).canvasRef.nativeElement as HTMLCanvasElement;
+    const ctx = stubDrawImage(canvas);
+    const fakeImg = { naturalWidth: 800, naturalHeight: 600 } as HTMLImageElement;
+    let containCalled = false;
+    (fixture.componentInstance as any).renderContain = () => { containCalled = true; };
+    (fixture.componentInstance as any).draw(ctx, canvas, fakeImg);
+    expect(containCalled).toBeTrue();
+  });
+
+  it('mode contain : applique les styles contain sur le canvas (width auto, maxWidth 100%, maxHeight 100%)', () => {
+    fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
+    fixture.componentRef.setInput('mode', 'contain');
+    fixture.componentRef.setInput('crop', { x: 10, y: 20, w: 60, h: 40 });
+    fixture.detectChanges();
+    const canvas = (fixture.componentInstance as any).canvasRef.nativeElement as HTMLCanvasElement;
+    const ctx = stubDrawImage(canvas);
+    const fakeImg = { naturalWidth: 1000, naturalHeight: 800 } as HTMLImageElement;
+    (fixture.componentInstance as any).renderContain(ctx, canvas, fakeImg);
+    expect(canvas.style.width).toBe('auto');
+    expect(canvas.style.height).toBe('auto');
+    expect(canvas.style.maxWidth).toBe('100%');
+    expect(canvas.style.maxHeight).toBe('100%');
+  });
+
+  it('mode contain : canvas aux dimensions natives du crop', () => {
+    fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
+    fixture.componentRef.setInput('mode', 'contain');
+    fixture.componentRef.setInput('crop', { x: 0, y: 0, w: 50, h: 50 });
+    fixture.detectChanges();
+    const canvas = (fixture.componentInstance as any).canvasRef.nativeElement as HTMLCanvasElement;
+    const ctx = stubDrawImage(canvas);
+    // image 1000x1000, crop 50%x50% => region 500x500 pixels natifs
+    const fakeImg = { naturalWidth: 1000, naturalHeight: 1000 } as HTMLImageElement;
+    (fixture.componentInstance as any).renderContain(ctx, canvas, fakeImg);
+    expect(canvas.width).toBe(500);
+    expect(canvas.height).toBe(500);
+    expect(ctx.drawImage).toHaveBeenCalled();
+  });
+
+  it('mode contain : sans crop dessine l\'image entiere a sa taille native', () => {
+    fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
+    fixture.componentRef.setInput('mode', 'contain');
+    fixture.detectChanges();
+    const canvas = (fixture.componentInstance as any).canvasRef.nativeElement as HTMLCanvasElement;
+    const ctx = stubDrawImage(canvas);
+    const fakeImg = { naturalWidth: 800, naturalHeight: 600 } as HTMLImageElement;
+    (fixture.componentInstance as any).renderContain(ctx, canvas, fakeImg);
+    expect(canvas.width).toBe(800);
+    expect(canvas.height).toBe(600);
+    expect(ctx.drawImage).toHaveBeenCalled();
+  });
+
+  it('modes adaptive/cover/fit restent intacts avec mode contain ajoute', () => {
+    // adaptive
+    fixture.componentRef.setInput('imageUrl', 'https://example.com/x.jpg');
+    fixture.componentRef.setInput('mode', 'adaptive');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.mode).toBe('adaptive');
+
+    // cover
+    fixture.componentRef.setInput('mode', 'cover');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.mode).toBe('cover');
+
+    // fit
+    fixture.componentRef.setInput('mode', 'fit');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.mode).toBe('fit');
+  });
 });
