@@ -31,7 +31,8 @@ export type EditableExhibitionField =
               [imageUrl]="item.coverImage"
               [crop]="item.coverCrop ?? null"
               [alt]="item.title"
-              mode="cover" />
+              mode="cover"
+              [priority]="true" />
             @if (editable) {
               <div class="edit-overlay">
                 <button type="button" class="edit-btn" aria-label="Cadrer la cover" (click)="coverEdit.emit('crop')">✂ Cadrer</button>
@@ -210,7 +211,7 @@ export type EditableExhibitionField =
                             [style.grid-row]="'span ' + (img.rowSpan ?? 1)">
                       <button type="button" class="gallery-open-btn" [attr.aria-label]="'Agrandir la vue ' + (i + 1)" (click)="galleryImageOpen.emit(i)">
                         <div class="gallery-img-wrap">
-                          <app-cropped-image-canvas [imageUrl]="img.url" [crop]="img.crop ?? null" [alt]="item.title + ' — vue ' + (i + 1)" mode="cover" />
+                          <app-cropped-image-canvas [imageUrl]="img.url" [crop]="img.crop ?? null" [alt]="item.title + ' — vue ' + (i + 1)" mode="cover" [lazy]="true" />
                         </div>
                       </button>
                     </figure>

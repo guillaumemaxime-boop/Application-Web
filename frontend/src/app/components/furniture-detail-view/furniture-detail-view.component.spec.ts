@@ -5,6 +5,7 @@ import { FurnitureDetailViewComponent } from './furniture-detail-view.component'
 import { Furniture } from '../../models/furniture.model';
 import { DisplaySlide } from '../../models/display-slide.model';
 import { StoryInlineComponent } from '../story-inline/story-inline.component';
+import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
 
 describe('FurnitureDetailViewComponent', () => {
   let fixture: ComponentFixture<FurnitureDetailViewComponent>;
@@ -532,5 +533,25 @@ describe('FurnitureDetailViewComponent', () => {
     fixture.componentRef.setInput('editable', true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.gallery-open-btn')).toBeNull();
+  });
+
+  it('cover hero : canvas en priority, pas lazy', () => {
+    const f = { ...mockFurniture, gallery: [{ url: 'https://e.com/a.jpg', crop: null }] };
+    fixture.componentRef.setInput('item', f);
+    fixture.componentRef.setInput('editable', false);
+    fixture.detectChanges();
+    const canvases = fixture.debugElement.queryAll(By.directive(CroppedImageCanvasComponent));
+    const hero = canvases.find(c => c.componentInstance.priority === true);
+    expect(hero).toBeTruthy();
+    expect(hero!.componentInstance.lazy).toBeFalse();
+  });
+
+  it('galerie publique : canvas en lazy', () => {
+    const f = { ...mockFurniture, gallery: [{ url: 'https://e.com/a.jpg', crop: null }] };
+    fixture.componentRef.setInput('item', f);
+    fixture.componentRef.setInput('editable', false);
+    fixture.detectChanges();
+    const canvases = fixture.debugElement.queryAll(By.directive(CroppedImageCanvasComponent));
+    expect(canvases.some(c => c.componentInstance.lazy === true)).toBeTrue();
   });
 });

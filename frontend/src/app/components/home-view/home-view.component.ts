@@ -165,7 +165,8 @@ export type EditableHomeContentKey =
                         [imageUrl]="item.cover"
                         [crop]="item.coverCrop ?? null"
                         [alt]="item.title"
-                        mode="cover" />
+                        mode="cover"
+                        [lazy]="true" />
                     </div>
                     <div class="meta">
                       <span class="cat" [ngStyle]="eyebrowStyle()">{{ item.subtitle }}</span>

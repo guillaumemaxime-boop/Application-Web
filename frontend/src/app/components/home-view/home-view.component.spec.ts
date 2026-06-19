@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { HomeViewComponent } from './home-view.component';
 import { HomePageData } from '../../models/home.model';
+import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
 
 describe('HomeViewComponent', () => {
   let fixture: ComponentFixture<HomeViewComponent>;
@@ -283,6 +285,17 @@ describe('HomeViewComponent', () => {
     fixture.componentRef.setInput('data', data);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.crop-btn')).toBeNull();
+  });
+
+  it('card publique : canvas en lazy', () => {
+    const data = { feed: [
+      { kind: 'furniture', slug: 'a', title: 'A', subtitle: 'X', cover: '/a.jpg', coverCrop: null, description: '' },
+    ]} as unknown as HomePageData;
+    fixture.componentRef.setInput('data', data);
+    fixture.componentRef.setInput('editable', false);
+    fixture.detectChanges();
+    const canvases = fixture.debugElement.queryAll(By.directive(CroppedImageCanvasComponent));
+    expect(canvases.some(c => c.componentInstance.lazy === true)).toBeTrue();
   });
 
   it('le sélecteur de zone propose une option Désactivé (valeur vide)', () => {
