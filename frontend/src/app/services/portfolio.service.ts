@@ -128,6 +128,16 @@ export class PortfolioService {
     return this.http.delete<void>(`${API}/admin/photos/${id}`);
   }
 
+  uploadVideo(file: File): Observable<{ url: string; filename: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<{ url: string; filename: string }>(`${API}/admin/videos`, fd);
+  }
+
+  deleteVideo(filename: string): Observable<void> {
+    return this.http.delete<void>(`${API}/admin/videos/files/${filename}`);
+  }
+
   updatePhotoTags(id: string, tags: string[]): Observable<Photo> {
     return this.http.put<Photo>(`${API}/admin/photos/${id}/tags`, { tags });
   }
