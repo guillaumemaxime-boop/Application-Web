@@ -29,7 +29,10 @@ class FurnitureTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Assert
@@ -71,7 +74,10 @@ class FurnitureTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Assert
@@ -108,7 +114,10 @@ class FurnitureTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Assert
@@ -140,7 +149,10 @@ class FurnitureTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
         assertNotNull(furniture);
         assertEquals("", furniture.title());
@@ -168,7 +180,10 @@ class FurnitureTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         Furniture furniture2 = new Furniture(
@@ -189,7 +204,10 @@ class FurnitureTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Act & Assert
@@ -217,7 +235,10 @@ class FurnitureTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Act
@@ -251,7 +272,10 @@ class FurnitureTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         Furniture furniture2 = new Furniture(
@@ -272,7 +296,10 @@ class FurnitureTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Act & Assert

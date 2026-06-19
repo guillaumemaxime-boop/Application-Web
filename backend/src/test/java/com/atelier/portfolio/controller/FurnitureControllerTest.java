@@ -50,7 +50,10 @@ class FurnitureControllerTest {
                 true,
                 true,
                 List.of(),
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         sampleFurnitureList = List.of(sampleFurniture);

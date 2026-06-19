@@ -58,7 +58,10 @@ public class FurnitureService {
                     base.showStoryLink(),
                     base.showStoryButton(),
                     storyService.findSlidesForOwner("furniture", entity.getId()),
-                    base.tags()
+                    base.tags(),
+                    base.videoUrl(),
+                    base.videoPoster(),
+                    base.videoCaptions()
             );
         });
     }
@@ -122,6 +125,10 @@ public class FurnitureService {
         entity.setFeatured(input.featured());
         entity.setShowStoryLink(input.showStoryLink());
         entity.setShowStoryButton(input.showStoryButton());
+        // video : set inconditionnel (null = retrait, comme coverCrop)
+        entity.setVideoUrl(input.videoUrl());
+        entity.setVideoPoster(input.videoPoster());
+        entity.setVideoCaptions(input.videoCaptions());
         if (input.gallery() != null) {
             entity.getGallery().clear();
             for (GalleryImage gi : input.gallery()) {
@@ -183,7 +190,10 @@ public class FurnitureService {
                 entity.isShowStoryLink(),
                 entity.isShowStoryButton(),
                 List.of(),
-                List.copyOf(entity.getTags())
+                List.copyOf(entity.getTags()),
+                entity.getVideoUrl(),
+                entity.getVideoPoster(),
+                entity.getVideoCaptions()
         );
     }
 }
