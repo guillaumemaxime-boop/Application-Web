@@ -56,6 +56,14 @@ public class VideoController {
         } else {
             HttpRange range = ranges.get(0);
             long start = range.getRangeStart(length);
+            if (start >= length) {
+                // Range hors borne (ex. bytes=5000- sur un fichier plus court) :
+                // 416 + Content-Range: bytes */length, plutot qu'un count negatif.
+                return ResponseEntity.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                        .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+                        .header(HttpHeaders.CONTENT_RANGE, "bytes */" + length)
+                        .build();
+            }
             long end = range.getRangeEnd(length);
             long count = Math.min(MAX_CHUNK, end - start + 1);
             region = new ResourceRegion(resource, start, count);

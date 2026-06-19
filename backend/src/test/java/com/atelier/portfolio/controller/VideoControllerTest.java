@@ -90,4 +90,19 @@ class VideoControllerTest {
         assertEquals(404, result.getStatusCode().value());
         assertNull(result.getBody());
     }
+
+    @Test
+    void serve_range_hors_borne_renvoie_416() throws IOException {
+        Resource resource = mock(Resource.class);
+        when(resource.contentLength()).thenReturn(1000L);
+        when(service.loadAsResource("clip.mp4")).thenReturn(resource);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.RANGE, "bytes=5000-");
+        ResponseEntity<ResourceRegion> result = controller.serve("clip.mp4", headers);
+
+        assertEquals(416, result.getStatusCode().value());
+        assertEquals("bytes */1000", result.getHeaders().getFirst(HttpHeaders.CONTENT_RANGE));
+        assertNull(result.getBody());
+    }
 }
