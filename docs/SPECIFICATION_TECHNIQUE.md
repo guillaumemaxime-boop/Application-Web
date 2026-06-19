@@ -670,6 +670,14 @@ record HomeFeedCoverCropRequest(
 |---------|----------|-------------|
 | GET | `/actuator/health` | Santé de l'application (`{"status":"UP"}`) |
 
+### 4.9 Médias servis — `/api/photos/files/{filename}`
+
+`PhotoController.serve` renvoie le fichier image depuis `app.upload.dir` (content-type déduit, `Content-Disposition: inline`). À l'upload, `ImageOptimizer` (Thumbnailator) redimensionne à **max 1920px** sur le grand côté (JPEG q0.85) ; les noms de fichiers sont des **UUID immuables** (le contenu d'un filename donné ne change jamais).
+
+**Cache (perf Phase 1)** : la réponse `200` porte `Cache-Control: max-age=31536000, public, immutable` (1 an). Justifié par l'immutabilité des noms : aucun risque de servir un contenu périmé. En prod, Nginx proxie `/api/` vers le backend (pas de service statique) — l'en-tête doit donc être posé **par le backend**.
+
+> **Phase 2 (backlog)** : variantes responsive multi-tailles (`srcset`/`sizes`), conversion WebP/AVIF, CDN médias — reporté (voir spec `docs/superpowers/specs/2026-06-19-perf-images-phase1-design.md`, section « Hors portée »).
+
 ---
 
 ## 5. Frontend — Composants & routes
@@ -1060,6 +1068,10 @@ Chemin : `frontend/src/app/pages/admin/shared/cropped-image-canvas.component.ts`
   - `contain` (lightbox) — le canvas est dessiné à la **résolution native** de la région cropée puis mis à l'échelle en CSS (`width:auto; max-width/max-height:100%`) pour tenir dans son conteneur en préservant le ratio. Utilisé par `<app-image-lightbox>` (box `92vw × 88vh`).
 - Utilise `ResizeObserver` (modes cover et fit) et un cache d'image en mémoire. Au chargement asynchrone, un **garde anti-rendu-périmé** (`requestedUrl !== this.imageUrl`) ignore le `onload` d'une image dont l'URL a changé entre-temps (évite un mauvais couple image/crop lors de changements rapides d'input, ex. navigation lightbox).
 - `role="img"` + `aria-label` pour l'accessibilité ; `crossOrigin="anonymous"` pour éviter le canvas tainted.
+- **Perf (Phase 1)** : deux inputs opt-in (défaut `false` = comportement inchangé).
+  - `[lazy]` — diffère le chargement (`new Image()` / `render()`) via un `IntersectionObserver` (`rootMargin: '200px'`, déconnecté après la première intersection) ; fallback **eager** si `IntersectionObserver` indisponible (vieux navigateur / test). Appliqué aux contextes **sous la ligne de flottaison** : galeries publiques des fiches mobilier/expo et cards du feed d'accueil (branches `@else`). Les galeries **éditables** (admin/preview) restent eager.
+  - `[priority]` — pose `fetchPriority = 'high'` sur l'`Image` créée (hint LCP). Appliqué aux **covers hero** des fiches (jamais lazy). Dégradation gracieuse si non supporté.
+  - CLS : les conteneurs lazifiés réservent leur hauteur en amont (galeries `grid-auto-rows: 220px`, cards home `aspect-ratio: 4/5`) — pas de saut au chargement différé.
 
 #### `<app-image-lightbox>` (`ImageLightboxComponent`)
 
