@@ -154,4 +154,20 @@ describe('StudioComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('aside')).toBeNull();
   });
+
+  it('affiche le bloc vidéo si studio.video.url est renseigné', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({ 'studio.video.url': '/api/videos/files/clip.mp4' }));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-video-player')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.studio-video')).toBeTruthy();
+  });
+
+  it('masque le bloc vidéo si studio.video.url est absent', () => {
+    portfolioServiceSpy.getContent.and.returnValue(of({}));
+    const fixture = TestBed.createComponent(StudioComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-video-player')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.studio-video')).toBeNull();
+  });
 });
