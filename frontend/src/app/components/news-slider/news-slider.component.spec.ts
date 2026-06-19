@@ -107,6 +107,13 @@ describe('NewsSliderComponent', () => {
     expect(cmp.storyCoverStyle(story).transform).toBe('none');
   });
 
+  it('les vignettes ont decoding="async"', () => {
+    // fournir un slider avec >=1 story ; detectChanges
+    const img = fixture.nativeElement.querySelector('.thumb img') as HTMLImageElement;
+    expect(img).toBeTruthy();
+    expect(img.getAttribute('decoding')).toBe('async');
+  });
+
   it('applique le style du role section-title sur le titre du slider', () => {
     fixture.componentRef.setInput('content', {
       'typo.section-title.font': 'helvetica',

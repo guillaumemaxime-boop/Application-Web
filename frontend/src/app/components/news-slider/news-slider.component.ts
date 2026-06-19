@@ -28,7 +28,7 @@ import { cropTransform, CropStyle } from '../../utils/crop-transform';
                   [attr.aria-label]="story.ownerLabel + ' — ' + story.title"
                   (click)="onCardClick(story)">
             <div class="thumb">
-              <img [src]="story.coverImage" [alt]="story.title" loading="lazy"
+              <img [src]="story.coverImage" [alt]="story.title" loading="lazy" decoding="async"
                    [style.transform]="storyCoverStyle(story).transform"
                    [style.transform-origin]="storyCoverStyle(story).transformOrigin" />
             </div>
