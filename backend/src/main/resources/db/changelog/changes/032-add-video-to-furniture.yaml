@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 032-add-video-to-furniture
+      author: milo-guillaume
+      comment: >
+        Ajoute video_url, video_poster, video_captions (nullables) sur furniture
+        pour le bloc video optionnel de la fiche. URLs servies par /api/videos/files.
+      changes:
+        - sql:
+            sql: ALTER TABLE furniture ADD COLUMN video_url VARCHAR(500);
+        - sql:
+            sql: ALTER TABLE furniture ADD COLUMN video_poster VARCHAR(500);
+        - sql:
+            sql: ALTER TABLE furniture ADD COLUMN video_captions VARCHAR(500);
