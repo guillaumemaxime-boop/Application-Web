@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { provideHttpClient } from '@angular/common/http';
 import { ExhibitionPreviewComponent } from './exhibition-preview.component';
 import { ExhibitionDetailViewComponent } from '../../../../components/exhibition-detail-view/exhibition-detail-view.component';
 import { GalleryItem } from '../../../../models/gallery-item.model';
@@ -21,7 +22,7 @@ describe('ExhibitionPreviewComponent', () => {
     });
     form.patchValue(formValues);
     const gallerySig = signal<GalleryItem[]>(gallery);
-    TestBed.configureTestingModule({ imports: [ExhibitionPreviewComponent] }).compileComponents();
+    TestBed.configureTestingModule({ imports: [ExhibitionPreviewComponent], providers: [provideHttpClient()] }).compileComponents();
     fixture = TestBed.createComponent(ExhibitionPreviewComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('form', form);

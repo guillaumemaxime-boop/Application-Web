@@ -13,6 +13,8 @@ import { StoryItem } from '../story-viewer/story-viewer.component';
 import { roleStyle } from '../../utils/title-style';
 import { StoryManagerBarComponent } from '../story-manager-bar/story-manager-bar.component';
 import { StoryInlineComponent } from '../story-inline/story-inline.component';
+import { VideoPlayerComponent } from '../video-player/video-player.component';
+import { VideoFieldComponent } from '../../pages/admin/shared/video-field.component';
 
 export type EditableExhibitionField =
   | 'title' | 'venue' | 'city' | 'country'
@@ -21,7 +23,7 @@ export type EditableExhibitionField =
 @Component({
   selector: 'app-exhibition-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, ReorderableDirective, NgStyle, RouterLink, TagEditorComponent, StoryManagerBarComponent, StoryInlineComponent],
+  imports: [CroppedImageCanvasComponent, ReorderableDirective, NgStyle, RouterLink, TagEditorComponent, StoryManagerBarComponent, StoryInlineComponent, VideoPlayerComponent, VideoFieldComponent],
   template: `
     @if (item) {
       <article class="fade-in">
@@ -223,6 +225,29 @@ export type EditableExhibitionField =
         }
 
         @if (editable) {
+          <section class="section video-block">
+            <div class="container narrow">
+              <app-video-field
+                label="{{ item.title }} — vidéo"
+                [videoUrl]="item.videoUrl ?? null"
+                [videoPoster]="item.videoPoster ?? null"
+                [videoCaptions]="item.videoCaptions ?? null"
+                (videoUrlChange)="videoUrlChange.emit($event)"
+                (videoPosterChange)="videoPosterChange.emit($event)"
+                (videoCaptionsChange)="videoCaptionsChange.emit($event)" />
+            </div>
+          </section>
+        } @else if (item.videoUrl) {
+          <section class="section video-block">
+            <div class="container narrow">
+              <h2 class="video-title">Vidéo</h2>
+              <app-video-player [src]="item.videoUrl" [poster]="item.videoPoster ?? null"
+                [captions]="item.videoCaptions ?? null" [label]="item.title + ' — vidéo'" />
+            </div>
+          </section>
+        }
+
+        @if (editable) {
           <section class="section story-admin">
             <div class="container narrow">
               <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
@@ -282,6 +307,9 @@ export type EditableExhibitionField =
 
     .story-admin { padding: 48px 0; border-top: 1px dashed var(--color-line); }
     .story-admin-badge { margin: 0 0 12px; font-size: 0.78rem; color: var(--color-mute); font-style: italic; }
+
+    .video-block .narrow { max-width: 880px; }
+    .video-title { font-size: 1.375rem; margin-bottom: 16px; }
 
     .editable .hero-bg { cursor: pointer; outline: 1px dashed rgba(255,255,255,0.25); outline-offset: -2px; }
     .hero-bg .edit-overlay {
@@ -384,6 +412,9 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Output() storyImageReplaceRequest = new EventEmitter<string>();
   @Output() storyImageCropRequest = new EventEmitter<string>();
   @Output() galleryImageOpen = new EventEmitter<number>();
+  @Output() videoUrlChange = new EventEmitter<string | null>();
+  @Output() videoPosterChange = new EventEmitter<string | null>();
+  @Output() videoCaptionsChange = new EventEmitter<string | null>();
 
   protected editingField: EditableExhibitionField | null = null;
   protected editingDateField: 'startDate' | 'endDate' | null = null;
