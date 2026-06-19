@@ -72,6 +72,7 @@ public class SecurityConfig {
                                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                                         "font-src 'self' https://fonts.gstatic.com; " +
                                         "img-src 'self' data: https:; " +
+                                        "media-src 'self'; " +
                                         "connect-src 'self'; " +
                                         "frame-src 'self' https://www.youtube.com https://player.vimeo.com; " +
                                         "frame-ancestors 'none'"))
