@@ -290,6 +290,89 @@ describe('CroppedImageCanvasComponent', () => {
     expect(fixture.componentInstance.mode).toBe('fit');
   });
 
+  it('lazy=true : ne cree pas d\'Image avant l\'intersection, puis rend a l\'intersection', () => {
+    let ioCallback: ((entries: any[]) => void) | null = null;
+    const observe = jasmine.createSpy('observe');
+    const disconnect = jasmine.createSpy('disconnect');
+    const OriginalIO = (window as any).IntersectionObserver;
+    (window as any).IntersectionObserver = class {
+      constructor(cb: any) { ioCallback = cb; }
+      observe = observe; disconnect = disconnect; unobserve = () => {};
+    };
+    try {
+      // Espionne render() plutot que window.Image (plus fiable dans le harnais Karma)
+      const renderSpy = spyOn(fixture.componentInstance as any, 'render').and.callThrough();
+      fixture.componentRef.setInput('imageUrl', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
+      fixture.componentRef.setInput('lazy', true);
+      fixture.detectChanges(); // ngAfterViewInit => lazy, pas de render immediat
+      expect(renderSpy).not.toHaveBeenCalled();
+      expect(observe).toHaveBeenCalled();
+      // Simule l'intersection
+      ioCallback!([{ isIntersecting: true }]);
+      expect(renderSpy).toHaveBeenCalled();
+      expect(disconnect).toHaveBeenCalled();
+    } finally {
+      (window as any).IntersectionObserver = OriginalIO;
+    }
+  });
+
+  it('lazy=false (defaut) : rend immediatement (render appele dans ngAfterViewInit)', () => {
+    const renderSpy = spyOn(fixture.componentInstance as any, 'render').and.callThrough();
+    fixture.componentRef.setInput('imageUrl', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
+    fixture.detectChanges(); // ngAfterViewInit => pas lazy, render immediat
+    expect(renderSpy).toHaveBeenCalled();
+  });
+
+  it('lazy=true : ngOnChanges avant intersection n\'appelle pas render', async () => {
+    let ioCallback: ((entries: any[]) => void) | null = null;
+    const observe = jasmine.createSpy('observe');
+    const disconnect = jasmine.createSpy('disconnect');
+    const OriginalIO = (window as any).IntersectionObserver;
+    (window as any).IntersectionObserver = class {
+      constructor(cb: any) { ioCallback = cb; }
+      observe = observe; disconnect = disconnect; unobserve = () => {};
+    };
+    try {
+      fixture.componentRef.setInput('imageUrl', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
+      fixture.componentRef.setInput('lazy', true);
+      fixture.detectChanges();
+      const renderSpy = spyOn(fixture.componentInstance as any, 'render').and.callThrough();
+      // ngOnChanges declenche avant intersection => doit etre bloque
+      fixture.componentInstance.ngOnChanges();
+      await Promise.resolve();
+      expect(renderSpy).not.toHaveBeenCalled();
+      // Apres intersection => render autorise
+      ioCallback!([{ isIntersecting: true }]);
+      expect(renderSpy).toHaveBeenCalled();
+    } finally {
+      (window as any).IntersectionObserver = OriginalIO;
+    }
+  });
+
+  it('priority=true : le composant se cree sans erreur', () => {
+    fixture.componentRef.setInput('imageUrl', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
+    fixture.componentRef.setInput('priority', true);
+    expect(() => fixture.detectChanges()).not.toThrow();
+  });
+
+  it('ngOnDestroy deconnecte aussi lazyObserver si present', () => {
+    const OriginalIO = (window as any).IntersectionObserver;
+    const disconnect = jasmine.createSpy('disconnect');
+    (window as any).IntersectionObserver = class {
+      constructor(cb: any) {}
+      observe = jasmine.createSpy('observe'); disconnect = disconnect; unobserve = () => {};
+    };
+    try {
+      fixture.componentRef.setInput('imageUrl', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
+      fixture.componentRef.setInput('lazy', true);
+      fixture.detectChanges();
+      expect(() => fixture.destroy()).not.toThrow();
+      expect(disconnect).toHaveBeenCalled();
+    } finally {
+      (window as any).IntersectionObserver = OriginalIO;
+    }
+  });
+
   it('ignore un onload perime (imageUrl a change entre-temps)', () => {
     fixture.componentRef.setInput('imageUrl', '/a.jpg');
     fixture.detectChanges();
