@@ -39,12 +39,32 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
   @Input() targetHeight = 140;
   /** Pour mode 'adaptive' : largeur max en pixels (clamp si crop tres large). */
   @Input() maxWidth = 240;
+  /** Differe le chargement jusqu'a l'approche du viewport via IntersectionObserver. Fallback eager si IO indisponible. */
+  @Input() lazy = false;
+  /** Pose fetchPriority='high' sur l'Image (hint LCP pour la cover). */
+  @Input() priority = false;
 
   private resizeObserver?: ResizeObserver;
+  private lazyObserver?: IntersectionObserver;
+  /** Passe a true des que le chargement est autorise (intersection en lazy, ou immediat sinon). */
+  private intersected = false;
   private cachedImage?: HTMLImageElement;
 
   ngAfterViewInit(): void {
-    this.render();
+    if (this.lazy && typeof IntersectionObserver !== 'undefined' && this.canvasRef) {
+      this.lazyObserver = new IntersectionObserver((entries) => {
+        if (entries.some(e => e.isIntersecting)) {
+          this.intersected = true;
+          this.lazyObserver?.disconnect();
+          this.lazyObserver = undefined;
+          this.render();
+        }
+      }, { rootMargin: '200px' });
+      this.lazyObserver.observe(this.canvasRef.nativeElement);
+    } else {
+      this.intersected = true;
+      this.render();
+    }
     // En mode cover/fit, le canvas doit se redessiner quand son conteneur change
     // de taille (resize fenetre, etc.). Pas necessaire en mode adaptive ou la
     // taille du canvas est pilotee par le code, pas par le CSS du parent.
@@ -57,11 +77,13 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
   }
 
   ngOnChanges(): void {
+    if (this.lazy && !this.intersected) return;  // lazy non intersecte : attendre l'IO
     queueMicrotask(() => this.render());
   }
 
   ngOnDestroy(): void {
     this.resizeObserver?.disconnect();
+    this.lazyObserver?.disconnect();
   }
 
   private render(): void {
@@ -77,6 +99,9 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
     }
     const img = new Image();
     img.crossOrigin = 'anonymous';  // permet getImageData() ulterieur sans tainted canvas
+    if (this.priority) {
+      (img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'high';
+    }
     const requestedUrl = this.imageUrl;
     img.onload = () => {
       if (requestedUrl !== this.imageUrl) return;  // rendu perime : l'input a change depuis

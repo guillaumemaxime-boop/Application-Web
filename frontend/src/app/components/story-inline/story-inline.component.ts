@@ -105,7 +105,7 @@ type InlineSlide = ImageSlide | VideoSlide | SpecSlide | QuoteSlide;
             @switch (s.type) {
               @case ('image') {
                 <figure class="block image">
-                  <img [src]="s.src" [alt]="s.caption ?? ''" loading="lazy" />
+                  <img [src]="s.src" [alt]="s.caption ?? ''" loading="lazy" decoding="async" />
                   @if (s.caption) {
                     <figcaption class="container narrow">{{ s.caption }}</figcaption>
                   }

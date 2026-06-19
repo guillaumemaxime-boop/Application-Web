@@ -316,4 +316,14 @@ describe('StoryInlineComponent', () => {
     expect(emitted![0].type).toBe('spec');
     expect(emitted![0].specs.length).toBe(1);
   });
+
+  it('l\'image de slide (lecture seule) a decoding="async"', () => {
+    // slides = [{type:'image', src:'/a.jpg', ...}] ; editable = false ; detectChanges
+    const fixture = createWithSlides([
+      { id: 'img1', position: 1, type: 'image', src: '/a.jpg', caption: null },
+    ]);
+    const img = fixture.nativeElement.querySelector('.image img') as HTMLImageElement;
+    expect(img).toBeTruthy();
+    expect(img.getAttribute('decoding')).toBe('async');
+  });
 });

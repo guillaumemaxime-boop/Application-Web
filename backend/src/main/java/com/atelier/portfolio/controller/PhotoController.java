@@ -4,6 +4,7 @@ import com.atelier.portfolio.model.Photo;
 import com.atelier.portfolio.service.PhotoService;
 import jakarta.validation.constraints.Size;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,7 @@ public class PhotoController {
         }
         String contentType = contentTypeFor(filename);
         return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(java.time.Duration.ofDays(365)).cachePublic().immutable())
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);

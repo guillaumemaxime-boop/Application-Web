@@ -131,4 +131,17 @@ class PhotoControllerTest {
 
         assertEquals("application/octet-stream", result.getHeaders().getContentType().toString());
     }
+
+    @Test
+    void serve_pose_un_cache_control_immuable_longue_duree() throws IOException {
+        Resource mockResource = mock(Resource.class);
+        when(service.loadAsResource("photo.jpg")).thenReturn(mockResource);
+
+        ResponseEntity<Resource> result = controller.serve("photo.jpg");
+
+        String cacheControl = result.getHeaders().getCacheControl();
+        assertNotNull(cacheControl);
+        assertTrue(cacheControl.contains("max-age=31536000"), "doit cacher 1 an : " + cacheControl);
+        assertTrue(cacheControl.contains("immutable"), "doit etre immutable : " + cacheControl);
+    }
 }

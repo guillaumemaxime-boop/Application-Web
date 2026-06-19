@@ -29,7 +29,8 @@ import { roleStyle } from '../../utils/title-style';
               [imageUrl]="item.coverImage"
               [crop]="item.coverCrop ?? null"
               [alt]="item.title"
-              mode="cover" />
+              mode="cover"
+              [priority]="true" />
             @if (editable) {
               <div class="edit-overlay">
                 <button type="button" class="edit-btn" aria-label="Cadrer la cover" (click)="coverEdit.emit('crop')">✂ Cadrer</button>
@@ -179,7 +180,8 @@ import { roleStyle } from '../../utils/title-style';
                             [imageUrl]="img.url"
                             [crop]="img.crop ?? null"
                             [alt]="item.title + ' — vue ' + (i + 1)"
-                            mode="cover" />
+                            mode="cover"
+                            [lazy]="true" />
                         </div>
                       </button>
                     </figure>
