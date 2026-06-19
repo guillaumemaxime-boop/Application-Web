@@ -68,6 +68,15 @@ public class ExhibitionEntity {
     @Column(name = "show_story_button", nullable = false)
     private boolean showStoryButton = true;
 
+    @Column(name = "video_url", length = 500)
+    private String videoUrl;
+
+    @Column(name = "video_poster", length = 500)
+    private String videoPoster;
+
+    @Column(name = "video_captions", length = 500)
+    private String videoCaptions;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "exhibition_gallery", joinColumns = @JoinColumn(name = "exhibition_id"))
     @OrderColumn(name = "position")
@@ -137,6 +146,15 @@ public class ExhibitionEntity {
 
     public boolean isShowStoryButton() { return showStoryButton; }
     public void setShowStoryButton(boolean showStoryButton) { this.showStoryButton = showStoryButton; }
+
+    public String getVideoUrl() { return videoUrl; }
+    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+
+    public String getVideoPoster() { return videoPoster; }
+    public void setVideoPoster(String videoPoster) { this.videoPoster = videoPoster; }
+
+    public String getVideoCaptions() { return videoCaptions; }
+    public void setVideoCaptions(String videoCaptions) { this.videoCaptions = videoCaptions; }
 
     public List<GalleryEntry> getGallery() { return gallery; }
     public void setGallery(List<GalleryEntry> gallery) { this.gallery = gallery; }

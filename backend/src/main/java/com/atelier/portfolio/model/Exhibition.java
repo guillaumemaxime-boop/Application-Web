@@ -26,6 +26,9 @@ public record Exhibition(
         boolean featured,
         boolean showStoryLink,
         boolean showStoryButton,
-        List<Slide> slides
+        List<Slide> slides,
+        @Size(max = 500) String videoUrl,
+        @Size(max = 500) String videoPoster,
+        @Size(max = 500) String videoCaptions
 ) {
 }

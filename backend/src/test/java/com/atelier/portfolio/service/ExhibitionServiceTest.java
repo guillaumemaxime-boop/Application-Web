@@ -125,7 +125,8 @@ class ExhibitionServiceTest {
                 null,
                 List.of(new GalleryImage("https://example.com/souffles-1.jpg", null, 1, 1)),
                 "Camille Lévy", "court", "long",
-                List.of("Sculpture", "Lumière"), true, true, true, List.of()
+                List.of("Sculpture", "Lumière"), true, true, true, List.of(),
+                null, null, null
         );
 
         Exhibition created = exhibitionService.create(input);
@@ -144,7 +145,8 @@ class ExhibitionServiceTest {
                 "Lieu", "Ville", "Pays",
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
                 null, null,
-                List.of(), "", "", "", List.of(), false, true, true, List.of()
+                List.of(), "", "", "", List.of(), false, true, true, List.of(),
+                null, null, null
         );
 
         Exhibition created = exhibitionService.create(input);
@@ -164,7 +166,8 @@ class ExhibitionServiceTest {
                 original.coverImage(), original.coverCrop(),
                 original.gallery(), original.curator(),
                 "Description courte mise à jour", original.description(),
-                original.tags(), false, true, true, List.of()
+                original.tags(), false, true, true, List.of(),
+                null, null, null
         );
 
         Optional<Exhibition> updated = exhibitionService.update(slug, changes);
@@ -176,12 +179,40 @@ class ExhibitionServiceTest {
     }
 
     @Test
+    void update_persiste_les_champs_video() {
+        String slug = "matieres-silencieuses";
+        Exhibition original = exhibitionService.findBySlug(slug).orElseThrow();
+
+        Exhibition changes = new Exhibition(
+                original.id(), original.title(), original.slug(),
+                original.venue(), original.city(), original.country(),
+                original.startDate(), original.endDate(),
+                original.coverImage(), original.coverCrop(),
+                original.gallery(), original.curator(),
+                original.shortDescription(), original.description(),
+                original.tags(), original.featured(), original.showStoryLink(),
+                original.showStoryButton(), List.of(),
+                "/api/videos/files/clip.mp4",
+                "/api/photos/files/poster.jpg",
+                "/api/videos/files/subs.vtt"
+        );
+
+        Optional<Exhibition> result = exhibitionService.update(slug, changes);
+
+        assertTrue(result.isPresent());
+        assertEquals("/api/videos/files/clip.mp4", result.get().videoUrl());
+        assertEquals("/api/photos/files/poster.jpg", result.get().videoPoster());
+        assertEquals("/api/videos/files/subs.vtt", result.get().videoCaptions());
+    }
+
+    @Test
     void testUpdate_NonExistingSlug_ReturnsEmpty() {
         Exhibition changes = new Exhibition(
                 null, "X", null, "", "", "",
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
                 null, null,
-                List.of(), "", "", "", List.of(), false, true, true, List.of()
+                List.of(), "", "", "", List.of(), false, true, true, List.of(),
+                null, null, null
         );
 
         Optional<Exhibition> updated = exhibitionService.update("non-existent", changes);
@@ -216,7 +247,8 @@ class ExhibitionServiceTest {
                 null,
                 List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0), 1, 1),
                         new GalleryImage("/g2.jpg", null, 1, 1)),
-                "curator", "s", "d", List.of(), false, true, true, List.of());
+                "curator", "s", "d", List.of(), false, true, true, List.of(),
+                null, null, null);
         Exhibition created = exhibitionService.create(input);
         Exhibition reloaded = exhibitionService.findBySlug(created.slug()).orElseThrow();
         assertEquals(2, reloaded.gallery().size());
