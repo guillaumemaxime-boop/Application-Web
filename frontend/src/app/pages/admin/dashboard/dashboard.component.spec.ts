@@ -17,9 +17,18 @@ describe('DashboardComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('affiche 4 cartes d\'action', () => {
+  it('affiche 5 cartes d\'action', () => {
     const fixture = TestBed.createComponent(DashboardComponent);
     fixture.detectChanges();
-    expect(fixture.debugElement.queryAll(By.css('.action-card')).length).toBe(4);
+    expect(fixture.debugElement.queryAll(By.css('.action-card')).length).toBe(5);
+  });
+
+  it('a une carte « Nouvelle story » vers /admin/stories?new=1', () => {
+    const fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+    const card = fixture.debugElement.queryAll(By.css('.action-card'))
+      .find(de => (de.nativeElement as HTMLElement).textContent?.includes('Nouvelle story'));
+    expect(card).toBeTruthy();
+    expect((card!.nativeElement as HTMLElement).getAttribute('href')).toContain('/admin/stories');
   });
 });

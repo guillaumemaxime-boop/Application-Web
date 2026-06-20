@@ -250,10 +250,11 @@ export type EditableExhibitionField =
     .hero-bg app-cropped-image-canvas { width: 100%; height: 100%; display: block; }
     .hero-bg::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 60%, transparent 100%); }
     .hero-content { position: relative; z-index: 1; color: #ffffff; max-width: 1280px; margin: 0 auto; padding: 0 32px; }
-    .hero-content .eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.85; }
-    .hero-content .eyebrow-composite { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.85; }
-    .hero-content h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.05; margin: 16px 0; }
-    .hero-content .dates { font-size: 0.95rem; opacity: 0.85; }
+    /* Couleur explicite : sinon les regles globales (h1/.eyebrow/p) ecrasent le blanc herite du hero. */
+    .hero-content .eyebrow { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.85); }
+    .hero-content .eyebrow-composite { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.85); }
+    .hero-content h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.05; margin: 16px 0; color: #ffffff; }
+    .hero-content .dates { font-size: 0.95rem; color: rgba(255,255,255,0.85); }
 
     .section { padding: 80px 0; }
     .section .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }

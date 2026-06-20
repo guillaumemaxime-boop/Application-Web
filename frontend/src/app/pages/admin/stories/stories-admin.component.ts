@@ -246,6 +246,10 @@ export class StoriesAdminComponent {
         this.presetOwner.set({ kind: ownerKind, id: ownerId });
       }
     }
+    // ?new=1 (raccourci « Nouvelle story » du tableau de bord) : ouvre la modale de création.
+    if (qp.get('new') === '1') {
+      this.createOpen.set(true);
+    }
     this.reload();
     this.reloadSliders();
   }
