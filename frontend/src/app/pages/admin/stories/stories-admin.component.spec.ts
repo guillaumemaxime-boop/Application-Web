@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { StoriesAdminComponent } from './stories-admin.component';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { StoryAdminView } from '../../../models/story.model';
+import { NewsSlider } from '../../../models/news-slider.model';
 
 describe('StoriesAdminComponent', () => {
   let fixture: ComponentFixture<StoriesAdminComponent>;
@@ -16,15 +17,21 @@ describe('StoriesAdminComponent', () => {
     { id: 'st-2', ownerKind: 'exhibition', ownerId: 'e-1', ownerTitle: 'Lumen', title: 'Story B', coverImage: '/d.jpg', coverCrop: null, slug: 'b', position: 0, slideCount: 0, sliders: [] },
   ];
 
+  const sliders: NewsSlider[] = [
+    { id: 'sl-1', slug: 'accueil', title: 'Accueil', zoneKey: 'home-top', storyIds: ['st-1'] },
+    { id: 'sl-2', slug: 'mise-en-avant', title: 'Mise en avant', zoneKey: 'home-middle', storyIds: [] },
+  ];
+
   /** Construit le composant avec des query params optionnels. */
   async function setup(queryParams: Record<string, string> = {}): Promise<void> {
     TestBed.resetTestingModule();
     portfolio = jasmine.createSpyObj('PortfolioService',
-      ['getStoriesForManagement', 'updateStory', 'getAllFurniture', 'getAllExhibitions', 'getAdminSliders']);
+      ['getStoriesForManagement', 'updateStory', 'getAllFurniture', 'getAllExhibitions', 'getAdminSliders', 'replaceSliderStories']);
     portfolio.getStoriesForManagement.and.returnValue(of(rows));
     portfolio.getAllFurniture.and.returnValue(of([]));
     portfolio.getAllExhibitions.and.returnValue(of([]));
-    portfolio.getAdminSliders.and.returnValue(of([]));
+    portfolio.getAdminSliders.and.returnValue(of(sliders.map(s => ({ ...s, storyIds: [...s.storyIds] }))));
+    portfolio.replaceSliderStories.and.returnValue(of(sliders[0]));
     await TestBed.configureTestingModule({
       imports: [StoriesAdminComponent],
       providers: [
@@ -123,6 +130,55 @@ describe('StoriesAdminComponent', () => {
         coverImage: story.coverImage,
         coverCrop: null,
       }));
+    });
+  });
+
+  describe('appartenance aux sliders', () => {
+    /** Ouvre le panneau Sliders de la première story (st-1) et renvoie ses cases à cocher. */
+    function openSlidersPanel(): HTMLInputElement[] {
+      const sliderBtn = Array.from(rowsEls()[0].querySelectorAll('button'))
+        .find(b => b.textContent?.trim() === 'Sliders') as HTMLButtonElement;
+      sliderBtn.click();
+      fixture.detectChanges();
+      return Array.from(rowsEls()[0].querySelectorAll('input[type="checkbox"]'));
+    }
+
+    it('charge les sliders au démarrage', () => {
+      expect(portfolio.getAdminSliders).toHaveBeenCalled();
+    });
+
+    it('cliquer « Sliders » ouvre un panneau listant les sliders avec des cases à cocher', () => {
+      // Avant le clic : aucune case à cocher de slider
+      expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(0);
+
+      const boxes = openSlidersPanel();
+      expect(boxes.length).toBe(2);
+      // La story st-1 est dans sl-1 (cochée) mais pas dans sl-2 (décochée).
+      expect(boxes[0].checked).toBe(true);
+      expect(boxes[1].checked).toBe(false);
+      // Les titres des sliders sont affichés.
+      expect(rowsEls()[0].textContent).toContain('Accueil');
+      expect(rowsEls()[0].textContent).toContain('Mise en avant');
+    });
+
+    it('cocher un slider où la story est absente appelle replaceSliderStories avec la story ajoutée', () => {
+      const boxes = openSlidersPanel();
+      // sl-2 ne contient pas st-1 : on coche.
+      boxes[1].checked = true;
+      boxes[1].dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+
+      expect(portfolio.replaceSliderStories).toHaveBeenCalledWith('sl-2', ['st-1']);
+    });
+
+    it('décocher un slider où la story est présente appelle replaceSliderStories sans la story', () => {
+      const boxes = openSlidersPanel();
+      // sl-1 contient st-1 : on décoche.
+      boxes[0].checked = false;
+      boxes[0].dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+
+      expect(portfolio.replaceSliderStories).toHaveBeenCalledWith('sl-1', []);
     });
   });
 });

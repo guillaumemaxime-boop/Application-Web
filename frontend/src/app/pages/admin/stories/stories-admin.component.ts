@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { ToastService } from '../shared/toast.service';
 import { StoryAdminView } from '../../../models/story.model';
+import { NewsSlider } from '../../../models/news-slider.model';
 import { Crop } from '../../../models/crop.model';
 import { CroppedImageCanvasComponent } from '../shared/cropped-image-canvas.component';
 import { ImageFieldComponent } from '../shared/image-field.component';
@@ -83,8 +84,36 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
             <button type="button" class="reorder" (click)="onReorder(row, 1)" [disabled]="!canMoveDown(row)" aria-label="Descendre la story">↓</button>
             <a class="action" [routerLink]="['/admin/stories', row.id]">Éditer</a>
             <button type="button" class="action" (click)="openCover(row)">Cover</button>
+            <button
+              type="button"
+              class="action"
+              [attr.aria-expanded]="sliderEditFor() === row.id"
+              (click)="sliderEditFor.set(sliderEditFor() === row.id ? null : row.id)">Sliders</button>
             <button type="button" class="action danger" (click)="onDelete(row)">Supprimer</button>
           </div>
+
+          @if (sliderEditFor() === row.id) {
+            <div class="slider-panel" role="region" [attr.aria-label]="'Sliders de la story ' + row.title">
+              <span class="slider-panel-label">Appartenance aux sliders</span>
+              @if (allSliders().length === 0) {
+                <p class="empty">Aucun slider disponible.</p>
+              }
+              <ul class="slider-options">
+                @for (s of allSliders(); track s.id) {
+                  <li>
+                    <label class="slider-option">
+                      <input
+                        type="checkbox"
+                        [checked]="s.storyIds.includes(row.id)"
+                        (change)="toggleMembership(s, row.id, $event)" />
+                      {{ s.title }}
+                    </label>
+                  </li>
+                }
+              </ul>
+              <button type="button" class="action" (click)="sliderEditFor.set(null)">Fermer</button>
+            </div>
+          }
         </li>
       }
     </ul>
@@ -125,7 +154,7 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
 
     .story-list { list-style: none; margin: 0; padding: 0; }
     .story-row {
-      display: flex; gap: 16px; align-items: center;
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
       padding: 12px; border: 1px solid var(--color-line);
       background: var(--color-bg-alt); margin-bottom: 8px;
     }
@@ -162,6 +191,14 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
     }
     .cover-editor-title { margin: 0 0 16px; font-size: 1rem; font-weight: 600; }
     .cover-editor-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+    .slider-panel {
+      flex-basis: 100%; width: 100%;
+      padding: 12px; border: 1px solid var(--color-line); background: var(--color-bg);
+    }
+    .slider-panel-label { display: block; font-size: 0.8rem; color: var(--color-mute); margin-bottom: 8px; }
+    .slider-options { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .slider-option { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; }
   `],
 })
 export class StoriesAdminComponent {
@@ -173,6 +210,11 @@ export class StoriesAdminComponent {
   protected readonly rows = signal<StoryAdminView[]>([]);
   protected readonly ownerFilter = signal<'all' | 'furniture' | 'exhibition'>('all');
   protected readonly search = signal('');
+
+  /** Tous les sliders disponibles, pour gérer l'appartenance des stories. */
+  protected readonly allSliders = signal<NewsSlider[]>([]);
+  /** Id de la story dont le panneau « Sliders » est ouvert (null si aucun). */
+  protected readonly sliderEditFor = signal<string | null>(null);
   // Câblés en T5 (création) et T6 (édition cover) ; déclarés ici pour les boutons.
   protected readonly createOpen = signal(false);
   protected readonly coverEdit = signal<StoryAdminView | null>(null);
@@ -208,10 +250,35 @@ export class StoriesAdminComponent {
       }
     }
     this.reload();
+    this.reloadSliders();
   }
 
   protected reload(): void {
     this.portfolio.getStoriesForManagement().subscribe(r => this.rows.set(r));
+  }
+
+  /** Recharge la liste des sliders (pour refléter l'appartenance des stories). */
+  protected reloadSliders(): void {
+    this.portfolio.getAdminSliders().subscribe(s => this.allSliders.set(s));
+  }
+
+  /**
+   * Ajoute ou retire la story du slider selon l'état de la case à cocher, puis
+   * rafraîchit la liste des stories (colonne sliders) et les cases du panneau.
+   */
+  protected toggleMembership(slider: NewsSlider, storyId: string, ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    const ids = checked
+      ? [...slider.storyIds, storyId]
+      : slider.storyIds.filter(id => id !== storyId);
+    this.portfolio.replaceSliderStories(slider.id, ids).subscribe({
+      next: () => {
+        this.toast.success('Appartenance aux sliders mise à jour.');
+        this.reload();
+        this.reloadSliders();
+      },
+      error: () => this.toast.error('Erreur lors de la mise à jour des sliders.'),
+    });
   }
 
   /** Ouvre le panneau d'édition du cover pour la story donnée. */
