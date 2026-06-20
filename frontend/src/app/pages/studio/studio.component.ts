@@ -77,7 +77,7 @@ import { VideoPlayerComponent } from '../../components/video-player/video-player
     @if (videoUrl()) {
       <section class="section studio-video">
         <div class="container">
-          <span class="eyebrow" [ngStyle]="eyebrowStyleVar()">Vidéo</span>
+          <h2 class="eyebrow" [ngStyle]="eyebrowStyleVar()">Vidéo</h2>
           <app-video-player
             [src]="videoUrl()"
             [poster]="videoPoster() || null"

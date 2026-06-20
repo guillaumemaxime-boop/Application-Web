@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,7 +50,11 @@ public class VideoService {
         Path dir = Paths.get(uploadDir);
         Files.createDirectories(dir);
         Path target = dir.resolve(filename);
-        Files.write(target, file.getBytes());
+        // Streame par blocs plutot que de charger tout le fichier (jusqu'a 200 Mo)
+        // en memoire via getBytes() — evite l'epuisement du heap a l'upload.
+        try (InputStream in = file.getInputStream()) {
+            Files.copy(in, target);
+        }
 
         return new StoredVideo(filename, baseUrl + "/" + filename);
     }

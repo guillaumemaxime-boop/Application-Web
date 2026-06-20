@@ -24,23 +24,23 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
       }
 
       <div class="vf-actions">
-        <label class="vf-btn">
+        <input #videoInput type="file" accept="video/mp4,video/webm" hidden (change)="onVideoSelected($event)" />
+        <button type="button" class="vf-btn" (click)="videoInput.click()">
           {{ videoUrl ? 'Remplacer la vidéo' : 'Ajouter une vidéo' }}
-          <input type="file" accept="video/mp4,video/webm" hidden (change)="onVideoSelected($event)" />
-        </label>
-        <label class="vf-btn">
+        </button>
+        <input #posterInput type="file" accept="image/*" hidden (change)="onPosterSelected($event)" />
+        <button type="button" class="vf-btn" (click)="posterInput.click()">
           {{ videoPoster ? 'Remplacer le poster' : 'Ajouter un poster' }}
-          <input type="file" accept="image/*" hidden (change)="onPosterSelected($event)" />
-        </label>
-        <label class="vf-btn">
+        </button>
+        <input #captionsInput type="file" accept=".vtt,text/vtt" hidden (change)="onCaptionsSelected($event)" />
+        <button type="button" class="vf-btn" (click)="captionsInput.click()">
           {{ videoCaptions ? 'Remplacer les sous-titres' : 'Ajouter des sous-titres (.vtt)' }}
-          <input type="file" accept=".vtt,text/vtt" hidden (change)="onCaptionsSelected($event)" />
-        </label>
+        </button>
         @if (videoUrl) {
           <button type="button" class="vf-btn vf-remove" (click)="removeVideo()">Retirer la vidéo</button>
         }
       </div>
-      @if (error()) { <p class="vf-error">{{ error() }}</p> }
+      @if (error()) { <p class="vf-error" role="alert">{{ error() }}</p> }
     </div>
   `,
   styles: [`
