@@ -268,6 +268,23 @@ class PhotoServiceTest {
         assertTrue(Files.exists(tempDir.resolve("u.jpg")), "deleteVariants ne touche pas l'original");
     }
 
+    @Test
+    void generateVariantsAll_genere_les_variantes_puis_est_idempotent() throws IOException {
+        byte[] big = makeJpegNoisy(1600, 1000);
+        Files.write(tempDir.resolve("existing.jpg"), big);
+        PhotoEntity entity = entity("ph-var01", "existing.jpg", "existing.jpg", "2026-05-10T00:00:00Z");
+        when(repository.findAll()).thenReturn(List.of(entity));
+
+        PhotoService.VariantReport first = service.generateVariantsAll();
+        assertEquals(1, first.count());
+        assertEquals(3, first.generated(), "400/800/1280 generees");
+        assertTrue(Files.exists(tempDir.resolve("existing-800.jpg")));
+
+        // 2e passage : variantes deja presentes -> rien de regenere (idempotent)
+        PhotoService.VariantReport second = service.generateVariantsAll();
+        assertEquals(0, second.generated());
+    }
+
     private static byte[] makeJpegNoisy(int w, int h) throws IOException {
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         long seed = 42;
