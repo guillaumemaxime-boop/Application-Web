@@ -33,6 +33,9 @@ public class PhotoService {
             ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"
     );
 
+    /** Taille source max chargee en RAM lors du batch de variantes (garde anti-OOM). */
+    private static final long MAX_BATCH_SOURCE_BYTES = 50L * 1024 * 1024;
+
     private final PhotoRepository repository;
 
     @Value("${app.upload.dir:./uploads}")
@@ -226,20 +229,27 @@ public class PhotoService {
         int count = 0;
         int generated = 0;
         Path dir = Paths.get(uploadDir);
+        Path dirAbs = dir.toAbsolutePath().normalize();
         for (PhotoEntity entity : repository.findAll()) {
             count++;
             String filename = entity.getFilename();
             Path original = dir.resolve(filename).normalize();
+            // Confinement (cohérence avec optimizeAll) : ignore tout chemin hors uploadDir.
+            if (!original.startsWith(dirAbs) && !original.startsWith(dir.normalize())) continue;
             if (!Files.exists(original)) continue;
             String ext = extractExtension(filename);
             byte[] originalBytes;
             try {
+                // Garde anti-OOM : ne charge pas en RAM une source démesurée lors du batch
+                // (un JPEG de quelques dizaines de Mo peut décoder en plusieurs Go).
+                if (Files.size(original) > MAX_BATCH_SOURCE_BYTES) continue;
                 originalBytes = Files.readAllBytes(original);
             } catch (IOException e) {
                 continue;
             }
             for (int w : ImageOptimizer.VARIANT_WIDTHS) {
-                Path variantPath = dir.resolve(variantFilename(filename, w));
+                Path variantPath = dir.resolve(variantFilename(filename, w)).normalize();
+                if (!variantPath.startsWith(dirAbs) && !variantPath.startsWith(dir.normalize())) continue;
                 if (Files.exists(variantPath)) continue;  // idempotent
                 try {
                     byte[] variant = ImageOptimizer.resizeToWidth(originalBytes, ext, w);
