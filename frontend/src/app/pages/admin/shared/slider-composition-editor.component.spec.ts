@@ -42,11 +42,14 @@ describe('SliderCompositionEditorComponent', () => {
   function editor(): SliderCompositionEditorComponent {
     return fixture.debugElement.query(By.directive(SliderCompositionEditorComponent)).componentInstance;
   }
-  // Construit un event CDK minimal pour onDrop.
+  // Construit un event CDK minimal pour onDrop. Quand from === to, les deux
+  // conteneurs sont la MÊME référence (onDrop discrimine via `===`, pas via l'id).
   function dropEvent(opts: { from: string; to: string; movedId: string; previousIndex: number; currentIndex: number }): CdkDragDrop<string[]> {
+    const prev = { id: opts.from };
+    const cont = opts.from === opts.to ? prev : { id: opts.to };
     return {
-      previousContainer: { id: opts.from },
-      container: { id: opts.to },
+      previousContainer: prev,
+      container: cont,
       previousIndex: opts.previousIndex,
       currentIndex: opts.currentIndex,
       item: { data: opts.movedId },

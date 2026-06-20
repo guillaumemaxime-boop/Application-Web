@@ -139,15 +139,16 @@ export class SliderCompositionEditorComponent {
   }
 
   /** Drag & drop : ajoute (available→composition), retire (composition→available)
-   *  ou réordonne (intra-composition). L'id déplacé est lu dans event.item.data,
-   *  robuste face au filtre de la liste disponible. */
+   *  ou réordonne (intra-composition). L'id déplacé est lu dans event.item.data.
+   *  On NE se fie PAS à l'id du conteneur CDK (non garanti = id HTML) : la
+   *  direction est déduite de l'appartenance de movedId à la composition. */
   onDrop(event: CdkDragDrop<string[]>): void {
     const movedId = event.item.data as string;
-    const fromId = event.previousContainer.id;
-    const toId = event.container.id;
 
-    if (fromId === toId) {
-      if (toId === 'composition') {
+    // Même conteneur = réordonnancement (seul celui de la composition compte ;
+    // la liste « disponibles » est dérivée, son réordre est sans effet).
+    if (event.previousContainer === event.container) {
+      if (this.pendingStoryIds().includes(movedId)) {
         this.pendingStoryIds.update(arr => {
           const copy = [...arr];
           moveItemInArray(copy, event.previousIndex, event.currentIndex);
@@ -157,17 +158,19 @@ export class SliderCompositionEditorComponent {
       }
       return;
     }
-    if (toId === 'composition') {
+
+    // Conteneurs différents : si la story est déjà dans la composition, elle en
+    // sort (retrait) ; sinon elle y entre (ajout à l'index de drop).
+    if (this.pendingStoryIds().includes(movedId)) {
+      this.pendingStoryIds.update(arr => arr.filter(x => x !== movedId));
+      this.status.set(this.storyTitle(movedId) + ' retirée de la composition.');
+    } else {
       this.pendingStoryIds.update(arr => {
-        if (arr.includes(movedId)) return arr;
         const copy = [...arr];
         copy.splice(Math.min(event.currentIndex, copy.length), 0, movedId);
         return copy;
       });
       this.status.set(this.storyTitle(movedId) + ' ajoutée à la composition.');
-    } else {
-      this.pendingStoryIds.update(arr => arr.filter(x => x !== movedId));
-      this.status.set(this.storyTitle(movedId) + ' retirée de la composition.');
     }
   }
 
