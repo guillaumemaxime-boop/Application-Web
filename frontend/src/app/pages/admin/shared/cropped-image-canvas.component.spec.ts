@@ -373,6 +373,33 @@ describe('CroppedImageCanvasComponent', () => {
     }
   });
 
+  it('resout une variante adaptee a la taille d’affichage (mode cover)', () => {
+    fixture.componentRef.setInput('imageUrl', '/api/photos/files/abc.jpg');
+    fixture.componentRef.setInput('crop', null);
+    fixture.componentRef.setInput('mode', 'cover');
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    // largeur d'affichage simulee ~200px, dPR 1 => besoin ~200 => variante 400
+    expect(cmp.resolveSrc(200, 1)).toBe('/api/photos/files/abc-400.jpg');
+  });
+
+  it('utilise l’original si le besoin depasse l’escalier', () => {
+    fixture.componentRef.setInput('imageUrl', '/api/photos/files/abc.jpg');
+    fixture.componentRef.setInput('crop', null);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    expect(cmp.resolveSrc(1500, 1)).toBe('/api/photos/files/abc.jpg');
+  });
+
+  it('ajuste le besoin selon la fraction de crop (crop serre => plus haute resolution)', () => {
+    fixture.componentRef.setInput('imageUrl', '/api/photos/files/abc.jpg');
+    fixture.componentRef.setInput('crop', { x: 0, y: 0, w: 25, h: 25 });  // 25% => besoin x4
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    // 200px d'affichage / 0.25 = 800 => variante 800
+    expect(cmp.resolveSrc(200, 1)).toBe('/api/photos/files/abc-800.jpg');
+  });
+
   it('ignore un onload perime (imageUrl a change entre-temps)', () => {
     fixture.componentRef.setInput('imageUrl', '/a.jpg');
     fixture.detectChanges();
