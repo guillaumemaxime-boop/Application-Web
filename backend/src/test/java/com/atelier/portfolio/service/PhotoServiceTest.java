@@ -321,6 +321,30 @@ class PhotoServiceTest {
     }
 
     @Test
+    void loadAsResource_variante_absente_retombe_sur_l_original() throws IOException {
+        Files.write(tempDir.resolve("u.jpg"), new byte[]{1, 2, 3});
+        // u-800.jpg n'existe pas → doit servir l'original u.jpg (fallback srcset-safe)
+        Resource res = service.loadAsResource("u-800.jpg");
+        assertNotNull(res);
+        assertTrue(res.exists());
+        assertTrue(res.getURI().toString().endsWith("u.jpg"));
+    }
+
+    @Test
+    void loadAsResource_variante_presente_servie_directement() throws IOException {
+        Files.write(tempDir.resolve("u.jpg"), new byte[]{1});
+        Files.write(tempDir.resolve("u-800.jpg"), new byte[]{2, 2});
+        Resource res = service.loadAsResource("u-800.jpg");
+        assertNotNull(res);
+        assertTrue(res.getURI().toString().endsWith("u-800.jpg"));
+    }
+
+    @Test
+    void loadAsResource_variante_et_original_absents_renvoie_null() throws IOException {
+        assertNull(service.loadAsResource("ghost-800.jpg"));
+    }
+
+    @Test
     void loadAsResource_renvoie_null_pour_path_traversal() throws IOException {
         // Creons un fichier "sensible" hors du tempDir, dans son parent.
         Path outside = tempDir.getParent().resolve("outside-secret.txt");

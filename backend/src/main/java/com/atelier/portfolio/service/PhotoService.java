@@ -90,16 +90,40 @@ public class PhotoService {
         // resolue puis on verifie qu'elle reste sous uploadPath. Empeche
         // les tentatives de path traversal du type "../etc/passwd".
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Resource direct = resolveUnder(uploadPath, filename);
+        if (direct != null) {
+            return direct;
+        }
+        // Fallback variante → original : une variante demandee mais absente
+        // (image plus petite que la cible, ou batch pas encore lance) retombe sur
+        // l'original. Indispensable pour les <img srcset> (pas de fallback natif
+        // vers `src` quand un candidat 404).
+        String base = baseFromVariant(filename);
+        if (base != null) {
+            return resolveUnder(uploadPath, base);
+        }
+        return null;
+    }
+
+    /** Resout un fichier sous uploadPath (garde path-traversal), ou null. */
+    private static Resource resolveUnder(Path uploadPath, String filename) throws MalformedURLException {
         Path filePath = uploadPath.resolve(filename).normalize();
         if (!filePath.startsWith(uploadPath)) {
             return null;
         }
         Resource resource = new UrlResource(filePath.toUri());
-        if (resource.exists() && resource.isReadable()) {
-            return resource;
-        }
-        return null;
+        return (resource.exists() && resource.isReadable()) ? resource : null;
     }
+
+    /** "uuid-800.jpg" -> "uuid.jpg" ; null si le nom n'est pas une variante {base}-{w}.{ext}. */
+    static String baseFromVariant(String filename) {
+        if (filename == null) return null;
+        var m = VARIANT_NAME.matcher(filename);
+        return m.matches() ? m.group(1) + m.group(2) : null;
+    }
+
+    private static final java.util.regex.Pattern VARIANT_NAME =
+            java.util.regex.Pattern.compile("(.+)-\\d+(\\.[^.]+)$");
 
     @Transactional
     public boolean delete(String id) {
