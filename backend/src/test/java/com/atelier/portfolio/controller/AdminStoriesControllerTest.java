@@ -117,16 +117,16 @@ class AdminStoriesControllerTest {
     }
 
     @Test
-    void all_delegatesToServiceAndReturnsAllStories() {
+    void all_delegatesToServiceAndReturnsStoriesWithSlides() {
         Story s1 = new Story("st-1", "furniture", "f-001", "Story 1",
                 "https://example.com/c.jpg", null, "f-001-abc", 0, Instant.now());
         Story s2 = new Story("st-2", "exhibition", "e-001", "Story 2",
                 "https://example.com/c.jpg", null, "e-001-xyz", 0, Instant.now());
-        when(service.findAll()).thenReturn(List.of(s1, s2));
+        when(service.findAllWithSlides()).thenReturn(List.of(s1, s2));
 
         List<Story> result = controller.all();
 
-        verify(service).findAll();
+        verify(service).findAllWithSlides();
         assertEquals(2, result.size());
         assertSame(s1, result.get(0));
         assertSame(s2, result.get(1));

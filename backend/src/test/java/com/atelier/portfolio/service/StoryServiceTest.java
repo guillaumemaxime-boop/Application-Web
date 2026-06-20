@@ -64,6 +64,18 @@ class StoryServiceTest {
     }
 
     @Test
+    void findAllWithSlidesExcludesStoriesWithoutSlides() {
+        Story withSlides = service.create(new StoryInput("furniture", "f-001", "Avec slides", "https://example.com/c.jpg", null));
+        service.replaceSlides(withSlides.id(), List.of(new Slide.ImageSlide(null, 0, "https://example.com/1.jpg", null, null)));
+        Story empty = service.create(new StoryInput("furniture", "f-001", "Sans slide", "https://example.com/c.jpg", null));
+
+        List<String> ids = service.findAllWithSlides().stream().map(Story::id).toList();
+
+        assertThat(ids).contains(withSlides.id());
+        assertThat(ids).doesNotContain(empty.id());
+    }
+
+    @Test
     void deleteStoryRemovesItAndCascadesSlides() {
         Story s = service.create(new StoryInput("furniture", "f-001", "Tmp", "https://example.com/c.jpg", null));
         service.replaceSlides(s.id(), List.of(new Slide.ImageSlide(null, 0, "https://example.com/x.jpg", null, null)));

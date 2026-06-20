@@ -26,7 +26,7 @@ import { Story } from '../../../models/story.model';
           <h3 id="composition-title">Composition de "{{ title() }}"</h3>
           <button type="button" class="comp-cancel" (click)="cancel.emit()" aria-label="Fermer">Fermer</button>
         </header>
-        <p class="comp-hint">Une story sans slide n'apparaît pas sur le site tant qu'elle n'a pas de contenu.</p>
+        <p class="comp-hint">Seules les stories ayant au moins un slide sont proposées (une story sans contenu n'apparaît pas sur le site).</p>
         <p class="sr-only" aria-live="polite">{{ status() }}</p>
         <div class="composition-grid" cdkDropListGroup>
           <aside class="available">
