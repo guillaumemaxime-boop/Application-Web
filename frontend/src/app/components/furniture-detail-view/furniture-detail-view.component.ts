@@ -1,19 +1,13 @@
 import { ApplicationRef, ChangeDetectorRef, Component, EventEmitter, inject, Input, NgZone, OnDestroy, Output, signal } from '@angular/core';
-import { Slide } from '../../models/slide.model';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TagEditorComponent } from '../tag-editor/tag-editor.component';
-import { StoryManagerBarComponent } from '../story-manager-bar/story-manager-bar.component';
 
 export type EditableTextField = 'title' | 'category' | 'material' | 'description' | 'shortDescription';
 import { Furniture } from '../../models/furniture.model';
-import { DisplaySlide } from '../../models/display-slide.model';
 import { SiteContent } from '../../models/site-content.model';
-import { Story } from '../../models/story.model';
 import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
-import { StoryInlineComponent } from '../story-inline/story-inline.component';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
-import { StoryItem } from '../story-viewer/story-viewer.component';
 import { roleStyle } from '../../utils/title-style';
 import { VideoPlayerComponent } from '../video-player/video-player.component';
 import { VideoFieldComponent } from '../../pages/admin/shared/video-field.component';
@@ -21,7 +15,7 @@ import { VideoFieldComponent } from '../../pages/admin/shared/video-field.compon
 @Component({
   selector: 'app-furniture-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective, RouterLink, NgStyle, TagEditorComponent, StoryManagerBarComponent, VideoPlayerComponent, VideoFieldComponent],
+  imports: [CroppedImageCanvasComponent, ReorderableDirective, RouterLink, NgStyle, TagEditorComponent, VideoPlayerComponent, VideoFieldComponent],
   template: `
     @if (item) {
       <article class="fade-in">
@@ -217,31 +211,6 @@ import { VideoFieldComponent } from '../../pages/admin/shared/video-field.compon
           </section>
         }
 
-        @if (editable) {
-          <section class="section story-admin">
-            <div class="container narrow">
-              <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
-              <app-story-manager-bar
-                [stories]="stories"
-                [activeStoryId]="activeStoryId"
-                [editable]="true"
-                (select)="storySelect.emit($event)"
-                (create)="storyCreate.emit()"
-                (rename)="storyRename.emit($event)"
-                (delete)="storyDelete.emit($event)"
-                (move)="storyMove.emit($event)"
-                (coverEdit)="storyCoverEdit.emit($event)"
-                (viewerPreview)="onViewerOpen()" />
-            </div>
-            @if (editable || displaySlides.length > 0) {
-              <app-story-inline [slides]="displaySlides" [editable]="true"
-                (slidesChange)="storySlidesChange.emit($event)"
-                (imageReplaceRequest)="storyImageReplaceRequest.emit($event)"
-                (imageCropRequest)="storyImageCropRequest.emit($event)"></app-story-inline>
-            }
-          </section>
-        }
-
         <ng-content select="[ctaSlot]"></ng-content>
       </article>
     }
@@ -295,9 +264,6 @@ import { VideoFieldComponent } from '../../pages/admin/shared/video-field.compon
       border: 1px solid var(--color-line); color: var(--color-ink-soft); text-decoration: none;
     }
     .tag-chip:hover { color: var(--color-ink); border-color: var(--color-ink); }
-
-    .story-admin { padding: 48px 0; border-top: 1px dashed var(--color-line); }
-    .story-admin-badge { margin: 0 0 12px; font-size: 0.78rem; color: var(--color-mute); font-style: italic; }
 
     .video-block .narrow { max-width: 880px; }
     .video-title { font-size: 1.375rem; margin-bottom: 16px; }
@@ -395,10 +361,6 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   private readonly appRef = inject(ApplicationRef);
 
   @Input({ required: true }) item: Furniture | null = null;
-  @Input() story: Story | null = null;
-  @Input() displaySlides: DisplaySlide[] = [];
-  @Input() stories: Story[] = [];
-  @Input() activeStoryId: string | null = null;
   @Input() content: SiteContent = {};
   @Input() editable = false;
   @Input() tagSuggestions: string[] = [];
@@ -414,17 +376,7 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   @Output() galleryAdd = new EventEmitter<void>();
   @Output() textFieldClick = new EventEmitter<EditableTextField>();
   @Output() textFieldEdit = new EventEmitter<{ field: EditableTextField; value: string }>();
-  @Output() viewerOpen = new EventEmitter<StoryItem[]>();
   @Output() galleryItemResize = new EventEmitter<{ index: number; colSpan: number; rowSpan: number }>();
-  @Output() storySelect = new EventEmitter<string>();
-  @Output() storyCreate = new EventEmitter<void>();
-  @Output() storyRename = new EventEmitter<{ id: string; title: string }>();
-  @Output() storyDelete = new EventEmitter<string>();
-  @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
-  @Output() storyCoverEdit = new EventEmitter<string>();
-  @Output() storySlidesChange = new EventEmitter<Slide[]>();
-  @Output() storyImageReplaceRequest = new EventEmitter<string>();
-  @Output() storyImageCropRequest = new EventEmitter<string>();
   @Output() videoUrlChange = new EventEmitter<string | null>();
   @Output() videoPosterChange = new EventEmitter<string | null>();
   @Output() videoCaptionsChange = new EventEmitter<string | null>();
@@ -543,18 +495,5 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   ngOnDestroy(): void {
     window.removeEventListener('pointermove', this.onResizeMove);
     window.removeEventListener('pointerup', this.onResizeEnd);
-  }
-
-  onViewerOpen(): void {
-    const f = this.item;
-    if (!f) return;
-    if (this.displaySlides.length === 0) return;
-    this.viewerOpen.emit([{
-      title: f.title,
-      subtitle: `${f.category} · ${f.year}`,
-      slides: this.displaySlides,
-      kind: 'furniture',
-      slug: f.slug,
-    }]);
   }
 }

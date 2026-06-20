@@ -20,10 +20,6 @@ type ExpoInternals = {
   editingExhibitionId: () => string | null;
   exhibitionGallery: { (): Array<{ url: string; crop?: unknown; colSpan?: number; rowSpan?: number }>; set: (v: Array<{ url: string; crop?: unknown }>) => void; update: (fn: (arr: unknown[]) => unknown[]) => void };
   allTags: () => string[];
-  currentStories: { (): Array<{ id: string; title: string; position: number; ownerId: string; ownerKind: string; coverImage: string }>; set: (v: unknown[]) => void };
-  editingStoryId: { (): string | null; set: (v: string | null) => void };
-  editingStoryCoverCrop: { (): { x: number; y: number; w: number; h: number } | null; set: (v: { x: number; y: number; w: number; h: number } | null) => void };
-  coverEditCtrl: { value: string | null; setValue: (v: string) => void };
   saving: () => boolean;
   creatingExhibition: { (): boolean; set: (v: boolean) => void };
   expoViewMode: { (): 'form' | 'preview'; set: (v: 'form' | 'preview') => void };
@@ -31,14 +27,7 @@ type ExpoInternals = {
   newExhibition: () => void;
   saveExhibition: () => void;
   removeExhibition: (item: unknown) => void;
-  editStory: (s: unknown) => void;
-  newStory: () => void;
-  renameStory: (s: unknown) => void;
-  deleteStory: (s: unknown) => void;
-  openCoverEditor: (s: unknown) => void;
-  saveCover: (s: unknown) => void;
   onCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
-  onStoryCoverCropChange: (crop: { x: number; y: number; w: number; h: number } | null) => void;
   focusField: (name: string) => void;
   onPreviewGalleryItemEdit: (e: { index: number; action: 'crop' | 'replace' | 'remove' }) => void;
   onPreviewGalleryReorder: (order: number[]) => void;
@@ -121,8 +110,6 @@ describe('ExpositionsComponent', () => {
       shortDescription: 's', description: 'd',
     };
     cmp.loadExhibition(item);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
     expect(cmp.editingExhibitionSlug()).toBe('salon');
     expect(cmp.editingExhibitionId()).toBe('e1');
     expect(cmp.exhibitionForm.getRawValue()['tags']).toEqual(['art', 'design']);
@@ -167,8 +154,6 @@ describe('ExpositionsComponent', () => {
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as ExpoInternals;
     cmp.loadExhibition({ id: '1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01' });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
     cmp.exhibitionForm.patchValue({ title: 'Salon 2' });
     cmp.saveExhibition();
     httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/exhibitions/salon').flush({});
@@ -230,8 +215,6 @@ describe('ExpositionsComponent', () => {
     spyOn(window, 'confirm').and.returnValue(true);
     const cmp = fixture.componentInstance as unknown as ExpoInternals;
     cmp.loadExhibition({ id: '1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01' });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
     expect(cmp.editingExhibitionSlug()).toBe('salon');
     cmp.removeExhibition({ slug: 'salon', title: 'Salon' });
     httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/exhibitions/salon').flush({});
@@ -254,7 +237,7 @@ describe('ExpositionsComponent', () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it('loadExhibition() peuple currentStories avec la liste retournée (Task 10)', () => {
+  it('affiche un lien « Gérer les stories » vers /admin/stories avec les query params owner quand l\'exposition est enregistrée', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);
     fixture.detectChanges();
@@ -262,88 +245,22 @@ describe('ExpositionsComponent', () => {
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as ExpoInternals;
     cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01' });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([
-      { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '', slug: 's1', position: 0, createdAt: '' },
-      { id: 'st-2', ownerKind: 'exhibition', ownerId: 'e1', title: 'S2', coverImage: '', slug: 's2', position: 1, createdAt: '' },
-    ]);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
-    expect(cmp.currentStories().length).toBe(2);
-    expect(cmp.editingStoryId()).toBeNull();
+    fixture.detectChanges();
+    const link = fixture.nativeElement.querySelector('.stories-block a[href]') as HTMLAnchorElement;
+    expect(link).toBeTruthy();
+    expect(link.textContent).toContain('Gérer les stories');
+    expect(link.getAttribute('href')).toContain('/admin/stories');
+    expect(link.getAttribute('href')).toContain('ownerKind=exhibition');
+    expect(link.getAttribute('href')).toContain('ownerId=e1');
   });
 
-  it('loadExhibition() crée une story par défaut quand liste vide (Task 10)', () => {
-    configure();
+  it('n\'affiche pas le lien stories tant que l\'exposition n\'est pas enregistrée', () => {
+    configure({ new: '1' });
     const fixture = TestBed.createComponent(ExpositionsComponent);
     fixture.detectChanges();
     flushInitial();
     fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon', coverImage: '/c.jpg', startDate: '2024-01-01', endDate: '2024-02-01' });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([]);
-    httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/admin/stories').flush({
-      id: 'new-st', ownerKind: 'exhibition', ownerId: 'e1', title: 'Salon', coverImage: '/c.jpg', slug: 'salon', position: 0, createdAt: '',
-    });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/new-st/slides').flush([]);
-    expect(cmp.currentStories().length).toBe(1);
-    expect(cmp.editingStoryId()).toBe('new-st');
-  });
-
-  it('editStory() définit editingStoryId (Task 10)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.editStory({ id: 'st-42' });
-    expect(cmp.editingStoryId()).toBe('st-42');
-  });
-
-  it('newStory() POST et ouvre la nouvelle story (Task 10)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    const toast = TestBed.inject(ToastService);
-    spyOn(toast, 'success');
-    fixture.detectChanges();
-    flushInitial([
-      { id: 'e1', slug: 'salon', title: 'Salon', venue: '', city: '', country: '', startDate: '2024-01-01', endDate: '2024-02-01', curator: '', coverImage: '/c.jpg', gallery: [], tags: [], featured: false, shortDescription: '', description: '' },
-    ]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon', coverImage: '/c.jpg', startDate: '2024-01-01', endDate: '2024-02-01' });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([
-      { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '', slug: 's1', position: 0, createdAt: '' },
-    ]);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
-    spyOn(window, 'prompt').and.returnValue('Ma nouvelle story');
-    cmp.newStory();
-    httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/admin/stories').flush({
-      id: 'st-2', ownerKind: 'exhibition', ownerId: 'e1', title: 'Ma nouvelle story', coverImage: '/c.jpg', slug: 'ma-nouvelle-story', position: 1, createdAt: '',
-    });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-2/slides').flush([]);
-    expect(cmp.currentStories().length).toBe(2);
-    expect(cmp.editingStoryId()).toBe('st-2');
-    expect(toast.success).toHaveBeenCalled();
-  });
-
-  it('deleteStory() retire la story de la liste (Task 10)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01' });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([
-      { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '', slug: 's1', position: 0, createdAt: '' },
-      { id: 'st-2', ownerKind: 'exhibition', ownerId: 'e1', title: 'S2', coverImage: '', slug: 's2', position: 1, createdAt: '' },
-    ]);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
-    spyOn(window, 'confirm').and.returnValue(true);
-    cmp.deleteStory({ id: 'st-1', title: 'S1' });
-    httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/admin/stories/st-1').flush({});
-    expect(cmp.currentStories().length).toBe(1);
-    expect(cmp.currentStories()[0].id).toBe('st-2');
+    expect(fixture.nativeElement.querySelector('.stories-block a[href]')).toBeNull();
   });
 
   it('charge les tags via getAllTags au constructeur', () => {
@@ -371,87 +288,6 @@ describe('ExpositionsComponent', () => {
     expect(req.request.body['tags']).toEqual(['art']);
     req.flush({});
     httpMock.expectOne('/api/exhibitions').flush([]);
-  });
-
-  it('newStory() ne fait rien si ownerId est null', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    // editingExhibitionId est null par défaut
-    cmp.newStory();
-    httpMock.expectNone(r => r.method === 'POST' && r.url === '/api/admin/stories');
-  });
-
-  it('newStory() ne fait rien si le prompt est annulé', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial([
-      { id: 'e1', slug: 'salon', title: 'Salon', venue: '', city: '', country: '', startDate: '2024-01-01', endDate: '2024-02-01', curator: '', coverImage: '/c.jpg', gallery: [], tags: [], featured: false, shortDescription: '', description: '' },
-    ]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01' });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([
-      { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '', slug: 's1', position: 0, createdAt: '' },
-    ]);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
-    spyOn(window, 'prompt').and.returnValue(null);
-    cmp.newStory();
-    httpMock.expectNone(r => r.method === 'POST' && r.url === '/api/admin/stories');
-  });
-
-  it('renameStory() ne fait rien si le prompt est annulé', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    spyOn(window, 'prompt').and.returnValue(null);
-    cmp.renameStory({ id: 'st-1', title: 'S1', ownerKind: 'exhibition', ownerId: 'e1', coverImage: '', position: 0 });
-    httpMock.expectNone(r => r.method === 'PUT');
-  });
-
-  it('renameStory() ne fait rien si le titre est inchangé', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    spyOn(window, 'prompt').and.returnValue('S1');
-    cmp.renameStory({ id: 'st-1', title: 'S1', ownerKind: 'exhibition', ownerId: 'e1', coverImage: '', position: 0 });
-    httpMock.expectNone(r => r.method === 'PUT');
-  });
-
-  it('deleteStory() ne fait rien si confirm est annulé', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    spyOn(window, 'confirm').and.returnValue(false);
-    cmp.deleteStory({ id: 'st-1', title: 'S1' });
-    httpMock.expectNone(r => r.method === 'DELETE');
-  });
-
-  it('deleteStory() remet editingStoryId à null si c\'est la story en cours d\'édition', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    cmp.editingStoryId.set('st-1');
-    spyOn(window, 'confirm').and.returnValue(true);
-    cmp.deleteStory({ id: 'st-1', title: 'S1' });
-    httpMock.expectOne(r => r.method === 'DELETE' && r.url === '/api/admin/stories/st-1').flush({});
-    expect(cmp.editingStoryId()).toBeNull();
   });
 
   it('refreshExhibitions() error -> toast error (branche erreur du réseau)', () => {
@@ -495,39 +331,6 @@ describe('ExpositionsComponent', () => {
     expect(req.request.body['coverCrop']).toEqual({ x: 10, y: 20, w: 50, h: 40 });
     req.flush({});
     httpMock.expectOne('/api/exhibitions').flush([]);
-  });
-
-  it('saveCover envoie coverCrop dans le payload PUT story (Task 13)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/tags').flush([]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    // Entrer en édition du cover d'une story existante
-    const story = { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '/old.jpg', coverCrop: null, slug: 's1', position: 0, createdAt: '' };
-    cmp.openCoverEditor(story);
-    cmp.editingStoryCoverCrop.set({ x: 10, y: 10, w: 80, h: 80 });
-    cmp.coverEditCtrl.setValue('/new-cover.jpg');
-    cmp.saveCover(story);
-    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url.includes('/api/admin/stories/st-1'));
-    expect(req.request.body['coverCrop']).toEqual({ x: 10, y: 10, w: 80, h: 80 });
-    expect(req.request.body['coverImage']).toBe('/new-cover.jpg');
-    req.flush({ ...story, coverImage: '/new-cover.jpg', coverCrop: { x: 10, y: 10, w: 80, h: 80 } });
-  });
-
-  it('openCoverEditor peuple editingStoryCoverCrop depuis story.coverCrop (Task 13)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/exhibitions').flush([]);
-    httpMock.expectOne('/api/tags').flush([]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as unknown as ExpoInternals;
-    const story = { id: 'st-1', ownerKind: 'exhibition', ownerId: 'e1', title: 'S1', coverImage: '/c.jpg', coverCrop: { x: 5, y: 5, w: 90, h: 90 }, slug: 's1', position: 0, createdAt: '' };
-    cmp.openCoverEditor(story);
-    expect(cmp.editingStoryCoverCrop()).toEqual({ x: 5, y: 5, w: 90, h: 90 });
   });
 
   it('focusField scroll + focus l\'input field-title', () => {
@@ -773,8 +576,6 @@ describe('ExpositionsComponent', () => {
     const cmp = fixture.componentInstance as any;
     const confirmSpy = spyOn(window, 'confirm');
     cmp.onSelectExhibition({ id: 'x', slug: 'salon', title: 'Salon' });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(cmp.editingExhibitionSlug()).toBe('salon');
   });
@@ -896,8 +697,6 @@ describe('ExpositionsComponent', () => {
     cmp.onPreviewTextFieldEdit({ field: 'title', value: 'X' });
     expect(cmp.history.canUndo()).toBeTrue();
     cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon' });
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories').flush([{ id: 'st-1' }]);
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/st-1/slides').flush([]);
     expect(cmp.history.canUndo()).toBeFalse();
   });
 
@@ -917,32 +716,6 @@ describe('ExpositionsComponent', () => {
     expect(cmp.exhibitionForm.getRawValue().tags).toEqual([]);
   });
 
-  it('onPreviewStorySelect change activeStoryId et recharge les slides actifs', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.currentStories.set([{ id: 'a', ownerKind: 'exhibition', ownerId: 'e1', title: 'A', coverImage: '', coverCrop: null, slug: 'a', position: 0, createdAt: '' }]);
-    cmp.onPreviewStorySelect('a');
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/a/slides').flush([]);
-    expect(cmp.activeStoryId()).toBe('a');
-  });
-
-
-  it('onPreviewStoryRename appelle updateStory', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.currentStories.set([{ id: 'a', ownerKind: 'exhibition', ownerId: 'e1', title: 'A', coverImage: 'c.jpg', coverCrop: null, slug: 'a', position: 0, createdAt: '' }]);
-    cmp.onPreviewStoryRename({ id: 'a', title: 'Nouveau' });
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a').flush({ id: 'a', ownerKind: 'exhibition', ownerId: 'e1', title: 'Nouveau', coverImage: 'c.jpg', coverCrop: null, slug: 'a', position: 0, createdAt: '' });
-  });
-
   it('ne rend plus les cases showStoryLink/showStoryButton (obsolètes)', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);
@@ -951,183 +724,6 @@ describe('ExpositionsComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('input[formcontrolname="showStoryLink"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('input[formcontrolname="showStoryButton"]')).toBeNull();
-  });
-
-  it('créer une story la rend active dans le preview', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial([
-      { id: 'e1', slug: 'salon', title: 'Salon', venue: '', city: '', country: '', startDate: '2024-01-01', endDate: '2024-02-01', curator: '', coverImage: '/c.jpg', gallery: [], tags: [], featured: false, shortDescription: '', description: '' },
-    ]);
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.currentStories.set([{ id: 'old', ownerKind: 'exhibition', ownerId: 'e1', title: 'Ancienne', coverImage: '', coverCrop: null, slug: 'old', position: 0, createdAt: '' }]);
-    cmp.editingExhibitionId.set('e1');
-    cmp.editingExhibitionSlug.set('salon');
-    cmp.activeStoryId.set('old');
-    spyOn(window, 'prompt').and.returnValue('Nouvelle');
-    cmp.onPreviewStoryCreate();
-    const created = { id: 'new', ownerKind: 'exhibition', ownerId: 'e1', title: 'Nouvelle', coverImage: '', coverCrop: null, slug: 'new', position: 1, createdAt: '' };
-    httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/admin/stories').flush(created);
-    expect(cmp.activeStoryId()).toBe('new');
-    httpMock.expectOne(r => r.method === 'GET' && r.url === '/api/admin/stories/new/slides').flush([]);
-  });
-
-  it('onPreviewViewerOpen remplit la file et onStoryViewerClosed la vide', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    const fakeQueue = [{ title: 'T', subtitle: 'S', slides: [] }];
-    cmp.onPreviewViewerOpen(fakeQueue);
-    expect(cmp.storyViewerQueue().length).toBe(1);
-    cmp.onStoryViewerClosed();
-    expect(cmp.storyViewerQueue().length).toBe(0);
-  });
-
-  it('storyViewerQueue non vide rend app-story-viewer dans le DOM', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeNull();
-    cmp.onPreviewViewerOpen([{ title: 'T', subtitle: 'S', slides: [] }]);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeTruthy();
-  });
-
-  it('onStorySlidesChange persiste via replaceStorySlides et passe par saving puis saved', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.activeStoryId.set('a');
-    cmp.onStorySlidesChange([{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null }]);
-    expect(cmp.slidesSaveState()).toBe('saving');
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
-    expect(cmp.slidesSaveState()).toBe('saved');
-  });
-
-  it('onStoryImageReplaceRequest ouvre le photo-picker', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.onStoryImageReplaceRequest('s1');
-    expect(cmp.replacingImageSlideId()).toBe('s1');
-    httpMock.expectOne('/api/photos').flush([]);
-  });
-
-  it('onStoryImageCropRequest ouvre le crop-picker pour le slide', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.activeStorySlides.set([{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null, crop: null }]);
-    cmp.onStoryImageCropRequest('s1');
-    expect(cmp.croppingImageSlideId()).toBe('s1');
-  });
-
-  it('onSlideCropValidated applique le crop au slide et persiste', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.activeStoryId.set('a');
-    cmp.activeStorySlides.set([{ id: 's1', type: 'image', position: 0, src: '/a.jpg', caption: null, crop: null }]);
-    cmp.croppingImageSlideId.set('s1');
-    cmp.onSlideCropValidated({ x: 10, y: 20, w: 50, h: 60 });
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
-    expect(cmp.activeStorySlides()[0].crop).toEqual({ x: 10, y: 20, w: 50, h: 60 });
-  });
-
-  it('onStorySlidesChange ne persiste PAS un slide incomplet (quote vide) et n\'erreure pas', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.activeStoryId.set('a');
-    cmp.onStorySlidesChange([{ id: 's1', type: 'quote', position: 0, body: '', cite: null }]);
-    httpMock.expectNone(r => r.url === '/api/admin/stories/a/slides');
-    expect(cmp.slidesSaveState()).not.toBe('error');
-  });
-
-  it('onStorySlidesChange persiste quand tous les slides sont valides', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.activeStoryId.set('a');
-    cmp.onStorySlidesChange([{ id: 's1', type: 'quote', position: 0, body: 'Texte', cite: null }]);
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
-    expect(cmp.slidesSaveState()).toBe('saved');
-  });
-
-  it('onStorySlidesChange met TOUJOURS a jour activeStorySlides (meme si incomplet, pour ne pas perdre le slide)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.activeStoryId.set('a');
-    const slides = [{ id: 's-new', type: 'image', position: 0, src: '', caption: null, crop: null }];
-    cmp.onStorySlidesChange(slides);
-    httpMock.expectNone(r => r.url === '/api/admin/stories/a/slides'); // pas de persist (invalide)
-    expect(cmp.activeStorySlides().length).toBe(1);
-    expect(cmp.activeStorySlides()[0].id).toBe('s-new'); // mais le slide est bien tracke
-  });
-
-  it('remplacer l\'image d\'un slide tout juste ajoute applique bien le src puis persiste', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.activeStoryId.set('a');
-    // simule l'ajout d'une image vide (invalide : trackee mais non persistee)
-    cmp.onStorySlidesChange([{ id: 's-new', type: 'image', position: 0, src: '', caption: null, crop: null }]);
-    // l'utilisateur ouvre la mediatheque pour ce slide puis selectionne une photo
-    cmp.onStoryImageReplaceRequest('s-new');
-    httpMock.expectOne('/api/photos').flush([]); // getPhotos
-    cmp.onSlideImageSelected({ url: '/chosen.jpg' });
-    // maintenant le slide a un src -> persiste
-    httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/stories/a/slides').flush([]);
-    expect(cmp.activeStorySlides()[0].src).toBe('/chosen.jpg');
-  });
-
-  it('previewDisplaySlides enrichit la story active (cover + lien)', () => {
-    configure();
-    const fixture = TestBed.createComponent(ExpositionsComponent);
-    fixture.detectChanges();
-    flushInitial();
-    fixture.detectChanges();
-    const cmp = fixture.componentInstance as any;
-    cmp.currentStories.set([{ id: 'a', ownerKind: 'exhibition', ownerId: 'e1', title: 'A', coverImage: '/c.jpg', coverCrop: null, slug: 'a', position: 0, createdAt: '' }]);
-    cmp.activeStoryId.set('a');
-    cmp.activeStorySlides.set([{ id: 's1', type: 'quote', position: 0, body: 'B', cite: null }]);
-    cmp.exhibitionForm.patchValue({ slug: 'salon', coverImage: '/c.jpg', showStoryLink: true });
-    const ds = cmp.previewDisplaySlides();
-    expect(ds[0].type).toBe('cover');
-    expect(ds[ds.length - 1].type).toBe('link');
   });
 
 });

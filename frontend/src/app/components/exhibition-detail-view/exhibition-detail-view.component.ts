@@ -1,18 +1,12 @@
 import { Component, EventEmitter, inject, Input, NgZone, OnDestroy, Output, signal } from '@angular/core';
-import { Slide } from '../../models/slide.model';
 import { NgStyle } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TagEditorComponent } from '../tag-editor/tag-editor.component';
 import { Exhibition } from '../../models/exhibition.model';
-import { DisplaySlide } from '../../models/display-slide.model';
 import { SiteContent } from '../../models/site-content.model';
-import { Story } from '../../models/story.model';
 import { CroppedImageCanvasComponent } from '../../pages/admin/shared/cropped-image-canvas.component';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
-import { StoryItem } from '../story-viewer/story-viewer.component';
 import { roleStyle } from '../../utils/title-style';
-import { StoryManagerBarComponent } from '../story-manager-bar/story-manager-bar.component';
-import { StoryInlineComponent } from '../story-inline/story-inline.component';
 import { VideoPlayerComponent } from '../video-player/video-player.component';
 import { VideoFieldComponent } from '../../pages/admin/shared/video-field.component';
 
@@ -23,7 +17,7 @@ export type EditableExhibitionField =
 @Component({
   selector: 'app-exhibition-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, ReorderableDirective, NgStyle, RouterLink, TagEditorComponent, StoryManagerBarComponent, StoryInlineComponent, VideoPlayerComponent, VideoFieldComponent],
+  imports: [CroppedImageCanvasComponent, ReorderableDirective, NgStyle, RouterLink, TagEditorComponent, VideoPlayerComponent, VideoFieldComponent],
   template: `
     @if (item) {
       <article class="fade-in">
@@ -247,30 +241,6 @@ export type EditableExhibitionField =
           </section>
         }
 
-        @if (editable) {
-          <section class="section story-admin">
-            <div class="container narrow">
-              <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
-              <app-story-manager-bar
-                [stories]="stories"
-                [activeStoryId]="activeStoryId"
-                [editable]="true"
-                (select)="storySelect.emit($event)"
-                (create)="storyCreate.emit()"
-                (rename)="storyRename.emit($event)"
-                (delete)="storyDelete.emit($event)"
-                (move)="storyMove.emit($event)"
-                (coverEdit)="storyCoverEdit.emit($event)"
-                (viewerPreview)="onViewerOpen()" />
-            </div>
-            @if (editable || displaySlides.length > 0) {
-              <app-story-inline [slides]="displaySlides" [editable]="true"
-                (slidesChange)="storySlidesChange.emit($event)"
-                (imageReplaceRequest)="storyImageReplaceRequest.emit($event)"
-                (imageCropRequest)="storyImageCropRequest.emit($event)"></app-story-inline>
-            }
-          </section>
-        }
       </article>
     }
   `,
@@ -304,9 +274,6 @@ export type EditableExhibitionField =
 
     @media (max-width: 960px) { .gallery .g-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .gallery .g-grid { grid-template-columns: 1fr; } }
-
-    .story-admin { padding: 48px 0; border-top: 1px dashed var(--color-line); }
-    .story-admin-badge { margin: 0 0 12px; font-size: 0.78rem; color: var(--color-mute); font-style: italic; }
 
     .video-block .narrow { max-width: 880px; }
     .video-title { font-size: 1.375rem; margin-bottom: 16px; }
@@ -384,16 +351,11 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   private readonly zone = inject(NgZone);
 
   @Input({ required: true }) item: Exhibition | null = null;
-  @Input() story: Story | null = null;
-  @Input() displaySlides: DisplaySlide[] = [];
-  @Input() stories: Story[] = [];
-  @Input() activeStoryId: string | null = null;
   @Input() content: SiteContent = {};
   @Input() editable = false;
   @Input() tagSuggestions: string[] = [];
 
   @Output() tagsChange = new EventEmitter<string[]>();
-  @Output() viewerOpen = new EventEmitter<StoryItem[]>();
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();
@@ -402,15 +364,6 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Output() textFieldClick = new EventEmitter<EditableExhibitionField | 'startDate' | 'endDate'>();
   @Output() textFieldEdit = new EventEmitter<{ field: EditableExhibitionField; value: string }>();
   @Output() dateFieldEdit = new EventEmitter<{ field: 'startDate' | 'endDate'; value: string }>();
-  @Output() storySelect = new EventEmitter<string>();
-  @Output() storyCreate = new EventEmitter<void>();
-  @Output() storyRename = new EventEmitter<{ id: string; title: string }>();
-  @Output() storyDelete = new EventEmitter<string>();
-  @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
-  @Output() storyCoverEdit = new EventEmitter<string>();
-  @Output() storySlidesChange = new EventEmitter<Slide[]>();
-  @Output() storyImageReplaceRequest = new EventEmitter<string>();
-  @Output() storyImageCropRequest = new EventEmitter<string>();
   @Output() galleryImageOpen = new EventEmitter<number>();
   @Output() videoUrlChange = new EventEmitter<string | null>();
   @Output() videoPosterChange = new EventEmitter<string | null>();
@@ -555,19 +508,6 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   ngOnDestroy(): void {
     window.removeEventListener('pointermove', this.onResizeMove);
     window.removeEventListener('pointerup', this.onResizeEnd);
-  }
-
-  protected onViewerOpen(): void {
-    const e = this.item;
-    if (!e) return;
-    if (this.displaySlides.length === 0) return;
-    this.viewerOpen.emit([{
-      title: e.title,
-      subtitle: `${e.venue} · ${e.city}`,
-      slides: this.displaySlides,
-      kind: 'exhibition',
-      slug: e.slug,
-    }]);
   }
 
   formatRange(start: string, end: string): string {

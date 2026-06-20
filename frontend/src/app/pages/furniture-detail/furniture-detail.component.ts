@@ -5,11 +5,8 @@ import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Furniture } from '../../models/furniture.model';
 import { SiteContent } from '../../models/site-content.model';
-import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
-import { enrichSlides } from '../../utils/display-slides';
-import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { ContactFormComponent } from '../../components/contact-form/contact-form.component';
 import { FurnitureDetailViewComponent } from '../../components/furniture-detail-view/furniture-detail-view.component';
 import { ImageLightboxComponent, LightboxImage } from '../../components/image-lightbox/image-lightbox.component';
@@ -17,7 +14,7 @@ import { ImageLightboxComponent, LightboxImage } from '../../components/image-li
 @Component({
   selector: 'app-furniture-detail',
   standalone: true,
-  imports: [NgStyle, RouterLink, FurnitureDetailViewComponent, StoryViewerComponent, ContactFormComponent, ImageLightboxComponent],
+  imports: [NgStyle, RouterLink, FurnitureDetailViewComponent, ContactFormComponent, ImageLightboxComponent],
   template: `
     @if (loading()) {
       <div class="container section"><p class="status">Chargement…</p></div>
@@ -29,9 +26,7 @@ import { ImageLightboxComponent, LightboxImage } from '../../components/image-li
     } @else if (item(); as f) {
       <app-furniture-detail-view
         [item]="f"
-        [displaySlides]="displaySlides()"
         [content]="content()"
-        (viewerOpen)="onViewerOpen($event)"
         (galleryImageOpen)="onGalleryImageOpen($event)">
         <section class="section cta" ctaSlot>
           <div class="container">
@@ -41,10 +36,6 @@ import { ImageLightboxComponent, LightboxImage } from '../../components/image-li
           </div>
         </section>
       </app-furniture-detail-view>
-
-      @if (viewerQueue().length > 0) {
-        <app-story-viewer [queue]="viewerQueue()" (closed)="closeViewer()"></app-story-viewer>
-      }
 
       @if (lightboxIndex() !== null) {
         <app-image-lightbox [images]="galleryImages()" [startIndex]="lightboxIndex()!" (closed)="lightboxIndex.set(null)" />
@@ -82,22 +73,9 @@ export class FurnitureDetailComponent {
   protected readonly item = signal<Furniture | null>(null);
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
-  protected readonly viewerQueue = signal<StoryItem[]>([]);
   protected readonly contactOpen = signal(false);
   protected readonly content = signal<SiteContent>({});
   protected readonly lightboxIndex = signal<number | null>(null);
-
-  protected readonly displaySlides = computed<DisplaySlide[]>(() => {
-    const f = this.item();
-    if (!f) return [];
-    return enrichSlides({
-      slug: f.slug,
-      coverImage: f.coverImage,
-      coverCrop: f.coverCrop,
-      slides: f.slides ?? [],
-      showStoryLink: f.showStoryLink,
-    }, 'furniture');
-  });
 
   protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
 
@@ -133,14 +111,6 @@ export class FurnitureDetailComponent {
         this.loadingSvc.stop('nav');
       },
     });
-  }
-
-  protected onViewerOpen(queue: StoryItem[]): void {
-    this.viewerQueue.set(queue);
-  }
-
-  protected closeViewer(): void {
-    this.viewerQueue.set([]);
   }
 
   protected onGalleryImageOpen(i: number): void {

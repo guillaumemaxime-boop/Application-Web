@@ -4,17 +4,14 @@ import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { Exhibition } from '../../models/exhibition.model';
 import { SiteContent } from '../../models/site-content.model';
-import { DisplaySlide } from '../../models/display-slide.model';
 import { LoadingService } from '../../services/loading.service';
-import { enrichSlides } from '../../utils/display-slides';
 import { ExhibitionDetailViewComponent } from '../../components/exhibition-detail-view/exhibition-detail-view.component';
-import { StoryViewerComponent, StoryItem } from '../../components/story-viewer/story-viewer.component';
 import { ImageLightboxComponent, LightboxImage } from '../../components/image-lightbox/image-lightbox.component';
 
 @Component({
   selector: 'app-exhibition-detail',
   standalone: true,
-  imports: [RouterLink, ExhibitionDetailViewComponent, StoryViewerComponent, ImageLightboxComponent],
+  imports: [RouterLink, ExhibitionDetailViewComponent, ImageLightboxComponent],
   template: `
     @if (loading()) {
       <div class="container section"><p class="status">Chargement…</p></div>
@@ -26,14 +23,8 @@ import { ImageLightboxComponent, LightboxImage } from '../../components/image-li
     } @else if (item(); as e) {
       <app-exhibition-detail-view
         [item]="e"
-        [displaySlides]="displaySlides()"
         [content]="content()"
-        (viewerOpen)="onViewerOpen($event)"
         (galleryImageOpen)="onGalleryImageOpen($event)" />
-
-      @if (viewerQueue().length > 0) {
-        <app-story-viewer [queue]="viewerQueue()" (closed)="closeViewer()"></app-story-viewer>
-      }
 
       @if (lightboxIndex() !== null) {
         <app-image-lightbox [images]="galleryImages()" [startIndex]="lightboxIndex()!" (closed)="lightboxIndex.set(null)" />
@@ -56,20 +47,7 @@ export class ExhibitionDetailComponent {
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
   protected readonly content = signal<SiteContent>({});
-  protected readonly viewerQueue = signal<StoryItem[]>([]);
   protected readonly lightboxIndex = signal<number | null>(null);
-
-  protected readonly displaySlides = computed<DisplaySlide[]>(() => {
-    const e = this.item();
-    if (!e) return [];
-    return enrichSlides({
-      slug: e.slug,
-      coverImage: e.coverImage,
-      coverCrop: e.coverCrop,
-      slides: e.slides ?? [],
-      showStoryLink: e.showStoryLink,
-    }, 'exhibition');
-  });
 
   protected readonly galleryImages = computed<LightboxImage[]>(() => {
     const e = this.item();
@@ -103,14 +81,6 @@ export class ExhibitionDetailComponent {
         this.loadingSvc.stop('nav');
       },
     });
-  }
-
-  protected onViewerOpen(queue: StoryItem[]): void {
-    this.viewerQueue.set(queue);
-  }
-
-  protected closeViewer(): void {
-    this.viewerQueue.set([]);
   }
 
   protected onGalleryImageOpen(i: number): void {

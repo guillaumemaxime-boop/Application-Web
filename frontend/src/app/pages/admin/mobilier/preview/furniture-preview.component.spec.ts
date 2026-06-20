@@ -1,15 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { signal } from '@angular/core';
-import { By } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { FurniturePreviewComponent } from './furniture-preview.component';
-import { FurnitureDetailViewComponent } from '../../../../components/furniture-detail-view/furniture-detail-view.component';
 import { GalleryItem } from '../../../../models/gallery-item.model';
 
 describe('FurniturePreviewComponent', () => {
   let fixture: ComponentFixture<FurniturePreviewComponent>;
-  let component: FurniturePreviewComponent;
 
   function setup(formValues: Record<string, unknown> = {}, gallery: GalleryItem[] = []) {
     const fb = new FormBuilder();
@@ -22,7 +19,6 @@ describe('FurniturePreviewComponent', () => {
     const gallerySig = signal<GalleryItem[]>(gallery);
     TestBed.configureTestingModule({ imports: [FurniturePreviewComponent], providers: [provideHttpClient()] }).compileComponents();
     fixture = TestBed.createComponent(FurniturePreviewComponent);
-    component = fixture.componentInstance;
     fixture.componentRef.setInput('form', form);
     fixture.componentRef.setInput('gallery', gallerySig.asReadonly());
     fixture.detectChanges();
@@ -128,67 +124,5 @@ describe('FurniturePreviewComponent', () => {
     expect(item.title).toBe('');
     expect(item.tags).toEqual([]);
     expect(item.featured).toBeFalse();
-  });
-
-  it('transmet stories/activeStoryId à la vue détail', () => {
-    setup();
-    fixture.componentInstance.stories = [{ id: 'a', ownerKind: 'furniture', ownerId: 'f1', title: 'A', coverImage: '', coverCrop: null, slug: 'a', position: 0, createdAt: '' } as any];
-    fixture.componentInstance.activeStoryId = 'a';
-    fixture.detectChanges();
-    const view = fixture.debugElement.query(By.directive(FurnitureDetailViewComponent)).componentInstance as FurnitureDetailViewComponent;
-    expect(view.stories.length).toBe(1);
-    expect(view.activeStoryId).toBe('a');
-  });
-
-  it('relaie storySelect depuis la vue détail', () => {
-    setup();
-    fixture.detectChanges();
-    const emitted: string[] = [];
-    fixture.componentInstance.storySelect.subscribe((v: string) => emitted.push(v));
-    const view = fixture.debugElement.query(By.directive(FurnitureDetailViewComponent)).componentInstance as FurnitureDetailViewComponent;
-    view.storySelect.emit('x');
-    expect(emitted[0]).toBe('x');
-  });
-
-  it('relaie viewerOpen depuis la vue détail', () => {
-    setup();
-    fixture.detectChanges();
-    const emitted: unknown[][] = [];
-    fixture.componentInstance.viewerOpen.subscribe((q: unknown[]) => emitted.push(q));
-    const view = fixture.debugElement.query(By.directive(FurnitureDetailViewComponent)).componentInstance as FurnitureDetailViewComponent;
-    const fakeQueue = [{ title: 'T', subtitle: 'S', slides: [] }] as any;
-    view.viewerOpen.emit(fakeQueue);
-    expect(emitted.length).toBe(1);
-    expect(emitted[0]).toBe(fakeQueue);
-  });
-
-  it('relaie storySlidesChange', () => {
-    setup();
-    fixture.detectChanges();
-    const emitted: any[] = [];
-    component.storySlidesChange.subscribe((s: any) => emitted.push(s));
-    const view = fixture.debugElement.query(By.directive(FurnitureDetailViewComponent)).componentInstance as FurnitureDetailViewComponent;
-    view.storySlidesChange.emit([{ id: 'x' } as any]);
-    expect(emitted.length).toBe(1);
-  });
-
-  it('relaie storyImageReplaceRequest', () => {
-    setup();
-    fixture.detectChanges();
-    const emitted: string[] = [];
-    component.storyImageReplaceRequest.subscribe((v: string) => emitted.push(v));
-    const view = fixture.debugElement.query(By.directive(FurnitureDetailViewComponent)).componentInstance as FurnitureDetailViewComponent;
-    view.storyImageReplaceRequest.emit('s1');
-    expect(emitted).toEqual(['s1']);
-  });
-
-  it('relaie storyImageCropRequest depuis la vue détail', () => {
-    setup();
-    fixture.detectChanges();
-    const emitted: string[] = [];
-    (component as any).storyImageCropRequest.subscribe((v: string) => emitted.push(v));
-    const view = fixture.debugElement.query(By.directive(FurnitureDetailViewComponent)).componentInstance as FurnitureDetailViewComponent;
-    (view as any).storyImageCropRequest.emit('s1');
-    expect(emitted).toEqual(['s1']);
   });
 });
