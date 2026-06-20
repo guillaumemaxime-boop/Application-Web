@@ -27,6 +27,7 @@ import { Story } from '../../../models/story.model';
           <button type="button" class="comp-cancel" (click)="cancel.emit()" aria-label="Fermer">Fermer</button>
         </header>
         <p class="comp-hint">Seules les stories ayant au moins un slide sont proposées (une story sans contenu n'apparaît pas sur le site).</p>
+        <p class="comp-hint">Glissez-déposez les stories entre les colonnes, ou utilisez les boutons « Ajouter », « ↑ / ↓ » et « Retirer ».</p>
         <p class="sr-only" aria-live="polite">{{ status() }}</p>
         <div class="composition-grid" cdkDropListGroup>
           <aside class="available">
@@ -57,9 +58,10 @@ import { Story } from '../../../models/story.model';
                 <li class="comp-item" cdkDrag [cdkDragData]="storyId">
                   <span>{{ storyTitle(storyId) }}</span>
                   <button type="button" class="comp-up" (click)="moveUp(storyId)" [disabled]="i === 0"
-                          aria-label="Monter la story dans l'ordre">↑</button>
+                          [attr.aria-label]="'Monter ' + storyTitle(storyId) + ' dans l’ordre'">↑</button>
                   <button type="button" class="comp-down" (click)="moveDown(storyId)"
-                          [disabled]="i === pendingStoryIds().length - 1" aria-label="Descendre la story dans l'ordre">↓</button>
+                          [disabled]="i === pendingStoryIds().length - 1"
+                          [attr.aria-label]="'Descendre ' + storyTitle(storyId) + ' dans l’ordre'">↓</button>
                   <button type="button" class="comp-remove" (click)="removeFromComposition(storyId)"
                           [attr.aria-label]="'Retirer ' + storyTitle(storyId)">× Retirer</button>
                 </li>
@@ -185,6 +187,7 @@ export class SliderCompositionEditorComponent {
   }
 
   protected moveUp(id: string): void {
+    const before = this.pendingStoryIds().indexOf(id);
     this.pendingStoryIds.update(arr => {
       const i = arr.indexOf(id);
       if (i <= 0) return arr;
@@ -192,9 +195,11 @@ export class SliderCompositionEditorComponent {
       [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
       return copy;
     });
+    this.announceMove(id, before);
   }
 
   protected moveDown(id: string): void {
+    const before = this.pendingStoryIds().indexOf(id);
     this.pendingStoryIds.update(arr => {
       const i = arr.indexOf(id);
       if (i < 0 || i >= arr.length - 1) return arr;
@@ -202,5 +207,14 @@ export class SliderCompositionEditorComponent {
       [copy[i + 1], copy[i]] = [copy[i], copy[i + 1]];
       return copy;
     });
+    this.announceMove(id, before);
+  }
+
+  /** Annonce aria-live d'un déplacement clavier (no-op si la position n'a pas changé). */
+  private announceMove(id: string, before: number): void {
+    const after = this.pendingStoryIds().indexOf(id);
+    if (after !== before) {
+      this.status.set(this.storyTitle(id) + ' déplacée en position ' + (after + 1) + '.');
+    }
   }
 }
