@@ -235,6 +235,9 @@ import { enrichSlides } from '../../../utils/display-slides';
             (storySlidesChange)="onStorySlidesChange($event)"
             (storyImageReplaceRequest)="onStoryImageReplaceRequest($event)"
             (storyImageCropRequest)="onStoryImageCropRequest($event)"
+            (videoUrlChange)="onPreviewVideoChange('videoUrl', $event)"
+            (videoPosterChange)="onPreviewVideoChange('videoPoster', $event)"
+            (videoCaptionsChange)="onPreviewVideoChange('videoCaptions', $event)"
             (viewerOpen)="onPreviewViewerOpen($event)" />
         </ng-template>
       </app-admin-preview-shell>
@@ -400,6 +403,9 @@ export class MobilierComponent {
     showStoryLink: [true],
     showStoryButton: [true],
     tags: this.fb.control<string[]>([], { nonNullable: true }),
+    videoUrl: this.fb.control<string | null>(null),
+    videoPoster: this.fb.control<string | null>(null),
+    videoCaptions: this.fb.control<string | null>(null),
   });
 
   // — Câblage preview WYSIWYG (shell + composables, voir preview-page-helpers) —
@@ -450,6 +456,18 @@ export class MobilierComponent {
   protected onPreviewTagsChange(tags: string[]): void {
     this.history.record();
     this.furnitureForm.patchValue({ tags });
+    this.furnitureForm.markAsDirty();
+  }
+
+  /**
+   * Edition in-preview de la vidéo : <app-video-field> a déjà uploadé le
+   * fichier et émet l'URL (ou null au retrait). On reporte dans le form (qui
+   * alimente le preview et le payload de saveFurniture) — même flux que
+   * cover/galerie/tags. La persistance se fait au save de la fiche.
+   */
+  protected onPreviewVideoChange(field: 'videoUrl' | 'videoPoster' | 'videoCaptions', value: string | null): void {
+    this.history.record();
+    this.furnitureForm.patchValue({ [field]: value });
     this.furnitureForm.markAsDirty();
   }
 
@@ -635,6 +653,9 @@ export class MobilierComponent {
       showStoryLink: true,
       showStoryButton: true,
       tags: [],
+      videoUrl: null,
+      videoPoster: null,
+      videoCaptions: null,
     });
     this.furnitureGallery.set([]);
   }
@@ -656,6 +677,9 @@ export class MobilierComponent {
       showStoryLink: item.showStoryLink ?? true,
       showStoryButton: item.showStoryButton ?? true,
       tags: item.tags ?? [],
+      videoUrl: item.videoUrl ?? null,
+      videoPoster: item.videoPoster ?? null,
+      videoCaptions: item.videoCaptions ?? null,
     });
     this.furnitureGallery.set([...(item.gallery ?? [])]);
     if (item.id) {
@@ -866,6 +890,9 @@ export class MobilierComponent {
       showStoryLink: v.showStoryLink ?? true,
       showStoryButton: v.showStoryButton ?? true,
       tags: v.tags ?? [],
+      videoUrl: v.videoUrl ?? null,
+      videoPoster: v.videoPoster ?? null,
+      videoCaptions: v.videoCaptions ?? null,
     };
     this.saving.set(true);
     const op$ = slug

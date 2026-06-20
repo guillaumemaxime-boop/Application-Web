@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 033-add-video-to-exhibition
+      author: milo-guillaume
+      comment: >
+        Ajoute video_url, video_poster, video_captions (nullables) sur exhibition
+        pour le bloc video optionnel de la fiche.
+      changes:
+        - sql:
+            sql: ALTER TABLE exhibition ADD COLUMN video_url VARCHAR(500);
+        - sql:
+            sql: ALTER TABLE exhibition ADD COLUMN video_poster VARCHAR(500);
+        - sql:
+            sql: ALTER TABLE exhibition ADD COLUMN video_captions VARCHAR(500);

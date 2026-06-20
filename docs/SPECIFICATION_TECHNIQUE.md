@@ -678,6 +678,20 @@ record HomeFeedCoverCropRequest(
 
 > **Phase 2 (backlog)** : variantes responsive multi-tailles (`srcset`/`sizes`), conversion WebP/AVIF, CDN médias — reporté (voir spec `docs/superpowers/specs/2026-06-19-perf-images-phase1-design.md`, section « Hors portée »).
 
+### 4.10 Vidéos auto-hébergées — `/api/videos/**` (ADR-0019)
+
+Vidéo optionnelle (auto-hébergée) sur fiches mobilier/expo et Studio. `VideoService` (distinct de `PhotoService`) : allowlist stricte `.mp4`/`.webm`/`.vtt`, stockage **brut** (pas de transcodage) dans `app.upload.dir`, nom **UUID immuable**, garde anti-path-traversal, upload **streamé** (`Files.copy(InputStream)`).
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| GET | `/api/videos/files/{filename}` | public | Sert vidéo/sous-titres. **HTTP Range** (`ResourceRegion`) : `206 Partial Content` si en-tête `Range` (seek), `200` sinon, `416` si hors borne ; `Accept-Ranges: bytes` ; cache `max-age=31536000, immutable`. Content-type : `video/mp4`, `video/webm`, `text/vtt`. |
+| POST | `/api/admin/videos` | JWT | Upload multipart → `201 {url, filename}` (400 si extension refusée). |
+| DELETE | `/api/admin/videos/files/{filename}` | JWT | Suppression best-effort → 204/404. |
+
+**Schéma** : colonnes nullables `video_url`/`video_poster`/`video_captions` sur `furniture` et `exhibition` (migrations 032/033, posées **inconditionnellement** en update → `null` = retrait) ; clés `SiteContent` `studio.video.url`/`.poster`/`.captions` pour le Studio (pas d'entité vidéo dédiée).
+
+**CSP** : `media-src 'self'` (couvre `<video>`/`<source>`/`<track>` même origine). **Upload** : limite **200 Mo** (Spring `multipart.max-*-size` + Nginx `client_max_body_size`, à garder en phase). Pas de JS inline (lecteur natif).
+
 ---
 
 ## 5. Frontend — Composants & routes

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { FurnitureDetailViewComponent } from './furniture-detail-view.component';
 import { Furniture } from '../../models/furniture.model';
 import { DisplaySlide } from '../../models/display-slide.model';
@@ -26,7 +27,7 @@ describe('FurnitureDetailViewComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FurnitureDetailViewComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideHttpClient()],
     }).compileComponents();
     fixture = TestBed.createComponent(FurnitureDetailViewComponent);
   });
@@ -553,5 +554,28 @@ describe('FurnitureDetailViewComponent', () => {
     fixture.detectChanges();
     const canvases = fixture.debugElement.queryAll(By.directive(CroppedImageCanvasComponent));
     expect(canvases.some(c => c.componentInstance.lazy === true)).toBeTrue();
+  });
+
+  // --- Tests bloc vidéo ---
+
+  it('affiche le bloc vidéo en public si videoUrl', () => {
+    fixture.componentRef.setInput('item', { ...mockFurniture, videoUrl: '/api/videos/files/clip.mp4' });
+    fixture.componentRef.setInput('editable', false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.video-block app-video-player')).toBeTruthy();
+  });
+
+  it('masque le bloc vidéo si pas de videoUrl (public)', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-video-player')).toBeNull();
+  });
+
+  it('rend <app-video-field> en mode editable', () => {
+    fixture.componentRef.setInput('item', mockFurniture);
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.video-block app-video-field')).toBeTruthy();
   });
 });

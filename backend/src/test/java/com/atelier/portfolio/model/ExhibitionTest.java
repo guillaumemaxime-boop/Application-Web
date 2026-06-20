@@ -31,7 +31,10 @@ class ExhibitionTest {
                 true,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Assert
@@ -75,7 +78,10 @@ class ExhibitionTest {
                 false,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Assert
@@ -113,7 +119,10 @@ class ExhibitionTest {
                 false,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Assert
@@ -146,7 +155,10 @@ class ExhibitionTest {
                 false,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
         assertNotNull(exhibition);
         assertEquals("", exhibition.title());
@@ -175,7 +187,10 @@ class ExhibitionTest {
                 true,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         Exhibition exhibition2 = new Exhibition(
@@ -197,7 +212,10 @@ class ExhibitionTest {
                 true,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Act & Assert
@@ -226,7 +244,10 @@ class ExhibitionTest {
                 false,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Act
@@ -261,7 +282,10 @@ class ExhibitionTest {
                 false,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         Exhibition exhibition2 = new Exhibition(
@@ -283,7 +307,10 @@ class ExhibitionTest {
                 false,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Act & Assert
@@ -312,7 +339,10 @@ class ExhibitionTest {
                 false,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Assert
@@ -344,7 +374,10 @@ class ExhibitionTest {
                 false,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         // Assert

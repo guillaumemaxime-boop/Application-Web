@@ -26,6 +26,9 @@ public record Furniture(
     boolean showStoryLink,
     boolean showStoryButton,
     List<Slide> slides,
-    @Size(max = 30) List<@Size(max = 255) String> tags
+    @Size(max = 30) List<@Size(max = 255) String> tags,
+    @Size(max = 500) String videoUrl,
+    @Size(max = 500) String videoPoster,
+    @Size(max = 500) String videoCaptions
 ) {
 }

@@ -51,7 +51,10 @@ class ExhibitionControllerTest {
                 true,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
 
         sampleExhibitionList = List.of(sampleExhibition);
@@ -226,7 +229,10 @@ class ExhibitionControllerTest {
                 true,
                 true,
                 true,
-                List.of()
+                List.of(),
+                null,
+                null,
+                null
         );
         when(exhibitionService.findBySlug(slug)).thenReturn(Optional.of(specialExhibition));
 

@@ -42,6 +42,9 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (storySlidesChange)="storySlidesChange.emit($event)"
       (storyImageReplaceRequest)="storyImageReplaceRequest.emit($event)"
       (storyImageCropRequest)="storyImageCropRequest.emit($event)"
+      (videoUrlChange)="videoUrlChange.emit($event)"
+      (videoPosterChange)="videoPosterChange.emit($event)"
+      (videoCaptionsChange)="videoCaptionsChange.emit($event)"
       (viewerOpen)="viewerOpen.emit($event)" />
   `,
   styles: []
@@ -67,6 +70,9 @@ export class ExhibitionPreviewComponent implements OnInit {
   @Output() storySlidesChange = new EventEmitter<Slide[]>();
   @Output() storyImageReplaceRequest = new EventEmitter<string>();
   @Output() storyImageCropRequest = new EventEmitter<string>();
+  @Output() videoUrlChange = new EventEmitter<string | null>();
+  @Output() videoPosterChange = new EventEmitter<string | null>();
+  @Output() videoCaptionsChange = new EventEmitter<string | null>();
   @Output() viewerOpen = new EventEmitter<StoryItem[]>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();
@@ -109,6 +115,9 @@ export class ExhibitionPreviewComponent implements OnInit {
       showStoryLink: !!v.showStoryLink,
       showStoryButton: !!v.showStoryButton,
       slides: [],
+      videoUrl: v.videoUrl ?? null,
+      videoPoster: v.videoPoster ?? null,
+      videoCaptions: v.videoCaptions ?? null,
     } as unknown as Exhibition;
   });
 

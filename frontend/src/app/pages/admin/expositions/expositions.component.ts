@@ -193,6 +193,9 @@ import { enrichSlides } from '../../../utils/display-slides';
             (storySlidesChange)="onStorySlidesChange($event)"
             (storyImageReplaceRequest)="onStoryImageReplaceRequest($event)"
             (storyImageCropRequest)="onStoryImageCropRequest($event)"
+            (videoUrlChange)="onPreviewVideoChange('videoUrl', $event)"
+            (videoPosterChange)="onPreviewVideoChange('videoPoster', $event)"
+            (videoCaptionsChange)="onPreviewVideoChange('videoCaptions', $event)"
             (viewerOpen)="onPreviewViewerOpen($event)" />
         </ng-template>
       </app-admin-preview-shell>
@@ -329,6 +332,9 @@ export class ExpositionsComponent {
     showStoryLink: [true],
     showStoryButton: [true],
     tags: this.fb.control<string[]>([], { nonNullable: true }),
+    videoUrl: this.fb.control<string | null>(null),
+    videoPoster: this.fb.control<string | null>(null),
+    videoCaptions: this.fb.control<string | null>(null),
   });
 
   // — Câblage preview WYSIWYG (shell + composables, voir preview-page-helpers) —
@@ -378,6 +384,18 @@ export class ExpositionsComponent {
   protected onPreviewTagsChange(tags: string[]): void {
     this.history.record();
     this.exhibitionForm.patchValue({ tags });
+    this.exhibitionForm.markAsDirty();
+  }
+
+  /**
+   * Edition in-preview de la vidéo : <app-video-field> a déjà uploadé le
+   * fichier et émet l'URL (ou null au retrait). On reporte dans le form (qui
+   * alimente le preview et le payload de saveExhibition) — même flux que
+   * cover/galerie/tags. La persistance se fait au save de l'exposition.
+   */
+  protected onPreviewVideoChange(field: 'videoUrl' | 'videoPoster' | 'videoCaptions', value: string | null): void {
+    this.history.record();
+    this.exhibitionForm.patchValue({ [field]: value });
     this.exhibitionForm.markAsDirty();
   }
 
@@ -562,6 +580,9 @@ export class ExpositionsComponent {
       showStoryLink: true,
       showStoryButton: true,
       tags: [],
+      videoUrl: null,
+      videoPoster: null,
+      videoCaptions: null,
     });
     this.exhibitionGallery.set([]);
   }
@@ -582,6 +603,9 @@ export class ExpositionsComponent {
       showStoryLink: item.showStoryLink ?? true,
       showStoryButton: item.showStoryButton ?? true,
       tags: item.tags ?? [],
+      videoUrl: item.videoUrl ?? null,
+      videoPoster: item.videoPoster ?? null,
+      videoCaptions: item.videoCaptions ?? null,
     });
     this.exhibitionGallery.set([...(item.gallery ?? [])]);
     if (item.id) {
@@ -752,6 +776,9 @@ export class ExpositionsComponent {
       featured: existing?.featured ?? false,
       showStoryLink: v.showStoryLink ?? true,
       showStoryButton: v.showStoryButton ?? true,
+      videoUrl: v.videoUrl ?? null,
+      videoPoster: v.videoPoster ?? null,
+      videoCaptions: v.videoCaptions ?? null,
     };
     this.saving.set(true);
     const op$ = slug

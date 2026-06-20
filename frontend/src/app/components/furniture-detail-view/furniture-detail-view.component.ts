@@ -15,11 +15,13 @@ import { StoryInlineComponent } from '../story-inline/story-inline.component';
 import { ReorderableDirective } from '../../directives/reorderable.directive';
 import { StoryItem } from '../story-viewer/story-viewer.component';
 import { roleStyle } from '../../utils/title-style';
+import { VideoPlayerComponent } from '../video-player/video-player.component';
+import { VideoFieldComponent } from '../../pages/admin/shared/video-field.component';
 
 @Component({
   selector: 'app-furniture-detail-view',
   standalone: true,
-  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective, RouterLink, NgStyle, TagEditorComponent, StoryManagerBarComponent],
+  imports: [CroppedImageCanvasComponent, StoryInlineComponent, ReorderableDirective, RouterLink, NgStyle, TagEditorComponent, StoryManagerBarComponent, VideoPlayerComponent, VideoFieldComponent],
   template: `
     @if (item) {
       <article class="fade-in">
@@ -193,6 +195,29 @@ import { roleStyle } from '../../utils/title-style';
         }
 
         @if (editable) {
+          <section class="section video-block">
+            <div class="container narrow">
+              <app-video-field
+                label="{{ item.title }} — vidéo"
+                [videoUrl]="item.videoUrl ?? null"
+                [videoPoster]="item.videoPoster ?? null"
+                [videoCaptions]="item.videoCaptions ?? null"
+                (videoUrlChange)="videoUrlChange.emit($event)"
+                (videoPosterChange)="videoPosterChange.emit($event)"
+                (videoCaptionsChange)="videoCaptionsChange.emit($event)" />
+            </div>
+          </section>
+        } @else if (item.videoUrl) {
+          <section class="section video-block">
+            <div class="container narrow">
+              <h2 class="video-title">Vidéo</h2>
+              <app-video-player [src]="item.videoUrl" [poster]="item.videoPoster ?? null"
+                [captions]="item.videoCaptions ?? null" [label]="item.title + ' — vidéo'" />
+            </div>
+          </section>
+        }
+
+        @if (editable) {
           <section class="section story-admin">
             <div class="container narrow">
               <p class="story-admin-badge">Story — non affichée sur la fiche publique (visible via les sliders).</p>
@@ -273,6 +298,9 @@ import { roleStyle } from '../../utils/title-style';
 
     .story-admin { padding: 48px 0; border-top: 1px dashed var(--color-line); }
     .story-admin-badge { margin: 0 0 12px; font-size: 0.78rem; color: var(--color-mute); font-style: italic; }
+
+    .video-block .narrow { max-width: 880px; }
+    .video-title { font-size: 1.375rem; margin-bottom: 16px; }
 
     @media (max-width: 960px) {
       .gallery .g-grid { grid-template-columns: repeat(2, 1fr); }
@@ -397,6 +425,9 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   @Output() storySlidesChange = new EventEmitter<Slide[]>();
   @Output() storyImageReplaceRequest = new EventEmitter<string>();
   @Output() storyImageCropRequest = new EventEmitter<string>();
+  @Output() videoUrlChange = new EventEmitter<string | null>();
+  @Output() videoPosterChange = new EventEmitter<string | null>();
+  @Output() videoCaptionsChange = new EventEmitter<string | null>();
 
   protected editingField: EditableTextField | null = null;
 

@@ -6,11 +6,12 @@ import { Profile } from '../../models/profile.model';
 import { SiteContent } from '../../models/site-content.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
+import { VideoPlayerComponent } from '../../components/video-player/video-player.component';
 
 @Component({
   selector: 'app-studio',
   standalone: true,
-  imports: [NgStyle],
+  imports: [NgStyle, VideoPlayerComponent],
   template: `
     <section class="section page-head">
       <div class="container">
@@ -69,6 +70,19 @@ import { roleStyle } from '../../utils/title-style';
               </div>
             }
           </div>
+        </div>
+      </section>
+    }
+
+    @if (videoUrl()) {
+      <section class="section studio-video">
+        <div class="container">
+          <h2 class="eyebrow" [ngStyle]="eyebrowStyleVar()">Vidéo</h2>
+          <app-video-player
+            [src]="videoUrl()"
+            [poster]="videoPoster() || null"
+            [captions]="videoCaptions() || null"
+            label="Studio — vidéo" />
         </div>
       </section>
     }
@@ -139,6 +153,9 @@ import { roleStyle } from '../../utils/title-style';
     .step h3 { font-size: 1.375rem; margin-bottom: 12px; }
     .step p { font-size: 0.95rem; }
 
+    .studio-video { border-top: 1px solid var(--color-line); }
+    .studio-video .eyebrow { display: block; margin-bottom: 40px; }
+
     .status { color: var(--color-mute); margin-top: 32px; }
     .status.error { color: #c0392b; }
 
@@ -162,6 +179,10 @@ export class StudioComponent {
   protected readonly subtitleStyleVar = computed(() => roleStyle(this.content(), 'subtitle'));
   protected readonly eyebrowStyleVar = computed(() => roleStyle(this.content(), 'eyebrow'));
   protected readonly processVisible = computed(() => this.content()['studio.process.visible'] !== 'false');
+
+  protected readonly videoUrl = computed(() => this.content()['studio.video.url'] ?? '');
+  protected readonly videoPoster = computed(() => this.content()['studio.video.poster'] ?? '');
+  protected readonly videoCaptions = computed(() => this.content()['studio.video.captions'] ?? '');
 
   protected readonly steps = computed(() => {
     const c = this.content();

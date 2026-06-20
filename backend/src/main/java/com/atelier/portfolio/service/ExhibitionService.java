@@ -58,7 +58,10 @@ public class ExhibitionService {
                     base.tags(), base.featured(),
                     base.showStoryLink(),
                     base.showStoryButton(),
-                    storyService.findSlidesForOwner("exhibition", entity.getId())
+                    storyService.findSlidesForOwner("exhibition", entity.getId()),
+                    base.videoUrl(),
+                    base.videoPoster(),
+                    base.videoCaptions()
             );
         });
     }
@@ -121,6 +124,10 @@ public class ExhibitionService {
         entity.setFeatured(input.featured());
         entity.setShowStoryLink(input.showStoryLink());
         entity.setShowStoryButton(input.showStoryButton());
+        // Champs video : set inconditionnel (null = retrait), comme coverCrop.
+        entity.setVideoUrl(input.videoUrl());
+        entity.setVideoPoster(input.videoPoster());
+        entity.setVideoCaptions(input.videoCaptions());
         if (input.gallery() != null) {
             entity.getGallery().clear();
             for (GalleryImage gi : input.gallery()) {
@@ -179,7 +186,10 @@ public class ExhibitionService {
                 entity.isFeatured(),
                 entity.isShowStoryLink(),
                 entity.isShowStoryButton(),
-                List.of()
+                List.of(),
+                entity.getVideoUrl(),
+                entity.getVideoPoster(),
+                entity.getVideoCaptions()
         );
     }
 }

@@ -92,3 +92,9 @@ databaseChangeLog:
   - include:
       file: changes/031-add-story-slide-image-crop.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/032-add-video-to-furniture.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/033-add-video-to-exhibition.yaml
+      relativeToChangelogFile: true

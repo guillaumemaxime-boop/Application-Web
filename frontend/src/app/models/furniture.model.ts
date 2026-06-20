@@ -21,4 +21,7 @@ export interface Furniture {
   showStoryLink: boolean;
   showStoryButton: boolean;
   slides: Slide[];
+  videoUrl?: string | null;
+  videoPoster?: string | null;
+  videoCaptions?: string | null;
 }

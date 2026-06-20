@@ -3,11 +3,12 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { SiteContent } from '../../../models/site-content.model';
 import { ToastService } from '../shared/toast.service';
+import { VideoFieldComponent } from '../shared/video-field.component';
 
 @Component({
   selector: 'app-textes',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, VideoFieldComponent],
   template: `
     @if (loading()) {
       <p class="status">Chargement des textes…</p>
@@ -96,6 +97,19 @@ import { ToastService } from '../shared/toast.service';
               </label>
             </div>
           }
+
+          <div class="texts-group">
+            <h3 class="texts-group-label">Vidéo de présentation</h3>
+            <p class="texts-group-hint">Affichée sur la page Studio sous le processus. Enregistrée automatiquement.</p>
+            <app-video-field
+              label="Studio — vidéo"
+              [videoUrl]="studioVideo()['studio.video.url'] || null"
+              [videoPoster]="studioVideo()['studio.video.poster'] || null"
+              [videoCaptions]="studioVideo()['studio.video.captions'] || null"
+              (videoUrlChange)="setVideoContent('studio.video.url', $event)"
+              (videoPosterChange)="setVideoContent('studio.video.poster', $event)"
+              (videoCaptionsChange)="setVideoContent('studio.video.captions', $event)" />
+          </div>
         </div>
 
         <div class="texts-section">
@@ -144,6 +158,7 @@ import { ToastService } from '../shared/toast.service';
     .texts-section-title { font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin: 0 0 8px; }
     .texts-group { display: flex; flex-direction: column; gap: 14px; padding: 24px; border: 1px solid var(--color-line); background: var(--color-bg); }
     .texts-group-label { font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-mute); margin: 0; }
+    .texts-group-hint { font-size: 0.78rem; color: var(--color-ink-soft); margin: 0; }
     .texts-group label { display: flex; flex-direction: column; gap: 6px; }
     .texts-group label > span { font-size: 0.78rem; color: var(--color-ink-soft); }
     .texts-group label.check-row { flex-direction: row; align-items: center; gap: 10px; }
@@ -168,6 +183,10 @@ export class TextesComponent {
 
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
+
+  // Clés vidéo Studio gérées hors formulaire (uploads via <app-video-field>),
+  // persistées au fil de l'eau via updateContent (auto-save).
+  protected readonly studioVideo = signal<SiteContent>({});
 
   protected readonly textsForm = this.fb.group({
     home_hero_eyebrow: [''],
@@ -198,6 +217,11 @@ export class TextesComponent {
     this.portfolio.getContent().subscribe({
       next: content => {
         this.loading.set(false);
+        this.studioVideo.set({
+          'studio.video.url': content['studio.video.url'] ?? '',
+          'studio.video.poster': content['studio.video.poster'] ?? '',
+          'studio.video.captions': content['studio.video.captions'] ?? '',
+        });
         this.textsForm.reset({
           home_hero_eyebrow: content['home.hero.eyebrow'] ?? '',
           home_hero_title: content['home.hero.title'] ?? '',
@@ -266,6 +290,20 @@ export class TextesComponent {
         this.saving.set(false);
         this.toast.error('Erreur lors de l\'enregistrement des textes.');
       }
+    });
+  }
+
+  /**
+   * Auto-save d'une clé vidéo Studio (studio.video.url/poster/captions).
+   * Met à jour le signal local pour refléter l'aperçu, puis persiste la seule
+   * clé modifiée via updateContent. `null` (retrait) → clé vidée.
+   */
+  protected setVideoContent(key: string, value: string | null): void {
+    const next = value ?? '';
+    this.studioVideo.update(prev => ({ ...prev, [key]: next }));
+    this.portfolio.updateContent({ [key]: next }).subscribe({
+      next: () => this.toast.success('Vidéo du Studio mise à jour.'),
+      error: () => this.toast.error('Erreur lors de l\'enregistrement de la vidéo.'),
     });
   }
 }

@@ -143,4 +143,20 @@ describe('TextesComponent', () => {
     httpMock.expectOne('/api/admin/content').flush({}, { status: 500, statusText: 'fail' });
     expect(toast.error).toHaveBeenCalled();
   });
+
+  it('rend un champ vidéo dans la section Studio et persiste la clé studio.video.url au changement', () => {
+    const fixture = TestBed.createComponent(TextesComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/content').flush({});
+    fixture.detectChanges();
+
+    const field = fixture.debugElement.query(By.css('app-video-field'));
+    expect(field).toBeTruthy();
+
+    field.triggerEventHandler('videoUrlChange', '/api/videos/files/studio.mp4');
+
+    const put = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/content');
+    expect((put.request.body as Record<string, string>)['studio.video.url']).toBe('/api/videos/files/studio.mp4');
+    put.flush({});
+  });
 });
