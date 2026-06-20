@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { VideoPlayerComponent } from '../../../components/video-player/video-player.component';
+import { PhotoPickerComponent } from './photo-picker.component';
+import { Photo } from '../../../models/photo.model';
 
 /**
  * Champ admin pour gerer la video optionnelle d'une fiche/page :
@@ -11,7 +13,7 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
 @Component({
   selector: 'app-video-field',
   standalone: true,
-  imports: [VideoPlayerComponent],
+  imports: [VideoPlayerComponent, PhotoPickerComponent],
   template: `
     <div class="video-field">
       <span class="vf-title">Vidéo (optionnelle)</span>
@@ -32,6 +34,9 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
         <button type="button" class="vf-btn" (click)="posterInput.click()">
           {{ videoPoster ? 'Remplacer le poster' : 'Ajouter un poster' }}
         </button>
+        <button type="button" class="vf-btn" (click)="openPosterPicker()" title="Choisir le poster depuis la médiathèque">
+          Poster depuis la médiathèque
+        </button>
         <input #captionsInput type="file" accept=".vtt,text/vtt" hidden (change)="onCaptionsSelected($event)" />
         <button type="button" class="vf-btn" (click)="captionsInput.click()">
           {{ videoCaptions ? 'Remplacer les sous-titres' : 'Ajouter des sous-titres (.vtt)' }}
@@ -42,6 +47,14 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
       </div>
       @if (error()) { <p class="vf-error" role="alert">{{ error() }}</p> }
     </div>
+
+    @if (posterPickerOpen()) {
+      <app-photo-picker
+        target="cover"
+        [photos]="photos()"
+        (selected)="onPosterPicked($event)"
+        (closed)="posterPickerOpen.set(false)" />
+    }
   `,
   styles: [`
     .video-field { display: flex; flex-direction: column; gap: 10px; }
@@ -70,6 +83,21 @@ export class VideoFieldComponent {
   @Output() videoCaptionsChange = new EventEmitter<string | null>();
 
   protected readonly error = signal('');
+  protected readonly posterPickerOpen = signal(false);
+  protected readonly photos = signal<Photo[]>([]);
+
+  /** Ouvre la médiathèque pour choisir le poster parmi les images existantes. */
+  openPosterPicker(): void {
+    this.posterPickerOpen.set(true);
+    this.portfolio.getPhotos().subscribe(p => this.photos.set(p));
+  }
+
+  /** Poster sélectionné depuis la médiathèque : adopte son URL (pas d'upload). */
+  onPosterPicked(photo: Photo): void {
+    this.videoPoster = photo.url;
+    this.videoPosterChange.emit(photo.url);
+    this.posterPickerOpen.set(false);
+  }
 
   onVideoSelected(ev: Event): void {
     const file = (ev.target as HTMLInputElement).files?.[0];

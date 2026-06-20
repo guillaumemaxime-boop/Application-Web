@@ -8,7 +8,8 @@ describe('VideoFieldComponent', () => {
   let portfolio: jasmine.SpyObj<PortfolioService>;
 
   beforeEach(async () => {
-    portfolio = jasmine.createSpyObj('PortfolioService', ['uploadVideo', 'uploadPhoto', 'deleteVideo']);
+    portfolio = jasmine.createSpyObj('PortfolioService', ['uploadVideo', 'uploadPhoto', 'deleteVideo', 'getPhotos']);
+    portfolio.getPhotos.and.returnValue(of([{ url: '/api/photos/files/p.jpg' } as any]));
     await TestBed.configureTestingModule({
       imports: [VideoFieldComponent],
       providers: [{ provide: PortfolioService, useValue: portfolio }],
@@ -45,5 +46,21 @@ describe('VideoFieldComponent', () => {
     const file = new File(['WEBVTT'], 's.vtt', { type: 'text/vtt' });
     fixture.componentInstance.onCaptionsSelected({ target: { files: [file] } } as unknown as Event);
     expect(emitted).toContain('/api/videos/files/s.vtt');
+  });
+
+  it('poster depuis la médiathèque : ouvre le picker et la sélection émet l’URL du poster', () => {
+    fixture.detectChanges();
+    const emitted: (string | null)[] = [];
+    fixture.componentInstance.videoPosterChange.subscribe(v => emitted.push(v));
+
+    // Ouvre la médiathèque
+    fixture.componentInstance.openPosterPicker();
+    expect(portfolio.getPhotos).toHaveBeenCalled();
+    expect((fixture.componentInstance as any).posterPickerOpen()).toBeTrue();
+
+    // Sélection d'une image → poster = son URL, picker fermé
+    fixture.componentInstance.onPosterPicked({ url: '/api/photos/files/p.jpg' } as any);
+    expect(emitted).toContain('/api/photos/files/p.jpg');
+    expect((fixture.componentInstance as any).posterPickerOpen()).toBeFalse();
   });
 });
