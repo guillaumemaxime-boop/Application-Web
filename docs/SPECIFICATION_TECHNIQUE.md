@@ -681,7 +681,14 @@ record HomeFeedCoverCropRequest(
 
 **Cache (perf Phase 1)** : la réponse `200` porte `Cache-Control: max-age=31536000, public, immutable` (1 an). Justifié par l'immutabilité des noms : aucun risque de servir un contenu périmé. En prod, Nginx proxie `/api/` vers le backend (pas de service statique) — l'en-tête doit donc être posé **par le backend**.
 
-> **Phase 2 (backlog)** : variantes responsive multi-tailles (`srcset`/`sizes`), conversion WebP/AVIF, CDN médias — reporté (voir spec `docs/superpowers/specs/2026-06-19-perf-images-phase1-design.md`, section « Hors portée »).
+**Variantes responsive (perf Phase 2a)** : pour réduire le poids transféré, on sert une **variante de taille adaptée** au rendu plutôt que toujours l'original (≤1920px).
+- **Nommage par convention** (pas de schéma DB) : à côté de l'original `{uuid}.{ext}`, on stocke `{uuid}-{w}.{ext}` pour `w ∈ {400, 800, 1280}` (`ImageOptimizer.VARIANT_WIDTHS`). Seuls JPEG/PNG produisent des variantes ; **pas d'upscale** (une largeur ≥ source n'est pas générée). Les images sont référencées **par URL** partout, donc les variantes doivent être dérivables de l'URL de base.
+- **Génération** : à l'upload (`PhotoService.store` → `writeVariants`) et en **batch idempotent** sur l'existant via `POST /api/admin/photos/variants` (JWT) → `{count, generated}` (`generateVariantsAll`). `delete` retire aussi les variantes.
+- **Sélection au rendu (front)** : `frontend/src/app/utils/image-variant.ts` (`variantUrl`, `pickVariantWidth`, `srcsetFor`). Les `<img>` bruts (news-slider, grilles catalog/créations/expositions) portent `srcset`/`sizes` ; `<app-cropped-image-canvas>` (rendu `drawImage`) choisit la variante via `clientWidth × devicePixelRatio` ajusté de la fraction de crop, avec fallback JS sur l'original au `onerror`.
+- **Serve robuste** : une **variante absente** (source plus petite, ou batch pas lancé) retombe sur l'original côté serveur (`loadAsResource` → `baseFromVariant`), indispensable car une `<img srcset>` native ne retombe pas sur `src` quand un candidat `404`.
+- **Référence perdue → image par défaut** : si ni le fichier ni son original n'existent, `serve` renvoie une **redirection `302`** vers `app.upload.fallback-image` (défaut `/logo.jpg`, `Cache-Control: no-store`, vide ⇒ `404`) au lieu d'une image cassée — couvre galeries, covers, slides et pertes futures. Caveat : dans un contexte canvas croppé, le logo de secours est dessiné à travers le crop (peut apparaître recadré).
+
+> **Phase 2b (backlog)** : conversion **WebP/AVIF** (`<picture>` multi-format, nécessite un encodeur dédié — ImageIO/Thumbnailator ne les encodent pas), CDN médias, tracking DB des variantes. Voir spec `docs/superpowers/specs/2026-06-19-perf-images-phase2-design.md`, section « Hors portée ».
 
 ### 4.10 Vidéos auto-hébergées — `/api/videos/**` (ADR-0019)
 
@@ -1093,6 +1100,7 @@ Chemin : `frontend/src/app/pages/admin/shared/cropped-image-canvas.component.ts`
   - `[lazy]` — diffère le chargement (`new Image()` / `render()`) via un `IntersectionObserver` (`rootMargin: '200px'`, déconnecté après la première intersection) ; fallback **eager** si `IntersectionObserver` indisponible (vieux navigateur / test). Appliqué aux contextes **sous la ligne de flottaison** : galeries publiques des fiches mobilier/expo et cards du feed d'accueil (branches `@else`). Les galeries **éditables** (admin/preview) restent eager.
   - `[priority]` — pose `fetchPriority = 'high'` sur l'`Image` créée (hint LCP). Appliqué aux **covers hero** des fiches (jamais lazy). Dégradation gracieuse si non supporté.
   - CLS : les conteneurs lazifiés réservent leur hauteur en amont (galeries `grid-auto-rows: 220px`, cards home `aspect-ratio: 4/5`) — pas de saut au chargement différé.
+- **Perf (Phase 2a)** : `resolveSrc(displayWidthCss, dpr)` (méthode pure, testable) calcule `neededPx = ceil(displayWidthCss × dpr / fractionDeCrop)` puis choisit une variante via `pickVariantWidth` (`variantUrl`) ou l'original. `loadAndDraw` charge la variante et **retombe sur l'original** au `onerror` (flag anti-boucle), ce qui se combine au fallback serveur (variante absente → original ; original absent → logo). Voir § 4.9.
 
 #### `<app-image-lightbox>` (`ImageLightboxComponent`)
 
