@@ -13,4 +13,8 @@ public interface StorySlideRepository extends JpaRepository<StorySlideEntity, St
     /** Ids des stories ayant au moins un slide (pour ne proposer que des stories non vides). */
     @Query("select distinct s.story.id from StorySlideEntity s")
     List<String> findDistinctStoryIdsWithSlides();
+
+    /** [storyId, count] des slides groupes par story. */
+    @Query("select s.story.id, count(s) from StorySlideEntity s group by s.story.id")
+    List<Object[]> countSlidesByStory();
 }

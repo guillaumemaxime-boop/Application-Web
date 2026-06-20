@@ -5,6 +5,7 @@ import com.atelier.portfolio.entity.FurnitureEntity;
 import com.atelier.portfolio.model.ImageCrop;
 import com.atelier.portfolio.model.Slide;
 import com.atelier.portfolio.model.Story;
+import com.atelier.portfolio.model.StoryAdminView;
 import com.atelier.portfolio.model.StoryInput;
 import com.atelier.portfolio.model.StoryWithSlides;
 import com.atelier.portfolio.repository.ExhibitionRepository;
@@ -145,6 +146,39 @@ class StoryServiceTest {
         assertThat(reloaded.story().coverCrop()).isNotNull();
         assertThat(reloaded.story().coverCrop().w()).isEqualTo(80.0);
         assertThat(reloaded.story().coverCrop().x()).isEqualTo(5.0);
+    }
+
+    @Test
+    void update_sans_cover_preserve_le_crop_existant() {
+        Story s = service.create(new StoryInput("furniture", "f-001", "Crop garde",
+                "https://example.com/c.jpg", new ImageCrop(5.0, 10.0, 80.0, 60.0)));
+        // update "titre seul" : coverImage null, coverCrop null
+        service.update(s.id(), new StoryInput("furniture", "f-001", "Renomme", null, null));
+        StoryWithSlides reloaded = service.findBySlugWithSlides(s.slug()).orElseThrow();
+        assertThat(reloaded.story().title()).isEqualTo("Renomme");
+        assertThat(reloaded.story().coverCrop()).isNotNull();
+        assertThat(reloaded.story().coverCrop().w()).isEqualTo(80.0);
+    }
+
+    @Test
+    void findAllForManagement_enrichit_slideCount_et_owner() {
+        Story s = service.create(new StoryInput("furniture", "f-001", "Manage test", "https://example.com/c.jpg", null));
+        service.replaceSlides(s.id(), List.of(new Slide.ImageSlide(null, 0, "https://example.com/1.jpg", null, null)));
+
+        var views = service.findAllForManagement();
+        var view = views.stream().filter(v -> v.id().equals(s.id())).findFirst().orElseThrow();
+
+        assertThat(view.slideCount()).isEqualTo(1);
+        assertThat(view.ownerKind()).isEqualTo("furniture");
+        assertThat(view.ownerTitle()).isNotBlank();        // titre du meuble f-001
+        assertThat(view.title()).isEqualTo("Manage test");
+    }
+
+    @Test
+    void findAllForManagement_inclut_les_stories_vides() {
+        Story empty = service.create(new StoryInput("furniture", "f-001", "Vide", "https://example.com/c.jpg", null));
+        var ids = service.findAllForManagement().stream().map(StoryAdminView::id).toList();
+        assertThat(ids).contains(empty.id());   // contrairement a findAllWithSlides
     }
 
     @Test
