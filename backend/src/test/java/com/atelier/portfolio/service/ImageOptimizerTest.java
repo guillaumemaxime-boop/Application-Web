@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ImageOptimizerTest {
 
@@ -126,6 +127,30 @@ class ImageOptimizerTest {
         BufferedImage decoded = ImageIO.read(new ByteArrayInputStream(output));
         assertThat(decoded.getWidth()).isEqualTo(1920);
         assertThat(decoded.getHeight()).isEqualTo(480);
+    }
+
+    // --- Tests resizeToWidth (Phase 2a) ---
+
+    @Test
+    void resizeToWidth_reduit_a_la_largeur_cible() throws Exception {
+        byte[] variant = ImageOptimizer.resizeToWidth(makeJpeg(1600, 1000), ".jpg", 800);
+        assertNotNull(variant);
+        assertEquals(800, ImageIO.read(new ByteArrayInputStream(variant)).getWidth());
+    }
+
+    @Test
+    void resizeToWidth_pas_d_upscale_renvoie_null() throws Exception {
+        assertNull(ImageOptimizer.resizeToWidth(makeJpeg(300, 200), ".jpg", 400));
+    }
+
+    @Test
+    void resizeToWidth_extension_non_optimisable_renvoie_null() throws Exception {
+        assertNull(ImageOptimizer.resizeToWidth(makeJpeg(1600, 1000), ".gif", 800));
+    }
+
+    @Test
+    void variantWidths_exposees() {
+        assertArrayEquals(new int[]{400, 800, 1280}, ImageOptimizer.VARIANT_WIDTHS);
     }
 
     // --- helpers ---

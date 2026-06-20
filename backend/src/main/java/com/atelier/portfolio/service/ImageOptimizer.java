@@ -39,6 +39,9 @@ public final class ImageOptimizer {
     static final int MAX_DIMENSION = 1920;
     static final double JPEG_QUALITY = 0.85;
 
+    /** Largeurs des variantes responsive generees a l'upload (Phase 2a). */
+    public static final int[] VARIANT_WIDTHS = {400, 800, 1280};
+
     private static final Set<String> OPTIMIZABLE_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png");
 
     private ImageOptimizer() {
@@ -79,6 +82,39 @@ public final class ImageOptimizer {
             return optimized.length < input.length ? optimized : input;
         } catch (Exception e) {
             return input;
+        }
+    }
+
+    /**
+     * Renvoie une variante JPEG/PNG redimensionnee a {@code targetWidth} de large
+     * (hauteur proportionnelle, EXIF preservee, JPEG q0.85). Pas d'upscale : renvoie
+     * {@code null} si la source n'est pas plus grande que la cible, si l'extension
+     * n'est pas optimisable, ou si la variante n'est pas plus legere que l'original.
+     */
+    public static byte[] resizeToWidth(byte[] input, String extension, int targetWidth) {
+        if (input == null || input.length == 0) return null;
+        String normalized = extension == null ? "" : extension.toLowerCase(Locale.ROOT);
+        if (!OPTIMIZABLE_EXTENSIONS.contains(normalized)) return null;
+        boolean isJpeg = normalized.equals(".jpg") || normalized.equals(".jpeg");
+        String outputFormat = isJpeg ? "jpg" : "png";
+        try {
+            int maxSide = readMaxDimension(input);
+            if (maxSide <= 0 || maxSide <= targetWidth) return null;  // pas d'upscale / aucun benefice
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Thumbnails.Builder<? extends InputStream> builder = Thumbnails.of(new ByteArrayInputStream(input))
+                    .useExifOrientation(true)
+                    .width(targetWidth)
+                    .outputFormat(outputFormat);
+            if (isJpeg) {
+                builder = builder.outputQuality(JPEG_QUALITY);
+            }
+            builder.toOutputStream(out);
+            byte[] variant = out.toByteArray();
+            // Garde-fou : si la variante n'est pas plus legere (ex. upscale d'un portrait
+            // dont la largeur etait deja < cible), on ne la garde pas.
+            return variant.length < input.length ? variant : null;
+        } catch (Exception e) {
+            return null;
         }
     }
 
