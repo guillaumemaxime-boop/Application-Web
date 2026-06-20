@@ -16,7 +16,7 @@ describe('StoriesAdminComponent', () => {
   ];
 
   beforeEach(async () => {
-    portfolio = jasmine.createSpyObj('PortfolioService', ['getStoriesForManagement']);
+    portfolio = jasmine.createSpyObj('PortfolioService', ['getStoriesForManagement', 'updateStory']);
     portfolio.getStoriesForManagement.and.returnValue(of(rows));
     await TestBed.configureTestingModule({
       imports: [StoriesAdminComponent],
@@ -41,5 +41,43 @@ describe('StoriesAdminComponent', () => {
     const input = fixture.nativeElement.querySelector('input[aria-label="Rechercher une story"]') as HTMLInputElement;
     input.value = 'Story A'; input.dispatchEvent(new Event('input')); fixture.detectChanges();
     expect(rowsEls().length).toBe(1);
+  });
+
+  describe('édition du cover', () => {
+    it('cliquer Cover ouvre l\'éditeur avec un <app-image-field>', () => {
+      // Avant le clic : aucun éditeur
+      expect(fixture.nativeElement.querySelector('app-image-field')).toBeNull();
+
+      // Clic sur le bouton Cover de la première story
+      const coverBtn = fixture.nativeElement.querySelectorAll('button.action')[0] as HTMLButtonElement;
+      coverBtn.click();
+      fixture.detectChanges();
+
+      // L'éditeur doit apparaître avec un <app-image-field>
+      expect(fixture.nativeElement.querySelector('app-image-field')).not.toBeNull();
+    });
+
+    it('saveCover() appelle updateStory avec coverImage et coverCrop', () => {
+      const story = rows[0];
+      const updatedStory = { ...story, id: story.id };
+      portfolio.updateStory.and.returnValue(of(updatedStory as any));
+      portfolio.getStoriesForManagement.and.returnValue(of(rows));
+
+      // Ouvrir l'éditeur via openCover()
+      fixture.componentInstance.openCover(story);
+      fixture.detectChanges();
+
+      // Appeler saveCover()
+      fixture.componentInstance.saveCover();
+      fixture.detectChanges();
+
+      expect(portfolio.updateStory).toHaveBeenCalledWith(story.id, jasmine.objectContaining({
+        ownerKind: story.ownerKind,
+        ownerId: story.ownerId,
+        title: story.title,
+        coverImage: story.coverImage,
+        coverCrop: null,
+      }));
+    });
   });
 });

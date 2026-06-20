@@ -1,16 +1,19 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { ToastService } from '../shared/toast.service';
 import { StoryAdminView } from '../../../models/story.model';
+import { Crop } from '../../../models/crop.model';
 import { CroppedImageCanvasComponent } from '../shared/cropped-image-canvas.component';
+import { ImageFieldComponent } from '../shared/image-field.component';
 import { StoryCreateModalComponent } from './story-create-modal.component';
 
 @Component({
   selector: 'app-stories-admin',
   standalone: true,
-  imports: [FormsModule, RouterLink, CroppedImageCanvasComponent, StoryCreateModalComponent],
+  imports: [FormsModule, ReactiveFormsModule, RouterLink, CroppedImageCanvasComponent, ImageFieldComponent, StoryCreateModalComponent],
   template: `
     <header class="page-head">
       <h2>Stories</h2>
@@ -79,12 +82,28 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
             <button type="button" class="reorder" (click)="onReorder(row, -1)" [disabled]="!canMoveUp(row)" aria-label="Monter la story">↑</button>
             <button type="button" class="reorder" (click)="onReorder(row, 1)" [disabled]="!canMoveDown(row)" aria-label="Descendre la story">↓</button>
             <a class="action" [routerLink]="['/admin/stories', row.id]">Éditer</a>
-            <button type="button" class="action" (click)="coverEdit.set(row)">Cover</button>
+            <button type="button" class="action" (click)="openCover(row)">Cover</button>
             <button type="button" class="action danger" (click)="onDelete(row)">Supprimer</button>
           </div>
         </li>
       }
     </ul>
+
+    @if (coverEdit(); as row) {
+      <div class="cover-editor" role="region" aria-label="Édition du cover">
+        <h3 class="cover-editor-title">Cover — {{ row.title }}</h3>
+        <app-image-field
+          label="Image de couverture"
+          [formControl]="coverCtrl"
+          [cropEnabled]="true"
+          [cropValue]="coverCropSig()"
+          (cropChange)="coverCropSig.set($event)" />
+        <div class="cover-editor-actions">
+          <button type="button" class="primary" (click)="saveCover()">Enregistrer</button>
+          <button type="button" class="action" (click)="coverEdit.set(null)">Annuler</button>
+        </div>
+      </div>
+    }
 
     @if (createOpen()) {
       <app-story-create-modal
@@ -135,6 +154,13 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
     .action.danger { border-color: var(--color-accent); color: var(--color-accent); }
     button:disabled { opacity: 0.4; cursor: not-allowed; }
     .primary { padding: 8px 16px; background: var(--color-ink); color: var(--color-bg); border: 1px solid var(--color-ink); cursor: pointer; font-size: 0.9rem; }
+
+    .cover-editor {
+      margin-top: 24px; padding: 20px;
+      border: 1px solid var(--color-line); background: var(--color-bg-alt);
+    }
+    .cover-editor-title { margin: 0 0 16px; font-size: 1rem; font-weight: 600; }
+    .cover-editor-actions { display: flex; gap: 10px; margin-top: 16px; }
   `],
 })
 export class StoriesAdminComponent {
@@ -148,6 +174,10 @@ export class StoriesAdminComponent {
   // Câblés en T5 (création) et T6 (édition cover) ; déclarés ici pour les boutons.
   protected readonly createOpen = signal(false);
   protected readonly coverEdit = signal<StoryAdminView | null>(null);
+
+  // Contrôle et signal pour le panneau d'édition du cover (Task 6).
+  protected readonly coverCtrl = new FormControl('');
+  protected readonly coverCropSig = signal<Crop | null>(null);
 
   protected readonly filtered = computed(() => {
     const q = this.search().toLowerCase();
@@ -163,6 +193,29 @@ export class StoriesAdminComponent {
 
   protected reload(): void {
     this.portfolio.getStoriesForManagement().subscribe(r => this.rows.set(r));
+  }
+
+  /** Ouvre le panneau d'édition du cover pour la story donnée. */
+  openCover(row: StoryAdminView): void {
+    this.coverEdit.set(row);
+    this.coverCtrl.setValue(row.coverImage);
+    this.coverCropSig.set(row.coverCrop ?? null);
+  }
+
+  /** Enregistre le cover (image + cadrage) en appelant updateStory avec tous les champs obligatoires. */
+  saveCover(): void {
+    const row = this.coverEdit();
+    if (!row) return;
+    this.portfolio.updateStory(row.id, {
+      ownerKind: row.ownerKind,
+      ownerId: row.ownerId,
+      title: row.title,
+      coverImage: this.coverCtrl.value ?? '',
+      coverCrop: this.coverCropSig(),
+    }).subscribe({
+      next: () => { this.coverEdit.set(null); this.reload(); this.toast.success('Cover mise à jour.'); },
+      error: () => this.toast.error('Erreur lors de la mise à jour du cover.'),
+    });
   }
 
   /** Story créée via la modale : on ferme et on bascule vers l'éditeur de slides. */
