@@ -11,7 +11,7 @@ import { Crop } from '../models/crop.model';
 import { Slide } from '../models/slide.model';
 import { ContactRequestInput, ContactRequestAck } from '../models/contact.model';
 import { MailSettingsView, MailSettingsInput, MailTestResult } from '../models/mail-settings.model';
-import { Story, StoryInput, StoryWithSlides } from '../models/story.model';
+import { Story, StoryInput, StoryWithSlides, StoryAdminView } from '../models/story.model';
 import { NewsSlider, NewsSliderInput, NewsSliderView } from '../models/news-slider.model';
 
 const API = '/api';
@@ -215,6 +215,10 @@ export class PortfolioService {
 
   getAdminStories(ownerKind: 'furniture' | 'exhibition', ownerId: string): Observable<Story[]> {
     return this.http.get<Story[]>(`${API}/admin/stories`, { params: { ownerKind, ownerId } });
+  }
+
+  getStoriesForManagement(): Observable<StoryAdminView[]> {
+    return this.http.get<StoryAdminView[]>(`${API}/admin/stories/manage`);
   }
 
   createStory(input: StoryInput): Observable<Story> {

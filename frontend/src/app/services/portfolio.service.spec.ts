@@ -517,6 +517,13 @@ describe('PortfolioService', () => {
       req.flush([]);
     });
 
+    it('getStoriesForManagement appelle GET /api/admin/stories/manage', () => {
+      service.getStoriesForManagement().subscribe();
+      const req = httpMock.expectOne('/api/admin/stories/manage');
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+
     it('getPublicSliders appelle GET /api/sliders', () => {
       service.getPublicSliders().subscribe();
       const req = httpMock.expectOne('/api/sliders');
