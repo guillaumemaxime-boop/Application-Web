@@ -29,8 +29,8 @@ import { ImageFieldComponent } from '../shared/image-field.component';
         </header>
 
         <div class="field">
-          <label for="story-owner">Propriétaire</label>
-          <select id="story-owner" [value]="ownerKey()" (change)="ownerKey.set($any($event.target).value)">
+          <label for="story-owner">Propriétaire <span class="opt">(requis)</span></label>
+          <select id="story-owner" aria-required="true" [value]="ownerKey()" (change)="ownerKey.set($any($event.target).value)">
             <option value="">— Choisir un meuble ou une exposition —</option>
             @if (furniture().length > 0) {
               <optgroup label="Mobilier">
@@ -50,8 +50,8 @@ import { ImageFieldComponent } from '../shared/image-field.component';
         </div>
 
         <div class="field">
-          <label for="story-title">Titre</label>
-          <input id="story-title" type="text" [value]="title()" (input)="title.set($any($event.target).value)"
+          <label for="story-title">Titre <span class="opt">(requis)</span></label>
+          <input id="story-title" type="text" aria-required="true" [value]="title()" (input)="title.set($any($event.target).value)"
                  placeholder="Titre de la story" />
         </div>
 
