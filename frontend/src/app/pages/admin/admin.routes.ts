@@ -61,6 +61,11 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./stories/stories-admin.component').then(m => m.StoriesAdminComponent),
         title: 'Stories — Administration',
       },
+      {
+        path: 'stories/:id',
+        loadComponent: () => import('./stories/story-slide-editor.component').then(m => m.StorySlideEditorComponent),
+        title: 'Édition d’une story — Administration',
+      },
       { path: 'sliders', redirectTo: 'accueil', pathMatch: 'full' },
     ],
   },
