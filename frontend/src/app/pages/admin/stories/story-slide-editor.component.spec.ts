@@ -17,7 +17,8 @@ describe('StorySlideEditorComponent', () => {
   beforeEach(async () => {
     portfolio = jasmine.createSpyObj('PortfolioService', ['getStorySlides', 'replaceStorySlides']);
     portfolio.getStorySlides.and.returnValue(of(slides));
-    portfolio.replaceStorySlides.and.returnValue(of(slides));
+    // Echo : le backend renvoie les slides tels qu'envoyés (ordre/positions persistés).
+    portfolio.replaceStorySlides.and.callFake((_id: string, next: Slide[]) => of(next));
     await TestBed.configureTestingModule({
       imports: [StorySlideEditorComponent],
       providers: [
@@ -41,5 +42,33 @@ describe('StorySlideEditorComponent', () => {
   it('ajoute un slide et auto-save', () => {
     fixture.componentInstance.addSlide('quote');
     expect(portfolio.replaceStorySlides).toHaveBeenCalled();
+  });
+
+  describe('réordre clavier du rail (RGAA)', () => {
+    it('affiche des boutons monter/descendre par vignette, désactivés aux extrémités', () => {
+      const ups = fixture.nativeElement.querySelectorAll('.rail-up') as NodeListOf<HTMLButtonElement>;
+      const downs = fixture.nativeElement.querySelectorAll('.rail-down') as NodeListOf<HTMLButtonElement>;
+      expect(ups.length).toBe(2);
+      expect(downs.length).toBe(2);
+      // Premier slide : pas de "monter" possible ; dernier slide : pas de "descendre".
+      expect(ups[0].disabled).toBeTrue();
+      expect(downs[downs.length - 1].disabled).toBeTrue();
+    });
+
+    it('cliquer ↑ sur le 2e slide le remonte et persiste via replaceStorySlides', () => {
+      portfolio.replaceStorySlides.calls.reset();
+      const ups = fixture.nativeElement.querySelectorAll('.rail-up') as NodeListOf<HTMLButtonElement>;
+      ups[1].click();
+      fixture.detectChanges();
+
+      // Ordre local : la quote (s2) est désormais en première position.
+      const order = fixture.componentInstance.slides().map(s => s.id);
+      expect(order).toEqual(['s2', 's1']);
+      // Auto-save déclenché avec le nouvel ordre.
+      expect(portfolio.replaceStorySlides).toHaveBeenCalled();
+      const savedArg = portfolio.replaceStorySlides.calls.mostRecent().args[1] as Slide[];
+      expect(savedArg.map(s => s.id)).toEqual(['s2', 's1']);
+      expect(savedArg.map(s => s.position)).toEqual([0, 1]);
+    });
   });
 });

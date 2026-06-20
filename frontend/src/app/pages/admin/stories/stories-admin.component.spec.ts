@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { StoriesAdminComponent } from './stories-admin.component';
 import { PortfolioService } from '../../../services/portfolio.service';
@@ -15,15 +16,29 @@ describe('StoriesAdminComponent', () => {
     { id: 'st-2', ownerKind: 'exhibition', ownerId: 'e-1', ownerTitle: 'Lumen', title: 'Story B', coverImage: '/d.jpg', coverCrop: null, slug: 'b', position: 0, slideCount: 0, sliders: [] },
   ];
 
-  beforeEach(async () => {
-    portfolio = jasmine.createSpyObj('PortfolioService', ['getStoriesForManagement', 'updateStory']);
+  /** Construit le composant avec des query params optionnels. */
+  async function setup(queryParams: Record<string, string> = {}): Promise<void> {
+    TestBed.resetTestingModule();
+    portfolio = jasmine.createSpyObj('PortfolioService',
+      ['getStoriesForManagement', 'updateStory', 'getAllFurniture', 'getAllExhibitions', 'getAdminSliders']);
     portfolio.getStoriesForManagement.and.returnValue(of(rows));
+    portfolio.getAllFurniture.and.returnValue(of([]));
+    portfolio.getAllExhibitions.and.returnValue(of([]));
+    portfolio.getAdminSliders.and.returnValue(of([]));
     await TestBed.configureTestingModule({
       imports: [StoriesAdminComponent],
-      providers: [provideHttpClient(), provideRouter([]), { provide: PortfolioService, useValue: portfolio }],
+      providers: [
+        provideHttpClient(), provideRouter([]),
+        { provide: PortfolioService, useValue: portfolio },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } } },
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(StoriesAdminComponent);
     fixture.detectChanges();
+  }
+
+  beforeEach(async () => {
+    await setup();
   });
 
   function rowsEls(): HTMLElement[] { return Array.from(fixture.nativeElement.querySelectorAll('.story-row')); }
@@ -41,6 +56,36 @@ describe('StoriesAdminComponent', () => {
     const input = fixture.nativeElement.querySelector('input[aria-label="Rechercher une story"]') as HTMLInputElement;
     input.value = 'Story A'; input.dispatchEvent(new Event('input')); fixture.detectChanges();
     expect(rowsEls().length).toBe(1);
+  });
+
+  describe('contexte owner depuis la fiche (query params)', () => {
+    it('queryParam ownerKind=furniture pré-filtre la liste', async () => {
+      await setup({ ownerKind: 'furniture' });
+      // Seule la story furniture reste affichée.
+      expect(rowsEls().length).toBe(1);
+      expect(fixture.nativeElement.textContent).toContain('Story A');
+      expect(fixture.nativeElement.textContent).not.toContain('Story B');
+    });
+
+    it('ownerKind + ownerId expose presetOwner et le passe à la modale', async () => {
+      await setup({ ownerKind: 'furniture', ownerId: 'f-1' });
+      const preset = (fixture.componentInstance as any).presetOwner();
+      expect(preset).toEqual({ kind: 'furniture', id: 'f-1' });
+
+      // Ouvrir la modale de création et vérifier que l'input presetOwner est bindé.
+      (fixture.componentInstance as any).createOpen.set(true);
+      fixture.detectChanges();
+      const modal = fixture.debugElement.query(
+        (de: any) => de.name === 'app-story-create-modal',
+      );
+      expect(modal).not.toBeNull();
+      expect(modal.componentInstance.presetOwner).toEqual({ kind: 'furniture', id: 'f-1' });
+    });
+
+    it('sans query param : pas de pré-filtre ni de presetOwner', () => {
+      expect(rowsEls().length).toBe(2);
+      expect((fixture.componentInstance as any).presetOwner()).toBeNull();
+    });
   });
 
   describe('édition du cover', () => {

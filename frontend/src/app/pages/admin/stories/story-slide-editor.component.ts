@@ -77,6 +77,20 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
                 </span>
                 <span class="rail-type">{{ typeLabel(s.type) }}</span>
               </button>
+              <div class="rail-move">
+                <button
+                  type="button"
+                  class="rail-up"
+                  [attr.aria-label]="'Monter le slide ' + (i + 1)"
+                  [disabled]="i === 0"
+                  (click)="moveSlideUp(i)">↑</button>
+                <button
+                  type="button"
+                  class="rail-down"
+                  [attr.aria-label]="'Descendre le slide ' + (i + 1)"
+                  [disabled]="i === slides().length - 1"
+                  (click)="moveSlideDown(i)">↓</button>
+              </div>
               <button
                 type="button"
                 class="rail-del"
@@ -224,6 +238,19 @@ import { StoryViewerComponent, StoryItem } from '../../../components/story-viewe
     .rail-del:hover { color: var(--color-accent); border-color: var(--color-accent); }
     .rail-item.reorder-dragging { opacity: 0.5; }
 
+    .rail-move {
+      position: absolute; top: 2px; right: 28px;
+      display: flex; gap: 2px;
+    }
+    .rail-move button {
+      background: var(--color-bg); border: 1px solid var(--color-line);
+      cursor: pointer; padding: 0 5px; line-height: 1.4; font-size: 0.8rem;
+      color: var(--color-ink);
+    }
+    .rail-move button:hover:not(:disabled) { border-color: var(--color-ink); }
+    .rail-move button:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 1px; }
+    .rail-move button:disabled { opacity: 0.35; cursor: not-allowed; }
+
     .add-bar { display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px dashed var(--color-line); padding-top: 12px; }
     .add-bar button {
       background: var(--color-bg); border: 1px solid var(--color-ink); cursor: pointer;
@@ -359,6 +386,30 @@ export class StorySlideEditorComponent {
     this.commit(next);
     this.selectedIndex.set(0);
     this.liveMessage.set('Slides réordonnés.');
+  }
+
+  /**
+   * Repli clavier du réordonnancement (RGAA) : échange le slide `index` avec son
+   * voisin et auto-save via le même `commit` que le drag. Garde la sélection sur
+   * le slide déplacé et annonce le déplacement en `aria-live`.
+   */
+  private swapSlides(index: number, target: number): void {
+    const cur = this.slides();
+    if (index < 0 || target < 0 || index >= cur.length || target >= cur.length) return;
+    const next = [...cur];
+    [next[index], next[target]] = [next[target], next[index]];
+    const repositioned = next.map((s, i) => ({ ...s, position: i }));
+    this.commit(repositioned);
+    this.selectedIndex.set(target);
+    this.liveMessage.set(`Slide déplacé en position ${target + 1}.`);
+  }
+
+  protected moveSlideUp(index: number): void {
+    this.swapSlides(index, index - 1);
+  }
+
+  protected moveSlideDown(index: number): void {
+    this.swapSlides(index, index + 1);
   }
 
   /** Met à jour un slide ciblé par id et auto-save. */

@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { ToastService } from '../shared/toast.service';
 import { StoryAdminView } from '../../../models/story.model';
@@ -107,6 +107,7 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
 
     @if (createOpen()) {
       <app-story-create-modal
+        [presetOwner]="presetOwner()"
         (created)="onStoryCreated($event)"
         (cancel)="createOpen.set(false)" />
     }
@@ -167,6 +168,7 @@ export class StoriesAdminComponent {
   private readonly portfolio = inject(PortfolioService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly rows = signal<StoryAdminView[]>([]);
   protected readonly ownerFilter = signal<'all' | 'furniture' | 'exhibition'>('all');
@@ -174,6 +176,13 @@ export class StoriesAdminComponent {
   // Câblés en T5 (création) et T6 (édition cover) ; déclarés ici pour les boutons.
   protected readonly createOpen = signal(false);
   protected readonly coverEdit = signal<StoryAdminView | null>(null);
+
+  /**
+   * Owner pré-sélectionné transmis par le lien « Gérer les stories » des fiches
+   * via les query params `ownerKind`/`ownerId`. Passé tel quel à la modale de
+   * création pour pré-sélectionner le propriétaire.
+   */
+  protected readonly presetOwner = signal<{ kind: 'furniture' | 'exhibition'; id: string } | null>(null);
 
   // Contrôle et signal pour le panneau d'édition du cover (Task 6).
   protected readonly coverCtrl = new FormControl('');
@@ -188,6 +197,16 @@ export class StoriesAdminComponent {
   });
 
   constructor() {
+    // Contexte owner transmis depuis une fiche : pré-filtre la liste et arme la modale.
+    const qp = this.route.snapshot.queryParamMap;
+    const ownerKind = qp.get('ownerKind');
+    const ownerId = qp.get('ownerId');
+    if (ownerKind === 'furniture' || ownerKind === 'exhibition') {
+      this.ownerFilter.set(ownerKind);
+      if (ownerId) {
+        this.presetOwner.set({ kind: ownerKind, id: ownerId });
+      }
+    }
     this.reload();
   }
 
