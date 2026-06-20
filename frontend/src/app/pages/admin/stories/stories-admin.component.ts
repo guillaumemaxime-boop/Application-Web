@@ -1,15 +1,16 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { ToastService } from '../shared/toast.service';
 import { StoryAdminView } from '../../../models/story.model';
 import { CroppedImageCanvasComponent } from '../shared/cropped-image-canvas.component';
+import { StoryCreateModalComponent } from './story-create-modal.component';
 
 @Component({
   selector: 'app-stories-admin',
   standalone: true,
-  imports: [FormsModule, RouterLink, CroppedImageCanvasComponent],
+  imports: [FormsModule, RouterLink, CroppedImageCanvasComponent, StoryCreateModalComponent],
   template: `
     <header class="page-head">
       <h2>Stories</h2>
@@ -84,6 +85,12 @@ import { CroppedImageCanvasComponent } from '../shared/cropped-image-canvas.comp
         </li>
       }
     </ul>
+
+    @if (createOpen()) {
+      <app-story-create-modal
+        (created)="onStoryCreated($event)"
+        (cancel)="createOpen.set(false)" />
+    }
   `,
   styles: [`
     .page-head { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
@@ -133,6 +140,7 @@ import { CroppedImageCanvasComponent } from '../shared/cropped-image-canvas.comp
 export class StoriesAdminComponent {
   private readonly portfolio = inject(PortfolioService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   protected readonly rows = signal<StoryAdminView[]>([]);
   protected readonly ownerFilter = signal<'all' | 'furniture' | 'exhibition'>('all');
@@ -155,6 +163,12 @@ export class StoriesAdminComponent {
 
   protected reload(): void {
     this.portfolio.getStoriesForManagement().subscribe(r => this.rows.set(r));
+  }
+
+  /** Story créée via la modale : on ferme et on bascule vers l'éditeur de slides. */
+  protected onStoryCreated(id: string): void {
+    this.createOpen.set(false);
+    this.router.navigate(['/admin/stories', id]);
   }
 
   protected onDelete(row: StoryAdminView): void {
