@@ -28,7 +28,9 @@ public class AdminStoriesController {
 
     @GetMapping("/all")
     public List<Story> all() {
-        return stories.findAll();
+        // Seules les stories ayant au moins un slide sont proposables a un slider
+        // (une story sans slide n'apparait pas sur le site).
+        return stories.findAllWithSlides();
     }
 
     @PostMapping

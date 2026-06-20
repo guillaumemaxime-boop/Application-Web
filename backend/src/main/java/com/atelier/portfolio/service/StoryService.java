@@ -22,8 +22,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -50,6 +52,19 @@ public class StoryService {
 
     public List<Story> findAll() {
         return storyRepo.findAll().stream().map(StoryService::toDto).toList();
+    }
+
+    /**
+     * Stories ayant au moins un slide. Utilise pour la liste « Disponibles » de
+     * composition d'un slider : une story sans slide n'apparait pas sur le site,
+     * donc on ne propose pas de l'ajouter a un slider.
+     */
+    public List<Story> findAllWithSlides() {
+        Set<String> withSlides = new HashSet<>(slideRepo.findDistinctStoryIdsWithSlides());
+        return storyRepo.findAll().stream()
+                .filter(e -> withSlides.contains(e.getId()))
+                .map(StoryService::toDto)
+                .toList();
     }
 
     /**

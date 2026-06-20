@@ -605,7 +605,7 @@ Zones reconnues : `news.primary`, `news.secondary`, `news.tertiary`. La `zoneKey
 | Méthode | Endpoint | Description | Réponse |
 |---------|----------|-------------|---------|
 | GET | `/api/admin/stories?ownerKind=&ownerId=` | Stories d'un owner | `Story[]` 200 |
-| GET | `/api/admin/stories/all` | Toutes les stories (page Sliders) | `Story[]` 200 |
+| GET | `/api/admin/stories/all` | Stories **ayant au moins un slide** (liste « Disponibles » de composition d'un slider — `findAllWithSlides()`) | `Story[]` 200 |
 | POST | `/api/admin/stories` | Créer une story | `Story` 200 |
 | PUT | `/api/admin/stories/{id}` | Modifier une story | `Story` 200 |
 | PUT | `/api/admin/stories/{id}/position` | Mettre à jour la position | 204 |
@@ -624,6 +624,8 @@ Zones reconnues : `news.primary`, `news.secondary`, `news.tertiary`. La `zoneKey
 | PUT | `/api/admin/sliders/{id}/stories` | Remplacer la liste des stories (max 50) | `NewsSlider` 200 / 400 |
 
 **Validation :** `storyIds.size() > 50` → 400. `zoneKey` invalide → 400 (`IllegalArgumentException` traduit par `@ExceptionHandler`).
+
+**Composition d'un slider — `<app-slider-composition-editor>`** : modale partagée (form-side `SlidersComponent` + preview `AccueilComponent`) refondue en **drag & drop 2 colonnes** via `@angular/cdk/drag-drop` (`cdkDropListGroup`/`cdkDropList`/`cdkDrag`) — glisser pour ajouter (Disponibles→Composition), retirer ou réordonner ; le sens est déduit de l'appartenance à la composition (pas de l'`id` du conteneur CDK). Équivalents **clavier** conservés (boutons « Ajouter », ↑/↓, « Retirer ») + région `aria-live`. Seule utilisation de `@angular/cdk/drag-drop` du projet (le reste reste sur la directive maison `appReorderable`). Le focus est restitué au déclencheur à la fermeture (deux consommateurs).
 
 ### 4.7 Home admin — `/api/admin/home` (JWT requis)
 

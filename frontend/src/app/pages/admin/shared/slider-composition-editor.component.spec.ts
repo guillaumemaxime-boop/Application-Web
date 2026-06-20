@@ -1,5 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { Story } from '../../../models/story.model';
 import { SliderCompositionEditorComponent } from './slider-composition-editor.component';
 
@@ -37,6 +39,22 @@ describe('SliderCompositionEditorComponent', () => {
   function available(): HTMLElement[] { return Array.from(fixture.nativeElement.querySelectorAll('.story-option')); }
   function pending(): HTMLElement[] { return Array.from(fixture.nativeElement.querySelectorAll('.comp-item')); }
   function byText(els: HTMLElement[], txt: string): HTMLElement | undefined { return els.find(e => e.textContent?.includes(txt)); }
+  function editor(): SliderCompositionEditorComponent {
+    return fixture.debugElement.query(By.directive(SliderCompositionEditorComponent)).componentInstance;
+  }
+  // Construit un event CDK minimal pour onDrop. Quand from === to, les deux
+  // conteneurs sont la MÊME référence (onDrop discrimine via `===`, pas via l'id).
+  function dropEvent(opts: { from: string; to: string; movedId: string; previousIndex: number; currentIndex: number }): CdkDragDrop<string[]> {
+    const prev = { id: opts.from };
+    const cont = opts.from === opts.to ? prev : { id: opts.to };
+    return {
+      previousContainer: prev,
+      container: cont,
+      previousIndex: opts.previousIndex,
+      currentIndex: opts.currentIndex,
+      item: { data: opts.movedId },
+    } as unknown as CdkDragDrop<string[]>;
+  }
 
   it('liste les stories disponibles en excluant celles déjà dans la composition', () => {
     const labels = available().map(e => e.textContent ?? '');
@@ -50,27 +68,55 @@ describe('SliderCompositionEditorComponent', () => {
     expect(pending()[0].textContent).toContain('Story 1');
   });
 
-  it('ajout : sélectionner puis Ajouter déplace la story vers la composition', () => {
-    const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    opt2.click();
-    fixture.detectChanges();        // ← flush le binding [disabled] avant de cliquer Ajouter
-    (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
+  it('filtre : taper dans la recherche restreint les stories disponibles', () => {
+    const input = fixture.nativeElement.querySelector('input[aria-label="Filtrer les stories"]') as HTMLInputElement;
+    input.value = 'Story 3';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(available().length).toBe(1);
+    expect(available()[0].textContent).toContain('Story 3');
+  });
+
+  it('ajout clavier : le bouton « Ajouter » d’une story disponible la déplace dans la composition', () => {
+    const addBtn = byText(available(), 'Story 2')!.querySelector('.story-add') as HTMLButtonElement;
+    addBtn.click();
     fixture.detectChanges();
     expect(pending().map(e => e.textContent).join()).toContain('Story 2');
+    // disparaît des disponibles
+    expect(byText(available(), 'Story 2')).toBeUndefined();
   });
 
   it('retrait : retire une story de la composition', () => {
-    const removeBtn = pending()[0].querySelector('.comp-remove') as HTMLButtonElement;
-    removeBtn.click();
+    (pending()[0].querySelector('.comp-remove') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(pending().length).toBe(0);
   });
 
+  it('drop available→composition : insère la story à l’index de drop', () => {
+    editor().onDrop(dropEvent({ from: 'available', to: 'composition', movedId: 's2', previousIndex: 0, currentIndex: 0 }));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.comp-save') as HTMLButtonElement).click();
+    expect(host.saved).toEqual(['s2', 's1']);
+  });
+
+  it('drop composition→available : retire la story', () => {
+    editor().onDrop(dropEvent({ from: 'composition', to: 'available', movedId: 's1', previousIndex: 0, currentIndex: 0 }));
+    fixture.detectChanges();
+    expect(pending().length).toBe(0);
+  });
+
+  it('drop intra-composition : réordonne', () => {
+    // compo = [s1, s2]
+    (byText(available(), 'Story 2')!.querySelector('.story-add') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    editor().onDrop(dropEvent({ from: 'composition', to: 'composition', movedId: 's2', previousIndex: 1, currentIndex: 0 }));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.comp-save') as HTMLButtonElement).click();
+    expect(host.saved).toEqual(['s2', 's1']);
+  });
+
   it('save émet la liste ordonnée courante', () => {
-    const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    opt2.click();
-    fixture.detectChanges();        // ← flush le binding [disabled] avant de cliquer Ajouter
-    (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
+    (byText(available(), 'Story 2')!.querySelector('.story-add') as HTMLButtonElement).click();
     fixture.detectChanges();
     (fixture.nativeElement.querySelector('.comp-save') as HTMLButtonElement).click();
     expect(host.saved).toEqual(['s1', 's2']);
@@ -81,27 +127,19 @@ describe('SliderCompositionEditorComponent', () => {
     expect(host.cancelled).toBeTrue();
   });
 
-  it('moveUp réordonne la composition', () => {
-    const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    opt2.click();
-    fixture.detectChanges();        // ← flush le binding [disabled] avant de cliquer Ajouter
-    (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
+  it('moveUp réordonne la composition (repli clavier)', () => {
+    (byText(available(), 'Story 2')!.querySelector('.story-add') as HTMLButtonElement).click();
     fixture.detectChanges();
-    const up = pending()[1].querySelector('.comp-up') as HTMLButtonElement;
-    up.click();
+    (pending()[1].querySelector('.comp-up') as HTMLButtonElement).click();
     fixture.detectChanges();
     (fixture.nativeElement.querySelector('.comp-save') as HTMLButtonElement).click();
     expect(host.saved).toEqual(['s2', 's1']);
   });
 
-  it('moveDown réordonne la composition', () => {
-    const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    opt2.click();
+  it('moveDown réordonne la composition (repli clavier)', () => {
+    (byText(available(), 'Story 2')!.querySelector('.story-add') as HTMLButtonElement).click();
     fixture.detectChanges();
-    (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    const down = pending()[0].querySelector('.comp-down') as HTMLButtonElement;
-    down.click();
+    (pending()[0].querySelector('.comp-down') as HTMLButtonElement).click();
     fixture.detectChanges();
     (fixture.nativeElement.querySelector('.comp-save') as HTMLButtonElement).click();
     expect(host.saved).toEqual(['s2', 's1']);
@@ -128,18 +166,17 @@ describe('SliderCompositionEditorComponent', () => {
     expect(down.getAttribute('aria-label')).toContain('Descendre');
   });
 
-  it('ne réinitialise PAS la composition quand storyIds change sans changement d\'id (modifs préservées)', () => {
-    // l'utilisateur ajoute Story 2 à la compo
-    const opt2 = byText(available(), 'Story 2')!.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    opt2.click();
-    fixture.detectChanges();
-    (fixture.nativeElement.querySelector('.add-selected') as HTMLButtonElement).click();
+  it('expose une région aria-live pour annoncer les changements', () => {
+    const live = fixture.nativeElement.querySelector('[aria-live]');
+    expect(live).toBeTruthy();
+  });
+
+  it('ne réinitialise PAS la composition quand storyIds change sans changement d\'id', () => {
+    (byText(available(), 'Story 2')!.querySelector('.story-add') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(pending().length).toBe(2);
-    // le parent rafraîchit storyIds (nouvelle référence) SANS changer le sliderId
     host.storyIds.set(['s1']);
     fixture.detectChanges();
-    // les modifs pendantes ne sont pas écrasées
     expect(pending().length).toBe(2);
     expect(pending().map(e => e.textContent).join()).toContain('Story 2');
   });

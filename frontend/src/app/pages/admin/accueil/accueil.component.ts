@@ -96,7 +96,7 @@ interface HomeAdminItem {
         [storyIds]="editingStoryIds()"
         [allStories]="allStories()"
         (save)="onSliderCompositionSave($event)"
-        (cancel)="editingSliderId.set(null)" />
+        (cancel)="closeComposition()" />
     }
   `,
   styles: [`
@@ -354,25 +354,36 @@ export class AccueilComponent {
     });
   }
 
+  /** Déclencheur de l'ouverture de la modale composition, pour restituer le
+   *  focus à la fermeture (RGAA 10.7 — cohérent avec SlidersComponent). */
+  private compositionTrigger: HTMLElement | null = null;
+
   protected onSliderCompositionRequested(id: string): void {
+    this.compositionTrigger = document.activeElement as HTMLElement | null;
     if (!this.storiesLoaded) {
       this.portfolio.getAllAdminStories().subscribe(s => { this.allStories.set(s); this.storiesLoaded = true; });
     }
     this.editingSliderId.set(id);
   }
 
+  /** Ferme la modale et restitue le focus au déclencheur. */
+  protected closeComposition(): void {
+    this.editingSliderId.set(null);
+    setTimeout(() => this.compositionTrigger?.focus(), 0);
+  }
+
   /** Échap ferme la modale de composition ouverte depuis le preview (cohérent
    *  avec le form-side SlidersComponent). No-op si aucune modale ouverte. */
   @HostListener('document:keydown.escape')
   protected onEscapeKey(): void {
-    if (this.editingSliderId()) this.editingSliderId.set(null);
+    if (this.editingSliderId()) this.closeComposition();
   }
 
   protected onSliderCompositionSave(storyIds: string[]): void {
     const id = this.editingSliderId();
     if (!id) return;
     this.portfolio.replaceSliderStories(id, storyIds).subscribe({
-      next: () => { this.toast.success('Composition enregistrée.'); this.editingSliderId.set(null); this.refreshSliders(); },
+      next: () => { this.toast.success('Composition enregistrée.'); this.closeComposition(); this.refreshSliders(); },
       error: () => this.toast.error('Erreur lors de l\'enregistrement de la composition.'),
     });
   }
