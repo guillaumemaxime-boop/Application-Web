@@ -56,7 +56,7 @@ import { Story } from '../../../models/story.model';
               }
               @for (storyId of pendingStoryIds(); track storyId; let i = $index) {
                 <li class="comp-item" cdkDrag [cdkDragData]="storyId">
-                  <span>{{ storyTitle(storyId) }}</span>
+                  <span>{{ storyTitle(storyId) }} @if (ownerLabelById(storyId)) {<small>({{ ownerLabelById(storyId) }})</small>}</span>
                   <button type="button" class="comp-up" (click)="moveUp(storyId)" [disabled]="i === 0"
                           [attr.aria-label]="'Monter ' + storyTitle(storyId) + ' dans l’ordre'">↑</button>
                   <button type="button" class="comp-down" (click)="moveDown(storyId)"
@@ -144,6 +144,12 @@ export class SliderCompositionEditorComponent {
 
   protected ownerLabel(story: Story): string {
     return this.ownerTitles[story.ownerId] ?? story.ownerId;
+  }
+
+  /** Libellé owner (titre mobilier/expo) d'une story de la composition, par id. */
+  protected ownerLabelById(id: string): string {
+    const story = this.allStories().find(s => s.id === id);
+    return story ? this.ownerLabel(story) : '';
   }
 
   /** Drag & drop : ajoute (available→composition), retire (composition→available)

@@ -194,6 +194,16 @@ describe('SliderCompositionEditorComponent', () => {
     expect(small?.textContent).toContain('f2');
   });
 
+  it('ownerTitles : la composition courante affiche aussi le titre de l\'owner', () => {
+    // s1 (dans la composition) a ownerId:'f1'
+    host.ownerTitles = { 'f1': 'Tabouret Aurore' };
+    fixture.detectChanges();
+    const compItem = pending()[0];
+    expect(compItem).toBeTruthy();
+    const small = compItem.querySelector('small');
+    expect(small?.textContent).toContain('Tabouret Aurore');
+  });
+
   it('ne réinitialise PAS la composition quand storyIds change sans changement d\'id', () => {
     (byText(available(), 'Story 2')!.querySelector('.story-add') as HTMLButtonElement).click();
     fixture.detectChanges();
