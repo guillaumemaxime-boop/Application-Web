@@ -226,6 +226,48 @@ class PhotoServiceTest {
         assertEquals(4, Files.size(gif));
     }
 
+    // --- variantes responsive (Phase 2a) ---
+
+    @Test
+    void store_ecrit_les_variantes_inferieures_a_la_source() throws IOException {
+        // Source 1600px (bruitee → reductions effectives) : variantes 400, 800, 1280 attendues.
+        byte[] big = makeJpegNoisy(1600, 1000);
+        MockMultipartFile file = new MockMultipartFile("file", "x.jpg", "image/jpeg", big);
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Photo photo = service.store(file);
+
+        String base = photo.filename().replace(".jpg", "");
+        assertTrue(Files.exists(tempDir.resolve(base + "-400.jpg")), "variante 400 ecrite");
+        assertTrue(Files.exists(tempDir.resolve(base + "-800.jpg")), "variante 800 ecrite");
+        assertTrue(Files.exists(tempDir.resolve(base + "-1280.jpg")), "variante 1280 ecrite");
+    }
+
+    @Test
+    void store_pas_de_variante_plus_large_que_la_source() throws IOException {
+        // Source 500px : seule 400 applicable (pas d'upscale vers 800/1280).
+        byte[] small = makeJpegNoisy(500, 400);
+        MockMultipartFile file = new MockMultipartFile("file", "x.jpg", "image/jpeg", small);
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Photo photo = service.store(file);
+
+        String base = photo.filename().replace(".jpg", "");
+        assertTrue(Files.exists(tempDir.resolve(base + "-400.jpg")), "variante 400 ecrite");
+        assertFalse(Files.exists(tempDir.resolve(base + "-800.jpg")), "pas de variante 800 (upscale)");
+    }
+
+    @Test
+    void deleteVariants_retire_les_variantes_sans_toucher_l_original() throws IOException {
+        Files.write(tempDir.resolve("u.jpg"), new byte[]{1});
+        Files.write(tempDir.resolve("u-400.jpg"), new byte[]{1});
+
+        ReflectionTestUtils.invokeMethod(service, "deleteVariants", "u.jpg");
+
+        assertFalse(Files.exists(tempDir.resolve("u-400.jpg")), "variante supprimee");
+        assertTrue(Files.exists(tempDir.resolve("u.jpg")), "deleteVariants ne touche pas l'original");
+    }
+
     private static byte[] makeJpegNoisy(int w, int h) throws IOException {
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         long seed = 42;

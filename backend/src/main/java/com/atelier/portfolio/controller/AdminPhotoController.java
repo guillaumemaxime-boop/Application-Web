@@ -64,4 +64,13 @@ public class AdminPhotoController {
     public ResponseEntity<PhotoService.OptimizeReport> optimizeAll() {
         return ResponseEntity.ok(service.optimizeAll());
     }
+
+    /**
+     * Migration one-shot : genere les variantes responsive manquantes pour toutes
+     * les photos deja uploadees. Idempotent : une variante deja presente est laissee.
+     */
+    @PostMapping("/variants")
+    public ResponseEntity<PhotoService.VariantReport> generateVariants() {
+        return ResponseEntity.ok(service.generateVariantsAll());
+    }
 }
