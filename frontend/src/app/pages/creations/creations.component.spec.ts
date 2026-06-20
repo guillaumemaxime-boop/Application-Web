@@ -262,6 +262,17 @@ describe('CreationsComponent', () => {
     expect(cmp.selectedYears().has(2024)).toBeFalse();
   });
 
+  it('ajoute un srcset responsive sur la vignette pour les URLs /api/photos/files', () => {
+    setup();
+    flushApi(
+      [{ slug: 'f1', title: 'F1', coverImage: '/api/photos/files/f1.jpg', category: 'Cat', year: 2024, tags: [] }],
+      [],
+    );
+    fixture.detectChanges();
+    const img = fixture.nativeElement.querySelector('.card .thumb img') as HTMLImageElement;
+    expect(img.getAttribute('srcset')).toContain('/api/photos/files/f1-400.jpg 400w');
+  });
+
   it('deep-link kind=all est accepté', () => {
     setup({ kind: 'all' });
     flushApi([], []);

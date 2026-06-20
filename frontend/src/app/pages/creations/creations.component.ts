@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../services/portfolio.service';
 import { CreationItem } from '../../models/creation.model';
+import { srcsetFor } from '../../utils/image-variant';
 
 type Kind = 'all' | 'furniture' | 'exhibition';
 
@@ -73,7 +74,10 @@ type Kind = 'all' | 'furniture' | 'exhibition';
             <a class="card" [routerLink]="item.href">
               @if (item.kind === 'exhibition') { <span class="badge">Exposition</span> }
               <div class="thumb">
-                <img [src]="item.cover" [alt]="item.title" loading="lazy" />
+                <img [src]="item.cover"
+                     [attr.srcset]="srcsetFor(item.cover) || null"
+                     sizes="(max-width: 600px) 100vw, (max-width: 960px) 50vw, 400px"
+                     [alt]="item.title" loading="lazy" />
               </div>
               <div class="meta">
                 <span class="cat">{{ item.subtitle }}</span>
@@ -148,6 +152,8 @@ export class CreationsComponent implements OnInit {
   constructor() {
     document.title = 'Créations — Milo GUILLAUME Design';
   }
+
+  protected readonly srcsetFor = srcsetFor;
 
   protected readonly allItems = signal<CreationItem[]>([]);
   protected readonly availableTags = signal<string[]>([]);

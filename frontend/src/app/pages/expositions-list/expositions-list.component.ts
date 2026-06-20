@@ -7,6 +7,7 @@ import { Exhibition } from '../../models/exhibition.model';
 import { SiteContent } from '../../models/site-content.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
+import { srcsetFor } from '../../utils/image-variant';
 
 interface YearGroup {
   year: number;
@@ -39,7 +40,10 @@ interface YearGroup {
               @for (e of g.items; track e.slug) {
                 <a class="card" [routerLink]="['/expositions', e.slug]">
                   <div class="thumb">
-                    <img [src]="e.coverImage" [alt]="e.title" loading="lazy" />
+                    <img [src]="e.coverImage"
+                         [attr.srcset]="srcsetFor(e.coverImage) || null"
+                         sizes="(max-width: 720px) 100vw, 50vw"
+                         [alt]="e.title" loading="lazy" />
                   </div>
                   <div class="meta">
                     <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ e.venue }} · {{ e.city }}</span>
@@ -132,6 +136,8 @@ export class ExpositionsListComponent {
   protected readonly items = signal<Exhibition[]>([]);
   protected readonly loading = signal(true);
   protected readonly content = signal<SiteContent>({});
+
+  protected readonly srcsetFor = srcsetFor;
 
   protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));
   protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));
