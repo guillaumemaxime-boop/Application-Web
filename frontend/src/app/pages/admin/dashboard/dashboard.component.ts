@@ -18,6 +18,10 @@ import { RouterLink } from '@angular/router';
           <span class="action-icon">+</span>
           <span class="action-label">Nouvelle exposition</span>
         </a>
+        <a routerLink="/admin/stories" [queryParams]="{ new: 1 }" class="action-card">
+          <span class="action-icon">+</span>
+          <span class="action-label">Nouvelle story</span>
+        </a>
         <a routerLink="/admin/mediatheque" [queryParams]="{ import: 1 }" class="action-card">
           <span class="action-icon">↑</span>
           <span class="action-label">Importer photo</span>

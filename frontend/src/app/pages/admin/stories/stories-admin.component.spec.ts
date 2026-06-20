@@ -93,6 +93,13 @@ describe('StoriesAdminComponent', () => {
       expect(rowsEls().length).toBe(2);
       expect((fixture.componentInstance as any).presetOwner()).toBeNull();
     });
+
+    it('queryParam new=1 ouvre directement la modale de création (raccourci dashboard)', async () => {
+      await setup({ new: '1' });
+      expect((fixture.componentInstance as any).createOpen()).toBeTrue();
+      const modal = fixture.debugElement.query((de: any) => de.name === 'app-story-create-modal');
+      expect(modal).not.toBeNull();
+    });
   });
 
   describe('édition du cover', () => {
