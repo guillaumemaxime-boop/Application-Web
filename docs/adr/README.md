@@ -34,6 +34,11 @@ Référence : [adr.github.io](https://adr.github.io/) — format inspiré de [MA
 | 0012 | [Mesure d'audience par Umami auto-hébergé](0012-mesure-audience-umami.md) | Accepted  | 2026-05-17 |
 | 0013 | [Configuration SMTP en base, password chiffré au repos](0013-config-smtp-en-base-chiffree.md) | Superseded by 0014 | 2026-05-23 |
 | 0014 | [Bascule vers Resend pour l'envoi de mails transactionnels](0014-bascule-vers-resend.md) | Accepted | 2026-05-24 |
+| 0015 | [Stories multiples par owner + sliders d'actualités](0015-stories-multiples-et-sliders-d-actualites.md) | Accepted | 2026-06-07 |
+| 0016 | [Tags partagés mobilier/exposition et page publique /creations](0016-tags-mobilier-et-page-creations.md) | Accepted | 2026-06-07 |
+| 0017 | [Cropper.js pour l'outil de cadrage d'image admin](0017-cropperjs-image-crop-tool.md) | Accepted | 2026-06-07 |
+| 0018 | [Pattern page/view pour les fiches détail](0018-page-vs-view-pattern.md) | Accepted | 2026-06-08 |
+| 0019 | [Vidéos auto-hébergées (fiches + Studio)](0019-videos-auto-hebergees.md) | Accepted | 2026-06-19 |
 
 ## Créer un nouvel ADR
 

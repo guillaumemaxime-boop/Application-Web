@@ -73,7 +73,9 @@ The sync workflows move those floating tags to point at the SHA recorded in `ver
 
 ### Volumes persistants (backend)
 
-Le service backend écrit les photos uploadées (médiathèque admin) sur disque via `UPLOAD_DIR`. Le filesystem d'un conteneur Railway est **éphémère** : sans volume, les fichiers disparaissent à chaque redéploiement (les métadonnées en base Postgres survivent, mais les vignettes pointent vers des fichiers introuvables).
+Le service backend écrit les photos **et les vidéos** uploadées (médiathèque admin, vidéos de fiches/Studio) sur disque via `UPLOAD_DIR`. Le filesystem d'un conteneur Railway est **éphémère** : sans volume, les fichiers disparaissent à chaque redéploiement (les métadonnées en base Postgres survivent, mais les vignettes pointent vers des fichiers introuvables).
+
+> **Taille d'upload** : la limite est de **200 Mo**, alignée entre Spring (`spring.servlet.multipart.max-file-size`/`max-request-size`) et Nginx (`client_max_body_size` sur `location /api/`). Garder les deux en phase si la limite change. Les vidéos sont stockées **brutes** (pas de transcodage) — l'admin doit fournir un mp4 web-ready (H.264/AAC) ; prévoir la croissance du volume en conséquence.
 
 Pour chaque service backend Railway (`backend × {staging, production}`) :
 

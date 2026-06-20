@@ -122,6 +122,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Tags** : mots-clés thématiques associés à la pièce (cliquables → `/creations?tags=...`).
 - **Stories** : la story **n'est plus affichée sur la fiche publique** (depuis le sous-projet 6a). Les stories restent rattachées à la pièce (contexte d'auteur) et sont consommées publiquement **uniquement via les sliders d'actualités de l'accueil** (clic → viewer plein écran). Le crop du cover de story est appliqué dans le viewer et dans les cards de news-slider.
 - **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item affiche son crop si défini. **Clic sur une image → lightbox plein écran** (`<app-image-lightbox>`) : région cropée agrandie, navigation précédent/suivant (boutons ‹ › + flèches clavier, circulaire) + compteur, fermeture par Échap / ✕ / clic sur le fond. La cover hero n'ouvre pas la lightbox.
+- **Vidéo** (sous-projet vidéos, ADR-0019) : bloc « Vidéo » optionnel **sous la galerie**, affiché uniquement si une vidéo est définie. Lecteur HTML natif (`<video controls>`) auto-hébergé, avec poster (image d'affiche) et sous-titres `.vtt` optionnels. Une seule vidéo par fiche.
 - **CTA** : lien de contact par e-mail.
 - Gestion 404 si le slug n'existe pas.
 
@@ -137,6 +138,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Galerie** : grille CSS Grid. Chaque item occupe les colonnes et lignes définies par l'admin (`colSpan` 1–3, `rowSpan` 1–4) ; valeur par défaut 1×1. Chaque item est rendu via `<app-cropped-image-canvas>` (crop appliqué si défini). **Clic sur une image → lightbox plein écran** (`<app-image-lightbox>`, identique à la fiche mobilier : région cropée, navigation circulaire, Échap/✕/clic-fond).
 - **Tags** associés à l'exposition.
 - **Stories** : comme pour le mobilier, la story n'est plus affichée sur la fiche publique (sous-projet 6a) ; consommée via les sliders de l'accueil.
+- **Vidéo** (ADR-0019) : bloc « Vidéo » optionnel sous la galerie, identique à la fiche mobilier (lecteur natif auto-hébergé, poster + sous-titres `.vtt` optionnels, une seule vidéo).
 - Gestion 404 si le slug n'existe pas.
 
 #### Studio (`/studio`)
@@ -144,6 +146,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Biographie** du designer.
 - **Distinctions / Prix**.
 - **Presse** : mentions et publications.
+- **Vidéo** (ADR-0019) : bloc vidéo optionnel (sous le Processus), affiché si une vidéo Studio est définie (clés `studio.video.*`). Même lecteur natif que les fiches.
 - **Contact** : e-mail du studio, localisation.
 
 #### Administration (`/admin/**`)
@@ -167,6 +170,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Outil de cadrage de la cover** : bouton « Cadrer » à côté du sélecteur d'image. Ouvre une modale avec Cropper.js (sélecteur d'aspect ratio : Libre / 16:9 / 4:5 / 1:1, coordonnées live en %, boutons Réinitialiser / Annuler / Valider). Une vignette de prévisualisation affiche le rendu pixel-perfect du crop sous le champ.
 - **Galerie** : chaque vignette dispose d'un bouton ✂ ouvrant la même modale de cadrage. Un badge `✂ LxH` sur la vignette indique qu'un crop est défini.
 - **Bloc Stories** : liste des stories de la pièce, CRUD stories, éditeur de slides par story. Le cover de chaque story dispose également d'un bouton « Cadrer ». Depuis le sous-projet 6a, la gestion des stories est **aussi disponible dans le preview** (voir ci-après) ; le form-side est conservé (double accès). Les cases « Afficher le lien/le bouton de story » ont été retirées du formulaire (la story n'est plus rendue sur la fiche publique).
+- **Bloc Vidéo** (ADR-0019) : dans le preview, sous la galerie, composant `<app-video-field>` pour uploader la vidéo (`.mp4`/`.webm` ≤ 200 Mo), un poster (image) et des sous-titres (`.vtt`), ou la retirer. La vidéo est persistée avec la fiche (`video_url`/`video_poster`/`video_captions`).
 - **Preview WYSIWYG** (sous-projet 2/4) : voir section dédiée ci-après.
 
 **Page Expositions (`/admin/expositions`)** :
@@ -176,6 +180,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Outil de cadrage de la cover** : identique à la page Mobilier.
 - **Galerie** : même comportement que Mobilier (bouton ✂ par vignette, badge crop).
 - **Bloc Stories** : idem mobilier, avec cadrage du cover de story. Gestion aussi disponible dans le preview (sous-projet 6a) ; cases « Afficher le lien/le bouton de story » retirées.
+- **Bloc Vidéo** (ADR-0019) : idem mobilier (`<app-video-field>` dans le preview, vidéo + poster + sous-titres).
 - **Preview WYSIWYG** (sous-projet 3/4) : voir section dédiée ci-après.
 
 **Page Navigation (`/admin/navigation`)** :
