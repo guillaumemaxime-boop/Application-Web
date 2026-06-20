@@ -32,7 +32,7 @@
 
 | Couche | Technologie | Version |
 |--------|-------------|---------|
-| Backend | Spring Boot | 4.0.0 |
+| Backend | Spring Boot | 4.1.0 |
 | Langage backend | Java (Eclipse Temurin) | 25 |
 | Build backend | Maven | 3.9 |
 | Frontend | Angular (standalone + signals) | 21 |
@@ -81,7 +81,7 @@
                          │ HTTP (réseau Docker interne)
                          ▼
 ┌──────────────────────────────────────────────────────────┐
-│               Spring Boot 4.0 — port 8080                │
+│               Spring Boot 4.1 — port 8080                │
 │  • API REST JSON                                         │
 │  • CORS autorisé : localhost:4200, localhost, 127.0.0.1, 127.0.0.1:4200             │
 │  • Liquibase (migrations au démarrage)                   │

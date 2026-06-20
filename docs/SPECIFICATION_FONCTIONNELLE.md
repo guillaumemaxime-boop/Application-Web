@@ -934,7 +934,7 @@ Navigateur
 Nginx 1.27 (:4200 / :80)
     │ /api/* reverse proxy
     ▼
-Spring Boot 4.0 (:8080)
+Spring Boot 4.1 (:8080)
     │ JDBC / JPA + Liquibase
     ▼
 PostgreSQL 16 (:5432)
