@@ -1,14 +1,10 @@
 import { Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
-import { ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Exhibition } from '../../../models/exhibition.model';
-import { Story } from '../../../models/story.model';
-import { Slide } from '../../../models/slide.model';
-import { Photo } from '../../../models/photo.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
-import { SlidesEditorComponent } from '../shared/slides-editor.component';
 import { GalleryEditorComponent } from '../shared/gallery-editor.component';
 import { ImageFieldComponent } from '../shared/image-field.component';
 import { TagInputComponent } from '../shared/tag-input.component';
@@ -16,18 +12,14 @@ import { ToastService } from '../shared/toast.service';
 import { GalleryItem } from '../../../models/gallery-item.model';
 import { Crop } from '../../../models/crop.model';
 import { ExhibitionPreviewComponent } from './preview/exhibition-preview.component';
-import { PhotoPickerComponent } from '../shared/photo-picker.component';
-import { ImageCropPickerComponent } from '../shared/image-crop-picker.component';
 import { AdminPreviewShellComponent, ShellPreviewDirective } from '../shared/admin-preview-shell.component';
 import { confirmIfDirty, createFieldFocus, createGalleryPreviewHandlers, createTextFieldEditHandler, createUndoHistory } from '../shared/preview-page-helpers';
 import { EditableExhibitionField } from '../../../components/exhibition-detail-view/exhibition-detail-view.component';
-import { StoryViewerComponent, StoryItem } from '../../../components/story-viewer/story-viewer.component';
-import { enrichSlides } from '../../../utils/display-slides';
 
 @Component({
   selector: 'app-expositions',
   standalone: true,
-  imports: [ReactiveFormsModule, ReorderableDirective, SlidesEditorComponent, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent, PhotoPickerComponent, AdminPreviewShellComponent, ShellPreviewDirective, StoryViewerComponent, ImageCropPickerComponent],
+  imports: [ReactiveFormsModule, RouterLink, ReorderableDirective, GalleryEditorComponent, ImageFieldComponent, TagInputComponent, ExhibitionPreviewComponent, AdminPreviewShellComponent, ShellPreviewDirective],
   template: `
     <div class="grid-admin">
       <aside class="list" [attr.inert]="previewFullscreenActive() ? '' : null">
@@ -63,7 +55,7 @@ import { enrichSlides } from '../../../utils/display-slides';
         [showSave]="true"
         [saveDisabled]="exhibitionForm.invalid"
         [saving]="saving()"
-        [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen() || replacingImageSlideId() !== null || croppingImageSlideId() !== null"
+        [formModalOpen]="coverField.modalOpen() || galleryEditor.modalOpen()"
         (save)="saveExhibition()"
         (fullscreenChange)="previewFullscreenActive.set($event)"
         [historyEnabled]="true"
@@ -114,47 +106,16 @@ import { enrichSlides } from '../../../utils/display-slides';
           <label><span>Description courte</span><textarea rows="2" id="field-shortDescription" formControlName="shortDescription"></textarea></label>
           <label><span>Description longue</span><textarea rows="5" id="field-description" formControlName="description"></textarea></label>
 
-          @if (editingExhibitionId()) {
+          @if (editingExhibitionId(); as eid) {
             <section class="stories-block">
               <header class="stories-head">
                 <h3>Stories</h3>
-                <button type="button" class="btn-link" (click)="newStory()">+ Nouvelle story</button>
               </header>
-              @if (currentStories().length === 0) {
-                <p class="empty">Aucune story pour cette exposition.</p>
-              }
-              @for (story of currentStories(); track story.id; let i = $index) {
-                <article class="story-item" [class.active]="editingStoryId() === story.id">
-                  <img [src]="story.coverImage" alt="" class="story-cover" />
-                  <span class="story-title">{{ story.title }}</span>
-                  <div class="story-actions">
-                    <button type="button" class="reorder-btn" (click)="moveStoryUp(story)" [disabled]="i === 0" aria-label="Monter la story">↑</button>
-                    <button type="button" class="reorder-btn" (click)="moveStoryDown(story)" [disabled]="i === currentStories().length - 1" aria-label="Descendre la story">↓</button>
-                    <button type="button" class="btn-mini" (click)="editStory(story)">Éditer slides</button>
-                    <button type="button" class="btn-mini" (click)="openCoverEditor(story)">Cover</button>
-                    <button type="button" class="btn-mini" (click)="renameStory(story)">Renommer</button>
-                    <button type="button" class="btn-mini danger" (click)="deleteStory(story)">Supprimer</button>
-                  </div>
-                </article>
-                @if (editingCoverStoryId() === story.id) {
-                  <div class="cover-editor">
-                    <app-image-field label="Image de couverture" [formControl]="coverEditCtrl"
-                      [cropEnabled]="true"
-                      [cropValue]="editingStoryCoverCrop()"
-                      (cropChange)="onStoryCoverCropChange($event)" />
-                    <div class="cover-editor-actions">
-                      <button type="button" class="btn-mini" (click)="cancelCoverEdit()">Annuler</button>
-                      <button type="button" class="btn-mini primary" (click)="saveCover(story)">Enregistrer</button>
-                    </div>
-                  </div>
-                }
-              }
+              <p class="stories-hint">Les stories de cette exposition se gèrent désormais sur la page dédiée.</p>
+              <a class="btn-link" routerLink="/admin/stories" [queryParams]="{ ownerKind: 'exhibition', ownerId: eid }">Gérer les stories →</a>
             </section>
-            @if (editingStoryId(); as sid) {
-              <app-slides-editor [storyId]="sid" [ownerSlug]="editingExhibitionSlug()" />
-            }
           } @else {
-            <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir éditer ses slides.</p>
+            <p class="slides-hint">Enregistre l'exposition une première fois pour pouvoir gérer ses stories.</p>
           }
 
           <div class="actions">
@@ -170,10 +131,6 @@ import { enrichSlides } from '../../../utils/display-slides';
           <app-exhibition-preview
             [form]="exhibitionForm"
             [gallery]="exhibitionGallery.asReadonly()"
-            [story]="currentStories()[0] ?? null"
-            [stories]="currentStories()"
-            [activeStoryId]="activeStoryId()"
-            [displaySlides]="previewDisplaySlides()"
             [tagSuggestions]="allTags()"
             (tagsChange)="onPreviewTagsChange($event)"
             (coverEdit)="onPreviewCoverEdit($event)"
@@ -184,44 +141,12 @@ import { enrichSlides } from '../../../utils/display-slides';
             (textFieldClick)="focusField($event)"
             (textFieldEdit)="onPreviewTextFieldEdit($event)"
             (dateFieldEdit)="onPreviewDateFieldEdit($event)"
-            (storySelect)="onPreviewStorySelect($event)"
-            (storyCreate)="onPreviewStoryCreate()"
-            (storyRename)="onPreviewStoryRename($event)"
-            (storyDelete)="onPreviewStoryDelete($event)"
-            (storyMove)="onPreviewStoryMove($event)"
-            (storyCoverEdit)="onPreviewStoryCoverEdit($event)"
-            (storySlidesChange)="onStorySlidesChange($event)"
-            (storyImageReplaceRequest)="onStoryImageReplaceRequest($event)"
-            (storyImageCropRequest)="onStoryImageCropRequest($event)"
             (videoUrlChange)="onPreviewVideoChange('videoUrl', $event)"
             (videoPosterChange)="onPreviewVideoChange('videoPoster', $event)"
-            (videoCaptionsChange)="onPreviewVideoChange('videoCaptions', $event)"
-            (viewerOpen)="onPreviewViewerOpen($event)" />
+            (videoCaptionsChange)="onPreviewVideoChange('videoCaptions', $event)" />
         </ng-template>
       </app-admin-preview-shell>
     </div>
-
-    @if (storyViewerQueue().length > 0) {
-      <app-story-viewer [queue]="storyViewerQueue()" (closed)="onStoryViewerClosed()" />
-    }
-
-    @if (slidesSaveState() !== 'idle') {
-      <div class="slides-save-state" aria-live="polite">
-        @switch (slidesSaveState()) {
-          @case ('saving') { Enregistrement… }
-          @case ('saved') { Enregistré ✓ }
-          @case ('error') { Erreur d'enregistrement }
-        }
-      </div>
-    }
-    @if (replacingImageSlideId()) {
-      <app-photo-picker target="cover" [photos]="pickerPhotos()"
-        (selected)="onSlideImageSelected($event)" (closed)="onSlidePickerClosed()" />
-    }
-    @if (croppingImageSlide(); as ctx) {
-      <app-image-crop-picker [imageUrl]="ctx.src" [initialCrop]="ctx.crop"
-        (validated)="onSlideCropValidated($event)" (cancelled)="onSlideCropCancelled()" />
-    }
   `,
   styles: [`
     .grid-admin { display: grid; grid-template-columns: 320px 1fr; gap: 48px; align-items: start; }
@@ -255,30 +180,15 @@ import { enrichSlides } from '../../../utils/display-slides';
     .stories-block { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--color-line); background: var(--color-bg-alt); }
     .stories-head { display: flex; align-items: center; justify-content: space-between; }
     .stories-head h3 { margin: 0; font-size: 1rem; letter-spacing: 0.04em; }
-    .stories-block .empty { margin: 0; color: var(--color-mute); font-size: 0.85rem; font-style: italic; }
-    .cover-editor { padding: 12px; margin: 4px 0 12px 84px; background: var(--color-bg); border: 1px solid var(--color-line); display: flex; flex-direction: column; gap: 12px; }
-    .cover-editor-actions { display: flex; justify-content: flex-end; gap: 8px; }
-    .btn-mini.primary { background: var(--color-ink); color: var(--color-bg); border-color: var(--color-ink); }
-    .story-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: var(--color-bg); border: 1px solid var(--color-line); }
-    .story-item.active { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent) inset; }
-    .story-cover { width: 40px; height: 40px; object-fit: cover; flex-shrink: 0; border-radius: 50%; background: var(--color-bg-alt); }
-    .story-title { flex: 1; font-size: 0.9rem; color: var(--color-ink); }
-    .story-actions { display: flex; align-items: center; gap: 6px; }
-    .btn-mini { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); padding: 4px 10px; font-size: 0.75rem; cursor: pointer; letter-spacing: 0.04em; text-transform: uppercase; }
-    .btn-mini:hover { color: var(--color-ink); border-color: var(--color-ink); }
-    .btn-mini.danger:hover { color: #b1532a; border-color: #b1532a; }
+    .stories-hint { margin: 0; color: var(--color-mute); font-size: 0.85rem; font-style: italic; }
     .form label.checkbox { flex-direction: row; align-items: center; gap: 10px; }
     .form label.checkbox > span { text-transform: none; letter-spacing: normal; font-size: 0.9rem; color: var(--color-ink); }
-    .reorder-btn { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink-soft); width: 28px; height: 28px; padding: 0; cursor: pointer; font-size: 0.9rem; line-height: 1; }
-    .reorder-btn:hover:not(:disabled) { color: var(--color-ink); border-color: var(--color-ink); }
-    .reorder-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .status { color: var(--color-mute); }
     @media (max-width: 960px) {
       .grid-admin { grid-template-columns: 1fr; }
       .list { position: static; max-height: none; }
       .row-2 { grid-template-columns: 1fr; }
     }
-    .slides-save-state { position: fixed; bottom: 16px; right: 16px; z-index: 1200; background: var(--color-ink); color: var(--color-bg); padding: 6px 14px; font-size: 0.8rem; border-radius: 4px; }
   `]
 })
 export class ExpositionsComponent {
@@ -298,23 +208,11 @@ export class ExpositionsComponent {
   protected readonly editingExhibitionId = signal<string | null>(null);
   readonly exhibitionGallery = signal<GalleryItem[]>([]);
   protected readonly allTags = signal<string[]>([]);
-  protected readonly currentStories = signal<Story[]>([]);
-  protected readonly editingStoryId = signal<string | null>(null);
-  protected readonly editingCoverStoryId = signal<string | null>(null);
-  protected readonly coverEditCtrl = new FormControl('');
-  protected readonly editingStoryCoverCrop = signal<Crop | null>(null);
-  protected readonly activeStoryId = signal<string | null>(null);
-  protected readonly activeStorySlides = signal<Slide[]>([]);
 
   protected readonly creatingExhibition = signal(false);
   protected readonly expoViewMode = signal<'form' | 'preview'>('form');
   /** Reflète le plein écran du shell — rend la liste latérale inert (neutralisation aria-modal). */
   protected readonly previewFullscreenActive = signal(false);
-  protected readonly storyViewerQueue = signal<StoryItem[]>([]);
-  protected readonly slidesSaveState = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  protected readonly replacingImageSlideId = signal<string | null>(null);
-  protected readonly croppingImageSlideId = signal<string | null>(null);
-  protected readonly pickerPhotos = signal<Photo[]>([]);
 
   protected readonly exhibitionForm = this.fb.group({
     title: ['', Validators.required],
@@ -350,18 +248,6 @@ export class ExpositionsComponent {
   protected readonly previewActive = computed(() =>
     this.editingExhibitionSlug() !== null || this.editingExhibitionId() !== null || this.creatingExhibition()
   );
-
-  /** Slides enrichis (cover + narratifs + lien fiche) destinés au preview et au viewer. */
-  protected readonly previewDisplaySlides = computed(() => {
-    const v = this.exhibitionForm.getRawValue();
-    return enrichSlides({
-      slug: v.slug ?? '',
-      coverImage: v.coverImage ?? null,
-      coverCrop: v.coverCrop ?? null,
-      slides: this.activeStorySlides(),
-      showStoryLink: v.showStoryLink ?? true,
-    }, 'exhibition');
-  });
 
   protected readonly focusField = createFieldFocus(ExpositionsComponent.FOCUSABLE_FIELDS);
   protected readonly onPreviewTextFieldEdit = createTextFieldEditHandler(this.exhibitionForm, ExpositionsComponent.FOCUSABLE_FIELDS, { onBeforeMutate: () => this.history.record() });
@@ -399,57 +285,6 @@ export class ExpositionsComponent {
     this.exhibitionForm.markAsDirty();
   }
 
-  private loadActiveStorySlides(id: string | null): void {
-    if (!id) { this.activeStorySlides.set([]); return; }
-    this.portfolio.getStorySlides(id).subscribe(slides => this.activeStorySlides.set(slides));
-  }
-
-  protected onPreviewStorySelect(id: string): void {
-    this.activeStoryId.set(id);
-    this.loadActiveStorySlides(id);
-  }
-
-  protected onPreviewStoryCreate(): void { this.newStory(); }
-
-  protected onPreviewStoryRename(e: { id: string; title: string }): void {
-    const story = this.currentStories().find(s => s.id === e.id);
-    if (!story) return;
-    this.portfolio.updateStory(story.id, {
-      ownerKind: story.ownerKind, ownerId: story.ownerId,
-      title: e.title, coverImage: story.coverImage,
-    }).subscribe({
-      next: updated => {
-        this.currentStories.update(arr => arr.map(s => s.id === updated.id ? updated : s));
-        this.toast.success('Story renommée.');
-      },
-      error: () => this.toast.error('Erreur lors du renommage de la story.'),
-    });
-  }
-
-  protected onPreviewStoryDelete(id: string): void {
-    const story = this.currentStories().find(s => s.id === id);
-    if (story) this.deleteStory(story);
-  }
-
-  protected onPreviewStoryMove(e: { id: string; dir: 'up' | 'down' }): void {
-    const story = this.currentStories().find(s => s.id === e.id);
-    if (!story) return;
-    if (e.dir === 'up') this.moveStoryUp(story); else this.moveStoryDown(story);
-  }
-
-  protected onPreviewStoryCoverEdit(id: string): void {
-    const story = this.currentStories().find(s => s.id === id);
-    if (story) this.openCoverEditor(story);
-  }
-
-  protected onPreviewViewerOpen(queue: StoryItem[]): void {
-    this.storyViewerQueue.set(queue);
-  }
-
-  protected onStoryViewerClosed(): void {
-    this.storyViewerQueue.set([]);
-  }
-
   /**
    * Historique undo/redo des opérations WYSIWYG (snapshots form + galerie).
    * Le snapshot aliase par référence les valeurs structurées du form (tags,
@@ -466,73 +301,6 @@ export class ExpositionsComponent {
     },
     announcer: this.announcer,
   });
-
-  private allSlidesPersistable(slides: Slide[]): boolean {
-    return slides.every(s => {
-      switch (s.type) {
-        case 'image':
-        case 'video': return !!s.src && s.src.trim().length > 0;
-        case 'quote': return !!s.body && s.body.trim().length > 0;
-        case 'spec':  return s.specs.length > 0;
-        default: return true;
-      }
-    });
-  }
-
-  protected onStorySlidesChange(slides: Slide[]): void {
-    const id = this.activeStoryId();
-    if (!id) return;
-    this.activeStorySlides.set(slides); // TOUJOURS synchroniser (handlers image/crop lisent activeStorySlides)
-    if (!this.allSlidesPersistable(slides)) {
-      // slide incomplet (nouveau/vide) : on ne persiste pas, pas d'erreur ; sera enregistré une fois complété
-      this.slidesSaveState.set('idle');
-      return;
-    }
-    this.slidesSaveState.set('saving');
-    this.portfolio.replaceStorySlides(id, slides).subscribe({
-      next: () => {
-        this.slidesSaveState.set('saved');
-        setTimeout(() => { if (this.slidesSaveState() === 'saved') this.slidesSaveState.set('idle'); }, 2000);
-      },
-      error: () => {
-        this.slidesSaveState.set('error');
-        this.toast.error('Erreur lors de l\'enregistrement des slides.');
-      },
-    });
-  }
-
-  protected onStoryImageReplaceRequest(slideId: string): void {
-    this.replacingImageSlideId.set(slideId);
-    this.portfolio.getPhotos().subscribe(p => this.pickerPhotos.set(p));
-  }
-
-  protected onSlideImageSelected(photo: Photo): void {
-    const slideId = this.replacingImageSlideId();
-    this.replacingImageSlideId.set(null);
-    if (!slideId) return;
-    const next = this.activeStorySlides().map(s => s.id === slideId && s.type === 'image' ? { ...s, src: photo.url } : s);
-    this.onStorySlidesChange(next);
-  }
-
-  protected onSlidePickerClosed(): void { this.replacingImageSlideId.set(null); }
-
-  protected onStoryImageCropRequest(slideId: string): void { this.croppingImageSlideId.set(slideId); }
-
-  protected onSlideCropValidated(crop: Crop): void {
-    const slideId = this.croppingImageSlideId();
-    this.croppingImageSlideId.set(null);
-    if (!slideId) return;
-    const next = this.activeStorySlides().map(s => s.id === slideId && s.type === 'image' ? { ...s, crop } : s);
-    this.onStorySlidesChange(next);
-  }
-
-  protected onSlideCropCancelled(): void { this.croppingImageSlideId.set(null); }
-
-  protected croppingImageSlide(): { src: string; crop: Crop | null } | null {
-    const id = this.croppingImageSlideId();
-    const s = this.activeStorySlides().find(x => x.id === id);
-    return s && s.type === 'image' ? { src: s.src, crop: (s as any).crop ?? null } : null;
-  }
 
   constructor() {
     this.refreshExhibitions();
@@ -571,8 +339,6 @@ export class ExpositionsComponent {
     this.editingExhibitionId.set(null);
     this.creatingExhibition.set(true);
     this.expoViewMode.set('form');
-    this.currentStories.set([]);
-    this.editingStoryId.set(null);
     this.exhibitionForm.reset({
       title: '', slug: '', venue: '', city: '', country: '',
       startDate: '', endDate: '', curator: '', coverImage: '', coverCrop: null,
@@ -593,8 +359,6 @@ export class ExpositionsComponent {
     this.editingExhibitionId.set(item.id ?? null);
     this.creatingExhibition.set(false);
     this.expoViewMode.set('form');
-    this.currentStories.set([]);
-    this.editingStoryId.set(null);
     this.exhibitionForm.reset({
       title: item.title, slug: item.slug, venue: item.venue ?? '', city: item.city ?? '', country: item.country ?? '',
       startDate: item.startDate ?? '', endDate: item.endDate ?? '', curator: item.curator ?? '',
@@ -608,9 +372,6 @@ export class ExpositionsComponent {
       videoCaptions: item.videoCaptions ?? null,
     });
     this.exhibitionGallery.set([...(item.gallery ?? [])]);
-    if (item.id) {
-      this.loadStoriesFor(item.id, item.title, item.coverImage ?? '');
-    }
   }
 
   protected onCoverCropChange(crop: Crop | null): void {
@@ -619,145 +380,6 @@ export class ExpositionsComponent {
     this.history.record();
     this.exhibitionForm.patchValue({ coverCrop: crop });
     this.exhibitionForm.markAsDirty();
-  }
-
-  private loadStoriesFor(exhibitionId: string, fallbackTitle: string, fallbackCover: string): void {
-    this.portfolio.getAdminStories('exhibition', exhibitionId).subscribe(stories => {
-      this.currentStories.set(stories);
-      if (stories.length === 0) {
-        // Cas rare : owner sans story → créer une story par défaut et l'ouvrir
-        this.portfolio.createStory({
-          ownerKind: 'exhibition', ownerId: exhibitionId,
-          title: fallbackTitle, coverImage: fallbackCover,
-        }).subscribe(s => {
-          this.currentStories.set([s]);
-          this.editingStoryId.set(s.id);
-          this.activeStoryId.set(s.id);
-          this.loadActiveStorySlides(s.id);
-        });
-      } else {
-        const first = this.currentStories()[0];
-        this.activeStoryId.set(first ? first.id : null);
-        this.loadActiveStorySlides(first ? first.id : null);
-      }
-    });
-  }
-
-  editStory(story: Story): void {
-    this.editingStoryId.set(story.id);
-  }
-
-  newStory(): void {
-    const ownerId = this.editingExhibitionId();
-    if (!ownerId) return;
-    const slug = this.editingExhibitionSlug();
-    const owner = slug ? this.exhibitions().find(e => e.slug === slug) : null;
-    const defaultTitle = owner ? `${owner.title} — Story` : 'Nouvelle story';
-    const title = prompt('Titre de la nouvelle story ?', defaultTitle);
-    if (!title) return;
-    this.portfolio.createStory({
-      ownerKind: 'exhibition', ownerId,
-      title, coverImage: owner?.coverImage ?? '',
-    }).subscribe({
-      next: s => {
-        this.currentStories.update(arr => [...arr, s]);
-        this.editingStoryId.set(s.id);
-        this.activeStoryId.set(s.id);
-        this.loadActiveStorySlides(s.id);
-        this.toast.success('Story créée.');
-      },
-      error: () => this.toast.error('Erreur lors de la création de la story.'),
-    });
-  }
-
-  openCoverEditor(story: Story): void {
-    this.editingCoverStoryId.set(story.id);
-    this.coverEditCtrl.setValue(story.coverImage);
-    this.editingStoryCoverCrop.set(story.coverCrop ?? null);
-  }
-
-  cancelCoverEdit(): void {
-    this.editingCoverStoryId.set(null);
-    this.coverEditCtrl.setValue('');
-    this.editingStoryCoverCrop.set(null);
-  }
-
-  protected onStoryCoverCropChange(crop: Crop | null): void {
-    this.editingStoryCoverCrop.set(crop);
-  }
-
-  saveCover(story: Story): void {
-    const newCover = (this.coverEditCtrl.value ?? '').trim();
-    if (!newCover) { this.cancelCoverEdit(); return; }
-    const newCrop = this.editingStoryCoverCrop();
-    const urlUnchanged = newCover === story.coverImage;
-    const cropUnchanged = JSON.stringify(newCrop ?? null) === JSON.stringify(story.coverCrop ?? null);
-    if (urlUnchanged && cropUnchanged) { this.cancelCoverEdit(); return; }
-    this.portfolio.updateStory(story.id, {
-      ownerKind: story.ownerKind, ownerId: story.ownerId,
-      title: story.title, coverImage: newCover,
-      coverCrop: newCrop,
-    }).subscribe({
-      next: updated => {
-        this.currentStories.update(arr => arr.map(s => s.id === updated.id ? updated : s));
-        this.cancelCoverEdit();
-        this.toast.success('Image de couverture mise à jour.');
-      },
-      error: () => this.toast.error('Erreur lors de la mise à jour de la cover.'),
-    });
-  }
-
-  renameStory(story: Story): void {
-    const newTitle = prompt('Nouveau titre ?', story.title);
-    if (!newTitle || newTitle === story.title) return;
-    this.portfolio.updateStory(story.id, {
-      ownerKind: story.ownerKind, ownerId: story.ownerId,
-      title: newTitle, coverImage: story.coverImage,
-    }).subscribe({
-      next: updated => {
-        this.currentStories.update(arr => arr.map(s => s.id === updated.id ? updated : s));
-        this.toast.success('Story renommée.');
-      },
-      error: () => this.toast.error('Erreur lors du renommage.'),
-    });
-  }
-
-  deleteStory(story: Story): void {
-    if (!confirm(`Supprimer la story "${story.title}" et ses slides ?`)) return;
-    this.portfolio.deleteStory(story.id).subscribe({
-      next: () => {
-        this.currentStories.update(arr => arr.filter(s => s.id !== story.id));
-        if (this.editingStoryId() === story.id) this.editingStoryId.set(null);
-        this.toast.success('Story supprimée.');
-      },
-      error: () => this.toast.error('Erreur lors de la suppression.'),
-    });
-  }
-
-  moveStoryUp(story: Story): void {
-    const arr = this.currentStories();
-    const i = arr.findIndex(s => s.id === story.id);
-    if (i <= 0) return;
-    const above = arr[i - 1];
-    this.portfolio.updateStoryPosition(story.id, above.position).subscribe(() => {
-      this.portfolio.updateStoryPosition(above.id, story.position).subscribe(() => {
-        const ownerId = this.editingExhibitionId();
-        if (ownerId) this.loadStoriesFor(ownerId, '', '');
-      });
-    });
-  }
-
-  moveStoryDown(story: Story): void {
-    const arr = this.currentStories();
-    const i = arr.findIndex(s => s.id === story.id);
-    if (i < 0 || i >= arr.length - 1) return;
-    const below = arr[i + 1];
-    this.portfolio.updateStoryPosition(story.id, below.position).subscribe(() => {
-      this.portfolio.updateStoryPosition(below.id, story.position).subscribe(() => {
-        const ownerId = this.editingExhibitionId();
-        if (ownerId) this.loadStoriesFor(ownerId, '', '');
-      });
-    });
   }
 
   saveExhibition(): void {

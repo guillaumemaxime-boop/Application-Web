@@ -2,12 +2,8 @@ import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, Signal, com
 import { FormGroup } from '@angular/forms';
 import { Exhibition } from '../../../../models/exhibition.model';
 import { GalleryItem } from '../../../../models/gallery-item.model';
-import { Story } from '../../../../models/story.model';
-import { Slide } from '../../../../models/slide.model';
 import { SiteContent } from '../../../../models/site-content.model';
-import { DisplaySlide } from '../../../../models/display-slide.model';
 import { EditableExhibitionField, ExhibitionDetailViewComponent } from '../../../../components/exhibition-detail-view/exhibition-detail-view.component';
-import { StoryItem } from '../../../../components/story-viewer/story-viewer.component';
 import { formTickSignal } from '../../shared/preview-page-helpers';
 
 @Component({
@@ -17,10 +13,6 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
   template: `
     <app-exhibition-detail-view
       [item]="previewItem()"
-      [story]="story"
-      [displaySlides]="displaySlides"
-      [stories]="stories"
-      [activeStoryId]="activeStoryId"
       [content]="content"
       [editable]="true"
       [tagSuggestions]="tagSuggestions"
@@ -33,47 +25,23 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (textFieldClick)="onTextFieldClick($event)"
       (textFieldEdit)="onTextFieldEdit($event)"
       (dateFieldEdit)="onDateFieldEdit($event)"
-      (storySelect)="storySelect.emit($event)"
-      (storyCreate)="storyCreate.emit()"
-      (storyRename)="storyRename.emit($event)"
-      (storyDelete)="storyDelete.emit($event)"
-      (storyMove)="storyMove.emit($event)"
-      (storyCoverEdit)="storyCoverEdit.emit($event)"
-      (storySlidesChange)="storySlidesChange.emit($event)"
-      (storyImageReplaceRequest)="storyImageReplaceRequest.emit($event)"
-      (storyImageCropRequest)="storyImageCropRequest.emit($event)"
       (videoUrlChange)="videoUrlChange.emit($event)"
       (videoPosterChange)="videoPosterChange.emit($event)"
-      (videoCaptionsChange)="videoCaptionsChange.emit($event)"
-      (viewerOpen)="viewerOpen.emit($event)" />
+      (videoCaptionsChange)="videoCaptionsChange.emit($event)" />
   `,
   styles: []
 })
 export class ExhibitionPreviewComponent implements OnInit {
   @Input({ required: true }) form!: FormGroup;
   @Input({ required: true }) gallery!: Signal<GalleryItem[]>;
-  @Input() story: Story | null = null;
-  @Input() displaySlides: DisplaySlide[] = [];
-  @Input() stories: Story[] = [];
-  @Input() activeStoryId: string | null = null;
   @Input() content: SiteContent = {};
   @Input() tagSuggestions: string[] = [];
 
   @Output() tagsChange = new EventEmitter<string[]>();
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
-  @Output() storySelect = new EventEmitter<string>();
-  @Output() storyCreate = new EventEmitter<void>();
-  @Output() storyRename = new EventEmitter<{ id: string; title: string }>();
-  @Output() storyDelete = new EventEmitter<string>();
-  @Output() storyMove = new EventEmitter<{ id: string; dir: 'up' | 'down' }>();
-  @Output() storyCoverEdit = new EventEmitter<string>();
-  @Output() storySlidesChange = new EventEmitter<Slide[]>();
-  @Output() storyImageReplaceRequest = new EventEmitter<string>();
-  @Output() storyImageCropRequest = new EventEmitter<string>();
   @Output() videoUrlChange = new EventEmitter<string | null>();
   @Output() videoPosterChange = new EventEmitter<string | null>();
   @Output() videoCaptionsChange = new EventEmitter<string | null>();
-  @Output() viewerOpen = new EventEmitter<StoryItem[]>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
   @Output() galleryReorder = new EventEmitter<number[]>();
   @Output() galleryAdd = new EventEmitter<void>();

@@ -152,14 +152,14 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 #### Administration (`/admin/**`)
 
 - Interface CRUD complète pour le mobilier, les expositions, les stories et les sliders.
-- Navigation latérale : **Accueil · Mobilier · Expositions · Navigation · Médiathèque · Textes · Typographie · Statistiques · Paramètres**.
+- Navigation latérale : **Accueil · Mobilier · Expositions · Stories · Navigation · Médiathèque · Textes · Typographie · Statistiques · Paramètres**.
 - Formulaires de création / modification avec validation et retour visuel (toast auto-dismiss).
 - Suppression avec confirmation implicite.
 
 **Page Accueil (`/admin/accueil`)** :
 
 - Gestion du masonry home feed (visibilité, ordre des sections).
-- **Composition des sliders d'actualités** : création / modification / suppression de sliders, assignation à une zone (`news.primary/.secondary/.tertiary`), ajout/retrait de stories par drag & drop depuis la liste de toutes les stories disponibles.
+- **Composition des sliders d'actualités** : création / modification / suppression de sliders, assignation à une zone (`news.primary/.secondary/.tertiary`), ajout/retrait de stories par drag & drop depuis la liste de toutes les stories disponibles (le nom du mobilier/expo est affiché entre parenthèses). L'appartenance d'une story à un slider peut aussi se gérer depuis la page **Stories** (ADR-0020).
 - `/admin/sliders` redirige vers `/admin/accueil` (les sliders sont désormais gérés dans la page Accueil).
 - **Preview WYSIWYG** (sous-projet 4/4) : voir section dédiée ci-après.
 
@@ -169,7 +169,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Champ Tags** : composant `<app-tag-input>` avec autocomplétion depuis `GET /api/tags`, chips + navigation clavier (WAI-ARIA combobox/listbox).
 - **Outil de cadrage de la cover** : bouton « Cadrer » à côté du sélecteur d'image. Ouvre une modale avec Cropper.js (sélecteur d'aspect ratio : Libre / 16:9 / 4:5 / 1:1, coordonnées live en %, boutons Réinitialiser / Annuler / Valider). Une vignette de prévisualisation affiche le rendu pixel-perfect du crop sous le champ.
 - **Galerie** : chaque vignette dispose d'un bouton ✂ ouvrant la même modale de cadrage. Un badge `✂ LxH` sur la vignette indique qu'un crop est défini.
-- **Bloc Stories** : liste des stories de la pièce, CRUD stories, éditeur de slides par story. Le cover de chaque story dispose également d'un bouton « Cadrer ». Depuis le sous-projet 6a, la gestion des stories est **aussi disponible dans le preview** (voir ci-après) ; le form-side est conservé (double accès). Les cases « Afficher le lien/le bouton de story » ont été retirées du formulaire (la story n'est plus rendue sur la fiche publique).
+- **Stories** : le bloc Stories a été **retiré de l'éditeur de fiche** (ADR-0020) ; la gestion des stories est centralisée sur la page **`/admin/stories`**. La fiche conserve un lien **« Gérer les stories »** (pré-filtré sur la pièce courante).
 - **Bloc Vidéo** (ADR-0019) : dans le preview, sous la galerie, composant `<app-video-field>` pour uploader la vidéo (`.mp4`/`.webm` ≤ 200 Mo), un poster (image) et des sous-titres (`.vtt`), ou la retirer. La vidéo est persistée avec la fiche (`video_url`/`video_poster`/`video_captions`).
 - **Preview WYSIWYG** (sous-projet 2/4) : voir section dédiée ci-après.
 
@@ -179,9 +179,17 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 - **Champ Tags** : même composant `<app-tag-input>`.
 - **Outil de cadrage de la cover** : identique à la page Mobilier.
 - **Galerie** : même comportement que Mobilier (bouton ✂ par vignette, badge crop).
-- **Bloc Stories** : idem mobilier, avec cadrage du cover de story. Gestion aussi disponible dans le preview (sous-projet 6a) ; cases « Afficher le lien/le bouton de story » retirées.
+- **Stories** : idem mobilier — bloc retiré (ADR-0020), lien **« Gérer les stories »** vers `/admin/stories` (pré-filtré sur l'exposition).
 - **Bloc Vidéo** (ADR-0019) : idem mobilier (`<app-video-field>` dans le preview, vidéo + poster + sous-titres).
 - **Preview WYSIWYG** (sous-projet 3/4) : voir section dédiée ci-après.
+
+**Page Stories (`/admin/stories`)** (ADR-0020) :
+
+- **Liste centralisée** de toutes les stories : vignette cover, titre, owner (mobilier/expo) + son titre, nombre de slides, sliders d'appartenance, alerte « ⚠ vide » si aucune slide. Filtres par type d'owner + recherche.
+- **« + Nouvelle story »** → modale : sélecteur d'owner (meuble/expo, obligatoire), titre, cover + cadrage, et **ajout optionnel à un slider** → ouvre l'éditeur.
+- **Éditeur de slides deux panneaux** (`/admin/stories/:id`) : rail de vignettes à gauche (réordre par glisser-déposer + flèches ↑/↓ au clavier, ajout des 4 types, suppression), éditeur du slide sélectionné à droite (image + cadrage / vidéo / specs / citation), **enregistrement automatique**, bouton **Aperçu** (viewer plein écran). Retour « ← Stories ».
+- **Cover** éditable depuis la liste (le cadrage est préservé, y compris au renommage — bug corrigé).
+- **Appartenance aux sliders** : bouton « Sliders » par story → cases à cocher par slider (cocher = ajoute la story au slider, décocher = la retire), effet immédiat.
 
 **Page Navigation (`/admin/navigation`)** :
 

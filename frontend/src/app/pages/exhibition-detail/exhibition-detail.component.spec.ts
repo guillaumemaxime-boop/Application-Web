@@ -3,7 +3,6 @@ import { ExhibitionDetailComponent } from './exhibition-detail.component';
 import { PortfolioService } from '../../services/portfolio.service';
 import { of, Subject, throwError } from 'rxjs';
 import { Exhibition } from '../../models/exhibition.model';
-import { DisplaySlide } from '../../models/display-slide.model';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
 describe('ExhibitionDetailComponent', () => {
@@ -103,48 +102,6 @@ describe('ExhibitionDetailComponent', () => {
     fixture.detectChanges();
     const view = fixture.nativeElement.querySelector('app-exhibition-detail-view');
     expect(view).toBeTruthy();
-  });
-
-  it('enrichit la liste de slides avec cover prefix + link suffix', () => {
-    const exhibition: Exhibition = {
-      ...mockExhibition,
-      slug: 'expo-test',
-      coverImage: '/uploads/cover.jpg',
-      slides: [
-        { id: 's1', position: 0, type: 'image', src: '/uploads/photo.jpg', caption: 'détail' },
-      ],
-    };
-    setup('expo-test', of(exhibition));
-    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
-    fixture.detectChanges();
-    const display: DisplaySlide[] = (fixture.componentInstance as any).displaySlides();
-    expect(display.length).toBe(3);
-    expect(display[0].type).toBe('cover');
-    expect((display[0] as any).src).toBe('/uploads/cover.jpg');
-    expect(display[1].type).toBe('image');
-    expect(display[display.length - 1].type).toBe('link');
-    expect((display[display.length - 1] as any).href).toBe('/expositions/expo-test');
-    expect((display[display.length - 1] as any).label).toBe('Voir l\'exposition');
-  });
-
-  it('filtre les slides legacy de type cover/link recues de l API', () => {
-    const exhibition: Exhibition = {
-      ...mockExhibition,
-      slug: 'x',
-      coverImage: '/c.jpg',
-      slides: [
-        { id: 'legacy-c', position: 0, type: 'cover', src: '/legacy.jpg' },
-        { id: 's1', position: 1, type: 'image', src: '/photo.jpg', caption: null },
-        { id: 'legacy-l', position: 2, type: 'link', label: 'old', description: null, href: '/old' },
-      ] as any,
-    };
-    setup('x', of(exhibition));
-    const fixture = TestBed.createComponent(ExhibitionDetailComponent);
-    fixture.detectChanges();
-    const display: DisplaySlide[] = (fixture.componentInstance as any).displaySlides();
-    expect(display.length).toBe(3);
-    expect(display.filter((s: DisplaySlide) => s.type === 'cover').length).toBe(1);
-    expect((display[0] as any).src).toBe('/c.jpg');
   });
 
   it('galleryImageOpen ouvre la lightbox avec les images mappées et le bon startIndex', () => {

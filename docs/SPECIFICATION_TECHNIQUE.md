@@ -606,12 +606,15 @@ Zones reconnues : `news.primary`, `news.secondary`, `news.tertiary`. La `zoneKey
 |---------|----------|-------------|---------|
 | GET | `/api/admin/stories?ownerKind=&ownerId=` | Stories d'un owner | `Story[]` 200 |
 | GET | `/api/admin/stories/all` | Stories **ayant au moins un slide** (liste « Disponibles » de composition d'un slider — `findAllWithSlides()`) | `Story[]` 200 |
+| GET | `/api/admin/stories/manage` | **Toutes** les stories enrichies (page de gestion `/admin/stories`) — `StoryAdminView` = story + `slideCount` + `sliders` (id/titre) + `ownerTitle` ; `findAllForManagement()` | `StoryAdminView[]` 200 |
 | POST | `/api/admin/stories` | Créer une story | `Story` 200 |
 | PUT | `/api/admin/stories/{id}` | Modifier une story | `Story` 200 |
 | PUT | `/api/admin/stories/{id}/position` | Mettre à jour la position | 204 |
 | DELETE | `/api/admin/stories/{id}` | Supprimer une story | 204 |
 | GET | `/api/admin/stories/{id}/slides` | Slides d'une story | `Slide[]` 200 |
 | PUT | `/api/admin/stories/{id}/slides` | Remplacer les slides | `Slide[]` 200 |
+
+**Page de gestion centralisée — `/admin/stories` (ADR-0020)** : la gestion des stories vit désormais dans une **page admin dédiée** (`StoriesAdminComponent`), **retirée des éditeurs mobilier/expo** (qui gardent un lien « Gérer les stories » avec query params `ownerKind`/`ownerId`). La page liste toutes les stories (via `/manage`), avec filtres (owner/recherche), création (`StoryCreateModalComponent` : sélecteur d'owner + titre + cover/cadrage + ajout slider optionnel), édition du cover (préservation du cadrage — `update()` patch-safe), suppression, et **gestion de l'appartenance aux sliders** (cases à cocher par slider → `replaceSliderStories`). L'édition des slides se fait dans un **éditeur deux panneaux** sous-route `/admin/stories/:id` (`StorySlideEditorComponent`) : rail de vignettes (réordre `appReorderable` + repli clavier ↑/↓ + ajout des 4 types + suppression), éditeur du slide sélectionné (logique des 4 types reprise de l'ancien `story-inline`), **auto-save** (`replaceStorySlides`), bouton « Aperçu » (`story-viewer`). Composants `story-inline`/`story-manager-bar` **supprimés** (logique migrée).
 
 #### Sliders admin — `/api/admin/sliders` (JWT requis)
 
@@ -723,6 +726,8 @@ Vidéo optionnelle (auto-hébergée) sur fiches mobilier/expo et Studio. `VideoS
 | `admin/accueil` | `AccueilComponent` | ✅ | `authGuard` | "Accueil — Admin" |
 | `admin/mobilier` | `MobilierComponent` | ✅ | `authGuard` | "Mobilier — Admin" |
 | `admin/expositions` | `ExpositionsAdminComponent` | ✅ | `authGuard` | "Expositions — Admin" |
+| `admin/stories` | `StoriesAdminComponent` | ✅ | `authGuard` | "Stories — Admin" |
+| `admin/stories/:id` | `StorySlideEditorComponent` | ✅ | `authGuard` | "Édition d'une story — Admin" |
 | `admin/navigation` | `NavigationComponent` | ✅ | `authGuard` | "Navigation — Admin" |
 | `admin/sliders` | redirect → `admin/accueil` | — | — | (fusionné dans Accueil) |
 | `**` | redirect → `/` | — | — | — |

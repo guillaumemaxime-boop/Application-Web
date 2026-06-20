@@ -95,6 +95,7 @@ interface HomeAdminItem {
         [title]="s.title"
         [storyIds]="editingStoryIds()"
         [allStories]="allStories()"
+        [ownerTitles]="ownerTitles()"
         (save)="onSliderCompositionSave($event)"
         (cancel)="closeComposition()" />
     }
@@ -139,6 +140,7 @@ export class AccueilComponent {
 
   protected readonly editingSliderId = signal<string | null>(null);
   protected readonly allStories = signal<Story[]>([]);
+  protected readonly ownerTitles = signal<Record<string, string>>({});
   private storiesLoaded = false;
 
   protected readonly editingSlider = computed(() =>
@@ -179,6 +181,10 @@ export class AccueilComponent {
         }
       }
       this.homeItems.set(items);
+      const titlesMap: Record<string, string> = {};
+      for (const f of furniture) titlesMap[f.id] = f.title;
+      for (const e of expos) titlesMap[e.id] = e.title;
+      this.ownerTitles.set(titlesMap);
     });
 
     forkJoin([

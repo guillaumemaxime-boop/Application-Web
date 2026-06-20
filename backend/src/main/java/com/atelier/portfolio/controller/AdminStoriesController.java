@@ -2,6 +2,7 @@ package com.atelier.portfolio.controller;
 
 import com.atelier.portfolio.model.Slide;
 import com.atelier.portfolio.model.Story;
+import com.atelier.portfolio.model.StoryAdminView;
 import com.atelier.portfolio.model.StoryInput;
 import com.atelier.portfolio.service.StoryService;
 import jakarta.validation.Valid;
@@ -31,6 +32,12 @@ public class AdminStoriesController {
         // Seules les stories ayant au moins un slide sont proposables a un slider
         // (une story sans slide n'apparait pas sur le site).
         return stories.findAllWithSlides();
+    }
+
+    @GetMapping("/manage")
+    public List<StoryAdminView> manage() {
+        // Liste enrichie (toutes stories, vides incluses) pour la page de gestion.
+        return stories.findAllForManagement();
     }
 
     @PostMapping

@@ -11,8 +11,10 @@ import com.atelier.portfolio.model.SpecEntry;
 import com.atelier.portfolio.model.Story;
 import com.atelier.portfolio.model.StoryInput;
 import com.atelier.portfolio.model.StoryWithSlides;
+import com.atelier.portfolio.model.StoryAdminView;
 import com.atelier.portfolio.repository.ExhibitionRepository;
 import com.atelier.portfolio.repository.FurnitureRepository;
+import com.atelier.portfolio.repository.NewsSliderRepository;
 import com.atelier.portfolio.repository.StoryRepository;
 import com.atelier.portfolio.repository.StorySlideRepository;
 import org.springframework.http.HttpStatus;
@@ -22,8 +24,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -36,13 +40,16 @@ public class StoryService {
     private final StorySlideRepository slideRepo;
     private final FurnitureRepository furnitureRepo;
     private final ExhibitionRepository exhibitionRepo;
+    private final NewsSliderRepository sliderRepo;
 
     public StoryService(StoryRepository storyRepo, StorySlideRepository slideRepo,
-                        FurnitureRepository furnitureRepo, ExhibitionRepository exhibitionRepo) {
+                        FurnitureRepository furnitureRepo, ExhibitionRepository exhibitionRepo,
+                        NewsSliderRepository sliderRepo) {
         this.storyRepo = storyRepo;
         this.slideRepo = slideRepo;
         this.furnitureRepo = furnitureRepo;
         this.exhibitionRepo = exhibitionRepo;
+        this.sliderRepo = sliderRepo;
     }
 
     public List<Story> findByOwner(String ownerKind, String ownerId) {
@@ -52,6 +59,46 @@ public class StoryService {
 
     public List<Story> findAll() {
         return storyRepo.findAll().stream().map(StoryService::toDto).toList();
+    }
+
+    /**
+     * Liste enrichie de toutes les stories (vides incluses) pour la page de gestion admin.
+     * Chaque vue porte : slideCount, sliders d'appartenance, titre de l'owner.
+     */
+    public List<StoryAdminView> findAllForManagement() {
+        // slideCount par story
+        Map<String, Integer> counts = new HashMap<>();
+        for (Object[] row : slideRepo.countSlidesByStory()) {
+            counts.put((String) row[0], ((Long) row[1]).intValue());
+        }
+        // sliders par story (id + titre)
+        Map<String, List<StoryAdminView.SliderRef>> bySlider = new HashMap<>();
+        for (var slider : sliderRepo.findAll()) {
+            var ref = new StoryAdminView.SliderRef(slider.getId(), slider.getTitle());
+            for (var link : slider.getStories()) {
+                bySlider.computeIfAbsent(link.getStory().getId(), k -> new ArrayList<>()).add(ref);
+            }
+        }
+        return storyRepo.findAll().stream().map(e -> {
+            String ownerTitle = ownerTitle(e.getOwnerKind(), e.getOwnerId());
+            return new StoryAdminView(
+                    e.getId(), e.getOwnerKind(), e.getOwnerId(), ownerTitle,
+                    e.getTitle(), e.getCoverImage(),
+                    ImageCrop.ofNullable(e.getCoverCropX(), e.getCoverCropY(), e.getCoverCropW(), e.getCoverCropH()),
+                    e.getSlug(), e.getPosition(),
+                    counts.getOrDefault(e.getId(), 0),
+                    bySlider.getOrDefault(e.getId(), List.of()));
+        }).toList();
+    }
+
+    private String ownerTitle(String ownerKind, String ownerId) {
+        if ("furniture".equals(ownerKind)) {
+            return furnitureRepo.findById(ownerId).map(FurnitureEntity::getTitle).orElse(ownerId);
+        }
+        if ("exhibition".equals(ownerKind)) {
+            return exhibitionRepo.findById(ownerId).map(ExhibitionEntity::getTitle).orElse(ownerId);
+        }
+        return ownerId;
     }
 
     /**
@@ -127,13 +174,19 @@ public class StoryService {
         StoryEntity e = storyRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "story not found: " + id));
         e.setTitle(input.title());
-        e.setCoverImage(input.coverImage());
-        // coverCrop : null = reset (centrer par defaut cote affichage)
-        ImageCrop c = input.coverCrop();
-        e.setCoverCropX(c != null ? c.x() : null);
-        e.setCoverCropY(c != null ? c.y() : null);
-        e.setCoverCropW(c != null ? c.w() : null);
-        e.setCoverCropH(c != null ? c.h() : null);
+        boolean coverProvided = input.coverImage() != null && !input.coverImage().isBlank();
+        if (coverProvided) {
+            e.setCoverImage(input.coverImage());
+        }
+        // Le crop n'est touche que si une nouvelle cover OU un crop explicite est fourni :
+        // un update "titre seul" (cover/crop null) ne reinitialise plus le cadrage.
+        if (coverProvided || input.coverCrop() != null) {
+            ImageCrop c = input.coverCrop();
+            e.setCoverCropX(c != null ? c.x() : null);
+            e.setCoverCropY(c != null ? c.y() : null);
+            e.setCoverCropW(c != null ? c.w() : null);
+            e.setCoverCropH(c != null ? c.h() : null);
+        }
         return toDto(storyRepo.save(e));
     }
 

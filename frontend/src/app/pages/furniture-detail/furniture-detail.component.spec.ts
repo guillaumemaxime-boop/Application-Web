@@ -4,10 +4,8 @@ import { PortfolioService } from '../../services/portfolio.service';
 import { of, Subject, throwError } from 'rxjs';
 import { Furniture } from '../../models/furniture.model';
 import { Slide } from '../../models/slide.model';
-import { DisplaySlide } from '../../models/display-slide.model';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { convertToParamMap } from '@angular/router';
-import { StoryItem } from '../../components/story-viewer/story-viewer.component';
 
 describe('FurnitureDetailComponent', () => {
   let portfolioServiceSpy: jasmine.SpyObj<PortfolioService>;
@@ -121,48 +119,11 @@ describe('FurnitureDetailComponent', () => {
     expect(spy.getFurniture).toHaveBeenCalledWith('');
   });
 
-  it('should close the viewer by emptying the queue', () => {
+  it('ne rend plus le story-viewer en public (gestion stories déplacée sur /admin/stories)', () => {
     setup('onde', of({ ...mockFurniture, slides }));
     const fixture = TestBed.createComponent(FurnitureDetailComponent);
     fixture.detectChanges();
-    const c = fixture.componentInstance as any;
-
-    const fakeQueue: StoryItem[] = [{
-      title: 'Onde',
-      subtitle: 'Sièges · 2024',
-      slides: [],
-      kind: 'furniture',
-      slug: 'onde',
-    }];
-    c.onViewerOpen(fakeQueue);
-    fixture.detectChanges();
-    expect(c.viewerQueue().length).toBe(1);
-    expect(fixture.nativeElement.querySelector('app-story-viewer')).not.toBeNull();
-
-    c.closeViewer();
-    fixture.detectChanges();
-    expect(c.viewerQueue().length).toBe(0);
     expect(fixture.nativeElement.querySelector('app-story-viewer')).toBeNull();
-  });
-
-  it('onViewerOpen sets the viewerQueue from emitted StoryItem[]', () => {
-    setup('onde', of(mockFurniture));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    const c = fixture.componentInstance as any;
-    expect(c.viewerQueue().length).toBe(0);
-
-    const queue: StoryItem[] = [{
-      title: 'Onde',
-      subtitle: 'Sièges · 2024',
-      slides: [],
-      kind: 'furniture',
-      slug: 'onde',
-    }];
-    c.onViewerOpen(queue);
-    fixture.detectChanges();
-    expect(c.viewerQueue().length).toBe(1);
-    expect(c.viewerQueue()[0].title).toBe('Onde');
   });
 
   it('should open the contact form when the CTA button is clicked', () => {
@@ -196,27 +157,6 @@ describe('FurnitureDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('app-contact-form')).toBeNull();
   });
 
-  it('enrichit la liste de slides avec cover prefix + link suffix', () => {
-    const furniture: Furniture = {
-      ...mockFurniture,
-      slug: 'chaise-bois',
-      coverImage: '/uploads/cover.jpg',
-      slides: [
-        { id: 's1', position: 0, type: 'image', src: '/uploads/photo.jpg', caption: 'détail' },
-      ],
-    };
-    setup('chaise-bois', of(furniture));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    const display: DisplaySlide[] = (fixture.componentInstance as any).displaySlides();
-    expect(display.length).toBe(3);
-    expect(display[0].type).toBe('cover');
-    expect((display[0] as any).src).toBe('/uploads/cover.jpg');
-    expect(display[1].type).toBe('image');
-    expect(display[display.length - 1].type).toBe('link');
-    expect((display[display.length - 1] as any).href).toBe('/mobilier/chaise-bois');
-  });
-
   it('galleryImageOpen ouvre la lightbox avec les images mappées et le bon startIndex', () => {
     const furnitureWithGallery: Furniture = {
       ...mockFurniture,
@@ -246,23 +186,4 @@ describe('FurnitureDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('app-image-lightbox')).toBeNull();
   });
 
-  it('filtre les slides legacy de type cover/link recues de l API', () => {
-    const furniture: Furniture = {
-      ...mockFurniture,
-      slug: 'x',
-      coverImage: '/c.jpg',
-      slides: [
-        { id: 'legacy-c', position: 0, type: 'cover', src: '/legacy.jpg' },
-        { id: 's1', position: 1, type: 'image', src: '/photo.jpg', caption: null },
-        { id: 'legacy-l', position: 2, type: 'link', label: 'old', description: null, href: '/old' },
-      ] as any,
-    };
-    setup('x', of(furniture));
-    const fixture = TestBed.createComponent(FurnitureDetailComponent);
-    fixture.detectChanges();
-    const display: DisplaySlide[] = (fixture.componentInstance as any).displaySlides();
-    expect(display.length).toBe(3);
-    expect(display.filter((s: DisplaySlide) => s.type === 'cover').length).toBe(1);
-    expect((display[0] as any).src).toBe('/c.jpg');
-  });
 });
