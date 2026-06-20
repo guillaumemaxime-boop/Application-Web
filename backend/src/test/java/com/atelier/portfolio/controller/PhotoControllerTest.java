@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -82,7 +83,25 @@ class PhotoControllerTest {
     }
 
     @Test
-    void testServe_NonExistingFile_ReturnsNotFound() throws IOException {
+    void serve_reference_perdue_redirige_vers_le_logo() throws IOException {
+        ReflectionTestUtils.setField(controller, "fallbackImage", "/logo.jpg");
+        when(service.loadAsResource("missing.jpg")).thenReturn(null);
+
+        ResponseEntity<Resource> result = controller.serve("missing.jpg");
+
+        assertEquals(302, result.getStatusCode().value());
+        assertNotNull(result.getHeaders().getLocation());
+        assertEquals("/logo.jpg", result.getHeaders().getLocation().toString());
+        assertNull(result.getBody());
+        String cacheControl = result.getHeaders().getCacheControl();
+        assertNotNull(cacheControl);
+        assertTrue(cacheControl.contains("no-store"),
+                "le placeholder ne doit pas etre cache : " + cacheControl);
+    }
+
+    @Test
+    void serve_reference_perdue_sans_fallback_renvoie_404() throws IOException {
+        ReflectionTestUtils.setField(controller, "fallbackImage", "");
         when(service.loadAsResource("missing.jpg")).thenReturn(null);
 
         ResponseEntity<Resource> result = controller.serve("missing.jpg");

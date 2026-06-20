@@ -33,6 +33,9 @@ public class PhotoService {
             ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"
     );
 
+    /** Taille source max chargee en RAM lors du batch de variantes (garde anti-OOM). */
+    private static final long MAX_BATCH_SOURCE_BYTES = 50L * 1024 * 1024;
+
     private final PhotoRepository repository;
 
     @Value("${app.upload.dir:./uploads}")
@@ -70,6 +73,7 @@ public class PhotoService {
         Path target = dir.resolve(filename);
         byte[] optimized = ImageOptimizer.optimize(file.getBytes(), normalizedExt);
         Files.write(target, optimized);
+        writeVariants(dir, filename, optimized, normalizedExt);
 
         String url = baseUrl + "/" + filename;
 
@@ -89,16 +93,40 @@ public class PhotoService {
         // resolue puis on verifie qu'elle reste sous uploadPath. Empeche
         // les tentatives de path traversal du type "../etc/passwd".
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Resource direct = resolveUnder(uploadPath, filename);
+        if (direct != null) {
+            return direct;
+        }
+        // Fallback variante → original : une variante demandee mais absente
+        // (image plus petite que la cible, ou batch pas encore lance) retombe sur
+        // l'original. Indispensable pour les <img srcset> (pas de fallback natif
+        // vers `src` quand un candidat 404).
+        String base = baseFromVariant(filename);
+        if (base != null) {
+            return resolveUnder(uploadPath, base);
+        }
+        return null;
+    }
+
+    /** Resout un fichier sous uploadPath (garde path-traversal), ou null. */
+    private static Resource resolveUnder(Path uploadPath, String filename) throws MalformedURLException {
         Path filePath = uploadPath.resolve(filename).normalize();
         if (!filePath.startsWith(uploadPath)) {
             return null;
         }
         Resource resource = new UrlResource(filePath.toUri());
-        if (resource.exists() && resource.isReadable()) {
-            return resource;
-        }
-        return null;
+        return (resource.exists() && resource.isReadable()) ? resource : null;
     }
+
+    /** "uuid-800.jpg" -> "uuid.jpg" ; null si le nom n'est pas une variante {base}-{w}.{ext}. */
+    static String baseFromVariant(String filename) {
+        if (filename == null) return null;
+        var m = VARIANT_NAME.matcher(filename);
+        return m.matches() ? m.group(1) + m.group(2) : null;
+    }
+
+    private static final java.util.regex.Pattern VARIANT_NAME =
+            java.util.regex.Pattern.compile("(.+)-\\d+(\\.[^.]+)$");
 
     @Transactional
     public boolean delete(String id) {
@@ -108,6 +136,7 @@ public class PhotoService {
                 Files.deleteIfExists(file);
             } catch (IOException ignored) {
             }
+            deleteVariants(entity.getFilename());
             repository.delete(entity);
             return true;
         }).orElse(false);
@@ -154,6 +183,86 @@ public class PhotoService {
     }
 
     public record OptimizeReport(int count, int optimized, long bytesSaved) {}
+
+    // --- Variantes responsive (Phase 2a) ---
+
+    /** Insere -{w} avant l'extension : "uuid.jpg" -> "uuid-800.jpg". */
+    static String variantFilename(String filename, int width) {
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0) return filename + "-" + width;
+        return filename.substring(0, dot) + "-" + width + filename.substring(dot);
+    }
+
+    /** Genere les variantes (≤ largeur source) a cote de l'original deja ecrit. */
+    private void writeVariants(Path dir, String filename, byte[] originalBytes, String extension) {
+        for (int w : ImageOptimizer.VARIANT_WIDTHS) {
+            try {
+                byte[] variant = ImageOptimizer.resizeToWidth(originalBytes, extension, w);
+                if (variant != null) {
+                    Files.write(dir.resolve(variantFilename(filename, w)), variant);
+                }
+            } catch (IOException ignored) {
+                // conformite d'abord : l'original prime, une variante ratee est sans gravite
+            }
+        }
+    }
+
+    /** Supprime les fichiers variantes d'un original (best-effort). */
+    void deleteVariants(String filename) {
+        Path dir = Paths.get(uploadDir);
+        for (int w : ImageOptimizer.VARIANT_WIDTHS) {
+            try {
+                Files.deleteIfExists(dir.resolve(variantFilename(filename, w)));
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    /** Resume du batch de generation de variantes. */
+    public record VariantReport(int count, int generated) {}
+
+    /**
+     * Genere les variantes manquantes pour toutes les photos existantes (idempotent :
+     * une variante deja presente est laissee). Migration one-shot.
+     */
+    public VariantReport generateVariantsAll() {
+        int count = 0;
+        int generated = 0;
+        Path dir = Paths.get(uploadDir);
+        Path dirAbs = dir.toAbsolutePath().normalize();
+        for (PhotoEntity entity : repository.findAll()) {
+            count++;
+            String filename = entity.getFilename();
+            Path original = dir.resolve(filename).normalize();
+            // Confinement (cohérence avec optimizeAll) : ignore tout chemin hors uploadDir.
+            if (!original.startsWith(dirAbs) && !original.startsWith(dir.normalize())) continue;
+            if (!Files.exists(original)) continue;
+            String ext = extractExtension(filename);
+            byte[] originalBytes;
+            try {
+                // Garde anti-OOM : ne charge pas en RAM une source démesurée lors du batch
+                // (un JPEG de quelques dizaines de Mo peut décoder en plusieurs Go).
+                if (Files.size(original) > MAX_BATCH_SOURCE_BYTES) continue;
+                originalBytes = Files.readAllBytes(original);
+            } catch (IOException e) {
+                continue;
+            }
+            for (int w : ImageOptimizer.VARIANT_WIDTHS) {
+                Path variantPath = dir.resolve(variantFilename(filename, w)).normalize();
+                if (!variantPath.startsWith(dirAbs) && !variantPath.startsWith(dir.normalize())) continue;
+                if (Files.exists(variantPath)) continue;  // idempotent
+                try {
+                    byte[] variant = ImageOptimizer.resizeToWidth(originalBytes, ext, w);
+                    if (variant != null) {
+                        Files.write(variantPath, variant);
+                        generated++;
+                    }
+                } catch (IOException ignored) {
+                }
+            }
+        }
+        return new VariantReport(count, generated);
+    }
 
     @Transactional
     public Optional<Photo> updateTags(String id, List<String> tags) {

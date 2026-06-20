@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, ViewChild } from '@angular/core';
 import { Crop } from '../../../models/crop.model';
+import { variantUrl, pickVariantWidth } from '../../../utils/image-variant';
 
 /**
  * Rend l'image source + crop optionnel dans un <canvas>. Pixel-perfect grâce
@@ -86,23 +87,53 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
     this.lazyObserver?.disconnect();
   }
 
+  /**
+   * URL a charger pour une largeur d'affichage CSS donnee et un devicePixelRatio.
+   * Choisit une variante responsive (ajustee de la fraction de crop) ou l'original.
+   * Methode pure (pas d'acces DOM) pour rester testable sans canvas/layout.
+   */
+  resolveSrc(displayWidthCss: number, dpr: number): string {
+    if (!displayWidthCss || displayWidthCss <= 0) return this.imageUrl;
+    const cropFrac = (this.crop && this.crop.w) ? this.crop.w / 100 : 1;
+    const neededPx = Math.ceil((displayWidthCss * dpr) / cropFrac);
+    const w = pickVariantWidth(neededPx);
+    return w ? variantUrl(this.imageUrl, w) : this.imageUrl;
+  }
+
+  /** Largeur d'affichage CSS estimee selon le mode (pour la selection de variante). */
+  private displayWidthFor(canvas: HTMLCanvasElement): number {
+    if (this.mode === 'adaptive') return this.maxWidth;
+    if (this.mode === 'contain') return Number.MAX_SAFE_INTEGER;  // pleine resolution
+    const rect = canvas.getBoundingClientRect();
+    return rect.width || 0;
+  }
+
   private render(): void {
     const canvas = this.canvasRef?.nativeElement;
     if (!canvas || !this.imageUrl) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    // Reutilise l'image cachee si elle correspond a l'URL courante (evite un
-    // re-fetch + re-decodage a chaque resize).
-    if (this.cachedImage && this.cachedImage.src === this.imageUrl && this.cachedImage.complete) {
+
+    const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+    const targetSrc = this.resolveSrc(this.displayWidthFor(canvas), dpr);
+
+    // Reutilise l'image cachee si elle correspond a la source visee courante (evite
+    // un re-fetch + re-decodage a chaque resize). Comparaison via endsWith car
+    // img.src est resolu en URL absolue par le navigateur, alors que targetSrc est relatif.
+    if (this.cachedImage && this.cachedImage.src.endsWith(targetSrc) && this.cachedImage.complete && this.cachedImage.naturalWidth > 0) {
       this.draw(ctx, canvas, this.cachedImage);
       return;
     }
+    this.loadAndDraw(ctx, canvas, targetSrc, false);
+  }
+
+  private loadAndDraw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, src: string, isFallback: boolean): void {
     const img = new Image();
     img.crossOrigin = 'anonymous';  // permet getImageData() ulterieur sans tainted canvas
     if (this.priority) {
       (img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'high';
     }
-    const requestedUrl = this.imageUrl;
+    const requestedUrl = this.imageUrl;  // garde anti-rendu-perime sur l'INPUT (pas la variante)
     img.onload = () => {
       if (requestedUrl !== this.imageUrl) return;  // rendu perime : l'input a change depuis
       this.cachedImage = img;
@@ -110,9 +141,15 @@ export class CroppedImageCanvasComponent implements AfterViewInit, OnChanges, On
     };
     img.onerror = () => {
       if (requestedUrl !== this.imageUrl) return;
+      // Variante absente (source plus petite que la cible, photo non encore batchee)
+      // => retente l'original une seule fois.
+      if (!isFallback && src !== this.imageUrl) {
+        this.loadAndDraw(ctx, canvas, this.imageUrl, true);
+        return;
+      }
       canvas.width = canvas.width;  // clears the canvas
     };
-    img.src = this.imageUrl;
+    img.src = src;
   }
 
   private draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, img: HTMLImageElement): void {

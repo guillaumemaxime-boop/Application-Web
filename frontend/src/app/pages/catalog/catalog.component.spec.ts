@@ -105,6 +105,21 @@ describe('CatalogComponent', () => {
     expect(buttons[1].classList.contains('active')).toBeTrue();
   });
 
+  it('adds a responsive srcset on the thumbnail for /api/photos/files URLs', () => {
+    const photoItems: Furniture[] = [
+      {
+        id: '1', title: 'Onde', slug: 'onde', category: 'Sièges', material: 'Chêne',
+        year: 2024, coverImage: '/api/photos/files/onde.jpg', gallery: [], shortDescription: '',
+        description: '', dimensions: [], designer: 'Lumen', featured: false, showStoryLink: true, showStoryButton: true, slides: [],
+      },
+    ];
+    setup(of(photoItems));
+    const fixture = TestBed.createComponent(CatalogComponent);
+    fixture.detectChanges();
+    const img = fixture.nativeElement.querySelector('.card .thumb img') as HTMLImageElement;
+    expect(img.getAttribute('srcset')).toContain('/api/photos/files/onde-400.jpg 400w');
+  });
+
   it('groups undated items under year 0 when sorting by year', () => {
     const undated: Furniture[] = [
       {

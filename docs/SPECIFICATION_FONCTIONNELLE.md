@@ -68,7 +68,7 @@ Milo Guillaume a besoin d'une **vitrine numérique** pour :
 
 - Les données (pièces, expositions) sont **gérées via l'interface d'administration** intégrée à l'application (`/admin`).
 - L'application est **hébergée sur Railway** (backend + base de données) avec un frontend servi par Nginx.
-- Les **images** sont référencées par URL externe (hébergement tiers, ex. CDN ou service cloud).
+- Les **images** sont soit **uploadées via l'admin** (médiathèque, servies par le backend depuis le disque), soit référencées par **URL externe** (CDN / données de démo). Si un média référencé est **introuvable**, une **image par défaut (le logo)** est affichée à la place d'une image cassée.
 - Aucune **transaction financière** n'est gérée via l'application.
 - L'interface d'administration est **protégée par authentification JWT** (identifiants configurés via variables d'environnement).
 

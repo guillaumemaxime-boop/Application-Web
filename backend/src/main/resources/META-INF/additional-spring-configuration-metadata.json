@@ -11,6 +11,12 @@
       "type": "java.lang.String",
       "description": "Base URL prefix used to build public photo URLs.",
       "defaultValue": "/api/photos/files"
+    },
+    {
+      "name": "app.upload.fallback-image",
+      "type": "java.lang.String",
+      "description": "Image servie par defaut (redirection) quand une reference d'image est perdue (fichier absent). Vide => 404.",
+      "defaultValue": "/logo.jpg"
     }
   ]
 }

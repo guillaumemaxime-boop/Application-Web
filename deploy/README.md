@@ -75,6 +75,8 @@ The sync workflows move those floating tags to point at the SHA recorded in `ver
 
 Le service backend écrit les photos **et les vidéos** uploadées (médiathèque admin, vidéos de fiches/Studio) sur disque via `UPLOAD_DIR`. Le filesystem d'un conteneur Railway est **éphémère** : sans volume, les fichiers disparaissent à chaque redéploiement (les métadonnées en base Postgres survivent, mais les vignettes pointent vers des fichiers introuvables).
 
+**Image par défaut (référence perdue)** : si une image référencée est absente du disque, `/api/photos/files/{filename}` renvoie une **redirection vers `UPLOAD_FALLBACK_IMAGE`** (défaut `/logo.jpg`, servi par le front) au lieu d'une image cassée — atténue le scénario ci-dessus. Mettre la variable à vide rétablit le `404`. Ce n'est **pas** un substitut au volume persistant : les fichiers restent perdus, seul l'affichage est dégradé proprement.
+
 > **Taille d'upload** : la limite est de **200 Mo**, alignée entre Spring (`spring.servlet.multipart.max-file-size`/`max-request-size`) et Nginx (`client_max_body_size` sur `location /api/`). Garder les deux en phase si la limite change. Les vidéos sont stockées **brutes** (pas de transcodage) — l'admin doit fournir un mp4 web-ready (H.264/AAC) ; prévoir la croissance du volume en conséquence.
 
 Pour chaque service backend Railway (`backend × {staging, production}`) :

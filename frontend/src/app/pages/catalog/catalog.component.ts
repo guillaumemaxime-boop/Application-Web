@@ -7,6 +7,7 @@ import { Furniture } from '../../models/furniture.model';
 import { SiteContent } from '../../models/site-content.model';
 import { LoadingService } from '../../services/loading.service';
 import { roleStyle } from '../../utils/title-style';
+import { srcsetFor } from '../../utils/image-variant';
 
 type GroupKey = 'category' | 'year';
 
@@ -52,7 +53,10 @@ interface Group {
               @for (f of g.items; track f.slug) {
                 <a class="card" [routerLink]="['/mobilier', f.slug]">
                   <div class="thumb">
-                    <img [src]="f.coverImage" [alt]="f.title" loading="lazy" />
+                    <img [src]="f.coverImage"
+                         [attr.srcset]="srcsetFor(f.coverImage) || null"
+                         sizes="(max-width: 600px) 100vw, (max-width: 960px) 50vw, 400px"
+                         [alt]="f.title" loading="lazy" />
                   </div>
                   <div class="meta">
                     <span class="eyebrow" [ngStyle]="eyebrowStyle()">{{ f.category }} · {{ f.year }}</span>
@@ -177,6 +181,8 @@ export class CatalogComponent {
   protected readonly loading = signal(true);
   protected readonly groupBy = signal<GroupKey>('category');
   protected readonly content = signal<SiteContent>({});
+
+  protected readonly srcsetFor = srcsetFor;
 
   protected readonly titleStyle        = computed(() => roleStyle(this.content(), 'title'));
   protected readonly sectionTitleStyle = computed(() => roleStyle(this.content(), 'section-title'));

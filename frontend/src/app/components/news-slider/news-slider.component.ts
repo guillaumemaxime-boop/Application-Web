@@ -4,6 +4,7 @@ import { NewsSliderView, SliderStoryRef } from '../../models/news-slider.model';
 import { SiteContent } from '../../models/site-content.model';
 import { roleStyle } from '../../utils/title-style';
 import { cropTransform, CropStyle } from '../../utils/crop-transform';
+import { srcsetFor } from '../../utils/image-variant';
 
 @Component({
   selector: 'app-news-slider',
@@ -29,6 +30,8 @@ import { cropTransform, CropStyle } from '../../utils/crop-transform';
                   (click)="onCardClick(story)">
             <div class="thumb">
               <img [src]="story.coverImage" [alt]="story.title" loading="lazy" decoding="async"
+                   [attr.srcset]="srcsetFor(story.coverImage) || null"
+                   sizes="(max-width: 600px) 100vw, 400px"
                    [style.transform]="storyCoverStyle(story).transform"
                    [style.transform-origin]="storyCoverStyle(story).transformOrigin" />
             </div>
@@ -103,6 +106,7 @@ export class NewsSliderComponent {
   @Output() storyOpen = new EventEmitter<SliderStoryRef>();
 
   protected readonly titleStyle = computed(() => roleStyle(this.content(), 'section-title'));
+  protected readonly srcsetFor = srcsetFor;
 
   protected trackRef = viewChild<ElementRef<HTMLDivElement>>('track');
   protected atStart = signal(true);

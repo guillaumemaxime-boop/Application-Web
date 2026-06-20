@@ -226,6 +226,65 @@ class PhotoServiceTest {
         assertEquals(4, Files.size(gif));
     }
 
+    // --- variantes responsive (Phase 2a) ---
+
+    @Test
+    void store_ecrit_les_variantes_inferieures_a_la_source() throws IOException {
+        // Source 1600px (bruitee → reductions effectives) : variantes 400, 800, 1280 attendues.
+        byte[] big = makeJpegNoisy(1600, 1000);
+        MockMultipartFile file = new MockMultipartFile("file", "x.jpg", "image/jpeg", big);
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Photo photo = service.store(file);
+
+        String base = photo.filename().replace(".jpg", "");
+        assertTrue(Files.exists(tempDir.resolve(base + "-400.jpg")), "variante 400 ecrite");
+        assertTrue(Files.exists(tempDir.resolve(base + "-800.jpg")), "variante 800 ecrite");
+        assertTrue(Files.exists(tempDir.resolve(base + "-1280.jpg")), "variante 1280 ecrite");
+    }
+
+    @Test
+    void store_pas_de_variante_plus_large_que_la_source() throws IOException {
+        // Source 500px : seule 400 applicable (pas d'upscale vers 800/1280).
+        byte[] small = makeJpegNoisy(500, 400);
+        MockMultipartFile file = new MockMultipartFile("file", "x.jpg", "image/jpeg", small);
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Photo photo = service.store(file);
+
+        String base = photo.filename().replace(".jpg", "");
+        assertTrue(Files.exists(tempDir.resolve(base + "-400.jpg")), "variante 400 ecrite");
+        assertFalse(Files.exists(tempDir.resolve(base + "-800.jpg")), "pas de variante 800 (upscale)");
+    }
+
+    @Test
+    void deleteVariants_retire_les_variantes_sans_toucher_l_original() throws IOException {
+        Files.write(tempDir.resolve("u.jpg"), new byte[]{1});
+        Files.write(tempDir.resolve("u-400.jpg"), new byte[]{1});
+
+        ReflectionTestUtils.invokeMethod(service, "deleteVariants", "u.jpg");
+
+        assertFalse(Files.exists(tempDir.resolve("u-400.jpg")), "variante supprimee");
+        assertTrue(Files.exists(tempDir.resolve("u.jpg")), "deleteVariants ne touche pas l'original");
+    }
+
+    @Test
+    void generateVariantsAll_genere_les_variantes_puis_est_idempotent() throws IOException {
+        byte[] big = makeJpegNoisy(1600, 1000);
+        Files.write(tempDir.resolve("existing.jpg"), big);
+        PhotoEntity entity = entity("ph-var01", "existing.jpg", "existing.jpg", "2026-05-10T00:00:00Z");
+        when(repository.findAll()).thenReturn(List.of(entity));
+
+        PhotoService.VariantReport first = service.generateVariantsAll();
+        assertEquals(1, first.count());
+        assertEquals(3, first.generated(), "400/800/1280 generees");
+        assertTrue(Files.exists(tempDir.resolve("existing-800.jpg")));
+
+        // 2e passage : variantes deja presentes -> rien de regenere (idempotent)
+        PhotoService.VariantReport second = service.generateVariantsAll();
+        assertEquals(0, second.generated());
+    }
+
     private static byte[] makeJpegNoisy(int w, int h) throws IOException {
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         long seed = 42;
@@ -259,6 +318,30 @@ class PhotoServiceTest {
         Resource resource = service.loadAsResource("ghost.jpg");
 
         assertNull(resource);
+    }
+
+    @Test
+    void loadAsResource_variante_absente_retombe_sur_l_original() throws IOException {
+        Files.write(tempDir.resolve("u.jpg"), new byte[]{1, 2, 3});
+        // u-800.jpg n'existe pas → doit servir l'original u.jpg (fallback srcset-safe)
+        Resource res = service.loadAsResource("u-800.jpg");
+        assertNotNull(res);
+        assertTrue(res.exists());
+        assertTrue(res.getURI().toString().endsWith("u.jpg"));
+    }
+
+    @Test
+    void loadAsResource_variante_presente_servie_directement() throws IOException {
+        Files.write(tempDir.resolve("u.jpg"), new byte[]{1});
+        Files.write(tempDir.resolve("u-800.jpg"), new byte[]{2, 2});
+        Resource res = service.loadAsResource("u-800.jpg");
+        assertNotNull(res);
+        assertTrue(res.getURI().toString().endsWith("u-800.jpg"));
+    }
+
+    @Test
+    void loadAsResource_variante_et_original_absents_renvoie_null() throws IOException {
+        assertNull(service.loadAsResource("ghost-800.jpg"));
     }
 
     @Test

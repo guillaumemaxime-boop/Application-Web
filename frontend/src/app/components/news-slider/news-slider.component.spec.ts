@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NewsSliderComponent } from './news-slider.component';
 import { NewsSliderView } from '../../models/news-slider.model';
+import { srcsetFor } from '../../utils/image-variant';
 
 describe('NewsSliderComponent', () => {
   let fixture: ComponentFixture<NewsSliderComponent>;
@@ -98,6 +99,35 @@ describe('NewsSliderComponent', () => {
                     ownerKind: 'furniture', ownerId: 'f-1', ownerLabel: 'Foo' } as any;
     const cmp = fixture.componentInstance as any;
     expect(cmp.storyCoverStyle(story).transform).toBe('translate(-50%, -50%) scale(2)');
+  });
+
+  it('la vignette porte un srcset responsive quand l\'URL est une photo /api/photos/files/', () => {
+    const photoUrl = '/api/photos/files/ma-photo.jpg';
+    const sliderPhoto: NewsSliderView = {
+      id: 'sld-p', slug: 'photos', title: 'Photos', zoneKey: 'home-top',
+      stories: [
+        { id: 'st-p1', slug: 'p-principale', title: 'Photo story',
+          coverImage: photoUrl,
+          ownerKind: 'furniture', ownerId: 'f-p1', ownerLabel: 'Meuble P' },
+      ],
+    };
+    const fp = TestBed.createComponent(NewsSliderComponent);
+    fp.componentRef.setInput('slider', sliderPhoto);
+    fp.detectChanges();
+
+    const img = fp.nativeElement.querySelector('.thumb img') as HTMLImageElement;
+    expect(img).toBeTruthy();
+    const srcset = img.getAttribute('srcset');
+    expect(srcset).withContext('srcset doit être présent').toBeTruthy();
+    expect(srcset).toContain('-400.jpg 400w');
+    expect(srcset).withContext('srcset doit correspondre à srcsetFor').toBe(srcsetFor(photoUrl));
+  });
+
+  it('la vignette n\'a pas de srcset pour une URL non-photo (externe)', () => {
+    const img = fixture.nativeElement.querySelector('.thumb img') as HTMLImageElement;
+    expect(img).toBeTruthy();
+    // Les fixtures par défaut ont https://e.com/... → pas éligibles
+    expect(img.getAttribute('srcset')).toBeNull();
   });
 
   it('storyCoverStyle() retourne transform none pour une story sans coverCrop', () => {

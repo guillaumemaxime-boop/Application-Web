@@ -112,6 +112,22 @@ describe('ExpositionsListComponent', () => {
     expect(out).toContain('—');
   });
 
+  it('adds a responsive srcset on the thumbnail for /api/photos/files URLs', () => {
+    const photoItems: Exhibition[] = [
+      {
+        id: '1', title: 'Paris Nuit', slug: 'paris-nuit', venue: 'Galerie X',
+        city: 'Paris', country: 'France', startDate: '2025-03-10', endDate: '2025-04-12',
+        coverImage: '/api/photos/files/paris.jpg', gallery: [], curator: 'C', shortDescription: '',
+        description: '', tags: [], featured: false, showStoryLink: true, showStoryButton: true, slides: [],
+      },
+    ];
+    setup(of(photoItems));
+    const fixture = TestBed.createComponent(ExpositionsListComponent);
+    fixture.detectChanges();
+    const img = fixture.nativeElement.querySelector('.card .thumb img') as HTMLImageElement;
+    expect(img.getAttribute('srcset')).toContain('/api/photos/files/paris-400.jpg 400w');
+  });
+
   it('groups items with an unparseable start date under year 0', () => {
     const broken: Exhibition[] = [
       {
