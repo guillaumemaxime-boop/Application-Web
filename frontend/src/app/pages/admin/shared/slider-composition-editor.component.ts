@@ -31,7 +31,7 @@ import { Story } from '../../../models/story.model';
         <div class="composition-grid" cdkDropListGroup>
           <aside class="available">
             <h4>Stories disponibles</h4>
-            <input type="text" [(ngModel)]="storyFilter" placeholder="Rechercher..." aria-label="Filtrer les stories" />
+            <input type="text" [ngModel]="storyFilter()" (ngModelChange)="storyFilter.set($event)" placeholder="Rechercher..." aria-label="Filtrer les stories" />
             <ul class="drop-list" id="available" cdkDropList [cdkDropListData]="availableIds()"
                 (cdkDropListDropped)="onDrop($event)">
               @for (story of filteredAvailable(); track story.id) {
@@ -111,7 +111,7 @@ export class SliderCompositionEditorComponent {
 
   protected readonly pendingStoryIds = signal<string[]>([]);
   protected readonly status = signal('');
-  protected storyFilter = '';
+  protected readonly storyFilter = signal('');
 
   private lastSliderId: string | null | undefined = undefined;
 
@@ -126,7 +126,7 @@ export class SliderCompositionEditorComponent {
 
   protected readonly filteredAvailable = computed(() => {
     const pending = new Set(this.pendingStoryIds());
-    const q = this.storyFilter.toLowerCase();
+    const q = this.storyFilter().toLowerCase();
     return this.allStories()
       .filter(s => !pending.has(s.id))
       .filter(s => !q || s.title.toLowerCase().includes(q) || s.ownerId.toLowerCase().includes(q));

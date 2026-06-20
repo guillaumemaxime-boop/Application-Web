@@ -65,6 +65,15 @@ describe('SliderCompositionEditorComponent', () => {
     expect(pending()[0].textContent).toContain('Story 1');
   });
 
+  it('filtre : taper dans la recherche restreint les stories disponibles', () => {
+    const input = fixture.nativeElement.querySelector('input[aria-label="Filtrer les stories"]') as HTMLInputElement;
+    input.value = 'Story 3';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(available().length).toBe(1);
+    expect(available()[0].textContent).toContain('Story 3');
+  });
+
   it('ajout clavier : le bouton « Ajouter » d’une story disponible la déplace dans la composition', () => {
     const addBtn = byText(available(), 'Story 2')!.querySelector('.story-add') as HTMLButtonElement;
     addBtn.click();
