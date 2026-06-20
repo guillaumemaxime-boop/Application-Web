@@ -29,6 +29,8 @@ describe('SlidersComponent', () => {
     fixture.detectChanges();
     httpMock.expectOne('/api/admin/sliders').flush([]);
     httpMock.expectOne('/api/admin/stories/all').flush([]);
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
     fixture.detectChanges();
   });
 

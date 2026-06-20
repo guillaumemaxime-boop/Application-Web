@@ -10,6 +10,7 @@ import { SliderCompositionEditorComponent } from './slider-composition-editor.co
   imports: [SliderCompositionEditorComponent],
   template: `<app-slider-composition-editor
     [title]="title" [sliderId]="sliderId()" [storyIds]="storyIds()" [allStories]="allStories"
+    [ownerTitles]="ownerTitles"
     (save)="saved = $event" (cancel)="cancelled = true" />`,
 })
 class HostComponent {
@@ -21,6 +22,7 @@ class HostComponent {
     { id: 's2', title: 'Story 2', ownerKind: 'exhibition', ownerId: 'e1' } as Story,
     { id: 's3', title: 'Story 3', ownerKind: 'furniture', ownerId: 'f2' } as Story,
   ];
+  ownerTitles: Record<string, string> = {};
   saved: string[] | null = null;
   cancelled = false;
 }
@@ -169,6 +171,27 @@ describe('SliderCompositionEditorComponent', () => {
   it('expose une région aria-live pour annoncer les changements', () => {
     const live = fixture.nativeElement.querySelector('[aria-live]');
     expect(live).toBeTruthy();
+  });
+
+  it('ownerTitles : le libellé d\'une story disponible affiche le titre de l\'owner et non l\'id', () => {
+    // s2 a ownerId:'e1' — on fournit un titre pour cet id
+    host.ownerTitles = { 'e1': 'Exposition Lumière' };
+    fixture.detectChanges();
+    const s2El = available().find(e => e.textContent?.includes('Story 2'));
+    expect(s2El).toBeTruthy();
+    const small = s2El!.querySelector('small');
+    expect(small?.textContent).toContain('Exposition Lumière');
+    expect(small?.textContent).not.toContain('e1');
+  });
+
+  it('ownerTitles : fallback sur ownerId si aucun titre fourni pour cet id', () => {
+    // s3 a ownerId:'f2' — pas de titre fourni
+    host.ownerTitles = {};
+    fixture.detectChanges();
+    const s3El = available().find(e => e.textContent?.includes('Story 3'));
+    expect(s3El).toBeTruthy();
+    const small = s3El!.querySelector('small');
+    expect(small?.textContent).toContain('f2');
   });
 
   it('ne réinitialise PAS la composition quand storyIds change sans changement d\'id', () => {

@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+import { Component, Input, computed, effect, input, output, signal, untracked } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
 import {
   CdkDropList, CdkDrag, CdkDropListGroup, CdkDragDrop, moveItemInArray,
@@ -37,7 +37,7 @@ import { Story } from '../../../models/story.model';
                 (cdkDropListDropped)="onDrop($event)">
               @for (story of filteredAvailable(); track story.id) {
                 <li class="story-option" cdkDrag [cdkDragData]="story.id">
-                  <span>{{ story.title }} <small>({{ story.ownerKind }} {{ story.ownerId }})</small></span>
+                  <span>{{ story.title }} <small>({{ ownerLabel(story) }})</small></span>
                   <button type="button" class="story-add" (click)="add(story.id)"
                           [attr.aria-label]="'Ajouter ' + story.title + ' à la composition'">Ajouter →</button>
                 </li>
@@ -104,6 +104,8 @@ export class SliderCompositionEditorComponent {
   readonly title = input<string>('');
   readonly storyIds = input<string[]>([]);
   readonly allStories = input<Story[]>([]);
+  /** Map ownerId → titre lisible (ex. 'f-001' → 'Tabouret Aurore'). */
+  @Input() ownerTitles: Record<string, string> = {};
   /** Identité du slider en cours d'édition. L'éditeur ne réinitialise sa
    *  composition pendante que lorsque cet id change (pas à chaque nouvelle
    *  référence de `storyIds`), pour ne pas écraser les modifications en cours. */
@@ -138,6 +140,10 @@ export class SliderCompositionEditorComponent {
 
   protected storyTitle(id: string): string {
     return this.allStories().find(s => s.id === id)?.title ?? id;
+  }
+
+  protected ownerLabel(story: Story): string {
+    return this.ownerTitles[story.ownerId] ?? story.ownerId;
   }
 
   /** Drag & drop : ajoute (available→composition), retire (composition→available)

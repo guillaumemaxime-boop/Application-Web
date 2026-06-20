@@ -1,5 +1,6 @@
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { NewsSlider, SliderZone, SLIDER_ZONES } from '../../../models/news-slider.model';
 import { Story } from '../../../models/story.model';
@@ -54,6 +55,7 @@ import { SliderCompositionEditorComponent } from '../shared/slider-composition-e
         [sliderId]="s.id"
         [storyIds]="s.storyIds"
         [allStories]="allStories()"
+        [ownerTitles]="ownerTitles()"
         (save)="onCompositionSave($event)"
         (cancel)="closeComposition()" />
     }
@@ -83,6 +85,7 @@ export class SlidersComponent implements OnInit {
 
   protected sliders = signal<NewsSlider[]>([]);
   protected allStories = signal<Story[]>([]);
+  protected ownerTitles = signal<Record<string, string>>({});
   protected compositionOpen = signal(false);
   protected editingSlider = signal<NewsSlider | null>(null);
   protected zones: SliderZone[] = SLIDER_ZONES;
@@ -103,6 +106,15 @@ export class SlidersComponent implements OnInit {
   ngOnInit(): void {
     this.portfolio.getAdminSliders().subscribe(s => this.sliders.set(s));
     this.portfolio.getAllAdminStories().subscribe(s => this.allStories.set(s));
+    forkJoin([
+      this.portfolio.getAllFurniture(),
+      this.portfolio.getAllExhibitions(),
+    ]).subscribe(([furniture, exhibitions]) => {
+      const map: Record<string, string> = {};
+      for (const f of furniture) map[f.id] = f.title;
+      for (const e of exhibitions) map[e.id] = e.title;
+      this.ownerTitles.set(map);
+    });
   }
 
   openNewSliderForm(): void {
