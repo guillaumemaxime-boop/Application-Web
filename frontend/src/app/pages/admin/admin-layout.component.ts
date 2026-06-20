@@ -29,6 +29,7 @@ import { ToastsComponent } from './shared/toasts.component';
             <span class="nav-group">CONTENU</span>
             <a class="nav-item" routerLink="/admin/mobilier" routerLinkActive="active">Mobilier</a>
             <a class="nav-item" routerLink="/admin/expositions" routerLinkActive="active">Expositions</a>
+            <a class="nav-item" routerLink="/admin/stories" routerLinkActive="active">Stories</a>
             <a class="nav-item" routerLink="/admin/textes" routerLinkActive="active">Textes du site</a>
             <a class="nav-item" routerLink="/admin/mediatheque" routerLinkActive="active">Médiathèque</a>
 

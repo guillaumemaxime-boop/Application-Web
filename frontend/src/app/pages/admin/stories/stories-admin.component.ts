@@ -1,0 +1,201 @@
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { PortfolioService } from '../../../services/portfolio.service';
+import { ToastService } from '../shared/toast.service';
+import { StoryAdminView } from '../../../models/story.model';
+import { CroppedImageCanvasComponent } from '../shared/cropped-image-canvas.component';
+
+@Component({
+  selector: 'app-stories-admin',
+  standalone: true,
+  imports: [FormsModule, RouterLink, CroppedImageCanvasComponent],
+  template: `
+    <header class="page-head">
+      <h2>Stories</h2>
+      <button type="button" class="primary" (click)="createOpen.set(true)">+ Nouvelle story</button>
+    </header>
+
+    <div class="filters">
+      <label class="owner-filter">
+        <span>Propriétaire</span>
+        <select [ngModel]="ownerFilter()" (ngModelChange)="ownerFilter.set($event)">
+          <option value="all">Tous</option>
+          <option value="furniture">Mobilier</option>
+          <option value="exhibition">Expositions</option>
+        </select>
+      </label>
+      <input
+        type="search"
+        class="search"
+        placeholder="Rechercher une story…"
+        aria-label="Rechercher une story"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)" />
+    </div>
+
+    @if (filtered().length === 0) {
+      <p class="empty">Aucune story ne correspond aux filtres.</p>
+    }
+
+    <ul class="story-list">
+      @for (row of filtered(); track row.id) {
+        <li class="story-row">
+          <div class="thumb">
+            @if (row.coverImage) {
+              <app-cropped-image-canvas
+                mode="cover"
+                [imageUrl]="row.coverImage"
+                [crop]="row.coverCrop"
+                [alt]="row.title" />
+            }
+          </div>
+
+          <div class="info">
+            <span class="story-title">{{ row.title }}</span>
+            <div class="meta">
+              <span class="badge" [class.furniture]="row.ownerKind === 'furniture'" [class.exhibition]="row.ownerKind === 'exhibition'">
+                {{ row.ownerKind === 'furniture' ? 'Mobilier' : 'Exposition' }}
+              </span>
+              <span class="owner-title">{{ row.ownerTitle }}</span>
+              @if (row.slideCount === 0) {
+                <span class="warn">⚠ vide</span>
+              } @else {
+                <span class="slides">{{ row.slideCount }} slide{{ row.slideCount > 1 ? 's' : '' }}</span>
+              }
+            </div>
+            @if (row.sliders.length > 0) {
+              <div class="sliders">
+                <span class="sliders-label">Sliders :</span>
+                @for (sl of row.sliders; track sl.id) {
+                  <span class="slider-chip">{{ sl.title }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="actions">
+            <button type="button" class="reorder" (click)="onReorder(row, -1)" [disabled]="!canMoveUp(row)" aria-label="Monter la story">↑</button>
+            <button type="button" class="reorder" (click)="onReorder(row, 1)" [disabled]="!canMoveDown(row)" aria-label="Descendre la story">↓</button>
+            <a class="action" [routerLink]="['/admin/stories', row.id]">Éditer</a>
+            <button type="button" class="action" (click)="coverEdit.set(row)">Cover</button>
+            <button type="button" class="action danger" (click)="onDelete(row)">Supprimer</button>
+          </div>
+        </li>
+      }
+    </ul>
+  `,
+  styles: [`
+    .page-head { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .page-head h2 { margin: 0; flex: 1; }
+
+    .filters { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 24px; }
+    .owner-filter { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--color-mute); }
+    select, .search { padding: 8px 10px; background: var(--color-bg); border: 1px solid var(--color-line); font-size: 0.9rem; }
+    .search { flex: 1; min-width: 200px; }
+
+    .empty { color: var(--color-mute); font-style: italic; padding: 12px 0; }
+
+    .story-list { list-style: none; margin: 0; padding: 0; }
+    .story-row {
+      display: flex; gap: 16px; align-items: center;
+      padding: 12px; border: 1px solid var(--color-line);
+      background: var(--color-bg-alt); margin-bottom: 8px;
+    }
+
+    .thumb { width: 88px; height: 64px; flex-shrink: 0; background: var(--color-bg); border: 1px solid var(--color-line); overflow: hidden; }
+
+    .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .story-title { font-weight: 600; }
+    .meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; }
+    .badge { padding: 2px 8px; border: 1px solid var(--color-line); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.08em; }
+    .badge.furniture { border-color: var(--color-accent); }
+    .owner-title { color: var(--color-ink-soft); }
+    .slides { color: var(--color-mute); }
+    .warn { color: var(--color-accent); font-weight: 600; }
+
+    .sliders { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 0.75rem; }
+    .sliders-label { color: var(--color-mute); }
+    .slider-chip { padding: 1px 7px; background: var(--color-bg); border: 1px solid var(--color-line); }
+
+    .actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .action, .reorder {
+      padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-ink);
+      cursor: pointer; font-size: 0.85rem; text-decoration: none; color: var(--color-ink);
+      font-family: inherit; line-height: 1;
+    }
+    .reorder { padding: 6px 10px; }
+    .action.danger { border-color: var(--color-accent); color: var(--color-accent); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .primary { padding: 8px 16px; background: var(--color-ink); color: var(--color-bg); border: 1px solid var(--color-ink); cursor: pointer; font-size: 0.9rem; }
+  `],
+})
+export class StoriesAdminComponent {
+  private readonly portfolio = inject(PortfolioService);
+  private readonly toast = inject(ToastService);
+
+  protected readonly rows = signal<StoryAdminView[]>([]);
+  protected readonly ownerFilter = signal<'all' | 'furniture' | 'exhibition'>('all');
+  protected readonly search = signal('');
+  // Câblés en T5 (création) et T6 (édition cover) ; déclarés ici pour les boutons.
+  protected readonly createOpen = signal(false);
+  protected readonly coverEdit = signal<StoryAdminView | null>(null);
+
+  protected readonly filtered = computed(() => {
+    const q = this.search().toLowerCase();
+    const f = this.ownerFilter();
+    return this.rows()
+      .filter(r => f === 'all' || r.ownerKind === f)
+      .filter(r => !q || r.title.toLowerCase().includes(q) || r.ownerTitle.toLowerCase().includes(q));
+  });
+
+  constructor() {
+    this.reload();
+  }
+
+  protected reload(): void {
+    this.portfolio.getStoriesForManagement().subscribe(r => this.rows.set(r));
+  }
+
+  protected onDelete(row: StoryAdminView): void {
+    if (!confirm(`Supprimer la story « ${row.title} » et ses slides ?`)) return;
+    this.portfolio.deleteStory(row.id).subscribe({
+      next: () => { this.rows.update(a => a.filter(x => x.id !== row.id)); this.toast.success('Story supprimée.'); },
+      error: () => this.toast.error('Erreur lors de la suppression.'),
+    });
+  }
+
+  /** Les stories d'un même owner sont ordonnées par `position` : on échange avec la voisine. */
+  private siblings(row: StoryAdminView): StoryAdminView[] {
+    return this.rows()
+      .filter(r => r.ownerKind === row.ownerKind && r.ownerId === row.ownerId)
+      .sort((a, b) => a.position - b.position);
+  }
+
+  protected canMoveUp(row: StoryAdminView): boolean {
+    const sibs = this.siblings(row);
+    return sibs.findIndex(r => r.id === row.id) > 0;
+  }
+
+  protected canMoveDown(row: StoryAdminView): boolean {
+    const sibs = this.siblings(row);
+    const idx = sibs.findIndex(r => r.id === row.id);
+    return idx >= 0 && idx < sibs.length - 1;
+  }
+
+  protected onReorder(row: StoryAdminView, delta: -1 | 1): void {
+    const sibs = this.siblings(row);
+    const idx = sibs.findIndex(r => r.id === row.id);
+    const target = idx + delta;
+    if (idx < 0 || target < 0 || target >= sibs.length) return;
+    const other = sibs[target];
+    // Échange des positions au sein du même owner, puis rechargement.
+    this.portfolio.updateStoryPosition(row.id, other.position).subscribe({
+      next: () => this.portfolio.updateStoryPosition(other.id, row.position).subscribe({
+        next: () => this.reload(),
+        error: () => this.toast.error('Erreur lors du réordonnancement.'),
+      }),
+      error: () => this.toast.error('Erreur lors du réordonnancement.'),
+    });
+  }
+}
