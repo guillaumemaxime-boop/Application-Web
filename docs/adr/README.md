@@ -39,6 +39,7 @@ Référence : [adr.github.io](https://adr.github.io/) — format inspiré de [MA
 | 0017 | [Cropper.js pour l'outil de cadrage d'image admin](0017-cropperjs-image-crop-tool.md) | Accepted | 2026-06-07 |
 | 0018 | [Pattern page/view pour les fiches détail](0018-page-vs-view-pattern.md) | Accepted | 2026-06-08 |
 | 0019 | [Vidéos auto-hébergées (fiches + Studio)](0019-videos-auto-hebergees.md) | Accepted | 2026-06-19 |
+| 0020 | [Page d'administration dédiée pour les stories](0020-page-stories-admin-dediee.md) | Accepted | 2026-06-19 |
 
 ## Créer un nouvel ADR
 
