@@ -80,8 +80,6 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
           </div>
 
           <div class="actions">
-            <button type="button" class="reorder" (click)="onReorder(row, -1)" [disabled]="!canMoveUp(row)" aria-label="Monter la story">↑</button>
-            <button type="button" class="reorder" (click)="onReorder(row, 1)" [disabled]="!canMoveDown(row)" aria-label="Descendre la story">↓</button>
             <a class="action" [routerLink]="['/admin/stories', row.id]">Éditer</a>
             <button type="button" class="action" (click)="openCover(row)">Cover</button>
             <button
@@ -175,12 +173,11 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
     .slider-chip { padding: 1px 7px; background: var(--color-bg); border: 1px solid var(--color-line); }
 
     .actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-    .action, .reorder {
+    .action {
       padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-ink);
       cursor: pointer; font-size: 0.85rem; text-decoration: none; color: var(--color-ink);
       font-family: inherit; line-height: 1;
     }
-    .reorder { padding: 6px 10px; }
     .action.danger { border-color: var(--color-accent); color: var(--color-accent); }
     button:disabled { opacity: 0.4; cursor: not-allowed; }
     .primary { padding: 8px 16px; background: var(--color-ink); color: var(--color-bg); border: 1px solid var(--color-ink); cursor: pointer; font-size: 0.9rem; }
@@ -318,37 +315,4 @@ export class StoriesAdminComponent {
     });
   }
 
-  /** Les stories d'un même owner sont ordonnées par `position` : on échange avec la voisine. */
-  private siblings(row: StoryAdminView): StoryAdminView[] {
-    return this.rows()
-      .filter(r => r.ownerKind === row.ownerKind && r.ownerId === row.ownerId)
-      .sort((a, b) => a.position - b.position);
-  }
-
-  protected canMoveUp(row: StoryAdminView): boolean {
-    const sibs = this.siblings(row);
-    return sibs.findIndex(r => r.id === row.id) > 0;
-  }
-
-  protected canMoveDown(row: StoryAdminView): boolean {
-    const sibs = this.siblings(row);
-    const idx = sibs.findIndex(r => r.id === row.id);
-    return idx >= 0 && idx < sibs.length - 1;
-  }
-
-  protected onReorder(row: StoryAdminView, delta: -1 | 1): void {
-    const sibs = this.siblings(row);
-    const idx = sibs.findIndex(r => r.id === row.id);
-    const target = idx + delta;
-    if (idx < 0 || target < 0 || target >= sibs.length) return;
-    const other = sibs[target];
-    // Échange des positions au sein du même owner, puis rechargement.
-    this.portfolio.updateStoryPosition(row.id, other.position).subscribe({
-      next: () => this.portfolio.updateStoryPosition(other.id, row.position).subscribe({
-        next: () => this.reload(),
-        error: () => this.toast.error('Erreur lors du réordonnancement.'),
-      }),
-      error: () => this.toast.error('Erreur lors du réordonnancement.'),
-    });
-  }
 }
