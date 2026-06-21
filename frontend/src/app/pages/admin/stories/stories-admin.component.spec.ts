@@ -161,7 +161,7 @@ describe('StoriesAdminComponent', () => {
     it('saveRename() appelle updateStory avec le nouveau titre et met à jour la liste', () => {
       portfolio.updateStory.and.returnValue(of({ ...rows[0] } as any));
       clickRename();
-      (fixture.componentInstance as any).renameValue.set('  Nouveau titre  ');
+      (fixture.componentInstance as any).renameCtrl.setValue('  Nouveau titre  ');
       (fixture.componentInstance as any).saveRename(rows[0]);
       fixture.detectChanges();
 
@@ -176,7 +176,7 @@ describe('StoriesAdminComponent', () => {
 
     it('titre vide → pas d\'appel updateStory', () => {
       clickRename();
-      (fixture.componentInstance as any).renameValue.set('   ');
+      (fixture.componentInstance as any).renameCtrl.setValue('   ');
       (fixture.componentInstance as any).saveRename(rows[0]);
       expect(portfolio.updateStory).not.toHaveBeenCalled();
     });

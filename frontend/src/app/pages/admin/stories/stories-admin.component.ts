@@ -62,8 +62,7 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
                 <input
                   type="text"
                   class="rename-input"
-                  [ngModel]="renameValue()"
-                  (ngModelChange)="renameValue.set($event)"
+                  [formControl]="renameCtrl"
                   (keydown.enter)="saveRename(row)"
                   (keydown.escape)="cancelRename()"
                   aria-label="Nouveau titre de la story"
@@ -252,8 +251,8 @@ export class StoriesAdminComponent {
 
   /** Id de la story en cours de renommage inline (null si aucune). */
   protected readonly renameFor = signal<string | null>(null);
-  /** Valeur courante du champ de renommage. */
-  protected readonly renameValue = signal('');
+  /** Contrôle du champ de renommage (réactif → écriture DOM synchrone). */
+  protected readonly renameCtrl = new FormControl('');
 
   protected readonly filtered = computed(() => {
     const q = this.search().toLowerCase();
@@ -313,7 +312,7 @@ export class StoriesAdminComponent {
   /** Démarre le renommage inline d'une story (pré-remplit le champ + focus). */
   startRename(row: StoryAdminView): void {
     this.renameFor.set(row.id);
-    this.renameValue.set(row.title);
+    this.renameCtrl.setValue(row.title);
     if (typeof document !== 'undefined') {
       setTimeout(() => {
         const input = document.querySelector<HTMLInputElement>('.rename-input');
@@ -334,7 +333,7 @@ export class StoriesAdminComponent {
    * inchangé → simple fermeture sans appel réseau.
    */
   saveRename(row: StoryAdminView): void {
-    const title = this.renameValue().trim();
+    const title = (this.renameCtrl.value ?? '').trim();
     if (!title) { this.toast.error('Le titre ne peut pas être vide.'); return; }
     if (title === row.title) { this.renameFor.set(null); return; }
     this.portfolio.updateStory(row.id, {
