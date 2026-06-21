@@ -36,6 +36,7 @@ class FurnitureTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -79,6 +80,7 @@ class FurnitureTest {
                 true,
                 List.of(),
                 List.of(),
+                null,
                 null,
                 null,
                 null,
@@ -129,6 +131,7 @@ class FurnitureTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -162,6 +165,7 @@ class FurnitureTest {
                 true,
                 List.of(),
                 List.of(),
+                null,
                 null,
                 null,
                 null,
@@ -203,6 +207,7 @@ class FurnitureTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -225,6 +230,7 @@ class FurnitureTest {
                 true,
                 List.of(),
                 List.of(),
+                null,
                 null,
                 null,
                 null,
@@ -260,6 +266,7 @@ class FurnitureTest {
                 true,
                 List.of(),
                 List.of(),
+                null,
                 null,
                 null,
                 null,
@@ -307,6 +314,7 @@ class FurnitureTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -329,6 +337,7 @@ class FurnitureTest {
                 true,
                 List.of(),
                 List.of(),
+                null,
                 null,
                 null,
                 null,

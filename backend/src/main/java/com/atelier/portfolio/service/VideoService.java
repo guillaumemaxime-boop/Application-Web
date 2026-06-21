@@ -71,6 +71,12 @@ public class VideoService {
     @Value("${app.video.poster-offset-seconds:1}")
     private int posterOffsetSeconds;
 
+    @Value("${app.video.hls-time-seconds:6}")
+    private int hlsTimeSeconds;
+
+    @Value("${app.video.hls-preset:veryfast}")
+    private String hlsPreset;
+
     public VideoService(VideoRepository repository, VideoTranscoder transcoder) {
         this.repository = repository;
         this.transcoder = transcoder;
@@ -214,6 +220,17 @@ public class VideoService {
             entity.setDurationSeconds(meta.durationSeconds());
             entity.setWidth(meta.width());
             entity.setHeight(meta.height());
+
+            // HLS best-effort : echec non fatal, le mp4 progressif reste le fallback
+            try {
+                Path hlsDir = dir.resolve(id + "-hls");
+                transcoder.generateHls(dir.resolve(outputFilename), hlsDir, meta.height(),
+                        new VideoTranscoder.HlsOptions(hlsTimeSeconds, hlsPreset));
+                entity.setHlsMasterFilename(id + "-hls/master.m3u8");
+            } catch (Exception hlsErr) {
+                // best-effort : le mp4 progressif reste le fallback ; on ne FAIL pas la video
+            }
+
             entity.setStatus(VideoStatus.READY);
             entity.setUpdatedAt(Instant.now().toString());
             repository.save(entity);
@@ -245,13 +262,16 @@ public class VideoService {
         String poster = (ready && e.getPosterFilename() != null)
                 ? "/api/photos/files/" + e.getPosterFilename()
                 : null;
+        String hls = (ready && e.getHlsMasterFilename() != null)
+                ? baseUrl + "/" + e.getHlsMasterFilename()
+                : null;
         Double duration = ready ? e.getDurationSeconds() : null;
         Integer width   = ready ? e.getWidth()           : null;
         Integer height  = ready ? e.getHeight()          : null;
         // errorMessage = sortie ffmpeg brute (peut contenir des chemins serveur) :
         // on ne l'expose que pour un statut FAILED (et uniquement a l'admin, JWT).
         String error = e.getStatus() == VideoStatus.FAILED ? e.getErrorMessage() : null;
-        return new Video(e.getId(), e.getStatus().name(), url, poster,
+        return new Video(e.getId(), e.getStatus().name(), url, poster, hls,
                 duration, width, height, error);
     }
 
@@ -260,19 +280,26 @@ public class VideoService {
     // -----------------------------------------------------------------------
 
     public record ResolvedVideo(String url, String posterUrl,
-                                Double durationSeconds, Integer width, Integer height) {}
+                                Double durationSeconds, Integer width, Integer height,
+                                String hlsUrl) {}
 
     public Optional<ResolvedVideo> resolveForPublic(String id) {
         return repository.findById(id)
                 .filter(e -> e.getStatus() == VideoStatus.READY)
-                .map(e -> new ResolvedVideo(
-                        baseUrl + "/" + e.getOutputFilename(),
-                        e.getPosterFilename() != null
-                                ? "/api/photos/files/" + e.getPosterFilename()
-                                : null,
-                        e.getDurationSeconds(),
-                        e.getWidth(),
-                        e.getHeight()));
+                .map(e -> {
+                    String hlsUrl = e.getHlsMasterFilename() != null
+                            ? baseUrl + "/" + e.getHlsMasterFilename()
+                            : null;
+                    return new ResolvedVideo(
+                            baseUrl + "/" + e.getOutputFilename(),
+                            e.getPosterFilename() != null
+                                    ? "/api/photos/files/" + e.getPosterFilename()
+                                    : null,
+                            e.getDurationSeconds(),
+                            e.getWidth(),
+                            e.getHeight(),
+                            hlsUrl);
+                });
     }
 
     // -----------------------------------------------------------------------
@@ -295,6 +322,53 @@ public class VideoService {
     }
 
     // -----------------------------------------------------------------------
+    // HLS batch
+    // -----------------------------------------------------------------------
+
+    public record VideoHlsReport(int count, int generated) {}
+
+    /** Garde de ré-entrance : empêche deux batchs HLS concurrents de traiter les
+     *  mêmes vidéos (segments corrompus). Process-local (un seul backend). */
+    private final java.util.concurrent.atomic.AtomicBoolean hlsBatchRunning =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    /**
+     * Genere le HLS pour toutes les videos READY qui n'en ont pas encore.
+     * Best-effort : une erreur sur une video n'interrompt pas les suivantes.
+     * Refuse un second appel concurrent ({@link IllegalStateException} → 409).
+     */
+    @Transactional
+    public VideoHlsReport generateHlsAll() {
+        if (!hlsBatchRunning.compareAndSet(false, true)) {
+            throw new IllegalStateException("Un batch HLS est deja en cours.");
+        }
+        try {
+            int count = 0, generated = 0;
+            Path dir = Paths.get(uploadDir);
+            for (VideoEntity e : repository.findByStatus(VideoStatus.READY)) {
+                count++;
+                if (e.getHlsMasterFilename() != null) continue;
+                if (e.getOutputFilename() == null) continue;
+                Path mp4 = dir.resolve(e.getOutputFilename());
+                if (!Files.exists(mp4)) continue;
+                try {
+                    int h = e.getHeight() != null ? e.getHeight() : transcoder.probe(mp4).height();
+                    Path hlsDir = dir.resolve(e.getId() + "-hls");
+                    transcoder.generateHls(mp4, hlsDir, h,
+                            new VideoTranscoder.HlsOptions(hlsTimeSeconds, hlsPreset));
+                    e.setHlsMasterFilename(e.getId() + "-hls/master.m3u8");
+                    e.setUpdatedAt(Instant.now().toString());
+                    repository.save(e);
+                    generated++;
+                } catch (Exception ignored) { /* best-effort */ }
+            }
+            return new VideoHlsReport(count, generated);
+        } finally {
+            hlsBatchRunning.set(false);
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Suppression
     // -----------------------------------------------------------------------
 
@@ -309,6 +383,7 @@ public class VideoService {
             deleteIfPresent(dir, entity.getSourceFilename());
             deleteIfPresent(dir, entity.getOutputFilename());
             deleteIfPresent(dir, entity.getPosterFilename());
+            deleteDirRecursive(dir.resolve(id + "-hls"));
             repository.delete(entity);
             return true;
         }).orElse(false);
@@ -339,6 +414,14 @@ public class VideoService {
             Files.deleteIfExists(dir.resolve(filename));
         } catch (IOException ignored) {
         }
+    }
+
+    private void deleteDirRecursive(Path dir) {
+        if (!Files.exists(dir)) return;
+        try (var walk = Files.walk(dir)) {
+            walk.sorted(java.util.Comparator.reverseOrder())
+                    .forEach(p -> { try { Files.deleteIfExists(p); } catch (IOException ignored) {} });
+        } catch (IOException ignored) {}
     }
 
     // -----------------------------------------------------------------------

@@ -48,6 +48,10 @@ public class SiteContentService {
                 if (!result.containsKey("studio.video.poster") && rv.posterUrl() != null) {
                     result.put("studio.video.poster", rv.posterUrl());
                 }
+                // HLS : manifeste master.m3u8 résolu (READY + HLS généré)
+                if (rv.hlsUrl() != null) {
+                    result.put("studio.video.hls", rv.hlsUrl());
+                }
             });
         }
 

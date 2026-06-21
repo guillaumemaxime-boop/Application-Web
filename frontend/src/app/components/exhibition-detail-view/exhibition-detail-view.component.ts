@@ -235,7 +235,8 @@ export type EditableExhibitionField =
           <section class="section video-block">
             <div class="container narrow">
               <h2 class="video-title">Vidéo</h2>
-              <app-video-player [src]="item.videoUrl" [poster]="item.videoPoster ?? null"
+              <app-video-player [src]="item.videoUrl" [hlsSrc]="item.videoHls ?? null"
+                [poster]="item.videoPoster ?? null"
                 [captions]="item.videoCaptions ?? null" [label]="item.title + ' — vidéo'" />
             </div>
           </section>

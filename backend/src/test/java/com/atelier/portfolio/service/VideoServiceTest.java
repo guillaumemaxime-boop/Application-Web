@@ -406,6 +406,189 @@ class VideoServiceTest {
     }
 
     // -----------------------------------------------------------------------
+    // HLS — Step 3 (Tache 3)
+    // -----------------------------------------------------------------------
+
+    /**
+     * HLS-1 : transcode reussi → generateHls appele ; hlsMasterFilename = id+"-hls/master.m3u8" ; READY.
+     */
+    @Test
+    void transcode_ffmpegAvailable_generateHlsCalled_hlsMasterFilenameSet() throws Exception {
+        String id = "vid-hls0001";
+        VideoEntity entity = uploadedEntity(id, id + "-src.mp4");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(transcoder.isAvailable()).thenReturn(true);
+        when(transcoder.probe(any())).thenReturn(new VideoTranscoder.VideoMeta(10.0, 1920, 1080));
+
+        Files.writeString(tmp.resolve(entity.getSourceFilename()), "fake");
+
+        service.transcode(id);
+
+        verify(transcoder).generateHls(any(), any(), eq(1080), any());
+
+        ArgumentCaptor<VideoEntity> captor = ArgumentCaptor.forClass(VideoEntity.class);
+        verify(repository, atLeast(2)).save(captor.capture());
+
+        VideoEntity readySave = captor.getAllValues().stream()
+                .filter(e -> e.getStatus() == VideoStatus.READY)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Aucun save READY"));
+
+        assertEquals(id + "-hls/master.m3u8", readySave.getHlsMasterFilename());
+        assertEquals(VideoStatus.READY, readySave.getStatus());
+    }
+
+    /**
+     * HLS-2 : generateHls leve une exception → video reste READY, hlsMasterFilename null (best-effort).
+     */
+    @Test
+    void transcode_generateHlsThrows_videoStillReady_hlsMasterNull() throws Exception {
+        String id = "vid-hls0002";
+        VideoEntity entity = uploadedEntity(id, id + "-src.mp4");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(transcoder.isAvailable()).thenReturn(true);
+        when(transcoder.probe(any())).thenReturn(new VideoTranscoder.VideoMeta(10.0, 1920, 1080));
+        doThrow(new IOException("hls error")).when(transcoder).generateHls(any(), any(), anyInt(), any());
+
+        Files.writeString(tmp.resolve(entity.getSourceFilename()), "fake");
+
+        service.transcode(id);
+
+        ArgumentCaptor<VideoEntity> captor = ArgumentCaptor.forClass(VideoEntity.class);
+        verify(repository, atLeast(2)).save(captor.capture());
+
+        VideoEntity readySave = captor.getAllValues().stream()
+                .filter(e -> e.getStatus() == VideoStatus.READY)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Aucun save READY — la video doit rester READY meme si HLS echoue"));
+
+        assertEquals(VideoStatus.READY, readySave.getStatus());
+        assertNull(readySave.getHlsMasterFilename());
+    }
+
+    /**
+     * HLS-3 : resolveForPublic, video READY avec hlsMaster → hlsUrl non null.
+     */
+    @Test
+    void resolveForPublic_readyWithHlsMaster_hlsUrlPresent() {
+        String id = "vid-hls0003";
+        VideoEntity entity = readyEntity(id, id + ".mp4", id + "-poster.jpg");
+        entity.setHlsMasterFilename(id + "-hls/master.m3u8");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        var result = service.resolveForPublic(id);
+
+        assertTrue(result.isPresent());
+        VideoService.ResolvedVideo rv = result.get();
+        assertNotNull(rv.hlsUrl());
+        assertEquals("/api/videos/files/" + id + "-hls/master.m3u8", rv.hlsUrl());
+    }
+
+    /**
+     * HLS-3b : resolveForPublic, video READY sans hlsMaster → hlsUrl null.
+     */
+    @Test
+    void resolveForPublic_readyWithoutHlsMaster_hlsUrlNull() {
+        String id = "vid-hls0003b";
+        VideoEntity entity = readyEntity(id, id + ".mp4", id + "-poster.jpg");
+        // hlsMasterFilename non positionne
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        var result = service.resolveForPublic(id);
+
+        assertTrue(result.isPresent());
+        assertNull(result.get().hlsUrl());
+    }
+
+    /**
+     * HLS-4 : getStatus → Video.hls() non null si READY + hlsMaster, null sinon.
+     */
+    @Test
+    void getStatus_readyWithHlsMaster_videoDtoHlsNonNull() {
+        String id = "vid-hls0004";
+        VideoEntity entity = readyEntity(id, id + ".mp4", id + "-poster.jpg");
+        entity.setHlsMasterFilename(id + "-hls/master.m3u8");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        Video dto = service.getStatus(id);
+
+        assertNotNull(dto);
+        assertNotNull(dto.hls());
+        assertTrue(dto.hls().contains(id + "-hls/master.m3u8"));
+    }
+
+    @Test
+    void getStatus_readyWithoutHlsMaster_videoDtoHlsNull() {
+        String id = "vid-hls0004b";
+        VideoEntity entity = readyEntity(id, id + ".mp4", id + "-poster.jpg");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        Video dto = service.getStatus(id);
+
+        assertNotNull(dto);
+        assertNull(dto.hls());
+    }
+
+    /**
+     * HLS-5 : generateHlsAll — READY sans hlsMaster + mp4 sur disque → generateHls appele, hlsMaster pose.
+     * Idempotent : video avec hlsMaster deja → skip.
+     */
+    @Test
+    void generateHlsAll_readyWithoutHls_generatesAndSaves() throws Exception {
+        String id1 = "vid-hls0005a"; // sans hlsMaster, mp4 sur disque
+        String id2 = "vid-hls0005b"; // avec hlsMaster → skip
+
+        VideoEntity e1 = readyEntity(id1, id1 + ".mp4", null);
+        e1.setHeight(720);
+
+        VideoEntity e2 = readyEntity(id2, id2 + ".mp4", null);
+        e2.setHlsMasterFilename(id2 + "-hls/master.m3u8");
+
+        when(repository.findByStatus(VideoStatus.READY)).thenReturn(List.of(e1, e2));
+
+        // Cree le mp4 de e1 sur disque
+        Files.writeString(tmp.resolve(id1 + ".mp4"), "fake-mp4");
+
+        ReflectionTestUtils.setField(service, "hlsTimeSeconds", 6);
+        ReflectionTestUtils.setField(service, "hlsPreset", "veryfast");
+
+        VideoService.VideoHlsReport report = service.generateHlsAll();
+
+        // generateHls appele 1 seule fois (e1 uniquement)
+        verify(transcoder, times(1)).generateHls(any(), any(), eq(720), any());
+
+        // e1 : hlsMaster positionne et sauvegarde
+        ArgumentCaptor<VideoEntity> captor = ArgumentCaptor.forClass(VideoEntity.class);
+        verify(repository, times(1)).save(captor.capture());
+        VideoEntity saved = captor.getValue();
+        assertEquals(id1 + "-hls/master.m3u8", saved.getHlsMasterFilename());
+
+        // Rapport
+        assertEquals(2, report.count());
+        assertEquals(1, report.generated());
+    }
+
+    /**
+     * HLS-5b : generateHlsAll idempotent — toutes les videos ont deja hlsMaster → generated=0.
+     */
+    @Test
+    void generateHlsAll_allAlreadyHaveHls_generatedZero() throws Exception {
+        String id = "vid-hls0005c";
+        VideoEntity e = readyEntity(id, id + ".mp4", null);
+        e.setHlsMasterFilename(id + "-hls/master.m3u8");
+        when(repository.findByStatus(VideoStatus.READY)).thenReturn(List.of(e));
+
+        ReflectionTestUtils.setField(service, "hlsTimeSeconds", 6);
+        ReflectionTestUtils.setField(service, "hlsPreset", "veryfast");
+
+        VideoService.VideoHlsReport report = service.generateHlsAll();
+
+        verify(transcoder, never()).generateHls(any(), any(), anyInt(), any());
+        assertEquals(1, report.count());
+        assertEquals(0, report.generated());
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 

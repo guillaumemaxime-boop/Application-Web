@@ -126,7 +126,7 @@ class ExhibitionServiceTest {
                 List.of(new GalleryImage("https://example.com/souffles-1.jpg", null, 1, 1)),
                 "Camille Lévy", "court", "long",
                 List.of("Sculpture", "Lumière"), true, true, true, List.of(),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Exhibition created = exhibitionService.create(input);
@@ -146,7 +146,7 @@ class ExhibitionServiceTest {
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
                 null, null,
                 List.of(), "", "", "", List.of(), false, true, true, List.of(),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Exhibition created = exhibitionService.create(input);
@@ -167,7 +167,7 @@ class ExhibitionServiceTest {
                 original.gallery(), original.curator(),
                 "Description courte mise à jour", original.description(),
                 original.tags(), false, true, true, List.of(),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Optional<Exhibition> updated = exhibitionService.update(slug, changes);
@@ -196,7 +196,7 @@ class ExhibitionServiceTest {
                 "/api/photos/files/poster.jpg",
                 "/api/videos/files/subs.vtt",
                 "vid-test-42", // videoId
-                null, null, null
+                null, null, null, null
         );
 
         Optional<Exhibition> result = exhibitionService.update(slug, changes);
@@ -219,7 +219,7 @@ class ExhibitionServiceTest {
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 2, 1),
                 null, null,
                 List.of(), "", "", "", List.of(), false, true, true, List.of(),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Optional<Exhibition> updated = exhibitionService.update("non-existent", changes);
@@ -255,7 +255,7 @@ class ExhibitionServiceTest {
                 List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0), 1, 1),
                         new GalleryImage("/g2.jpg", null, 1, 1)),
                 "curator", "s", "d", List.of(), false, true, true, List.of(),
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
         Exhibition created = exhibitionService.create(input);
         Exhibition reloaded = exhibitionService.findBySlug(created.slug()).orElseThrow();
         assertEquals(2, reloaded.gallery().size());

@@ -46,6 +46,9 @@ public class VideoEntity {
     @Column(name = "updated_at", length = 40)
     private String updatedAt;
 
+    @Column(name = "hls_master_filename", length = 255)
+    private String hlsMasterFilename;
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -81,4 +84,7 @@ public class VideoEntity {
 
     public String getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getHlsMasterFilename() { return hlsMasterFilename; }
+    public void setHlsMasterFilename(String hlsMasterFilename) { this.hlsMasterFilename = hlsMasterFilename; }
 }

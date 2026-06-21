@@ -36,7 +36,7 @@ class ExhibitionServiceVideoTest {
             new VideoService.ResolvedVideo(
                     "/api/videos/files/vid-1.mp4",
                     "/api/photos/files/vid-1-poster.jpg",
-                    12.5, 1920, 1080);
+                    12.5, 1920, 1080, null);
 
     private ExhibitionEntity baseEntity() {
         ExhibitionEntity e = new ExhibitionEntity();
@@ -123,6 +123,41 @@ class ExhibitionServiceVideoTest {
         assertThat(result.durationSeconds()).isNull();
     }
 
+    @Test
+    void toDto_videoId_READY_avec_hlsUrl_expose_videoHls() {
+        ExhibitionEntity entity = baseEntity();
+        entity.setVideoId("vid-1");
+
+        VideoService.ResolvedVideo resolvedWithHls = new VideoService.ResolvedVideo(
+                "/api/videos/files/vid-1.mp4",
+                "/api/photos/files/vid-1-poster.jpg",
+                12.5, 1920, 1080,
+                "/api/videos/files/vid-1-hls/master.m3u8");
+
+        when(repository.findBySlug("test-expo")).thenReturn(Optional.of(entity));
+        when(videoService.resolveForPublic("vid-1")).thenReturn(Optional.of(resolvedWithHls));
+        when(storyService.findSlidesForOwner("exhibition", "e-test")).thenReturn(List.of());
+
+        Exhibition result = exhibitionService.findBySlug("test-expo").orElseThrow();
+
+        assertThat(result.videoHls()).isEqualTo("/api/videos/files/vid-1-hls/master.m3u8");
+    }
+
+    @Test
+    void toDto_videoId_READY_sans_hlsUrl_videoHls_est_null() {
+        ExhibitionEntity entity = baseEntity();
+        entity.setVideoId("vid-1");
+
+        // READY_VIDEO a hlsUrl=null
+        when(repository.findBySlug("test-expo")).thenReturn(Optional.of(entity));
+        when(videoService.resolveForPublic("vid-1")).thenReturn(Optional.of(READY_VIDEO));
+        when(storyService.findSlidesForOwner("exhibition", "e-test")).thenReturn(List.of());
+
+        Exhibition result = exhibitionService.findBySlug("test-expo").orElseThrow();
+
+        assertThat(result.videoHls()).isNull();
+    }
+
     // -----------------------------------------------------------------------
     // Tests d'écriture (create/update avec videoId)
     // -----------------------------------------------------------------------
@@ -144,7 +179,7 @@ class ExhibitionServiceVideoTest {
                 null,    // videoPoster (override)
                 null,    // videoCaptions
                 "vid-9", // videoId
-                null, null, null // durationSeconds, width, height
+                null, null, null, null // durationSeconds, width, height, videoHls
         );
 
         Exhibition created = exhibitionService.create(input);
@@ -171,7 +206,7 @@ class ExhibitionServiceVideoTest {
                 null,    // videoPoster
                 null,    // videoCaptions
                 "vid-9", // videoId
-                null, null, null
+                null, null, null, null // durationSeconds, width, height, videoHls
         );
 
         Exhibition result = exhibitionService.update("test-expo", input).orElseThrow();

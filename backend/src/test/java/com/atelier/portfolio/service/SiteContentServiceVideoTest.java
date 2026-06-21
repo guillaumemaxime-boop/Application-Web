@@ -34,7 +34,7 @@ class SiteContentServiceVideoTest {
             new VideoService.ResolvedVideo(
                     "/api/videos/files/vid-studio.mp4",
                     "/api/photos/files/vid-studio-poster.jpg",
-                    42.0, 1920, 1080);
+                    42.0, 1920, 1080, null);
 
     private static SiteContentEntity entry(String key, String value) {
         SiteContentEntity e = new SiteContentEntity();
@@ -118,5 +118,41 @@ class SiteContentServiceVideoTest {
         Map<String, String> result = service.findAll();
 
         assertThat(result.get("studio.video.url")).isNull();
+    }
+
+    // -----------------------------------------------------------------------
+    // studio.video.hls : manifeste HLS injecté quand hlsUrl présent
+    // -----------------------------------------------------------------------
+
+    @Test
+    void findAll_studioVideoId_READY_avec_hlsUrl_expose_studioVideoHls() {
+        VideoService.ResolvedVideo resolvedWithHls = new VideoService.ResolvedVideo(
+                "/api/videos/files/vid-studio.mp4",
+                "/api/photos/files/vid-studio-poster.jpg",
+                42.0, 1920, 1080,
+                "/api/videos/files/vid-studio-hls/master.m3u8");
+
+        when(repository.findAll()).thenReturn(List.of(
+                entry("studio.video.id", "vid-studio")
+        ));
+        when(videoService.resolveForPublic("vid-studio")).thenReturn(Optional.of(resolvedWithHls));
+
+        Map<String, String> result = service.findAll();
+
+        assertThat(result.get("studio.video.hls"))
+                .isEqualTo("/api/videos/files/vid-studio-hls/master.m3u8");
+    }
+
+    @Test
+    void findAll_studioVideoId_READY_sans_hlsUrl_cle_studio_video_hls_absente() {
+        // READY_VIDEO a hlsUrl=null → la clé ne doit pas être injectée
+        when(repository.findAll()).thenReturn(List.of(
+                entry("studio.video.id", "vid-studio")
+        ));
+        when(videoService.resolveForPublic("vid-studio")).thenReturn(Optional.of(READY_VIDEO));
+
+        Map<String, String> result = service.findAll();
+
+        assertThat(result).doesNotContainKey("studio.video.hls");
     }
 }

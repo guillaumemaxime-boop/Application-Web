@@ -68,7 +68,8 @@ public class FurnitureService {
                     base.videoId(),
                     base.durationSeconds(),
                     base.width(),
-                    base.height()
+                    base.height(),
+                    base.videoHls()
             );
         });
     }
@@ -190,6 +191,7 @@ public class FurnitureService {
         Double durationSecs = resolved.map(VideoService.ResolvedVideo::durationSeconds).orElse(null);
         Integer width       = resolved.map(VideoService.ResolvedVideo::width).orElse(null);
         Integer height      = resolved.map(VideoService.ResolvedVideo::height).orElse(null);
+        String videoHls     = resolved.map(VideoService.ResolvedVideo::hlsUrl).orElse(null);
         return new Furniture(
                 entity.getId(),
                 entity.getTitle(),
@@ -215,7 +217,8 @@ public class FurnitureService {
                 videoId,
                 durationSecs,
                 width,
-                height
+                height,
+                videoHls
         );
     }
 }

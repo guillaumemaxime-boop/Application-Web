@@ -38,4 +38,27 @@ class FfmpegVideoTranscoderTest {
         assertTrue(args.contains("-show_format"));
         assertTrue(args.contains("json"));
     }
+
+    @Test
+    void renditionsFor_plafonne_a_la_hauteur_source() {
+        var r = FfmpegVideoTranscoder.renditionsFor(720);
+        assertEquals(java.util.List.of(360, 720), r.stream().map(VideoTranscoder.Rendition::height).toList());
+        assertFalse(FfmpegVideoTranscoder.renditionsFor(240).isEmpty());
+        assertEquals(3, FfmpegVideoTranscoder.renditionsFor(1080).size());
+    }
+
+    @Test
+    void buildHlsArgs_master_varstreammap_et_libx264() {
+        var rends = java.util.List.of(new VideoTranscoder.Rendition(360, 800, 96),
+                                      new VideoTranscoder.Rendition(720, 2500, 128));
+        var args = FfmpegVideoTranscoder.buildHlsArgs("ffmpeg",
+                java.nio.file.Path.of("in.mp4"), java.nio.file.Path.of("/up/vid-1-hls"), rends, 6, "veryfast");
+        assertEquals("ffmpeg", args.get(0));
+        assertTrue(args.contains("libx264"));
+        assertTrue(args.stream().anyMatch(a -> a.contains("v:0,a:0")));
+        assertTrue(args.stream().anyMatch(a -> a.contains("master.m3u8")));
+        assertTrue(args.contains("hls"));
+        assertTrue(args.stream().anyMatch(a -> a.contains("h=360")));
+        assertTrue(args.stream().anyMatch(a -> a.contains("h=720")));
+    }
 }

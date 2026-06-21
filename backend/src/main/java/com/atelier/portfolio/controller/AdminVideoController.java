@@ -2,6 +2,7 @@ package com.atelier.portfolio.controller;
 
 import com.atelier.portfolio.model.Video;
 import com.atelier.portfolio.service.VideoService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -83,6 +84,21 @@ public class AdminVideoController {
         return service.retry(id)
                 ? ResponseEntity.ok().build()
                 : ResponseEntity.status(409).build();
+    }
+
+    // -----------------------------------------------------------------------
+    // POST /hls — génération HLS batch
+    // -----------------------------------------------------------------------
+
+    @PostMapping("/hls")
+    public ResponseEntity<?> generateHls() {
+        try {
+            VideoService.VideoHlsReport report = service.generateHlsAll();
+            return ResponseEntity.ok(Map.of("count", report.count(), "generated", report.generated()));
+        } catch (IllegalStateException e) {
+            // Un batch HLS est déjà en cours (garde de ré-entrance).
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+        }
     }
 
     // -----------------------------------------------------------------------

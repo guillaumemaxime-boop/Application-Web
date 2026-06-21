@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 036-add-hls-to-video
+      author: milo-guillaume
+      comment: Ajoute hls_master_filename sur video (manifeste HLS, SP2).
+      changes:
+        - sql:
+            sql: ALTER TABLE video ADD COLUMN hls_master_filename VARCHAR(255);

@@ -74,7 +74,7 @@ class AdminVideoControllerTest {
      */
     @Test
     void getStatus_id_connu_renvoie_200_avec_dto() {
-        Video video = new Video("vid-1", "PROCESSING", null, null, null, null, null, null);
+        Video video = new Video("vid-1", "PROCESSING", null, null, null, null, null, null, null);
         when(service.getStatus("vid-1")).thenReturn(video);
 
         ResponseEntity<?> result = controller.getStatus("vid-1");
@@ -157,6 +157,35 @@ class AdminVideoControllerTest {
         ResponseEntity<Void> result = controller.deleteById("vid-ghost");
 
         assertEquals(404, result.getStatusCode().value());
+    }
+
+    // -----------------------------------------------------------------------
+    // POST /api/admin/videos/hls — batch HLS
+    // -----------------------------------------------------------------------
+
+    /**
+     * Cas 7 : génération HLS batch → service.generateHlsAll renvoie un rapport → 200 avec count et generated.
+     */
+    @Test
+    void hls_batch_renvoie_le_resume() {
+        when(service.generateHlsAll()).thenReturn(new VideoService.VideoHlsReport(3, 2));
+
+        ResponseEntity<?> r = controller.generateHls();
+
+        assertEquals(200, r.getStatusCode().value());
+        assertEquals(Map.of("count", 3, "generated", 2), r.getBody());
+    }
+
+    /**
+     * Cas 8 : un batch HLS déjà en cours (garde de ré-entrance) → 409 Conflict.
+     */
+    @Test
+    void hls_batch_concurrent_renvoie_409() {
+        when(service.generateHlsAll()).thenThrow(new IllegalStateException("Un batch HLS est deja en cours."));
+
+        ResponseEntity<?> r = controller.generateHls();
+
+        assertEquals(409, r.getStatusCode().value());
     }
 
     // -----------------------------------------------------------------------

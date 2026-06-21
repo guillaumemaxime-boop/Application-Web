@@ -33,6 +33,7 @@ public record Furniture(
     @Size(max = 64) String videoId,
     Double durationSeconds,
     Integer width,
-    Integer height
+    Integer height,
+    @Size(max = 500) String videoHls
 ) {
 }

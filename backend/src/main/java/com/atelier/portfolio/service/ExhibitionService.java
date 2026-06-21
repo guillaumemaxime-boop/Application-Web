@@ -68,7 +68,8 @@ public class ExhibitionService {
                     base.videoId(),
                     base.durationSeconds(),
                     base.width(),
-                    base.height()
+                    base.height(),
+                    base.videoHls()
             );
         });
     }
@@ -185,6 +186,7 @@ public class ExhibitionService {
         Double durationSecs = resolved.map(VideoService.ResolvedVideo::durationSeconds).orElse(null);
         Integer width       = resolved.map(VideoService.ResolvedVideo::width).orElse(null);
         Integer height      = resolved.map(VideoService.ResolvedVideo::height).orElse(null);
+        String videoHls     = resolved.map(VideoService.ResolvedVideo::hlsUrl).orElse(null);
         return new Exhibition(
                 entity.getId(),
                 entity.getTitle(),
@@ -211,7 +213,8 @@ public class ExhibitionService {
                 videoId,
                 durationSecs,
                 width,
-                height
+                height,
+                videoHls
         );
     }
 }
