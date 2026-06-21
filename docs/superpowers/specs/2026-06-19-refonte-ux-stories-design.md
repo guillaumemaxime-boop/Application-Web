@@ -1,7 +1,7 @@
 # Refonte UX des stories (admin) — Spec
 
 **Date** : 2026-06-19
-**Statut** : Validé — à planifier
+**Statut** : ✅ Implémenté — mergé sur main (ADR-0020)
 **Type** : Refonte UX + correctif (backlog, demandé le 19/06/2026). Chantier unique (l'utilisateur a choisi de ne pas décomposer).
 
 ## Objectif

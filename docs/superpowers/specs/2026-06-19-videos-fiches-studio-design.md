@@ -1,7 +1,7 @@
 # Vidéos dans les fiches (mobilier/exposition) et le Studio — Spec
 
 **Date** : 2026-06-19
-**Statut** : Validé — à planifier
+**Statut** : ✅ Implémenté — mergé sur main (ADR-0019)
 **Type** : Feature standalone (backlog, demandée le 13/06/2026).
 
 ## Objectif

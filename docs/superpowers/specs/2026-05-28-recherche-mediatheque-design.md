@@ -1,7 +1,7 @@
 # Recherche médiathèque sur les champs image de l'admin
 
 Date : 2026-05-28
-Statut : Validé (en attente de plan d'implémentation)
+Statut : ✅ Implémenté — mergé sur main
 
 ## Contexte
 

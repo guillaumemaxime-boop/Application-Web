@@ -1,7 +1,7 @@
 # Preview WYSIWYG Fiche Exposition — Spec
 
 **Date** : 2026-06-09
-**Statut** : Validé — prêt pour writing-plans
+**Statut** : ✅ Implémenté — mergé sur main (ADR-0018)
 **Sous-projet** : 3/4 d'un chantier « Console admin de configuration d'affichage des images ». S'appuie sur les sous-projets 1 (crop tool) et 2 (preview WYSIWYG mobilier), tous deux mergés sur main. Sous-projet 4 (preview Accueil) reprendra le même pattern.
 
 ## Objectif

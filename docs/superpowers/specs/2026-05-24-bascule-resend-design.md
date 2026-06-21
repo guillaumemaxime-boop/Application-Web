@@ -1,7 +1,7 @@
 # Bascule de SMTP vers Resend pour l'envoi de mails transactionnels
 
 Date : 2026-05-24
-Statut : Validé (en attente de plan d'implémentation)
+Statut : ✅ Implémenté — mergé sur main (ADR-0014)
 Supersede : [ADR-0013](../../adr/0013-config-smtp-en-base-chiffree.md)
 
 ## Contexte

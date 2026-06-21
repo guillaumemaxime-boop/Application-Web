@@ -1,7 +1,7 @@
 # Umami sur une adresse externe à l'application
 
 **Date** : 2026-05-21
-**Statut** : Spec validée, en attente du plan d'implémentation
+**Statut** : ✅ Implémenté — mergé sur main
 **Périmètre** : infra frontend (Nginx, Dockerfile, docker-compose, docs)
 
 ## Contexte et problème

@@ -1,7 +1,7 @@
 # Réorganisation de l'espace d'administration
 
 Date : 2026-05-23
-Statut : Validé (en attente de plan d'implémentation)
+Statut : ✅ Implémenté — mergé sur main
 
 ## Contexte
 

@@ -1,7 +1,7 @@
 # Performance de chargement des images — Phase 1 (quick wins) — Spec
 
 **Date** : 2026-06-19
-**Statut** : Validé — à planifier
+**Statut** : ✅ Implémenté — mergé sur main
 **Type** : Optimisation perf (backlog). **Phase 1** d'un effort potentiellement en 2 phases ; la Phase 2 (variantes responsive + WebP/AVIF + srcset) est explicitement reportée en backlog.
 
 ## Objectif

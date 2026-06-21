@@ -1,7 +1,7 @@
 # Configuration SMTP éditable depuis la console d'administration
 
 Date : 2026-05-17
-Statut : Validé (en attente de plan d'implémentation)
+Statut : ✅ Implémenté — mergé sur main (ADR-0013, ensuite superseded par ADR-0014/Resend)
 
 ## Contexte
 

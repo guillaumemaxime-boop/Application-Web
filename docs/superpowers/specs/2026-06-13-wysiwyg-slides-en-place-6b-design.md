@@ -1,7 +1,7 @@
 # Édition des slides EN PLACE dans le preview (sous-projet 6b) — Spec
 
 **Date** : 2026-06-13
-**Statut** : Validé — à planifier
+**Statut** : ✅ Implémenté — mergé sur main (feat/wysiwyg-slides-en-place-6b)
 **Sous-projet** : 6b du chantier « Améliorations WYSIWYG v2 » — **dernier sous-projet du chantier**. Suite directe du 6a (`docs/superpowers/specs/2026-06-13-wysiwyg-stories-fiches-6a-design.md`, mergé). S'appuie sur SP1-5 + 6a.
 
 ## Objectif

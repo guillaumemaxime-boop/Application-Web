@@ -1,7 +1,7 @@
 # Splash de chargement (logo + pulse)
 
 **Date** : 2026-05-18
-**Statut** : Spec validée, en attente du plan d'implémentation
+**Statut** : ✅ Implémenté — mergé sur main (composant `splash`)
 **Périmètre** : frontend uniquement (Angular 21)
 
 ## Contexte et problème

@@ -1,7 +1,7 @@
 # Lightbox images des fiches (mobilier/exposition) — Spec
 
 **Date** : 2026-06-17
-**Statut** : Validé — à planifier
+**Statut** : ✅ Implémenté — mergé sur main (feat/lightbox-images-fiches)
 **Type** : Feature standalone (backlog, demandée le 13/06/2026). Hors chantier WYSIWYG v2 (clos).
 
 ## Objectif
