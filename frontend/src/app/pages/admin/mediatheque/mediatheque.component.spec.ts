@@ -285,7 +285,7 @@ describe('MediathequeComponent', () => {
     expect(count).toMatch(/1\s*\/\s*2/);
   });
 
-  it('ajoute un tag normalise et appelle updatePhotoTags', () => {
+  it('persistTags() PUT le tableau complet et applique l\'update optimiste', () => {
     configure();
     const fixture = TestBed.createComponent(MediathequeComponent);
     fixture.detectChanges();
@@ -293,59 +293,15 @@ describe('MediathequeComponent', () => {
     httpMock.expectOne('/api/photos').flush([photo]);
     fixture.detectChanges();
 
-    (fixture.componentInstance as any).addTag(photo, '  Studio  ');
+    (fixture.componentInstance as any).persistTags(photo, ['studio']);
+    // update optimiste immediat
+    expect(((fixture.componentInstance as any).photos() as Photo[])[0].tags).toEqual(['studio']);
     const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
     expect(req.request.body).toEqual({ tags: ['studio'] });
     req.flush(makePhoto({ id: '1', tags: ['studio'] }));
   });
 
-  it('commitTag() valide le tag du champ et le vide (cas blur/mobile)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MediathequeComponent);
-    fixture.detectChanges();
-    const photo = makePhoto({ id: '1', tags: [] });
-    httpMock.expectOne('/api/photos').flush([photo]);
-    fixture.detectChanges();
-
-    const input = { value: '  Studio  ' } as HTMLInputElement;
-    (fixture.componentInstance as any).commitTag(photo, input);
-    expect(input.value).toBe(''); // champ vidé
-    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
-    expect(req.request.body).toEqual({ tags: ['studio'] });
-    req.flush(makePhoto({ id: '1', tags: ['studio'] }));
-  });
-
-  it('commitTag() champ vide → aucun appel HTTP (blur sans saisie)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MediathequeComponent);
-    fixture.detectChanges();
-    const photo = makePhoto({ id: '1', tags: [] });
-    httpMock.expectOne('/api/photos').flush([photo]);
-    fixture.detectChanges();
-
-    const input = { value: '   ' } as HTMLInputElement;
-    (fixture.componentInstance as any).commitTag(photo, input);
-    expect(input.value).toBe('');
-    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
-  });
-
-  it('le champ tag valide au blur (DOM)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MediathequeComponent);
-    fixture.detectChanges();
-    httpMock.expectOne('/api/photos').flush([makePhoto({ id: '1', tags: [] })]);
-    fixture.detectChanges();
-
-    const inputDe = fixture.debugElement.query(By.css('input.tag-input'));
-    const input = inputDe.nativeElement as HTMLInputElement;
-    input.value = 'atelier';
-    inputDe.triggerEventHandler('blur', { target: input });
-    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
-    expect(req.request.body).toEqual({ tags: ['atelier'] });
-    req.flush(makePhoto({ id: '1', tags: ['atelier'] }));
-  });
-
-  it('retire un tag', () => {
+  it('persistTags() gère le retrait (tableau complet sans le tag)', () => {
     configure();
     const fixture = TestBed.createComponent(MediathequeComponent);
     fixture.detectChanges();
@@ -353,34 +309,25 @@ describe('MediathequeComponent', () => {
     httpMock.expectOne('/api/photos').flush([photo]);
     fixture.detectChanges();
 
-    (fixture.componentInstance as any).removeTag(photo, 'studio');
+    (fixture.componentInstance as any).persistTags(photo, ['atelier']);
     const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
     expect(req.request.body).toEqual({ tags: ['atelier'] });
     req.flush(makePhoto({ id: '1', tags: ['atelier'] }));
   });
 
-  it('tag duplique est ignore (pas d\'appel HTTP)', () => {
+  it('édite les tags d\'une photo via <app-tag-editor> (output → persistTags)', () => {
     configure();
     const fixture = TestBed.createComponent(MediathequeComponent);
     fixture.detectChanges();
-    const photo = makePhoto({ id: '1', tags: ['studio'] });
-    httpMock.expectOne('/api/photos').flush([photo]);
+    httpMock.expectOne('/api/photos').flush([makePhoto({ id: '1', tags: [] })]);
     fixture.detectChanges();
 
-    (fixture.componentInstance as any).addTag(photo, 'STUDIO');
-    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
-  });
-
-  it('tag vide est ignore (pas d\'appel HTTP)', () => {
-    configure();
-    const fixture = TestBed.createComponent(MediathequeComponent);
-    fixture.detectChanges();
-    const photo = makePhoto({ id: '1', tags: [] });
-    httpMock.expectOne('/api/photos').flush([photo]);
-    fixture.detectChanges();
-
-    (fixture.componentInstance as any).addTag(photo, '   ');
-    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
+    const editorDe = fixture.debugElement.query(By.css('.photo-tags app-tag-editor'));
+    expect(editorDe).toBeTruthy();
+    editorDe.triggerEventHandler('tagsChange', ['atelier']);
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
+    expect(req.request.body).toEqual({ tags: ['atelier'] });
+    req.flush(makePhoto({ id: '1', tags: ['atelier'] }));
   });
 
   it('revert local si le PUT echoue', () => {
@@ -393,7 +340,7 @@ describe('MediathequeComponent', () => {
     httpMock.expectOne('/api/photos').flush([photo]);
     fixture.detectChanges();
 
-    (fixture.componentInstance as any).addTag(photo, 'studio');
+    (fixture.componentInstance as any).persistTags(photo, ['studio']);
     const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
     req.flush({ error: 'oops' }, { status: 500, statusText: 'Error' });
     fixture.detectChanges();
@@ -401,5 +348,178 @@ describe('MediathequeComponent', () => {
     const photos = (fixture.componentInstance as any).photos() as Photo[];
     expect(photos[0].tags).toEqual([]);
     expect(toast.error).toHaveBeenCalled();
+  });
+
+  // --- Filtre par tag (ET) + sans-tag + autocompletion ---
+
+  it('allTags() : tags distincts tries alphabetiquement', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', tags: ['studio', 'bois'] }),
+      makePhoto({ id: '2', tags: ['atelier', 'bois'] }),
+      makePhoto({ id: '3', tags: [] }),
+    ]);
+    fixture.detectChanges();
+    const allTags = (fixture.componentInstance as any).allTags() as string[];
+    expect(allTags).toEqual(['atelier', 'bois', 'studio']);
+  });
+
+  it('filtre ET : 2 tags → seules les photos portant les DEUX', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', originalName: 'a.jpg', tags: ['bois', 'studio'] }),
+      makePhoto({ id: '2', originalName: 'b.jpg', tags: ['bois'] }),
+      makePhoto({ id: '3', originalName: 'c.jpg', tags: ['studio'] }),
+    ]);
+    fixture.detectChanges();
+    (fixture.componentInstance as any).setTagFilter(['bois', 'studio']);
+    fixture.detectChanges();
+    const filtered = (fixture.componentInstance as any).filtered() as Photo[];
+    expect(filtered.map(p => p.id)).toEqual(['1']);
+  });
+
+  it('setTagFilter() normalise la casse (Bois → bois)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', tags: ['bois'] }),
+      makePhoto({ id: '2', tags: ['metal'] }),
+    ]);
+    fixture.detectChanges();
+    (fixture.componentInstance as any).setTagFilter(['  Bois  ']);
+    fixture.detectChanges();
+    expect((fixture.componentInstance as any).tagFilter()).toEqual(['bois']);
+    const filtered = (fixture.componentInstance as any).filtered() as Photo[];
+    expect(filtered.map(p => p.id)).toEqual(['1']);
+  });
+
+  it('setTagFilter() dedoublonne et ignore les entrees vides', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([makePhoto()]);
+    fixture.detectChanges();
+    (fixture.componentInstance as any).setTagFilter(['bois', '  ', 'BOIS', '']);
+    expect((fixture.componentInstance as any).tagFilter()).toEqual(['bois']);
+  });
+
+  it('REPRO: ajout sequentiel de 2 tags dans le filtre (combobox) accumule', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', tags: ['bois', 'chaise'] }),
+      makePhoto({ id: '2', tags: ['bois'] }),
+    ]);
+    fixture.detectChanges();
+
+    const filterEditor = fixture.debugElement.queryAll(By.css('app-tag-editor'))[0];
+    const inputEl = filterEditor.query(By.css('input')).nativeElement as HTMLInputElement;
+
+    inputEl.value = 'bois';
+    inputEl.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+
+    inputEl.value = 'chaise';
+    inputEl.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+
+    expect((fixture.componentInstance as any).tagFilter()).toEqual(['bois', 'chaise']);
+  });
+
+  it('toggleNoTag() : ne garde que les photos sans tag', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', tags: ['bois'] }),
+      makePhoto({ id: '2', tags: [] }),
+      makePhoto({ id: '3', tags: [] }),
+    ]);
+    fixture.detectChanges();
+    (fixture.componentInstance as any).toggleNoTag();
+    fixture.detectChanges();
+    const filtered = (fixture.componentInstance as any).filtered() as Photo[];
+    expect(filtered.map(p => p.id)).toEqual(['2', '3']);
+  });
+
+  it('activer « Sans tag » vide tagFilter (exclusion mutuelle)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([makePhoto({ id: '1', tags: ['bois'] })]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.setTagFilter(['bois']);
+    expect(cmp.tagFilter()).toEqual(['bois']);
+    cmp.toggleNoTag();
+    expect(cmp.noTagOnly()).toBeTrue();
+    expect(cmp.tagFilter()).toEqual([]);
+  });
+
+  it('setTagFilter() non vide remet noTagOnly à false (exclusion mutuelle)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([makePhoto({ id: '1', tags: ['bois'] })]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.toggleNoTag();
+    expect(cmp.noTagOnly()).toBeTrue();
+    cmp.setTagFilter(['bois']);
+    expect(cmp.noTagOnly()).toBeFalse();
+    expect(cmp.tagFilter()).toEqual(['bois']);
+  });
+
+  it('combine recherche texte + filtre tag (intersection)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', originalName: 'portrait.jpg', tags: ['studio'] }),
+      makePhoto({ id: '2', originalName: 'paysage.jpg', tags: ['studio'] }),
+      makePhoto({ id: '3', originalName: 'portrait2.jpg', tags: ['atelier'] }),
+    ]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.search.set('portrait');
+    cmp.setTagFilter(['studio']);
+    fixture.detectChanges();
+    const filtered = cmp.filtered() as Photo[];
+    expect(filtered.map((p: Photo) => p.id)).toEqual(['1']);
+  });
+
+  it('affiche le bloc filtre (app-tag-editor + bouton « Sans tag ») quand il y a des photos', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([makePhoto({ id: '1', tags: ['bois'] })]);
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('.photos-filter app-tag-editor'))).toBeTruthy();
+    const toggle = fixture.debugElement.query(By.css('.photos-filter .no-tag-toggle'));
+    expect(toggle).toBeTruthy();
+    expect(toggle.nativeElement.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('le bouton « Sans tag » reflète aria-pressed et bascule au clic', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([makePhoto({ id: '1', tags: [] })]);
+    fixture.detectChanges();
+    const toggle = fixture.debugElement.query(By.css('.no-tag-toggle'));
+    toggle.nativeElement.click();
+    fixture.detectChanges();
+    expect((fixture.componentInstance as any).noTagOnly()).toBeTrue();
+    expect(toggle.nativeElement.getAttribute('aria-pressed')).toBe('true');
   });
 });

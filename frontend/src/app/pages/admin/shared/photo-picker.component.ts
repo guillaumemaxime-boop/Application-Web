@@ -41,12 +41,18 @@ import { Photo } from '../../../models/photo.model';
           </div>
           @if (allTags().length > 0) {
             <div class="picker-tags" role="group" aria-label="Filtrer par tag">
+              <button
+                type="button"
+                class="picker-tag"
+                [class.active]="noTagOnly()"
+                [attr.aria-pressed]="noTagOnly()"
+                (click)="toggleNoTag()">Sans tag</button>
               @for (tag of allTags(); track tag) {
                 <button
                   type="button"
                   class="picker-tag"
-                  [class.active]="activeTag() === tag"
-                  [attr.aria-pressed]="activeTag() === tag"
+                  [class.active]="activeTags().includes(tag)"
+                  [attr.aria-pressed]="activeTags().includes(tag)"
                   (click)="toggleTag(tag)">{{ tag }}</button>
               }
             </div>
@@ -54,8 +60,10 @@ import { Photo } from '../../../models/photo.model';
           @if (filtered().length === 0) {
             @if (query().trim()) {
               <p class="picker-empty">Aucun résultat pour « {{ query() }} ».</p>
+            } @else if (noTagOnly()) {
+              <p class="picker-empty">Aucune photo sans tag.</p>
             } @else {
-              <p class="picker-empty">Aucune photo avec le tag « {{ activeTag() }} ».</p>
+              <p class="picker-empty">Aucune photo avec ces tags.</p>
             }
           } @else {
             <div class="picker-grid">
@@ -131,7 +139,10 @@ export class PhotoPickerComponent implements OnInit, OnDestroy {
   @Output() closed = new EventEmitter<void>();
 
   protected readonly query = signal('');
-  protected readonly activeTag = signal<string | null>(null);
+  /** Tags actifs du filtre (logique ET). Mutuellement exclusif avec `noTagOnly`. */
+  protected readonly activeTags = signal<string[]>([]);
+  /** Filtre « sans tag ». Mutuellement exclusif avec `activeTags`. */
+  protected readonly noTagOnly = signal(false);
   private previousFocus: HTMLElement | null = null;
 
   ngOnInit(): void {
@@ -162,21 +173,36 @@ export class PhotoPickerComponent implements OnInit, OnDestroy {
     return [...set].sort((a, b) => a.localeCompare(b, 'fr'));
   }
 
-  /** Active/désactive le filtre par tag (clic sur un chip déjà actif = retrait). */
+  /** Ajoute/retire un tag du filtre (multi-sélection, logique ET). Sélectionner un tag désactive « sans tag ». */
   toggleTag(tag: string): void {
-    this.activeTag.update(current => current === tag ? null : tag);
+    this.activeTags.update(curr => curr.includes(tag) ? curr.filter(t => t !== tag) : [...curr, tag]);
+    if (this.activeTags().length > 0) this.noTagOnly.set(false);
+  }
+
+  /** Bascule le filtre « sans tag » ; l'activer vide la sélection de tags (exclusion mutuelle). */
+  toggleNoTag(): void {
+    this.noTagOnly.update(v => !v);
+    if (this.noTagOnly()) this.activeTags.set([]);
   }
 
   protected filtered(): Photo[] {
     const q = this.query().trim().toLowerCase();
-    const tag = this.activeTag();
     let list = this.photos;
-    if (tag) list = list.filter(p => (p.tags ?? []).includes(tag));
     if (q) {
       list = list.filter(p =>
         p.originalName.toLowerCase().includes(q) ||
         (p.tags ?? []).some(t => t.includes(q))
       );
+    }
+    if (this.noTagOnly()) {
+      return list.filter(p => (p.tags ?? []).length === 0);
+    }
+    const tags = this.activeTags();
+    if (tags.length > 0) {
+      return list.filter(p => {
+        const photoTags = p.tags ?? [];
+        return tags.every(t => photoTags.includes(t));
+      });
     }
     return list;
   }
