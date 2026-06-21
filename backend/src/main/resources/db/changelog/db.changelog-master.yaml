@@ -98,3 +98,6 @@ databaseChangeLog:
   - include:
       file: changes/033-add-video-to-exhibition.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/034-create-video.yaml
+      relativeToChangelogFile: true
