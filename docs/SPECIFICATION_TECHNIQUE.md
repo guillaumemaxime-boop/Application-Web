@@ -688,6 +688,8 @@ record HomeFeedCoverCropRequest(
 - **Serve robuste** : une **variante absente** (source plus petite, ou batch pas lancé) retombe sur l'original côté serveur (`loadAsResource` → `baseFromVariant`), indispensable car une `<img srcset>` native ne retombe pas sur `src` quand un candidat `404`.
 - **Référence perdue → image par défaut** : si ni le fichier ni son original n'existent, `serve` renvoie une **redirection `302`** vers `app.upload.fallback-image` (défaut `/logo.jpg`, `Cache-Control: no-store`, vide ⇒ `404`) au lieu d'une image cassée — couvre galeries, covers, slides et pertes futures. Caveat : dans un contexte canvas croppé, le logo de secours est dessiné à travers le crop (peut apparaître recadré).
 
+**Gestion admin (JWT)** : `POST /api/admin/photos` (upload multipart → `Photo`), `DELETE /api/admin/photos/{id}`, `POST /api/admin/photos/optimize` (batch), `POST /api/admin/photos/variants` (batch variantes), et **`PUT /api/admin/photos/{id}/tags`** (`{ tags: string[] }` → `Photo`) pour taguer les images. `GET /api/photos` (permitAll) liste les photos (avec leurs tags) — consommé par la médiathèque et le `<app-photo-picker>` (recherche + filtre par chips de tags, cf. §5.5).
+
 > **Phase 2b (backlog)** : conversion **WebP/AVIF** (`<picture>` multi-format, nécessite un encodeur dédié — ImageIO/Thumbnailator ne les encodent pas), CDN médias, tracking DB des variantes. Voir spec `docs/superpowers/specs/2026-06-19-perf-images-phase2-design.md`, section « Hors portée ».
 
 ### 4.10 Vidéos auto-hébergées — `/api/videos/**` (ADR-0019)
@@ -1083,6 +1085,21 @@ Chemin : `frontend/src/app/pages/admin/shared/image-crop-picker.component.ts`
 - Retourne un objet `Crop { x, y, w, h }` en coordonnées normalisées (% 0–100).
 - CSS focus override dans le backdrop : `.crop-backdrop :focus-visible { outline-color: #fff }` pour lisibilité sur fond sombre.
 - Instanciation manuelle dans `ngAfterViewInit`, cleanup dans `ngOnDestroy` (pas de wrapper Angular maintenu pour Cropper.js).
+
+#### `<app-photo-picker>` (`PhotoPickerComponent`)
+
+Chemin : `frontend/src/app/pages/admin/shared/photo-picker.component.ts`
+
+- Modale de sélection d'une image **depuis la médiathèque**, partagée par tous les ajouts de ressources : galerie (`<app-gallery-editor>`), image principale/cover (`<app-image-field>`) et poster vidéo (`<app-video-field>`). Inputs : `target: 'cover' | 'gallery'`, `photos: Photo[]`. Outputs : `selected(Photo)`, `closed()`. Modale `role=dialog` + `aria-modal` + `cdkTrapFocus`, restitution du focus à la fermeture.
+- **Recherche** texte (`query`) sur nom de fichier **ou** tag (sous-chaîne).
+- **Filtre par tags** : sous la recherche, une rangée de **chips** liste les tags **distincts présents** dans `photos` (triés FR, `allTags()`), masquée s'il n'y en a aucun. Clic sur un chip → filtre par **appartenance exacte** au tag (`activeTag` signal, `toggleTag()`), re-clic = retrait. Combinable avec la recherche (ET). Chips = `<button>` dans un `role="group"` « Filtrer par tag », `aria-pressed` sur l'état actif. Message vide adapté (« Aucun résultat pour … » / « Aucune photo avec le tag … »).
+
+#### `MediathequeComponent` (`/admin/mediatheque`)
+
+Chemin : `frontend/src/app/pages/admin/mediatheque/mediatheque.component.ts`
+
+- Page de gestion de la médiathèque : import (multi-fichiers, `POST /api/admin/photos`), optimisation batch (`POST /api/admin/photos/optimize`), recherche (nom/tag), suppression, copie d'URL, visionneuse.
+- **Tags par photo** : chips supprimables + champ d'ajout. L'ajout est validé **au `blur` ET à `Entrée`** via `commitTag()` (`enterkeyhint="done"`). Indispensable sur **mobile** : les claviers virtuels (iOS Safari, Android Gboard) n'émettent pas de `keydown.enter` fiable — la touche « OK/Done » referme le clavier et déclenche un `blur`. Persistance optimiste via `PUT /api/admin/photos/{id}/tags` (revert + toast en cas d'échec ; vide et doublons ignorés, donc Entrée+blur idempotent).
 
 #### `<app-cropped-image-canvas>` (`CroppedImageCanvasComponent`)
 
@@ -1526,3 +1543,4 @@ Les ADR sont dans `docs/adr/`. Format : `NNNN-titre.md`.
 | 2.9.0 | 11/06/2026 | Undo/redo previews WYSIWYG (chantier v2, sous-projet 3/6) : `createUndoHistory` (snapshots form+galerie, limite 50) · option `onBeforeMutate` des composables · boutons ↶/↷ + Ctrl+Z/Ctrl+Y dans le shell (undo natif préservé dans les champs) · annonces SR « Action annulée/rétablie » · garde anti-bruit blur sans modification |
 | 2.10.0 | 13/06/2026 | Tags éditables in-preview (chantier v2, sous-projet 4/6) : extraction `<app-tag-editor>` pur (combobox partagé), `<app-tag-input>` devient wrapper CVA, édition des tags dans les previews mobilier/exposition avec autocomplétion + undo/redo |
 | 2.11.0 | 13/06/2026 | Sliders éditables in-preview accueil (chantier v2, sous-projet 5/6) : extraction `<app-slider-composition-editor>` (partagé form-side + preview), édition des sliders depuis le preview (titre, composition, créer/supprimer/zone) en auto-save, garde « une zone = un slider » |
+| 2.12.0 | 21/06/2026 | Médiathèque — tags & filtres : correctif ajout de tag au `blur` (+ `enterkeyhint`) dans `MediathequeComponent` pour le **mobile** (claviers virtuels sans `keydown.enter` fiable) · `<app-photo-picker>` : chips de filtre par tags distincts présents (`allTags()`/`toggleTag()`/`activeTag`), appartenance exacte, combinable avec la recherche · doc endpoints admin photos (dont `PUT /api/admin/photos/{id}/tags`) |
