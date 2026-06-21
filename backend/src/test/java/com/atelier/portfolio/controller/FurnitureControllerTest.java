@@ -57,6 +57,7 @@ class FurnitureControllerTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 

@@ -58,6 +58,7 @@ class ExhibitionControllerTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -234,6 +235,7 @@ class ExhibitionControllerTest {
                 true,
                 true,
                 List.of(),
+                null,
                 null,
                 null,
                 null,

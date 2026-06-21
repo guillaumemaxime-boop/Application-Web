@@ -128,6 +128,41 @@ class FurnitureServiceVideoTest {
         assertThat(result.durationSeconds()).isNull();
     }
 
+    @Test
+    void toDto_videoId_READY_avec_hlsUrl_expose_videoHls() {
+        FurnitureEntity entity = baseEntity();
+        entity.setVideoId("vid-1");
+
+        VideoService.ResolvedVideo resolvedWithHls = new VideoService.ResolvedVideo(
+                "/api/videos/files/vid-1.mp4",
+                "/api/photos/files/vid-1-poster.jpg",
+                12.5, 1920, 1080,
+                "/api/videos/files/vid-1-hls/master.m3u8");
+
+        when(repository.findBySlug("test")).thenReturn(Optional.of(entity));
+        when(videoService.resolveForPublic("vid-1")).thenReturn(Optional.of(resolvedWithHls));
+        when(storyService.findSlidesForOwner("furniture", "f-test")).thenReturn(List.of());
+
+        Furniture result = furnitureService.findBySlug("test").orElseThrow();
+
+        assertThat(result.videoHls()).isEqualTo("/api/videos/files/vid-1-hls/master.m3u8");
+    }
+
+    @Test
+    void toDto_videoId_READY_sans_hlsUrl_videoHls_est_null() {
+        FurnitureEntity entity = baseEntity();
+        entity.setVideoId("vid-1");
+
+        // READY_VIDEO a hlsUrl=null
+        when(repository.findBySlug("test")).thenReturn(Optional.of(entity));
+        when(videoService.resolveForPublic("vid-1")).thenReturn(Optional.of(READY_VIDEO));
+        when(storyService.findSlidesForOwner("furniture", "f-test")).thenReturn(List.of());
+
+        Furniture result = furnitureService.findBySlug("test").orElseThrow();
+
+        assertThat(result.videoHls()).isNull();
+    }
+
     // -----------------------------------------------------------------------
     // Tests d'écriture (create/update avec videoId)
     // -----------------------------------------------------------------------
@@ -146,7 +181,7 @@ class FurnitureServiceVideoTest {
                 null,   // videoPoster (override)
                 null,   // videoCaptions
                 "vid-9", // videoId
-                null, null, null // durationSeconds, width, height
+                null, null, null, null // durationSeconds, width, height, videoHls
         );
 
         Furniture created = furnitureService.create(input);
@@ -172,7 +207,7 @@ class FurnitureServiceVideoTest {
                 null,   // videoPoster
                 null,   // videoCaptions
                 "vid-9", // videoId
-                null, null, null
+                null, null, null, null // durationSeconds, width, height, videoHls
         );
 
         Furniture result = furnitureService.update("test", input).orElseThrow();

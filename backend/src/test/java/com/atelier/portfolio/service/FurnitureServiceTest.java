@@ -90,7 +90,7 @@ class FurnitureServiceTest {
                 "Banc épuré", "Description longue",
                 List.of("L 180 cm", "H 45 cm"),
                 "Milo GUILLAUME Design", false, true, true, List.of(), List.of(),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Furniture created = furnitureService.create(input);
@@ -110,7 +110,7 @@ class FurnitureServiceTest {
                 null, null,
                 List.of(), "court", "long",
                 List.of(), "Milo GUILLAUME Design", false, true, true, List.of(), List.of(),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Furniture created = furnitureService.create(input);
@@ -131,7 +131,7 @@ class FurnitureServiceTest {
                 List.of("L 120 cm", "H 180 cm"),
                 "Milo GUILLAUME Design", false, true, true, List.of(),
                 List.of("bois", "sculpture"),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Furniture created = furnitureService.create(input);
@@ -153,7 +153,7 @@ class FurnitureServiceTest {
                 "Nouvelle description courte", original.description(),
                 original.dimensions(), original.designer(), false, true, true, List.of(),
                 List.of("métal", "édition limitée"),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Optional<Furniture> updated = furnitureService.update(slug, changes);
@@ -186,7 +186,7 @@ class FurnitureServiceTest {
                 "/api/photos/files/poster.jpg",
                 "/api/videos/files/subs.vtt",
                 "vid-test-42", // videoId
-                null, null, null
+                null, null, null, null
         );
 
         Optional<Furniture> result = furnitureService.update(slug, input);
@@ -208,7 +208,7 @@ class FurnitureServiceTest {
                 null, "X", null, "Tables", null, 2026,
                 null, null,
                 List.of(), "", "", List.of(), "", false, true, true, List.of(), List.of(),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Optional<Furniture> updated = furnitureService.update("non-existent", changes);
@@ -244,7 +244,7 @@ class FurnitureServiceTest {
                 List.of(), null, null,
                 List.of(), null, false, true, true, List.of(),
                 List.of("a".repeat(256)),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Set<ConstraintViolation<Furniture>> violations = validator.validate(f);
@@ -262,7 +262,7 @@ class FurnitureServiceTest {
                 List.of(), null, null,
                 List.of(), null, false, true, true, List.of(),
                 List.of("a".repeat(255)),
-                null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null
         );
 
         Set<ConstraintViolation<Furniture>> violations = validator.validate(f);
@@ -294,7 +294,7 @@ class FurnitureServiceTest {
         Furniture input = new Furniture(null, "T", null, "Cat", "mat", 2024, "/c.jpg",
             new ImageCrop(10.0, 20.0, 60.0, 40.0),
             List.of(), "s", "d", List.of(), "des", false, true, true, List.of(), List.of(),
-            null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null);
         Furniture created = furnitureService.create(input);
         Furniture reloaded = furnitureService.findBySlug(created.slug()).orElseThrow();
         assertThat(reloaded.coverCrop()).isNotNull();
@@ -308,7 +308,7 @@ class FurnitureServiceTest {
         Furniture initial = new Furniture(null, "Reset Test", null, "Cat", "mat", 2024, "/c.jpg",
             new ImageCrop(10.0, 20.0, 60.0, 40.0),
             List.of(), "s", "d", List.of(), "des", false, true, true, List.of(), List.of(),
-            null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null);
         Furniture created = furnitureService.create(initial);
         assertThat(created.coverCrop()).isNotNull();
 
@@ -320,7 +320,7 @@ class FurnitureServiceTest {
             created.designer(), created.featured(), created.showStoryLink(), created.showStoryButton(),
             created.slides(), created.tags(),
             created.videoUrl(), created.videoPoster(), created.videoCaptions(),
-            created.videoId(), created.durationSeconds(), created.width(), created.height());
+            created.videoId(), created.durationSeconds(), created.width(), created.height(), null);
         furnitureService.update(created.slug(), cleared).orElseThrow();
 
         // Relit et verifie que le crop est bien null
@@ -335,7 +335,7 @@ class FurnitureServiceTest {
             List.of(new GalleryImage("/g1.jpg", new ImageCrop(0.0, 0.0, 50.0, 50.0), 1, 1),
                     new GalleryImage("/g2.jpg", null, 1, 1)),
             "s", "d", List.of(), "des", false, true, true, List.of(), List.of(),
-            null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null);
         Furniture created = furnitureService.create(input);
         Furniture reloaded = furnitureService.findBySlug(created.slug()).orElseThrow();
         assertThat(reloaded.gallery()).hasSize(2);
