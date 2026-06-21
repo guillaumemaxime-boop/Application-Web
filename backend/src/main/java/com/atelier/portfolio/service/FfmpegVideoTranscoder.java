@@ -94,7 +94,10 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
             throw new IOException("Timeout ffmpeg apres " + timeoutSeconds + "s");
         }
         if (p.exitValue() != 0) {
-            throw new IOException("ffmpeg a echoue (code " + p.exitValue() + ") : " + new String(p.getInputStream().readAllBytes()));
+            // Cap la lecture du diagnostic (le process a deja quitte) : evite un
+            // OOM theorique si ffmpeg crache une sortie anormalement volumineuse.
+            String diag = new String(p.getInputStream().readNBytes(4096), java.nio.charset.StandardCharsets.UTF_8);
+            throw new IOException("ffmpeg a echoue (code " + p.exitValue() + ") : " + diag);
         }
     }
 

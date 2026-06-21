@@ -248,8 +248,11 @@ public class VideoService {
         Double duration = ready ? e.getDurationSeconds() : null;
         Integer width   = ready ? e.getWidth()           : null;
         Integer height  = ready ? e.getHeight()          : null;
+        // errorMessage = sortie ffmpeg brute (peut contenir des chemins serveur) :
+        // on ne l'expose que pour un statut FAILED (et uniquement a l'admin, JWT).
+        String error = e.getStatus() == VideoStatus.FAILED ? e.getErrorMessage() : null;
         return new Video(e.getId(), e.getStatus().name(), url, poster,
-                duration, width, height, e.getErrorMessage());
+                duration, width, height, error);
     }
 
     // -----------------------------------------------------------------------
