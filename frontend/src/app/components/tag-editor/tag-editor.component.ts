@@ -174,6 +174,12 @@ export class TagEditorComponent {
   }
 
   protected onBlur(): void {
+    // Valide le texte saisi au blur — indispensable sur mobile : les claviers
+    // virtuels n'emettent pas de keydown.enter fiable, et la touche OK/Done
+    // referme le clavier en provoquant un blur. Les clics sur une suggestion font
+    // un (mousedown) preventDefault (pas de blur) -> aucun double-ajout possible.
+    const v = this.inputValue().trim();
+    if (v) this.addTag(v);
     setTimeout(() => this.dropdownOpen.set(false), 150);
   }
 

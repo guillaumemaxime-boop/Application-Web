@@ -62,6 +62,21 @@ describe('TagEditorComponent', () => {
     expect(host.last).toEqual(['vegetal']);
   });
 
+  it('valide le texte saisi au blur (clavier mobile : OK/Done = blur)', () => {
+    inputEl().dispatchEvent(new Event('focus'));
+    type('mobile');
+    inputEl().dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    expect(host.last).toEqual(['mobile']);
+  });
+
+  it('un blur sans saisie n\'ajoute rien', () => {
+    inputEl().dispatchEvent(new Event('focus'));
+    inputEl().dispatchEvent(new Event('blur'));
+    fixture.detectChanges();
+    expect(host.last).toBeNull();
+  });
+
   it('flèches + Entrée ajoutent la suggestion active', () => {
     inputEl().dispatchEvent(new Event('focus'));
     type('b');                 // bois, boheme (frene exclu, sculpture exclu)
