@@ -17,6 +17,54 @@
       "type": "java.lang.String",
       "description": "Image servie par defaut (redirection) quand une reference d'image est perdue (fichier absent). Vide => 404.",
       "defaultValue": "/logo.jpg"
+    },
+    {
+      "name": "app.video.transcode.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Active le transcodage FFmpeg en tache de fond apres upload.",
+      "defaultValue": true
+    },
+    {
+      "name": "app.video.ffmpeg-path",
+      "type": "java.lang.String",
+      "description": "Chemin vers l'executable ffmpeg (ou nom si dans le PATH).",
+      "defaultValue": "ffmpeg"
+    },
+    {
+      "name": "app.video.ffprobe-path",
+      "type": "java.lang.String",
+      "description": "Chemin vers l'executable ffprobe (ou nom si dans le PATH).",
+      "defaultValue": "ffprobe"
+    },
+    {
+      "name": "app.video.max-height",
+      "type": "java.lang.Integer",
+      "description": "Hauteur maximale (px) apres transcodage. La largeur est calculee proportionnellement.",
+      "defaultValue": 1080
+    },
+    {
+      "name": "app.video.crf",
+      "type": "java.lang.Integer",
+      "description": "Facteur de qualite constant FFmpeg (CRF) pour H.264. Plus bas = meilleure qualite. 23 = defaut x264.",
+      "defaultValue": 23
+    },
+    {
+      "name": "app.video.preset",
+      "type": "java.lang.String",
+      "description": "Preset d'encodage FFmpeg x264 (ultrafast..veryslow). Compromis vitesse/compression.",
+      "defaultValue": "medium"
+    },
+    {
+      "name": "app.video.transcode-timeout-seconds",
+      "type": "java.lang.Integer",
+      "description": "Timeout maximal (secondes) alloue a un processus FFmpeg avant arret force.",
+      "defaultValue": 600
+    },
+    {
+      "name": "app.video.poster-offset-seconds",
+      "type": "java.lang.Integer",
+      "description": "Offset (secondes) utilise par ffmpeg pour extraire la miniature poster de la video.",
+      "defaultValue": 1
     }
   ]
 }
