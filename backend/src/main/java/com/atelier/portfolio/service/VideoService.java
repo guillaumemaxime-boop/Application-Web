@@ -41,7 +41,6 @@ import java.util.UUID;
  * {@link #store} (compat retrograde) — pas d'entite VideoEntity.
  */
 @Service
-@Transactional(readOnly = true)
 public class VideoService {
 
     // Allowlist stricte des extensions autorisees a l'upload.
@@ -170,8 +169,14 @@ public class VideoService {
      *
      * Mode degradation : si ffmpeg indisponible → READY avec la source brute.
      * Mode normal     : PROCESSING → ffmpeg → READY (source supprimee) ou FAILED.
+     *
+     * Volontairement NON @Transactional : appelee en self-invocation depuis
+     * transcodeAsync (le proxy AOP serait court-circuite de toute facon), et on
+     * VEUT que chaque repository.save() soit committe independamment (tx propre du
+     * repository Spring Data) — ainsi le passage PROCESSING est visible des pollers
+     * pendant le transcodage long, et un READY/FAILED final persiste meme apres une
+     * transaction precedente fermee.
      */
-    @Transactional
     void transcode(String id) {
         VideoEntity entity = repository.findById(id).orElseThrow(
                 () -> new IllegalArgumentException("Video introuvable: " + id));
