@@ -108,7 +108,8 @@ describe('StoriesAdminComponent', () => {
       expect(fixture.nativeElement.querySelector('app-image-field')).toBeNull();
 
       // Clic sur le bouton Cover de la première story
-      const coverBtn = fixture.nativeElement.querySelectorAll('button.action')[0] as HTMLButtonElement;
+      const coverBtn = Array.from(rowsEls()[0].querySelectorAll('button'))
+        .find(b => b.textContent?.trim() === 'Cover') as HTMLButtonElement;
       coverBtn.click();
       fixture.detectChanges();
 
@@ -137,6 +138,63 @@ describe('StoriesAdminComponent', () => {
         coverImage: story.coverImage,
         coverCrop: null,
       }));
+    });
+  });
+
+  describe('renommage', () => {
+    /** Clique le bouton « Renommer » de la première story. */
+    function clickRename(): void {
+      const btn = Array.from(rowsEls()[0].querySelectorAll('button'))
+        .find(b => b.textContent?.trim() === 'Renommer') as HTMLButtonElement;
+      btn.click();
+      fixture.detectChanges();
+    }
+
+    it('cliquer « Renommer » remplace le titre par un champ pré-rempli', () => {
+      expect(rowsEls()[0].querySelector('.rename-input')).toBeNull();
+      clickRename();
+      const input = rowsEls()[0].querySelector('.rename-input') as HTMLInputElement;
+      expect(input).not.toBeNull();
+      expect(input.value).toBe('Story A');
+    });
+
+    it('saveRename() appelle updateStory avec le nouveau titre et met à jour la liste', () => {
+      portfolio.updateStory.and.returnValue(of({ ...rows[0] } as any));
+      clickRename();
+      (fixture.componentInstance as any).renameValue.set('  Nouveau titre  ');
+      (fixture.componentInstance as any).saveRename(rows[0]);
+      fixture.detectChanges();
+
+      expect(portfolio.updateStory).toHaveBeenCalledWith('st-1', jasmine.objectContaining({
+        ownerKind: 'furniture', ownerId: 'f-1', title: 'Nouveau titre',
+        coverImage: '/c.jpg', coverCrop: null,
+      }));
+      // Liste mise à jour + champ refermé
+      expect(rowsEls()[0].textContent).toContain('Nouveau titre');
+      expect(rowsEls()[0].querySelector('.rename-input')).toBeNull();
+    });
+
+    it('titre vide → pas d\'appel updateStory', () => {
+      clickRename();
+      (fixture.componentInstance as any).renameValue.set('   ');
+      (fixture.componentInstance as any).saveRename(rows[0]);
+      expect(portfolio.updateStory).not.toHaveBeenCalled();
+    });
+
+    it('titre inchangé → ferme sans appel updateStory', () => {
+      clickRename();
+      (fixture.componentInstance as any).saveRename(rows[0]);
+      fixture.detectChanges();
+      expect(portfolio.updateStory).not.toHaveBeenCalled();
+      expect(rowsEls()[0].querySelector('.rename-input')).toBeNull();
+    });
+
+    it('cancelRename() referme le champ sans appel', () => {
+      clickRename();
+      (fixture.componentInstance as any).cancelRename();
+      fixture.detectChanges();
+      expect(portfolio.updateStory).not.toHaveBeenCalled();
+      expect(rowsEls()[0].querySelector('.rename-input')).toBeNull();
     });
   });
 
