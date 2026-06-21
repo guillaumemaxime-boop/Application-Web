@@ -176,6 +176,18 @@ class AdminVideoControllerTest {
         assertEquals(Map.of("count", 3, "generated", 2), r.getBody());
     }
 
+    /**
+     * Cas 8 : un batch HLS déjà en cours (garde de ré-entrance) → 409 Conflict.
+     */
+    @Test
+    void hls_batch_concurrent_renvoie_409() {
+        when(service.generateHlsAll()).thenThrow(new IllegalStateException("Un batch HLS est deja en cours."));
+
+        ResponseEntity<?> r = controller.generateHls();
+
+        assertEquals(409, r.getStatusCode().value());
+    }
+
     // -----------------------------------------------------------------------
     // DELETE /api/admin/videos/files/{filename} — suppression .vtt sans entité
     // -----------------------------------------------------------------------

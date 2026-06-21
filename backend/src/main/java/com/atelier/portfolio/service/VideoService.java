@@ -327,32 +327,45 @@ public class VideoService {
 
     public record VideoHlsReport(int count, int generated) {}
 
+    /** Garde de ré-entrance : empêche deux batchs HLS concurrents de traiter les
+     *  mêmes vidéos (segments corrompus). Process-local (un seul backend). */
+    private final java.util.concurrent.atomic.AtomicBoolean hlsBatchRunning =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+
     /**
      * Genere le HLS pour toutes les videos READY qui n'en ont pas encore.
      * Best-effort : une erreur sur une video n'interrompt pas les suivantes.
+     * Refuse un second appel concurrent ({@link IllegalStateException} → 409).
      */
     @Transactional
     public VideoHlsReport generateHlsAll() {
-        int count = 0, generated = 0;
-        Path dir = Paths.get(uploadDir);
-        for (VideoEntity e : repository.findByStatus(VideoStatus.READY)) {
-            count++;
-            if (e.getHlsMasterFilename() != null) continue;
-            if (e.getOutputFilename() == null) continue;
-            Path mp4 = dir.resolve(e.getOutputFilename());
-            if (!Files.exists(mp4)) continue;
-            try {
-                int h = e.getHeight() != null ? e.getHeight() : transcoder.probe(mp4).height();
-                Path hlsDir = dir.resolve(e.getId() + "-hls");
-                transcoder.generateHls(mp4, hlsDir, h,
-                        new VideoTranscoder.HlsOptions(hlsTimeSeconds, hlsPreset));
-                e.setHlsMasterFilename(e.getId() + "-hls/master.m3u8");
-                e.setUpdatedAt(Instant.now().toString());
-                repository.save(e);
-                generated++;
-            } catch (Exception ignored) { /* best-effort */ }
+        if (!hlsBatchRunning.compareAndSet(false, true)) {
+            throw new IllegalStateException("Un batch HLS est deja en cours.");
         }
-        return new VideoHlsReport(count, generated);
+        try {
+            int count = 0, generated = 0;
+            Path dir = Paths.get(uploadDir);
+            for (VideoEntity e : repository.findByStatus(VideoStatus.READY)) {
+                count++;
+                if (e.getHlsMasterFilename() != null) continue;
+                if (e.getOutputFilename() == null) continue;
+                Path mp4 = dir.resolve(e.getOutputFilename());
+                if (!Files.exists(mp4)) continue;
+                try {
+                    int h = e.getHeight() != null ? e.getHeight() : transcoder.probe(mp4).height();
+                    Path hlsDir = dir.resolve(e.getId() + "-hls");
+                    transcoder.generateHls(mp4, hlsDir, h,
+                            new VideoTranscoder.HlsOptions(hlsTimeSeconds, hlsPreset));
+                    e.setHlsMasterFilename(e.getId() + "-hls/master.m3u8");
+                    e.setUpdatedAt(Instant.now().toString());
+                    repository.save(e);
+                    generated++;
+                } catch (Exception ignored) { /* best-effort */ }
+            }
+            return new VideoHlsReport(count, generated);
+        } finally {
+            hlsBatchRunning.set(false);
+        }
     }
 
     // -----------------------------------------------------------------------
