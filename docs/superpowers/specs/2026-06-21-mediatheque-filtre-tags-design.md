@@ -61,6 +61,14 @@ Dans la médiathèque admin (`mediatheque.component.ts`), permettre de **filtrer
 - Intégration : `setTagFilter`/`toggleNoTag` mettent à jour `filtered()`.
 - (Le combobox lui-même est déjà couvert par `tag-editor.component.spec.ts`.)
 
+## Parité photo-picker (sélecteur d'images de galerie)
+
+Le sélecteur `photo-picker.component.ts` (modale « Ajouter à la galerie » / « Choisir une image ») a son **propre** filtre par tag, historiquement en **chips mono-sélection** (`activeTag: string | null` → cliquer un 2ᵉ tag remplace le 1ᵉ). Mise en parité de **sémantique** avec la page :
+- `activeTags: signal<string[]>` (logique **ET**) + `noTagOnly: signal<boolean>`, mutuellement exclusifs (`toggleTag`/`toggleNoTag`).
+- Chips multi-sélection (`[class.active]="activeTags().includes(tag)"`) + chip **« Sans tag »** en tête de la rangée.
+- `filtered()` : texte → `noTagOnly` (photos sans tag) → sinon `activeTags` en `every` (ET).
+- **Pas de combobox/autocomplétion ici** : la modale affiche déjà **tous** les tags en chips cliquables (la découverte est visuelle, l'autocomplétion n'apporte rien). Le contrôle diffère de la page mais la **sémantique est identique** (ET + sans-tag).
+
 ## Hors portée
 - Endpoint backend d'agrégation des tags (inutile : photos déjà toutes chargées).
 - Persistance de l'état du filtre dans l'URL (query params).

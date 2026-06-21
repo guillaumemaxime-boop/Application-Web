@@ -408,6 +408,34 @@ describe('MediathequeComponent', () => {
     expect((fixture.componentInstance as any).tagFilter()).toEqual(['bois']);
   });
 
+  it('REPRO: ajout sequentiel de 2 tags dans le filtre (combobox) accumule', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([
+      makePhoto({ id: '1', tags: ['bois', 'chaise'] }),
+      makePhoto({ id: '2', tags: ['bois'] }),
+    ]);
+    fixture.detectChanges();
+
+    const filterEditor = fixture.debugElement.queryAll(By.css('app-tag-editor'))[0];
+    const inputEl = filterEditor.query(By.css('input')).nativeElement as HTMLInputElement;
+
+    inputEl.value = 'bois';
+    inputEl.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+
+    inputEl.value = 'chaise';
+    inputEl.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+
+    expect((fixture.componentInstance as any).tagFilter()).toEqual(['bois', 'chaise']);
+  });
+
   it('toggleNoTag() : ne garde que les photos sans tag', () => {
     configure();
     const fixture = TestBed.createComponent(MediathequeComponent);

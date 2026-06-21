@@ -103,7 +103,8 @@ describe('PhotoPickerComponent', () => {
     fixture.componentRef.setInput('photos', photosAvecTags);
     fixture.detectChanges();
     const chips = fixture.debugElement.queryAll(By.css('.picker-tag'));
-    expect(chips.map(c => c.nativeElement.textContent.trim())).toEqual(['atelier', 'bois']);
+    // Le premier chip est le toggle « Sans tag », suivi des tags distincts triés.
+    expect(chips.map(c => c.nativeElement.textContent.trim())).toEqual(['Sans tag', 'atelier', 'bois']);
   });
 
   it('ne rend pas de zone de tags quand aucune photo n\'a de tag', () => {
@@ -167,6 +168,50 @@ describe('PhotoPickerComponent', () => {
     const items = fixture.debugElement.queryAll(By.css('.picker-item'));
     expect(items.length).toBe(1);
     expect(items[0].nativeElement.getAttribute('title')).toBe('Table');
+  });
+
+  it('multi-tags ET : 2 tags actifs → seules les photos portant les DEUX', () => {
+    const photosAvecTags: Photo[] = [
+      { id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '', tags: ['bois', 'chaise'] },
+      { id: '2', filename: 'b.jpg', originalName: 'B', url: '/uploads/b.jpg', uploadedAt: '', tags: ['bois'] },
+      { id: '3', filename: 'c.jpg', originalName: 'C', url: '/uploads/c.jpg', uploadedAt: '', tags: ['chaise'] },
+    ];
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'gallery');
+    fixture.componentRef.setInput('photos', photosAvecTags);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance;
+    cmp.toggleTag('bois');
+    cmp.toggleTag('chaise');
+    fixture.detectChanges();
+    const items = fixture.debugElement.queryAll(By.css('.picker-item'));
+    expect(items.map(i => i.nativeElement.getAttribute('title'))).toEqual(['A']);
+  });
+
+  it('filtre « Sans tag » : ne garde que les photos sans tag, exclusif avec les tags', () => {
+    const photosAvecTags: Photo[] = [
+      { id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '', tags: ['bois'] },
+      { id: '2', filename: 'b.jpg', originalName: 'B', url: '/uploads/b.jpg', uploadedAt: '', tags: [] },
+    ];
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'gallery');
+    fixture.componentRef.setInput('photos', photosAvecTags);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance;
+    const chip = (label: string) => fixture.debugElement.queryAll(By.css('.picker-tag'))
+      .find(c => c.nativeElement.textContent.trim() === label)!;
+
+    cmp.toggleTag('bois');
+    cmp.toggleNoTag();           // active « sans tag » → doit vider la sélection de tags
+    fixture.detectChanges();
+    expect(chip('bois').nativeElement.getAttribute('aria-pressed')).toBe('false');  // tag vidé
+    expect(chip('Sans tag').nativeElement.getAttribute('aria-pressed')).toBe('true');
+    const items = fixture.debugElement.queryAll(By.css('.picker-item'));
+    expect(items.map(i => i.nativeElement.getAttribute('title'))).toEqual(['B']);
+
+    cmp.toggleTag('bois');       // re-sélectionner un tag → désactive « sans tag »
+    fixture.detectChanges();
+    expect(chip('Sans tag').nativeElement.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('expose le panel en role=dialog avec aria-modal (A-06)', () => {
