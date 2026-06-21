@@ -38,9 +38,14 @@ public class VideoController {
         this.service = service;
     }
 
-    @GetMapping("/files/{filename:.+}")
+    @GetMapping("/files/{*filename}")
     public ResponseEntity<ResourceRegion> serve(@PathVariable String filename,
                                                 @RequestHeader HttpHeaders headers) throws IOException {
+        // {*filename} capture les chemins imbriqués (ex. vid-1-hls/master.m3u8)
+        // mais Spring fournit le path avec un slash initial → on le retire
+        if (filename.startsWith("/")) {
+            filename = filename.substring(1);
+        }
         Resource resource = service.loadAsResource(filename);
         if (resource == null) {
             return ResponseEntity.notFound().build();
@@ -84,6 +89,8 @@ public class VideoController {
             case "mp4"  -> MediaType.parseMediaType("video/mp4");
             case "webm" -> MediaType.parseMediaType("video/webm");
             case "vtt"  -> MediaType.parseMediaType("text/vtt");
+            case "m3u8" -> MediaType.parseMediaType("application/vnd.apple.mpegurl");
+            case "ts"   -> MediaType.parseMediaType("video/mp2t");
             default     -> MediaType.APPLICATION_OCTET_STREAM;
         };
     }

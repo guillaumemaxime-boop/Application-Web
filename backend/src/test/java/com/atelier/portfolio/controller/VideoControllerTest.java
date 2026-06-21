@@ -105,4 +105,57 @@ class VideoControllerTest {
         assertEquals("bytes */1000", result.getHeaders().getFirst(HttpHeaders.CONTENT_RANGE));
         assertNull(result.getBody());
     }
+
+    // --- Tests HLS (Tâche 5) ---
+
+    @Test
+    void serve_m3u8_renvoie_content_type_mpegurl() throws IOException {
+        Resource resource = mock(Resource.class);
+        when(resource.contentLength()).thenReturn(200L);
+        when(service.loadAsResource("master.m3u8")).thenReturn(resource);
+
+        ResponseEntity<ResourceRegion> result = controller.serve("master.m3u8", new HttpHeaders());
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals("application/vnd.apple.mpegurl", result.getHeaders().getContentType().toString());
+    }
+
+    @Test
+    void serve_ts_renvoie_content_type_mp2t() throws IOException {
+        Resource resource = mock(Resource.class);
+        when(resource.contentLength()).thenReturn(500L);
+        when(service.loadAsResource("segment.ts")).thenReturn(resource);
+
+        ResponseEntity<ResourceRegion> result = controller.serve("segment.ts", new HttpHeaders());
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals("video/mp2t", result.getHeaders().getContentType().toString());
+    }
+
+    @Test
+    void serve_mp4_content_type_inchange() throws IOException {
+        Resource resource = mock(Resource.class);
+        when(resource.contentLength()).thenReturn(1000L);
+        when(service.loadAsResource("clip.mp4")).thenReturn(resource);
+
+        ResponseEntity<ResourceRegion> result = controller.serve("clip.mp4", new HttpHeaders());
+
+        assertEquals("video/mp4", result.getHeaders().getContentType().toString());
+    }
+
+    @Test
+    void serve_chemin_imbrique_hls_master_m3u8() throws IOException {
+        Resource resource = mock(Resource.class);
+        when(resource.contentLength()).thenReturn(100L);
+        // Spring {*filename} fournit le path avec slash initial ; le contrôleur doit le retirer
+        when(service.loadAsResource("vid-1-hls/master.m3u8")).thenReturn(resource);
+
+        // Appel avec slash initial (tel que Spring le transmet via {*filename})
+        ResponseEntity<ResourceRegion> result = controller.serve("/vid-1-hls/master.m3u8", new HttpHeaders());
+
+        assertEquals(200, result.getStatusCode().value());
+        assertEquals("application/vnd.apple.mpegurl", result.getHeaders().getContentType().toString());
+        // Vérifie que loadAsResource a bien été appelé SANS slash initial
+        verify(service).loadAsResource("vid-1-hls/master.m3u8");
+    }
 }
