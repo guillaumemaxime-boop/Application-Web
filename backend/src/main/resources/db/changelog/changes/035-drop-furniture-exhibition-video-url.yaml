@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 035-drop-furniture-exhibition-video-url
+      author: milo-guillaume
+      comment: >
+        Supprime la colonne video_url sur furniture et exhibition.
+        L'entité utilise désormais video_id (FK logique vers la table video).
+        Sûr : FurnitureEntity et ExhibitionEntity ne mappent plus video_url depuis la tâche 7.
+      changes:
+        - sql:
+            sql: ALTER TABLE furniture DROP COLUMN video_url;
+        - sql:
+            sql: ALTER TABLE exhibition DROP COLUMN video_url;

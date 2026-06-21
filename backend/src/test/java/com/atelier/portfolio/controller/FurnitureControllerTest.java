@@ -53,6 +53,10 @@ class FurnitureControllerTest {
                 List.of(),
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 

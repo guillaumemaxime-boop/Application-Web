@@ -68,8 +68,8 @@ public class ExhibitionEntity {
     @Column(name = "show_story_button", nullable = false)
     private boolean showStoryButton = true;
 
-    @Column(name = "video_url", length = 500)
-    private String videoUrl;
+    @Column(name = "video_id", length = 64)
+    private String videoId;
 
     @Column(name = "video_poster", length = 500)
     private String videoPoster;
@@ -147,8 +147,8 @@ public class ExhibitionEntity {
     public boolean isShowStoryButton() { return showStoryButton; }
     public void setShowStoryButton(boolean showStoryButton) { this.showStoryButton = showStoryButton; }
 
-    public String getVideoUrl() { return videoUrl; }
-    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+    public String getVideoId() { return videoId; }
+    public void setVideoId(String videoId) { this.videoId = videoId; }
 
     public String getVideoPoster() { return videoPoster; }
     public void setVideoPoster(String videoPoster) { this.videoPoster = videoPoster; }

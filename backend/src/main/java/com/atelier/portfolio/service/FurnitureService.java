@@ -28,23 +28,26 @@ public class FurnitureService {
     private final StoryService storyService;
     private final HomeFeedService homeFeedService;
     private final CategoryMetaService categoryMetaService;
+    private final VideoService videoService;
 
     public FurnitureService(FurnitureRepository repository,
                             StoryService storyService,
                             HomeFeedService homeFeedService,
-                            CategoryMetaService categoryMetaService) {
+                            CategoryMetaService categoryMetaService,
+                            VideoService videoService) {
         this.repository = repository;
         this.storyService = storyService;
         this.homeFeedService = homeFeedService;
         this.categoryMetaService = categoryMetaService;
+        this.videoService = videoService;
     }
 
     public List<Furniture> findAll() {
-        return repository.findAll().stream().map(FurnitureService::toDto).toList();
+        return repository.findAll().stream().map(this::toDto).toList();
     }
 
     public List<Furniture> findFeatured() {
-        return repository.findByFeaturedTrue().stream().map(FurnitureService::toDto).toList();
+        return repository.findByFeaturedTrue().stream().map(this::toDto).toList();
     }
 
     public Optional<Furniture> findBySlug(String slug) {
@@ -61,7 +64,11 @@ public class FurnitureService {
                     base.tags(),
                     base.videoUrl(),
                     base.videoPoster(),
-                    base.videoCaptions()
+                    base.videoCaptions(),
+                    base.videoId(),
+                    base.durationSeconds(),
+                    base.width(),
+                    base.height()
             );
         });
     }
@@ -126,7 +133,7 @@ public class FurnitureService {
         entity.setShowStoryLink(input.showStoryLink());
         entity.setShowStoryButton(input.showStoryButton());
         // video : set inconditionnel (null = retrait, comme coverCrop)
-        entity.setVideoUrl(input.videoUrl());
+        entity.setVideoId(input.videoId());
         entity.setVideoPoster(input.videoPoster());
         entity.setVideoCaptions(input.videoCaptions());
         if (input.gallery() != null) {
@@ -164,7 +171,7 @@ public class FurnitureService {
         return normalized.replaceAll("-+", "-").replaceAll("^-|-$", "");
     }
 
-    private static Furniture toDto(FurnitureEntity entity) {
+    private Furniture toDto(FurnitureEntity entity) {
         ImageCrop coverCrop = ImageCrop.ofNullable(entity.getCoverCropX(), entity.getCoverCropY(),
                                         entity.getCoverCropW(), entity.getCoverCropH());
         List<GalleryImage> gallery = entity.getGallery().stream()
@@ -172,6 +179,17 @@ public class FurnitureService {
                         e.getColSpan() != null ? e.getColSpan() : 1,
                         e.getRowSpan() != null ? e.getRowSpan() : 1))
                 .toList();
+        String videoId = entity.getVideoId();
+        Optional<VideoService.ResolvedVideo> resolved = videoId != null
+                ? videoService.resolveForPublic(videoId)
+                : Optional.empty();
+        String videoUrl     = resolved.map(VideoService.ResolvedVideo::url).orElse(null);
+        String videoPoster  = entity.getVideoPoster() != null
+                ? entity.getVideoPoster()
+                : resolved.map(VideoService.ResolvedVideo::posterUrl).orElse(null);
+        Double durationSecs = resolved.map(VideoService.ResolvedVideo::durationSeconds).orElse(null);
+        Integer width       = resolved.map(VideoService.ResolvedVideo::width).orElse(null);
+        Integer height      = resolved.map(VideoService.ResolvedVideo::height).orElse(null);
         return new Furniture(
                 entity.getId(),
                 entity.getTitle(),
@@ -191,9 +209,13 @@ public class FurnitureService {
                 entity.isShowStoryButton(),
                 List.of(),
                 List.copyOf(entity.getTags()),
-                entity.getVideoUrl(),
-                entity.getVideoPoster(),
-                entity.getVideoCaptions()
+                videoUrl,
+                videoPoster,
+                entity.getVideoCaptions(),
+                videoId,
+                durationSecs,
+                width,
+                height
         );
     }
 }
