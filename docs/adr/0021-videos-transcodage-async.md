@@ -27,6 +27,16 @@ L'ADR-0019 a acté l'auto-hébergement des vidéos **sans transcodage** (l'admin
 - (-) Suppression de la source après `READY` : **SP2 (HLS)** dérivera les rendus du **mp4 normalisé** (perte générationnelle mineure acceptée pour économiser le volume).
 - (-) Dette : **streaming adaptatif HLS** = SP2 ; **GC global des orphelins** (vidéos non référencées) = SP3.
 
+## SP2 — Streaming adaptatif HLS (extension, 2026-06-21)
+
+Le pipeline SP1 est étendu pour produire, **en best-effort** (un échec HLS laisse la vidéo `READY` avec le mp4 progressif en fallback), un **HLS multi-rendition TS** dérivé du mp4 normalisé :
+
+- `FfmpegVideoTranscoder.generateHls` (`buildHlsArgs` : `split` + `scale` par rendition, `var_stream_map`, `master.m3u8` + `{0,1,2}.m3u8` + segments `.ts`) dans `{id}-hls/` ; escalier **360/720/1080p** plafonné à la hauteur source. Colonne `hls_master_filename` (migration 036) ; batch `POST /api/admin/videos/hls` pour l'existant.
+- **Correctif** : exécution des process ffmpeg redirigée vers un **fichier temp** (`runToFile`) — élimine le risque de blocage de pipe (sortie volumineuse des longues vidéos) noté en SP1.
+- **Serve** : `VideoController` passe à `{*filename}` (chemins HLS imbriqués), content-types `application/vnd.apple.mpegurl`/`video/mp2t`, garde anti-path-traversal conservée. **Résolution DTO** : `videoHls` (fiches) + `studio.video.hls` (Studio), exposés `READY`-only.
+- **Player** : `<app-video-player>` choisit HLS **natif** (Safari/iOS), sinon **hls.js** (Chrome/FF/Edge), sinon **fallback mp4**. Dépendance `hls.js` (1ʳᵉ lib player tierce). CSP : segments via `connect-src 'self'` + `media-src 'self'` (déjà en place).
+- `delete` retire récursivement le dossier `{id}-hls/`. **GC global des orphelins = SP3** (dette).
+
 ## Supersession
 
 Cet ADR **supersède en partie l'ADR-0019** : les points « pas de transcodage » et « pas d'entité vidéo / URL persistée sur la fiche » ne sont plus valables. Le reste de l'ADR-0019 demeure : auto-hébergement (pas d'embed tiers), serve avec HTTP Range/206, CSP `media-src 'self'`, allowlist `.mp4`/`.webm`/`.vtt`, upload streamé, limite 200 Mo.
