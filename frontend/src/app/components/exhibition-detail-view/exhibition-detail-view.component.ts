@@ -223,10 +223,10 @@ export type EditableExhibitionField =
             <div class="container narrow">
               <app-video-field
                 label="{{ item.title }} — vidéo"
-                [videoUrl]="item.videoUrl ?? null"
+                [videoId]="item.videoId ?? null"
                 [videoPoster]="item.videoPoster ?? null"
                 [videoCaptions]="item.videoCaptions ?? null"
-                (videoUrlChange)="videoUrlChange.emit($event)"
+                (videoIdChange)="videoIdChange.emit($event)"
                 (videoPosterChange)="videoPosterChange.emit($event)"
                 (videoCaptionsChange)="videoCaptionsChange.emit($event)" />
             </div>
@@ -366,7 +366,7 @@ export class ExhibitionDetailViewComponent implements OnDestroy {
   @Output() textFieldEdit = new EventEmitter<{ field: EditableExhibitionField; value: string }>();
   @Output() dateFieldEdit = new EventEmitter<{ field: 'startDate' | 'endDate'; value: string }>();
   @Output() galleryImageOpen = new EventEmitter<number>();
-  @Output() videoUrlChange = new EventEmitter<string | null>();
+  @Output() videoIdChange = new EventEmitter<string | null>();
   @Output() videoPosterChange = new EventEmitter<string | null>();
   @Output() videoCaptionsChange = new EventEmitter<string | null>();
 

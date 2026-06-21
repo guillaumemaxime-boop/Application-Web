@@ -183,7 +183,7 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
             (textFieldClick)="focusField($event)"
             (textFieldEdit)="onPreviewTextFieldEdit($event)"
             (galleryItemResize)="onPreviewGalleryItemResize($event)"
-            (videoUrlChange)="onPreviewVideoChange('videoUrl', $event)"
+            (videoIdChange)="onPreviewVideoChange('videoId', $event)"
             (videoPosterChange)="onPreviewVideoChange('videoPoster', $event)"
             (videoCaptionsChange)="onPreviewVideoChange('videoCaptions', $event)" />
         </ng-template>
@@ -301,7 +301,7 @@ export class MobilierComponent {
     showStoryLink: [true],
     showStoryButton: [true],
     tags: this.fb.control<string[]>([], { nonNullable: true }),
-    videoUrl: this.fb.control<string | null>(null),
+    videoId: this.fb.control<string | null>(null),
     videoPoster: this.fb.control<string | null>(null),
     videoCaptions: this.fb.control<string | null>(null),
   });
@@ -351,7 +351,7 @@ export class MobilierComponent {
    * alimente le preview et le payload de saveFurniture) — même flux que
    * cover/galerie/tags. La persistance se fait au save de la fiche.
    */
-  protected onPreviewVideoChange(field: 'videoUrl' | 'videoPoster' | 'videoCaptions', value: string | null): void {
+  protected onPreviewVideoChange(field: 'videoId' | 'videoPoster' | 'videoCaptions', value: string | null): void {
     this.history.record();
     this.furnitureForm.patchValue({ [field]: value });
     this.furnitureForm.markAsDirty();
@@ -419,7 +419,7 @@ export class MobilierComponent {
       showStoryLink: true,
       showStoryButton: true,
       tags: [],
-      videoUrl: null,
+      videoId: null,
       videoPoster: null,
       videoCaptions: null,
     });
@@ -441,7 +441,7 @@ export class MobilierComponent {
       showStoryLink: item.showStoryLink ?? true,
       showStoryButton: item.showStoryButton ?? true,
       tags: item.tags ?? [],
-      videoUrl: item.videoUrl ?? null,
+      videoId: item.videoId ?? null,
       videoPoster: item.videoPoster ?? null,
       videoCaptions: item.videoCaptions ?? null,
     });
@@ -512,7 +512,7 @@ export class MobilierComponent {
       showStoryLink: v.showStoryLink ?? true,
       showStoryButton: v.showStoryButton ?? true,
       tags: v.tags ?? [],
-      videoUrl: v.videoUrl ?? null,
+      videoId: v.videoId ?? null,
       videoPoster: v.videoPoster ?? null,
       videoCaptions: v.videoCaptions ?? null,
     };

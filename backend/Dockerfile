@@ -15,7 +15,7 @@ WORKDIR /app
 # su-exec : drop de privileges root -> app au demarrage (cf. entrypoint.sh).
 # Necessaire car les volumes montes (Railway, K8s) sont root-owned et masquent
 # le chown de l'image ; on doit donc chown le point de montage au runtime.
-RUN apk add --no-cache su-exec
+RUN apk add --no-cache su-exec ffmpeg
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build /workspace/target/portfolio-backend-*.jar app.jar
 COPY entrypoint.sh /entrypoint.sh

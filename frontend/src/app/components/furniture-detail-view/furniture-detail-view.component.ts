@@ -193,10 +193,10 @@ import { VideoFieldComponent } from '../../pages/admin/shared/video-field.compon
             <div class="container narrow">
               <app-video-field
                 label="{{ item.title }} — vidéo"
-                [videoUrl]="item.videoUrl ?? null"
+                [videoId]="item.videoId ?? null"
                 [videoPoster]="item.videoPoster ?? null"
                 [videoCaptions]="item.videoCaptions ?? null"
-                (videoUrlChange)="videoUrlChange.emit($event)"
+                (videoIdChange)="videoIdChange.emit($event)"
                 (videoPosterChange)="videoPosterChange.emit($event)"
                 (videoCaptionsChange)="videoCaptionsChange.emit($event)" />
             </div>
@@ -377,7 +377,7 @@ export class FurnitureDetailViewComponent implements OnDestroy {
   @Output() textFieldClick = new EventEmitter<EditableTextField>();
   @Output() textFieldEdit = new EventEmitter<{ field: EditableTextField; value: string }>();
   @Output() galleryItemResize = new EventEmitter<{ index: number; colSpan: number; rowSpan: number }>();
-  @Output() videoUrlChange = new EventEmitter<string | null>();
+  @Output() videoIdChange = new EventEmitter<string | null>();
   @Output() videoPosterChange = new EventEmitter<string | null>();
   @Output() videoCaptionsChange = new EventEmitter<string | null>();
 

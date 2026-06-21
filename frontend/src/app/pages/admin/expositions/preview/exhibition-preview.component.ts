@@ -25,7 +25,7 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (textFieldClick)="onTextFieldClick($event)"
       (textFieldEdit)="onTextFieldEdit($event)"
       (dateFieldEdit)="onDateFieldEdit($event)"
-      (videoUrlChange)="videoUrlChange.emit($event)"
+      (videoIdChange)="videoIdChange.emit($event)"
       (videoPosterChange)="videoPosterChange.emit($event)"
       (videoCaptionsChange)="videoCaptionsChange.emit($event)" />
   `,
@@ -39,7 +39,7 @@ export class ExhibitionPreviewComponent implements OnInit {
 
   @Output() tagsChange = new EventEmitter<string[]>();
   @Output() coverEdit = new EventEmitter<'crop' | 'replace'>();
-  @Output() videoUrlChange = new EventEmitter<string | null>();
+  @Output() videoIdChange = new EventEmitter<string | null>();
   @Output() videoPosterChange = new EventEmitter<string | null>();
   @Output() videoCaptionsChange = new EventEmitter<string | null>();
   @Output() galleryItemEdit = new EventEmitter<{ index: number; action: 'crop' | 'replace' | 'remove' }>();
@@ -83,6 +83,7 @@ export class ExhibitionPreviewComponent implements OnInit {
       showStoryLink: !!v.showStoryLink,
       showStoryButton: !!v.showStoryButton,
       slides: [],
+      videoId: v.videoId ?? null,
       videoUrl: v.videoUrl ?? null,
       videoPoster: v.videoPoster ?? null,
       videoCaptions: v.videoCaptions ?? null,

@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: 034-create-video
+      author: milo-guillaume
+      comment: >
+        Crée la table video et ajoute video_id (FK logique) sur furniture et exhibition.
+        Migration des données existantes video_url → video. Volet studio no-op si clé absente.
+      changes:
+        - sql:
+            sql: >-
+              CREATE TABLE video (
+                id VARCHAR(64) PRIMARY KEY,
+                status VARCHAR(20) NOT NULL,
+                source_filename VARCHAR(255),
+                output_filename VARCHAR(255),
+                poster_filename VARCHAR(255),
+                duration_seconds DOUBLE PRECISION,
+                width INT,
+                height INT,
+                error_message VARCHAR(500),
+                original_name VARCHAR(255),
+                created_at VARCHAR(40),
+                updated_at VARCHAR(40)
+              );
+        - sql:
+            sql: ALTER TABLE furniture ADD COLUMN video_id VARCHAR(64);
+        - sql:
+            sql: ALTER TABLE exhibition ADD COLUMN video_id VARCHAR(64);
+        - sql:
+            sql: >-
+              INSERT INTO video (id, status, source_filename, output_filename, poster_filename, original_name)
+              SELECT 'vid-f-' || id, 'READY',
+                REPLACE(video_url, '/api/videos/files/', ''),
+                REPLACE(video_url, '/api/videos/files/', ''),
+                NULLIF(REPLACE(COALESCE(video_poster, ''), '/api/photos/files/', ''), ''),
+                'migré'
+              FROM furniture
+              WHERE video_url IS NOT NULL AND video_url <> '';
+        - sql:
+            sql: >-
+              UPDATE furniture
+              SET video_id = 'vid-f-' || id
+              WHERE video_url IS NOT NULL AND video_url <> '';
+        - sql:
+            sql: >-
+              INSERT INTO video (id, status, source_filename, output_filename, poster_filename, original_name)
+              SELECT 'vid-e-' || id, 'READY',
+                REPLACE(video_url, '/api/videos/files/', ''),
+                REPLACE(video_url, '/api/videos/files/', ''),
+                NULLIF(REPLACE(COALESCE(video_poster, ''), '/api/photos/files/', ''), ''),
+                'migré'
+              FROM exhibition
+              WHERE video_url IS NOT NULL AND video_url <> '';
+        - sql:
+            sql: >-
+              UPDATE exhibition
+              SET video_id = 'vid-e-' || id
+              WHERE video_url IS NOT NULL AND video_url <> '';
+        - sql:
+            sql: >-
+              INSERT INTO video (id, status, source_filename, output_filename, original_name)
+              SELECT 'vid-studio', 'READY',
+                REPLACE(content_value, '/api/videos/files/', ''),
+                REPLACE(content_value, '/api/videos/files/', ''),
+                'migré'
+              FROM site_content
+              WHERE content_key = 'studio.video.url'
+                AND content_value IS NOT NULL AND content_value <> '';
+        - sql:
+            sql: >-
+              INSERT INTO site_content (content_key, content_value)
+              SELECT 'studio.video.id', 'vid-studio'
+              FROM site_content
+              WHERE content_key = 'studio.video.url'
+                AND content_value IS NOT NULL AND content_value <> '';

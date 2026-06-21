@@ -1,61 +1,435 @@
 package com.atelier.portfolio.service;
 
+import com.atelier.portfolio.entity.VideoEntity;
+import com.atelier.portfolio.entity.VideoStatus;
+import com.atelier.portfolio.model.Video;
+import com.atelier.portfolio.repository.VideoRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class VideoServiceTest {
 
-    private VideoService newService(Path dir) {
-        VideoService service = new VideoService();
-        ReflectionTestUtils.setField(service, "uploadDir", dir.toString());
+    @TempDir
+    Path tmp;
+
+    @Mock
+    VideoRepository repository;
+
+    @Mock
+    VideoTranscoder transcoder;
+
+    VideoService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new VideoService(repository, transcoder);
+        ReflectionTestUtils.setField(service, "uploadDir", tmp.toString());
         ReflectionTestUtils.setField(service, "baseUrl", "/api/videos/files");
-        return service;
+        ReflectionTestUtils.setField(service, "maxHeight", 1080);
+        ReflectionTestUtils.setField(service, "crf", 23);
+        ReflectionTestUtils.setField(service, "preset", "medium");
+        ReflectionTestUtils.setField(service, "timeoutSeconds", 600);
+        ReflectionTestUtils.setField(service, "posterOffsetSeconds", 1);
+
+        // repository.save renvoie l'entite telle quelle par defaut
+        when(repository.save(any())).thenAnswer(i -> i.getArgument(0));
     }
 
+    // -----------------------------------------------------------------------
+    // 1. store(.mp4) : fichier source sur disque, entite UPLOADED, id non nul
+    // -----------------------------------------------------------------------
+
     @Test
-    void store_accepte_mp4_et_renvoie_url(@TempDir Path dir) throws Exception {
-        VideoService service = newService(dir);
-        MockMultipartFile file = new MockMultipartFile("file", "clip.mp4", "video/mp4", new byte[]{1, 2, 3});
+    void store_mp4_createsSourceFileAndSavesUploadedEntity() throws IOException {
+        byte[] content = "fake-mp4-content".getBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "ma-video.mp4", "video/mp4", content);
 
         VideoService.StoredVideo result = service.store(file);
 
-        assertTrue(result.url().startsWith("/api/videos/files/"));
-        assertTrue(result.filename().endsWith(".mp4"));
+        // L'id doit etre non nul et prefixe vid-
+        assertNotNull(result.id());
+        assertTrue(result.id().startsWith("vid-"));
+
+        // Statut UPLOADED
+        assertEquals("UPLOADED", result.status());
+
+        // Le fichier source existe bien sur disque
+        String sourceFilename = result.filename();
+        assertTrue(Files.exists(tmp.resolve(sourceFilename)),
+                "Le fichier source devrait etre ecrit sur disque");
+
+        // save() appele avec une entite UPLOADED
+        ArgumentCaptor<VideoEntity> captor = ArgumentCaptor.forClass(VideoEntity.class);
+        verify(repository).save(captor.capture());
+        VideoEntity saved = captor.getValue();
+        assertEquals(VideoStatus.UPLOADED, saved.getStatus());
+        assertEquals(result.id(), saved.getId());
+        assertNotNull(saved.getCreatedAt());
     }
 
     @Test
-    void store_accepte_vtt(@TempDir Path dir) throws Exception {
-        VideoService service = newService(dir);
-        MockMultipartFile file = new MockMultipartFile("file", "subs.vtt", "text/vtt", "WEBVTT".getBytes());
+    void storeCaptions_vtt_storesFileWithoutVideoEntity() throws IOException {
+        byte[] content = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHello".getBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "sous-titres.vtt", "text/vtt", content);
 
-        VideoService.StoredVideo result = service.store(file);
+        VideoService.StoredVideo result = service.storeCaptions(file);
 
-        assertTrue(result.filename().endsWith(".vtt"));
+        assertNotNull(result.url());
+        assertTrue(result.url().endsWith(".vtt"));
+        // Pas d'entite Video creee
+        verify(repository, never()).save(any());
     }
 
     @Test
-    void store_rejette_extension_interdite(@TempDir Path dir) {
-        VideoService service = newService(dir);
-        MockMultipartFile file = new MockMultipartFile("file", "hack.exe", "application/octet-stream", new byte[]{0});
-
+    void store_unknownExtension_throwsIllegalArgument() {
+        MockMultipartFile file = new MockMultipartFile("file", "virus.exe", "application/octet-stream",
+                "bad".getBytes());
         assertThrows(IllegalArgumentException.class, () -> service.store(file));
     }
 
+    // Compatibilite : store(.vtt) via store() renvoie url/filename comme avant
     @Test
-    void loadAsResource_bloque_path_traversal(@TempDir Path dir) throws Exception {
-        VideoService service = newService(dir);
+    void store_vtt_viaBehaviourCompat_renvoieUrl() throws IOException {
+        byte[] content = "WEBVTT".getBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "subs.vtt", "text/vtt", content);
+
+        VideoService.StoredVideo result = service.store(file);
+
+        assertNotNull(result.url());
+        assertTrue(result.filename().endsWith(".vtt"));
+        verify(repository, never()).save(any());
+    }
+
+    // -----------------------------------------------------------------------
+    // 2. transcode -> READY (ffmpeg disponible, transcode ok)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void transcode_ffmpegAvailable_setsReadyWithMetadata() throws Exception {
+        String id = "vid-abcd1234";
+        VideoEntity entity = uploadedEntity(id, "vid-abcd1234-src.mp4");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(transcoder.isAvailable()).thenReturn(true);
+        when(transcoder.probe(any())).thenReturn(new VideoTranscoder.VideoMeta(12.5, 1920, 1080));
+
+        // Cree le fichier source factice
+        Files.writeString(tmp.resolve(entity.getSourceFilename()), "fake");
+
+        service.transcode(id);
+
+        ArgumentCaptor<VideoEntity> captor = ArgumentCaptor.forClass(VideoEntity.class);
+        // save est appele au moins 2 fois : PROCESSING puis READY
+        verify(repository, atLeast(2)).save(captor.capture());
+
+        VideoEntity finalSave = captor.getAllValues().stream()
+                .filter(e -> e.getStatus() == VideoStatus.READY)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Aucun save avec status READY"));
+
+        assertEquals(VideoStatus.READY, finalSave.getStatus());
+        assertNotNull(finalSave.getOutputFilename());
+        assertTrue(finalSave.getOutputFilename().endsWith(".mp4"));
+        assertNotNull(finalSave.getPosterFilename());
+        assertEquals(12.5, finalSave.getDurationSeconds());
+        assertEquals(1920, finalSave.getWidth());
+        assertEquals(1080, finalSave.getHeight());
+
+        // transcoder.transcode appele
+        verify(transcoder).transcode(any(), any(), any(), any());
+
+        // Fichier source supprime
+        assertFalse(Files.exists(tmp.resolve(entity.getSourceFilename())),
+                "Le fichier source doit etre supprime apres transcodage reussi");
+    }
+
+    // -----------------------------------------------------------------------
+    // 3. transcode -> FAILED (IOException pendant ffmpeg)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void transcode_ffmpegThrows_setsFailedAndKeepsSource() throws Exception {
+        String id = "vid-fail1234";
+        VideoEntity entity = uploadedEntity(id, "vid-fail1234-src.mp4");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(transcoder.isAvailable()).thenReturn(true);
+        when(transcoder.probe(any())).thenReturn(new VideoTranscoder.VideoMeta(5.0, 640, 480));
+        doThrow(new IOException("ffmpeg error")).when(transcoder).transcode(any(), any(), any(), any());
+
+        // Cree le fichier source factice
+        Files.writeString(tmp.resolve(entity.getSourceFilename()), "fake");
+
+        service.transcode(id);
+
+        ArgumentCaptor<VideoEntity> captor = ArgumentCaptor.forClass(VideoEntity.class);
+        verify(repository, atLeast(1)).save(captor.capture());
+
+        VideoEntity failedSave = captor.getAllValues().stream()
+                .filter(e -> e.getStatus() == VideoStatus.FAILED)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Aucun save avec status FAILED"));
+
+        assertEquals(VideoStatus.FAILED, failedSave.getStatus());
+        assertNotNull(failedSave.getErrorMessage());
+        assertFalse(failedSave.getErrorMessage().isBlank());
+
+        // Source conservee
+        assertTrue(Files.exists(tmp.resolve(entity.getSourceFilename())),
+                "Le fichier source doit etre conserve en cas d'echec");
+    }
+
+    // -----------------------------------------------------------------------
+    // 4. degradation : ffmpeg indisponible -> READY avec source brute
+    // -----------------------------------------------------------------------
+
+    @Test
+    void transcode_ffmpegUnavailable_setsReadyWithSourceFilename() throws Exception {
+        String id = "vid-degraded1";
+        VideoEntity entity = uploadedEntity(id, "vid-degraded1-src.mp4");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(transcoder.isAvailable()).thenReturn(false);
+
+        Files.writeString(tmp.resolve(entity.getSourceFilename()), "fake");
+
+        service.transcode(id);
+
+        ArgumentCaptor<VideoEntity> captor = ArgumentCaptor.forClass(VideoEntity.class);
+        verify(repository).save(captor.capture());
+        VideoEntity saved = captor.getValue();
+
+        assertEquals(VideoStatus.READY, saved.getStatus());
+        assertEquals(entity.getSourceFilename(), saved.getOutputFilename());
+
+        // probe et transcode pas appeles
+        verify(transcoder, never()).probe(any());
+        verify(transcoder, never()).transcode(any(), any(), any(), any());
+    }
+
+    // -----------------------------------------------------------------------
+    // 5. getStatus : mappe en DTO Video
+    // -----------------------------------------------------------------------
+
+    @Test
+    void getStatus_readyEntity_returnsVideoDtoWithUrl() {
+        String id = "vid-ready001";
+        VideoEntity entity = readyEntity(id, "vid-ready001.mp4", "vid-ready001-poster.jpg");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        Video dto = service.getStatus(id);
+
+        assertNotNull(dto);
+        assertEquals(id, dto.id());
+        assertEquals("READY", dto.status());
+        assertNotNull(dto.url());
+        assertTrue(dto.url().contains("vid-ready001.mp4"));
+        assertNotNull(dto.poster());
+        assertTrue(dto.poster().contains("vid-ready001-poster.jpg"));
+        assertEquals(10.0, dto.durationSeconds());
+        assertEquals(1280, dto.width());
+        assertEquals(720, dto.height());
+    }
+
+    @Test
+    void getStatus_processingEntity_urlIsNull() {
+        String id = "vid-proc001";
+        VideoEntity entity = new VideoEntity();
+        entity.setId(id);
+        entity.setStatus(VideoStatus.PROCESSING);
+        entity.setSourceFilename("vid-proc001-src.mp4");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        Video dto = service.getStatus(id);
+
+        assertNotNull(dto);
+        assertEquals("PROCESSING", dto.status());
+        assertNull(dto.url());
+        assertNull(dto.poster());
+    }
+
+    @Test
+    void getStatus_notFound_returnsNull() {
+        when(repository.findById("unknown")).thenReturn(Optional.empty());
+
+        Video dto = service.getStatus("unknown");
+
+        assertNull(dto);
+    }
+
+    // -----------------------------------------------------------------------
+    // 6. resolveForPublic
+    // -----------------------------------------------------------------------
+
+    @Test
+    void resolveForPublic_readyEntity_returnsPresent() {
+        String id = "vid-pub001";
+        VideoEntity entity = readyEntity(id, "vid-pub001.mp4", "vid-pub001-poster.jpg");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        var result = service.resolveForPublic(id);
+
+        assertTrue(result.isPresent());
+        VideoService.ResolvedVideo rv = result.get();
+        assertNotNull(rv.url());
+        assertTrue(rv.url().contains("vid-pub001.mp4"));
+        assertNotNull(rv.posterUrl());
+        assertEquals(10.0, rv.durationSeconds());
+        assertEquals(1280, rv.width());
+        assertEquals(720, rv.height());
+    }
+
+    @Test
+    void resolveForPublic_processingEntity_returnsEmpty() {
+        String id = "vid-pub002";
+        VideoEntity entity = new VideoEntity();
+        entity.setId(id);
+        entity.setStatus(VideoStatus.PROCESSING);
+        entity.setSourceFilename("vid-pub002-src.mp4");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        var result = service.resolveForPublic(id);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void resolveForPublic_unknownId_returnsEmpty() {
+        when(repository.findById("nope")).thenReturn(Optional.empty());
+
+        var result = service.resolveForPublic("nope");
+
+        assertTrue(result.isEmpty());
+    }
+
+    // -----------------------------------------------------------------------
+    // 7. recoverStaleProcessing
+    // -----------------------------------------------------------------------
+
+    @Test
+    void recoverStaleProcessing_setsStalesToFailed() {
+        String id = "vid-stale1";
+        VideoEntity stale = new VideoEntity();
+        stale.setId(id);
+        stale.setStatus(VideoStatus.PROCESSING);
+        stale.setSourceFilename("vid-stale1-src.mp4");
+
+        when(repository.findByStatus(VideoStatus.PROCESSING)).thenReturn(List.of(stale));
+
+        service.recoverStaleProcessing();
+
+        ArgumentCaptor<VideoEntity> captor = ArgumentCaptor.forClass(VideoEntity.class);
+        verify(repository).save(captor.capture());
+        VideoEntity saved = captor.getValue();
+        assertEquals(VideoStatus.FAILED, saved.getStatus());
+        assertNotNull(saved.getErrorMessage());
+        assertFalse(saved.getErrorMessage().isBlank());
+    }
+
+    // -----------------------------------------------------------------------
+    // 8. retry
+    // -----------------------------------------------------------------------
+
+    @Test
+    void retry_failedEntityWithSourceOnDisk_returnsTrue() throws Exception {
+        String id = "vid-retry001";
+        VideoEntity entity = new VideoEntity();
+        entity.setId(id);
+        entity.setStatus(VideoStatus.FAILED);
+        entity.setSourceFilename("vid-retry001-src.mp4");
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        // Cree le fichier source factice
+        Files.writeString(tmp.resolve(entity.getSourceFilename()), "fake");
+
+        boolean result = service.retry(id);
+
+        assertTrue(result);
+    }
+
+    @Test
+    void retry_failedEntityWithoutSource_returnsFalse() {
+        String id = "vid-retry002";
+        VideoEntity entity = new VideoEntity();
+        entity.setId(id);
+        entity.setStatus(VideoStatus.FAILED);
+        entity.setSourceFilename("vid-retry002-src.mp4");
+        // pas de fichier sur disque
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        boolean result = service.retry(id);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void retry_readyEntity_returnsFalse() {
+        String id = "vid-retry003";
+        VideoEntity entity = readyEntity(id, "vid-retry003.mp4", null);
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+
+        boolean result = service.retry(id);
+
+        assertFalse(result);
+    }
+
+    // -----------------------------------------------------------------------
+    // loadAsResource : garde-fous path-traversal (conserves de l'ancienne impl)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void loadAsResource_blocksPathTraversal() throws Exception {
         assertNull(service.loadAsResource("../../etc/passwd"));
     }
 
     @Test
-    void loadAsResource_renvoie_null_si_absent(@TempDir Path dir) throws Exception {
-        VideoService service = newService(dir);
+    void loadAsResource_returnsNullForMissingFile() throws Exception {
         assertNull(service.loadAsResource("inexistant.mp4"));
+    }
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+
+    private static VideoEntity uploadedEntity(String id, String sourceFilename) {
+        VideoEntity e = new VideoEntity();
+        e.setId(id);
+        e.setStatus(VideoStatus.UPLOADED);
+        e.setSourceFilename(sourceFilename);
+        e.setOriginalName("video.mp4");
+        e.setCreatedAt("2026-06-21T10:00:00Z");
+        return e;
+    }
+
+    private static VideoEntity readyEntity(String id, String outputFilename, String posterFilename) {
+        VideoEntity e = new VideoEntity();
+        e.setId(id);
+        e.setStatus(VideoStatus.READY);
+        e.setOutputFilename(outputFilename);
+        e.setPosterFilename(posterFilename);
+        e.setSourceFilename(null);
+        e.setDurationSeconds(10.0);
+        e.setWidth(1280);
+        e.setHeight(720);
+        e.setCreatedAt("2026-06-21T10:00:00Z");
+        return e;
     }
 }

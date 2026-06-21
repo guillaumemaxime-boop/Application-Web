@@ -29,6 +29,10 @@ public record Exhibition(
         List<Slide> slides,
         @Size(max = 500) String videoUrl,
         @Size(max = 500) String videoPoster,
-        @Size(max = 500) String videoCaptions
+        @Size(max = 500) String videoCaptions,
+        @Size(max = 64) String videoId,
+        Double durationSeconds,
+        Integer width,
+        Integer height
 ) {
 }

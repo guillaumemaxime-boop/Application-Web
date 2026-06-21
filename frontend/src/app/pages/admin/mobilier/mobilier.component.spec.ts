@@ -749,6 +749,33 @@ describe('MobilierComponent', () => {
     expect(cmp.furnitureForm.getRawValue().tags).toEqual([]);
   });
 
+  it('saveFurniture envoie videoId dans le payload', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.furnitureForm.patchValue({ title: 'T', category: 'C', year: 2024, videoId: 'vid-42' } as any);
+    cmp.saveFurniture();
+    const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/furniture');
+    expect(req.request.body['videoId']).toBe('vid-42');
+    req.flush({});
+    httpMock.expectOne('/api/furniture').flush([]);
+  });
+
+  it('loadFurniture() charge videoId depuis la fiche', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as MobilierInternals;
+    cmp.loadFurniture({ id: 'f1', slug: 'chaise', title: 'Chaise', category: 'C', year: 2024, videoId: 'vid-99' });
+    expect((cmp.furnitureForm.getRawValue() as any)['videoId']).toBe('vid-99');
+  });
+
   it('ne rend plus les cases showStoryLink/showStoryButton (obsolètes)', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);

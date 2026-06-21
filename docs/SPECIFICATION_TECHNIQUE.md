@@ -692,19 +692,25 @@ record HomeFeedCoverCropRequest(
 
 > **Phase 2b (backlog)** : conversion **WebP/AVIF** (`<picture>` multi-format, nécessite un encodeur dédié — ImageIO/Thumbnailator ne les encodent pas), CDN médias, tracking DB des variantes. Voir spec `docs/superpowers/specs/2026-06-19-perf-images-phase2-design.md`, section « Hors portée ».
 
-### 4.10 Vidéos auto-hébergées — `/api/videos/**` (ADR-0019)
+### 4.10 Vidéos auto-hébergées — `/api/videos/**` (ADR-0019, ADR-0021)
 
-Vidéo optionnelle (auto-hébergée) sur fiches mobilier/expo et Studio. `VideoService` (distinct de `PhotoService`) : allowlist stricte `.mp4`/`.webm`/`.vtt`, stockage **brut** (pas de transcodage) dans `app.upload.dir`, nom **UUID immuable**, garde anti-path-traversal, upload **streamé** (`Files.copy(InputStream)`).
+Vidéo optionnelle (auto-hébergée) sur fiches mobilier/expo et Studio. **SP1 (ADR-0021)** : transcodage **asynchrone** vers un mp4 web-ready + poster auto + métadonnées, porté par une entité `Video` à statut. `VideoService` (distinct de `PhotoService`) : allowlist `.mp4`/`.webm`/`.vtt`, upload **streamé** (`Files.copy(InputStream)`), garde anti-path-traversal, noms **UUID immuables**.
+
+**Pipeline (entité `Video`, statut `UPLOADED→PROCESSING→READY|FAILED`)** : `store` écrit la source brute, crée `Video(UPLOADED)`, déclenche `transcodeAsync` (`@Async`, executor `videoExecutor` borné à 1) → `PROCESSING` → `ffprobe` (durée/dimensions) + `ffmpeg` mp4 web-ready (**H.264/AAC, `+faststart`, plafond 1080p sans upscale, CRF 23**) + poster (frame ~1 s) → `READY` (source supprimée) ou `FAILED` (source conservée, `error_message`). `VideoTranscoder` (interface, mockable) + `FfmpegVideoTranscoder` (**`ProcessBuilder` args en liste = pas de shell**, timeout + `destroyForcibly`). Flag `app.video.transcode.enabled` → **dégradation gracieuse** (ffmpeg absent ⇒ source brute passée `READY`). **Recovery** au démarrage (`ApplicationReadyEvent` : `PROCESSING`→`FAILED`). FFmpeg ajouté à l'image Docker backend.
 
 | Méthode | Endpoint | Auth | Description |
 |---------|----------|------|-------------|
-| GET | `/api/videos/files/{filename}` | public | Sert vidéo/sous-titres. **HTTP Range** (`ResourceRegion`) : `206 Partial Content` si en-tête `Range` (seek), `200` sinon, `416` si hors borne ; `Accept-Ranges: bytes` ; cache `max-age=31536000, immutable`. Content-type : `video/mp4`, `video/webm`, `text/vtt`. |
-| POST | `/api/admin/videos` | JWT | Upload multipart → `201 {url, filename}` (400 si extension refusée). |
-| DELETE | `/api/admin/videos/files/{filename}` | JWT | Suppression best-effort → 204/404. |
+| GET | `/api/videos/files/{filename}` | public | Sert vidéo/sous-titres. **HTTP Range** (`ResourceRegion`) : `206` si `Range` (seek), `200` sinon, `416` hors borne ; `Accept-Ranges: bytes` ; cache `immutable`. Content-type `video/mp4`/`video/webm`/`text/vtt`. |
+| POST | `/api/admin/videos` | JWT | Upload multipart **async** → `201 {id, status, filename}` (vidéo) ou `{url, filename}` (.vtt) ; 400 si extension refusée. |
+| GET | `/api/admin/videos/{id}` | JWT | Statut (pollé par l'admin) → `{id, status, url, poster, durationSeconds, width, height, errorMessage}` (url/poster/méta non nuls **seulement si `READY`**) ; 404 si inconnu. |
+| POST | `/api/admin/videos/{id}/retry` | JWT | Relance le transcodage (si `FAILED` + source présente) → 200/409. |
+| DELETE | `/api/admin/videos/{id}` | JWT | Supprime fichiers (source/output/poster) + entité → 204/404. |
 
-**Schéma** : colonnes nullables `video_url`/`video_poster`/`video_captions` sur `furniture` et `exhibition` (migrations 032/033, posées **inconditionnellement** en update → `null` = retrait) ; clés `SiteContent` `studio.video.url`/`.poster`/`.captions` pour le Studio (pas d'entité vidéo dédiée).
+**Schéma** : table `video` (statut + `source/output/poster_filename`, `duration_seconds`, `width`/`height`, `error_message`) ; colonne **`video_id`** sur `furniture`/`exhibition` (migration 034, remplace `video_url` droppée en 035) ; `video_poster` = override optionnel (poster médiathèque), `video_captions` = `.vtt`. Studio : clé `SiteContent` **`studio.video.id`** (+ `.poster`/`.captions`). **Résolution DTO** : la vidéo n'est exposée au public (`videoUrl`/poster/durée résolus) **que si `READY`** ; l'état `PROCESSING`/`FAILED` et `error_message` ne fuitent jamais côté public. `SiteContentService` injecte une clé synthétique résolue `studio.video.url` (lecture) quand `studio.video.id` est `READY`. Migration de l'existant : chaque ancienne vidéo → `Video(READY)` pointant sur le fichier brut (pas de re-transcodage rétro).
 
-**CSP** : `media-src 'self'` (couvre `<video>`/`<source>`/`<track>` même origine). **Upload** : limite **200 Mo** (Spring `multipart.max-*-size` + Nginx `client_max_body_size`, à garder en phase). Pas de JS inline (lecteur natif).
+**Rendu** : public = `<app-video-player>` (natif) inchangé ; admin = `<app-video-field>` **polle le statut** (« Traitement… » via `aria-live`, aperçu si `READY`, message `role="alert"` + **Relancer** si `FAILED`).
+
+**CSP** : `media-src 'self'`. **Upload** : limite **200 Mo** (Spring + Nginx, à garder en phase). Pas de JS inline. **Backlog** : HLS adaptatif = SP2 ; GC des orphelins = SP3.
 
 ---
 

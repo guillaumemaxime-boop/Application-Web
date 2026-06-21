@@ -1,0 +1,32 @@
+# 21. Vidéos : transcodage asynchrone + entité Video
+
+Date : 2026-06-21
+Statut : Accepté (supersède en partie l'[ADR-0019](0019-videos-auto-hebergees.md))
+
+## Contexte
+
+L'ADR-0019 a acté l'auto-hébergement des vidéos **sans transcodage** (l'admin devait fournir un mp4 web-ready H.264/AAC), **sans poster automatique**, **sans entité vidéo** (l'URL était persistée directement sur la fiche / la clé `SiteContent studio.video.url`) et **sans streaming adaptatif**. Le chantier « amélioration vidéos + streaming » (décomposé en SP1/SP2/SP3) lève ces limites. **SP1** (cet ADR) pose les fondations : normalisation web-ready, poster auto, métadonnées, et un modèle à statut qui prépare le HLS (SP2).
+
+## Décision
+
+- **FFmpeg** ajouté à l'image Docker backend (`apk add ffmpeg`). Flag `app.video.transcode.enabled` (défaut `true`) : si ffmpeg est absent/désactivé, **dégradation gracieuse** — la vidéo brute passe directement `READY` (comportement ADR-0019).
+- **Entité `Video`** (table `video`) à statut `UPLOADED → PROCESSING → READY | FAILED`, avec `source/output/poster_filename`, `duration_seconds`, `width`/`height`, `error_message`. Repository + DTO `Video`.
+- **`VideoTranscoder`** (interface, mockable) + **`FfmpegVideoTranscoder`** : invocation via `ProcessBuilder` avec **liste d'arguments** (jamais de shell → pas d'injection), **timeout + kill** du process, `ffprobe` (JSON) pour durée/dimensions.
+- **Pipeline `@Async`** (executor `videoExecutor` borné à 1 thread — single-tenant, transcodage CPU-lourd en process externe) : `store` crée `Video(UPLOADED)` et déclenche `transcodeAsync` → `PROCESSING` → transcode mp4 **web-ready** (H.264/AAC, `+faststart`, plafond **1080p** sans upscale, CRF 23) + **poster** (frame ~1 s) + métadonnées → `READY` (source supprimée) ; toute erreur/timeout → `FAILED` (source conservée pour relance). **Recovery** au démarrage (`ApplicationReadyEvent`) : toute vidéo restée `PROCESSING` (conteneur tombé) repasse `FAILED`. Le transcodage tourne **hors transaction `readOnly`** (chaque `save` dans sa propre transaction → le passage `PROCESSING` est visible des pollers).
+- **Endpoints admin** (`/api/admin/videos`, JWT) : `POST` upload **async** (`{id, status}`), `GET /{id}` (statut **pollé** par l'UI), `POST /{id}/retry`, `DELETE /{id}`. Le serve public (`VideoController`, **Range/206** déjà en place) sert le mp4 de sortie ; le poster (jpg) est servi par le serve images.
+- **Référence par id** : `furniture`/`exhibition` portent `video_id` (remplace `video_url`) ; le Studio utilise la clé `studio.video.id` (remplace `studio.video.url`). `video_poster`/`studio.video.poster` restent comme **override** optionnel (poster choisi en médiathèque) ; `video_captions` (`.vtt`) inchangé (pas d'entité). **Résolution DTO** : la vidéo n'est exposée au public (`videoUrl` + poster + durée/dimensions) **que si `READY`** — l'état `PROCESSING`/`FAILED` n'est jamais visible côté public (bloc masqué). Le poster override prime sur le poster auto.
+- **Migrations** : `034` crée la table `video` + ajoute `video_id` + migre l'existant (chaque `video_url` → une `Video` `READY` pointant sur le fichier brut existant, **pas de re-transcodage rétro**) ; `035` supprime la colonne `video_url`. Le Studio reste lisible sans changement frontend grâce à une clé synthétique `studio.video.url` résolue injectée par `SiteContentService` quand `studio.video.id` est `READY`.
+- **Frontend** : `<app-video-field>` (admin) **polle le statut** (« Traitement en cours… » / aperçu quand `READY` / message + **Relancer** sur `FAILED`) et émet `videoId`. Le rendu public (`<app-video-player>`) lit `videoUrl` résolu — **inchangé**.
+
+## Conséquences
+
+- (+) Vidéos normalisées/compressées web-ready, **poster automatique**, métadonnées exposées ; lecture progressive fluide (faststart + Range).
+- (+) La surface publique **masque** une vidéo non prête ; aucune fuite d'état de traitement.
+- (+) Sécurité : exécution ffmpeg sans shell (args en liste), timeout/kill, async borné (pas de CPU public à la demande) ; recovery au démarrage.
+- (-) Image backend plus lourde (ffmpeg) ; **CPU/temps de transcodage** non négligeables sur l'instance Railway (borné par preset medium + plafond 1080p + timeout).
+- (-) Suppression de la source après `READY` : **SP2 (HLS)** dérivera les rendus du **mp4 normalisé** (perte générationnelle mineure acceptée pour économiser le volume).
+- (-) Dette : **streaming adaptatif HLS** = SP2 ; **GC global des orphelins** (vidéos non référencées) = SP3.
+
+## Supersession
+
+Cet ADR **supersède en partie l'ADR-0019** : les points « pas de transcodage » et « pas d'entité vidéo / URL persistée sur la fiche » ne sont plus valables. Le reste de l'ADR-0019 demeure : auto-hébergement (pas d'embed tiers), serve avec HTTP Range/206, CSP `media-src 'self'`, allowlist `.mp4`/`.webm`/`.vtt`, upload streamé, limite 200 Mo.

@@ -1,7 +1,7 @@
 # 19. Vidéos auto-hébergées (fiches + Studio)
 
 Date : 2026-06-19
-Statut : Accepté
+Statut : Accepté — **supersédé en partie par l'[ADR-0021](0021-videos-transcodage-async.md)** (transcodage + entité `Video` ; les points « pas de transcodage » et « URL persistée sur la fiche » ne sont plus valables).
 
 ## Contexte
 

@@ -13,6 +13,7 @@ import { ContactRequestInput, ContactRequestAck } from '../models/contact.model'
 import { MailSettingsView, MailSettingsInput, MailTestResult } from '../models/mail-settings.model';
 import { Story, StoryInput, StoryWithSlides, StoryAdminView } from '../models/story.model';
 import { NewsSlider, NewsSliderInput, NewsSliderView } from '../models/news-slider.model';
+import { VideoStatus, VideoStatusDto } from '../models/video.model';
 
 const API = '/api';
 
@@ -128,10 +129,24 @@ export class PortfolioService {
     return this.http.delete<void>(`${API}/admin/photos/${id}`);
   }
 
-  uploadVideo(file: File): Observable<{ url: string; filename: string }> {
+  uploadVideo(file: File): Observable<{ id: string; status: VideoStatus; filename: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<{ id: string; status: VideoStatus; filename: string }>(`${API}/admin/videos`, fd);
+  }
+
+  uploadCaptions(file: File): Observable<{ url: string; filename: string }> {
     const fd = new FormData();
     fd.append('file', file);
     return this.http.post<{ url: string; filename: string }>(`${API}/admin/videos`, fd);
+  }
+
+  getVideoStatus(id: string): Observable<VideoStatusDto> {
+    return this.http.get<VideoStatusDto>(`${API}/admin/videos/${id}`);
+  }
+
+  retryVideo(id: string): Observable<void> {
+    return this.http.post<void>(`${API}/admin/videos/${id}/retry`, null);
   }
 
   deleteVideo(filename: string): Observable<void> {

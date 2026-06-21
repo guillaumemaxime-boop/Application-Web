@@ -28,23 +28,26 @@ public class ExhibitionService {
     private final StoryService storyService;
     private final HomeFeedService homeFeedService;
     private final ExhibitionMetaService exhibitionMetaService;
+    private final VideoService videoService;
 
     public ExhibitionService(ExhibitionRepository repository,
                              StoryService storyService,
                              HomeFeedService homeFeedService,
-                             ExhibitionMetaService exhibitionMetaService) {
+                             ExhibitionMetaService exhibitionMetaService,
+                             VideoService videoService) {
         this.repository = repository;
         this.storyService = storyService;
         this.homeFeedService = homeFeedService;
         this.exhibitionMetaService = exhibitionMetaService;
+        this.videoService = videoService;
     }
 
     public List<Exhibition> findAll() {
-        return repository.findAllByOrderByStartDateDesc().stream().map(ExhibitionService::toDto).toList();
+        return repository.findAllByOrderByStartDateDesc().stream().map(this::toDto).toList();
     }
 
     public List<Exhibition> findFeatured() {
-        return repository.findByFeaturedTrueOrderByStartDateDesc().stream().map(ExhibitionService::toDto).toList();
+        return repository.findByFeaturedTrueOrderByStartDateDesc().stream().map(this::toDto).toList();
     }
 
     public Optional<Exhibition> findBySlug(String slug) {
@@ -61,7 +64,11 @@ public class ExhibitionService {
                     storyService.findSlidesForOwner("exhibition", entity.getId()),
                     base.videoUrl(),
                     base.videoPoster(),
-                    base.videoCaptions()
+                    base.videoCaptions(),
+                    base.videoId(),
+                    base.durationSeconds(),
+                    base.width(),
+                    base.height()
             );
         });
     }
@@ -125,7 +132,7 @@ public class ExhibitionService {
         entity.setShowStoryLink(input.showStoryLink());
         entity.setShowStoryButton(input.showStoryButton());
         // Champs video : set inconditionnel (null = retrait), comme coverCrop.
-        entity.setVideoUrl(input.videoUrl());
+        entity.setVideoId(input.videoId());
         entity.setVideoPoster(input.videoPoster());
         entity.setVideoCaptions(input.videoCaptions());
         if (input.gallery() != null) {
@@ -159,7 +166,7 @@ public class ExhibitionService {
         return normalized.replaceAll("-+", "-").replaceAll("^-|-$", "");
     }
 
-    private static Exhibition toDto(ExhibitionEntity entity) {
+    private Exhibition toDto(ExhibitionEntity entity) {
         ImageCrop coverCrop = ImageCrop.ofNullable(entity.getCoverCropX(), entity.getCoverCropY(),
                                         entity.getCoverCropW(), entity.getCoverCropH());
         List<GalleryImage> gallery = entity.getGallery().stream()
@@ -167,6 +174,17 @@ public class ExhibitionService {
                         e.getColSpan() != null ? e.getColSpan() : 1,
                         e.getRowSpan() != null ? e.getRowSpan() : 1))
                 .toList();
+        String videoId = entity.getVideoId();
+        Optional<VideoService.ResolvedVideo> resolved = videoId != null
+                ? videoService.resolveForPublic(videoId)
+                : Optional.empty();
+        String videoUrl     = resolved.map(VideoService.ResolvedVideo::url).orElse(null);
+        String videoPoster  = entity.getVideoPoster() != null
+                ? entity.getVideoPoster()
+                : resolved.map(VideoService.ResolvedVideo::posterUrl).orElse(null);
+        Double durationSecs = resolved.map(VideoService.ResolvedVideo::durationSeconds).orElse(null);
+        Integer width       = resolved.map(VideoService.ResolvedVideo::width).orElse(null);
+        Integer height      = resolved.map(VideoService.ResolvedVideo::height).orElse(null);
         return new Exhibition(
                 entity.getId(),
                 entity.getTitle(),
@@ -187,9 +205,13 @@ public class ExhibitionService {
                 entity.isShowStoryLink(),
                 entity.isShowStoryButton(),
                 List.of(),
-                entity.getVideoUrl(),
-                entity.getVideoPoster(),
-                entity.getVideoCaptions()
+                videoUrl,
+                videoPoster,
+                entity.getVideoCaptions(),
+                videoId,
+                durationSecs,
+                width,
+                height
         );
     }
 }

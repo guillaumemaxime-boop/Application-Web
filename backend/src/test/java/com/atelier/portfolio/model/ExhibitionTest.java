@@ -34,6 +34,10 @@ class ExhibitionTest {
                 List.of(),
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -81,6 +85,10 @@ class ExhibitionTest {
                 List.of(),
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -122,6 +130,10 @@ class ExhibitionTest {
                 List.of(),
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -158,6 +170,10 @@ class ExhibitionTest {
                 List.of(),
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
         assertNotNull(exhibition);
@@ -190,6 +206,10 @@ class ExhibitionTest {
                 List.of(),
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -213,6 +233,10 @@ class ExhibitionTest {
                 true,
                 true,
                 List.of(),
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null
@@ -245,6 +269,10 @@ class ExhibitionTest {
                 true,
                 true,
                 List.of(),
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null
@@ -285,6 +313,10 @@ class ExhibitionTest {
                 List.of(),
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
 
@@ -308,6 +340,10 @@ class ExhibitionTest {
                 true,
                 true,
                 List.of(),
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null
@@ -340,6 +376,10 @@ class ExhibitionTest {
                 true,
                 true,
                 List.of(),
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null
@@ -375,6 +415,10 @@ class ExhibitionTest {
                 true,
                 true,
                 List.of(),
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null
