@@ -68,13 +68,15 @@ import { ToastService } from '../shared/toast.service';
                   <span class="tag">{{ tag }}<button type="button" class="tag-remove" (click)="removeTag(photo, tag)" aria-label="Retirer le tag">×</button></span>
                 }
                 <input
+                  #tagInput
                   type="text"
                   class="tag-input"
                   placeholder="+ tag"
                   aria-label="Ajouter un tag"
+                  enterkeyhint="done"
                   maxlength="100"
-                  (keydown.enter)="addTag(photo, $any($event.target).value); $any($event.target).value = ''"
-                  (blur)="$any($event.target).value = ''"
+                  (keydown.enter)="$event.preventDefault(); commitTag(photo, tagInput)"
+                  (blur)="commitTag(photo, tagInput)"
                 />
               </div>
               <div class="photo-actions">
@@ -326,6 +328,20 @@ export class MediathequeComponent implements AfterViewInit {
 
   copyUrl(url: string): void {
     navigator.clipboard.writeText(url).then(() => this.toast.success('URL copiée dans le presse-papier.'));
+  }
+
+  /**
+   * Valide le tag saisi puis vide le champ. Branché sur Entrée ET sur blur :
+   * sur mobile, les claviers virtuels (iOS/Android) n'émettent pas d'événement
+   * `keydown.enter` fiable — la touche « OK/Done » referme le clavier et provoque
+   * un `blur`. Valider au blur est donc le seul moyen robuste d'enregistrer un tag
+   * au doigt. La valeur est capturée avant le vidage ; `addTag` ignore le vide et
+   * les doublons, donc un double déclenchement (Entrée puis blur) est sans effet.
+   */
+  commitTag(photo: Photo, input: HTMLInputElement): void {
+    const raw = input.value;
+    input.value = '';
+    this.addTag(photo, raw);
   }
 
   addTag(photo: Photo, raw: string): void {

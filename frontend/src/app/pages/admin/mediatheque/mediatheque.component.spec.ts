@@ -299,6 +299,52 @@ describe('MediathequeComponent', () => {
     req.flush(makePhoto({ id: '1', tags: ['studio'] }));
   });
 
+  it('commitTag() valide le tag du champ et le vide (cas blur/mobile)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    const photo = makePhoto({ id: '1', tags: [] });
+    httpMock.expectOne('/api/photos').flush([photo]);
+    fixture.detectChanges();
+
+    const input = { value: '  Studio  ' } as HTMLInputElement;
+    (fixture.componentInstance as any).commitTag(photo, input);
+    expect(input.value).toBe(''); // champ vidé
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
+    expect(req.request.body).toEqual({ tags: ['studio'] });
+    req.flush(makePhoto({ id: '1', tags: ['studio'] }));
+  });
+
+  it('commitTag() champ vide → aucun appel HTTP (blur sans saisie)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    const photo = makePhoto({ id: '1', tags: [] });
+    httpMock.expectOne('/api/photos').flush([photo]);
+    fixture.detectChanges();
+
+    const input = { value: '   ' } as HTMLInputElement;
+    (fixture.componentInstance as any).commitTag(photo, input);
+    expect(input.value).toBe('');
+    httpMock.expectNone(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
+  });
+
+  it('le champ tag valide au blur (DOM)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MediathequeComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/photos').flush([makePhoto({ id: '1', tags: [] })]);
+    fixture.detectChanges();
+
+    const inputDe = fixture.debugElement.query(By.css('input.tag-input'));
+    const input = inputDe.nativeElement as HTMLInputElement;
+    input.value = 'atelier';
+    inputDe.triggerEventHandler('blur', { target: input });
+    const req = httpMock.expectOne(r => r.method === 'PUT' && r.url === '/api/admin/photos/1/tags');
+    expect(req.request.body).toEqual({ tags: ['atelier'] });
+    req.flush(makePhoto({ id: '1', tags: ['atelier'] }));
+  });
+
   it('retire un tag', () => {
     configure();
     const fixture = TestBed.createComponent(MediathequeComponent);
