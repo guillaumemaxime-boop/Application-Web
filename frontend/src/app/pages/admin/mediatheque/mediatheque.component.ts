@@ -5,11 +5,12 @@ import { A11yModule } from '@angular/cdk/a11y';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { Photo } from '../../../models/photo.model';
 import { ToastService } from '../shared/toast.service';
+import { TagEditorComponent } from '../../../components/tag-editor/tag-editor.component';
 
 @Component({
   selector: 'app-mediatheque',
   standalone: true,
-  imports: [FormsModule, A11yModule],
+  imports: [FormsModule, A11yModule, TagEditorComponent],
   template: `
     <div class="photos-tab">
       <div class="photos-upload-zone">
@@ -39,6 +40,23 @@ import { ToastService } from '../shared/toast.service';
           [ngModel]="search()"
           (ngModelChange)="search.set($event)"
         />
+        <div class="photos-filter">
+          <app-tag-editor
+            class="photos-filter-editor"
+            [tags]="tagFilter()"
+            [suggestions]="allTags()"
+            placeholder="Filtrer par tag…"
+            ariaLabel="Filtrer par tag"
+            (tagsChange)="setTagFilter($event)"
+          />
+          <button
+            type="button"
+            class="no-tag-toggle"
+            [class.active]="noTagOnly()"
+            [attr.aria-pressed]="noTagOnly()"
+            (click)="toggleNoTag()"
+          >Sans tag</button>
+        </div>
         <div class="photos-count">
           @if (search().trim()) {
             {{ filtered().length }} / {{ photos().length }} photo{{ photos().length > 1 ? 's' : '' }}
@@ -64,19 +82,12 @@ import { ToastService } from '../shared/toast.service';
                 </span>
               </div>
               <div class="photo-tags">
-                @for (tag of photo.tags ?? []; track tag) {
-                  <span class="tag">{{ tag }}<button type="button" class="tag-remove" (click)="removeTag(photo, tag)" aria-label="Retirer le tag">×</button></span>
-                }
-                <input
-                  #tagInput
-                  type="text"
-                  class="tag-input"
+                <app-tag-editor
+                  [tags]="photo.tags ?? []"
+                  [suggestions]="allTags()"
                   placeholder="+ tag"
-                  aria-label="Ajouter un tag"
-                  enterkeyhint="done"
-                  maxlength="100"
-                  (keydown.enter)="$event.preventDefault(); commitTag(photo, tagInput)"
-                  (blur)="commitTag(photo, tagInput)"
+                  ariaLabel="Ajouter un tag"
+                  (tagsChange)="persistTags(photo, $event)"
                 />
               </div>
               <div class="photo-actions">
@@ -137,6 +148,20 @@ import { ToastService } from '../shared/toast.service';
       font-family: inherit; color: var(--color-ink); box-sizing: border-box;
     }
     .photos-search:focus { outline: 1px dashed var(--color-mute); outline-offset: 1px; }
+    .photos-filter {
+      display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px;
+    }
+    .photos-filter-editor { flex: 1; min-width: 240px; max-width: 480px; display: block; }
+    .no-tag-toggle {
+      align-self: stretch; padding: 6px 16px; font-size: 0.8rem; letter-spacing: 0.04em;
+      border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink);
+      cursor: pointer; font-family: inherit; white-space: nowrap;
+    }
+    .no-tag-toggle:hover { background: var(--color-bg-alt); }
+    .no-tag-toggle:focus-visible { outline: 1px dashed var(--color-mute); outline-offset: 1px; }
+    .no-tag-toggle.active {
+      background: var(--color-ink); color: var(--color-bg); border-color: var(--color-ink);
+    }
     .photos-count { font-size: 0.85rem; color: var(--color-mute); }
     .photos-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px;
@@ -157,21 +182,8 @@ import { ToastService } from '../shared/toast.service';
     }
     .meta-size { color: var(--color-mute); }
     .photo-tags {
-      display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 12px; border-top: 1px solid var(--color-line);
+      padding: 8px 12px; border-top: 1px solid var(--color-line);
     }
-    .photo-tags .tag {
-      display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 8px;
-      background: var(--color-bg-alt); border: 1px solid var(--color-line); font-size: 0.7rem; color: var(--color-ink-soft);
-    }
-    .photo-tags .tag-remove {
-      background: none; border: 0; color: var(--color-mute); cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 0 2px;
-    }
-    .photo-tags .tag-remove:hover { color: #b1532a; }
-    .photo-tags .tag-input {
-      flex: 1; min-width: 80px; border: 0; padding: 2px 4px; background: transparent; font-size: 0.7rem;
-      color: var(--color-ink); font-family: inherit;
-    }
-    .photo-tags .tag-input:focus { outline: 1px dashed var(--color-mute); outline-offset: 1px; }
     .photo-actions { display: flex; justify-content: space-between; padding: 8px 12px; border-top: 1px solid var(--color-line); }
     .btn-copy { background: transparent; border: 1px solid var(--color-line); padding: 4px 10px; font-size: 0.75rem; cursor: pointer; }
     .photo-del { background: transparent; border: 0; color: var(--color-mute); font-size: 1.2rem; cursor: pointer; padding: 0 6px; }
@@ -227,15 +239,67 @@ export class MediathequeComponent implements AfterViewInit {
   protected readonly optimizing = signal(false);
   protected readonly viewingPhoto = signal<Photo | null>(null);
   protected readonly search = signal('');
+
+  /** Tags actifs du filtre (logique ET). Mutuellement exclusif avec `noTagOnly`. */
+  protected readonly tagFilter = signal<string[]>([]);
+  /** Filtre « sans tag ». Mutuellement exclusif avec `tagFilter`. */
+  protected readonly noTagOnly = signal(false);
+
+  /** Univers des tags : tags distincts de toutes les photos, tries alphabetiquement. */
+  protected readonly allTags = computed<string[]>(() => {
+    const set = new Set<string>();
+    for (const p of this.photos()) {
+      for (const t of p.tags ?? []) set.add(t);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  });
+
   protected readonly filtered = computed<Photo[]>(() => {
     const q = this.search().trim().toLowerCase();
-    const list = this.photos();
-    if (!q) return list;
-    return list.filter(p =>
-      p.originalName.toLowerCase().includes(q) ||
-      (p.tags ?? []).some(t => t.includes(q))
-    );
+    let list = this.photos();
+    if (q) {
+      list = list.filter(p =>
+        p.originalName.toLowerCase().includes(q) ||
+        (p.tags ?? []).some(t => t.includes(q))
+      );
+    }
+    if (this.noTagOnly()) {
+      return list.filter(p => (p.tags ?? []).length === 0);
+    }
+    const tags = this.tagFilter();
+    if (tags.length > 0) {
+      return list.filter(p => {
+        const photoTags = p.tags ?? [];
+        return tags.every(t => photoTags.includes(t));
+      });
+    }
+    return list;
   });
+
+  /**
+   * Definit les tags du filtre. Normalise chaque entree (trim + minuscules,
+   * vides ignores, dedoublonnage) pour garantir la correspondance avec les tags
+   * persistes (le backend met deja tout en minuscules). Une selection non vide
+   * desactive le filtre « sans tag » (exclusion mutuelle).
+   */
+  protected setTagFilter(next: string[]): void {
+    const seen = new Set<string>();
+    const normalized: string[] = [];
+    for (const raw of next) {
+      const t = raw.trim().toLowerCase();
+      if (!t || seen.has(t)) continue;
+      seen.add(t);
+      normalized.push(t);
+    }
+    this.tagFilter.set(normalized);
+    if (normalized.length > 0) this.noTagOnly.set(false);
+  }
+
+  /** Bascule le filtre « sans tag » ; l'activer vide la selection de tags (exclusion mutuelle). */
+  protected toggleNoTag(): void {
+    this.noTagOnly.update(v => !v);
+    if (this.noTagOnly()) this.tagFilter.set([]);
+  }
 
   constructor() {
     this.refresh();
@@ -331,33 +395,12 @@ export class MediathequeComponent implements AfterViewInit {
   }
 
   /**
-   * Valide le tag saisi puis vide le champ. Branché sur Entrée ET sur blur :
-   * sur mobile, les claviers virtuels (iOS/Android) n'émettent pas d'événement
-   * `keydown.enter` fiable — la touche « OK/Done » referme le clavier et provoque
-   * un `blur`. Valider au blur est donc le seul moyen robuste d'enregistrer un tag
-   * au doigt. La valeur est capturée avant le vidage ; `addTag` ignore le vide et
-   * les doublons, donc un double déclenchement (Entrée puis blur) est sans effet.
+   * Persiste le tableau complet de tags d'une photo (gere ajout ET retrait).
+   * Update optimiste immediat, puis appel `updatePhotoTags` ; en cas d'echec,
+   * revert local et toast d'erreur. Branche sur l'output `tagsChange` de
+   * `<app-tag-editor>`, qui emet a chaque fois le tableau neuf complet.
    */
-  commitTag(photo: Photo, input: HTMLInputElement): void {
-    const raw = input.value;
-    input.value = '';
-    this.addTag(photo, raw);
-  }
-
-  addTag(photo: Photo, raw: string): void {
-    const tag = raw.trim().toLowerCase();
-    if (!tag) return;
-    if ((photo.tags ?? []).includes(tag)) return;
-    const next = [...(photo.tags ?? []), tag];
-    this.persistTags(photo, next);
-  }
-
-  removeTag(photo: Photo, tag: string): void {
-    const next = (photo.tags ?? []).filter(t => t !== tag);
-    this.persistTags(photo, next);
-  }
-
-  private persistTags(photo: Photo, next: string[]): void {
+  protected persistTags(photo: Photo, next: string[]): void {
     // Optimistic update
     this.photos.update(list => list.map(p => p.id === photo.id ? { ...p, tags: next } : p));
     this.portfolio.updatePhotoTags(photo.id, next).subscribe({
