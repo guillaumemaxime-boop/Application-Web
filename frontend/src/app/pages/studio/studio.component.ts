@@ -80,6 +80,7 @@ import { VideoPlayerComponent } from '../../components/video-player/video-player
           <h2 class="eyebrow" [ngStyle]="eyebrowStyleVar()">Vidéo</h2>
           <app-video-player
             [src]="videoUrl()"
+            [hlsSrc]="videoHls()"
             [poster]="videoPoster() || null"
             [captions]="videoCaptions() || null"
             label="Studio — vidéo" />
@@ -181,6 +182,7 @@ export class StudioComponent {
   protected readonly processVisible = computed(() => this.content()['studio.process.visible'] !== 'false');
 
   protected readonly videoUrl = computed(() => this.content()['studio.video.url'] ?? '');
+  protected readonly videoHls = computed(() => this.content()['studio.video.hls'] ?? null);
   protected readonly videoPoster = computed(() => this.content()['studio.video.poster'] ?? '');
   protected readonly videoCaptions = computed(() => this.content()['studio.video.captions'] ?? '');
 

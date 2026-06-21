@@ -4,6 +4,7 @@ export interface VideoStatusDto {
   id: string;
   status: VideoStatus;
   url?: string | null;
+  hls?: string | null;
   poster?: string | null;
   durationSeconds?: number | null;
   width?: number | null;

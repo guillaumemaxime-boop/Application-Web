@@ -17,9 +17,19 @@ describe('VideoPlayerComponent', () => {
   it('rend la source et le nom accessible', () => {
     render({ src: '/api/videos/files/clip.mp4', label: 'Tabouret Aurore — vidéo' });
     const video: HTMLVideoElement = fixture.nativeElement.querySelector('video');
-    const source: HTMLSourceElement = fixture.nativeElement.querySelector('source');
     expect(video.getAttribute('aria-label')).toBe('Tabouret Aurore — vidéo');
+  });
+
+  it('rend une balise <source> mp4 quand hlsSrc est absent', () => {
+    render({ src: '/api/videos/files/clip.mp4', label: 'Tabouret Aurore — vidéo' });
+    const source: HTMLSourceElement = fixture.nativeElement.querySelector('source');
+    expect(source).toBeTruthy();
     expect(source.getAttribute('src')).toBe('/api/videos/files/clip.mp4');
+  });
+
+  it('omet la balise <source> quand hlsSrc est fourni (hls.js gère la lecture)', () => {
+    render({ src: '/api/videos/files/clip.mp4', hlsSrc: '/api/videos/files/clip/master.m3u8', label: 'x' });
+    expect(fixture.nativeElement.querySelector('source')).toBeNull();
   });
 
   it('utilise preload=none avec poster, metadata sans', () => {
@@ -43,5 +53,32 @@ describe('VideoPlayerComponent', () => {
   it('omet la piste si pas de captions', () => {
     render({ src: '/api/videos/files/clip.mp4', label: 'x' });
     expect(fixture.nativeElement.querySelector('track')).toBeNull();
+  });
+
+  // -------------------------------------------------------------------------
+  // Tests unitaires de la stratégie pure (chooseStrategy)
+  // -------------------------------------------------------------------------
+
+  describe('chooseStrategy (pure)', () => {
+    const { chooseStrategy } = VideoPlayerComponent;
+
+    it('retourne mp4 si hlsSrc est null (quel que soit le support navigateur)', () => {
+      expect(chooseStrategy(null, true, true)).toBe('mp4');
+      expect(chooseStrategy(null, false, true)).toBe('mp4');
+      expect(chooseStrategy(null, false, false)).toBe('mp4');
+    });
+
+    it('retourne native si hlsSrc fourni et navigateur supporte HLS natif', () => {
+      expect(chooseStrategy('https://cdn/master.m3u8', true, true)).toBe('native');
+      expect(chooseStrategy('https://cdn/master.m3u8', true, false)).toBe('native');
+    });
+
+    it('retourne hlsjs si hlsSrc fourni, pas de HLS natif, mais hls.js supporté', () => {
+      expect(chooseStrategy('https://cdn/master.m3u8', false, true)).toBe('hlsjs');
+    });
+
+    it('retourne mp4 (fallback) si hlsSrc fourni mais aucun support HLS', () => {
+      expect(chooseStrategy('https://cdn/master.m3u8', false, false)).toBe('mp4');
+    });
   });
 });

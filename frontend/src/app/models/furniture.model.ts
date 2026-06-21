@@ -23,6 +23,7 @@ export interface Furniture {
   slides: Slide[];
   videoId?: string | null;
   videoUrl?: string | null;
+  videoHls?: string | null;
   videoPoster?: string | null;
   videoCaptions?: string | null;
 }

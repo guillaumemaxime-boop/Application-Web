@@ -34,6 +34,7 @@ import { VideoStatus } from '../../../models/video.model';
       @if (status() === 'READY' && previewUrl()) {
         <app-video-player
           [src]="previewUrl()!"
+          [hlsSrc]="previewHls()"
           [poster]="videoPoster ?? null"
           [captions]="videoCaptions ?? null"
           [label]="label" />
@@ -120,8 +121,10 @@ export class VideoFieldComponent implements OnInit, OnChanges, OnDestroy {
 
   /** Statut de transcodage courant. */
   protected readonly status = signal<VideoStatus | null>(null);
-  /** URL de preview (disponible uniquement quand status=READY). */
+  /** URL de preview mp4 (disponible uniquement quand status=READY). */
   protected readonly previewUrl = signal<string | null>(null);
+  /** URL master.m3u8 HLS si disponible (null sinon — fallback mp4). */
+  protected readonly previewHls = signal<string | null>(null);
   /** Message d'erreur de transcodage (FAILED). */
   protected readonly errorMsg = signal<string | null>(null);
   /** Erreur d'upload réseau. */
@@ -164,6 +167,7 @@ export class VideoFieldComponent implements OnInit, OnChanges, OnDestroy {
         this.status.set(dto.status);
         if (dto.status === 'READY') {
           this.previewUrl.set(dto.url ?? null);
+          this.previewHls.set(dto.hls ?? null);
         } else if (dto.status === 'FAILED') {
           this.errorMsg.set(dto.errorMessage ?? 'Échec du transcodage.');
         } else if (dto.status === 'PROCESSING' || dto.status === 'UPLOADED') {
@@ -190,6 +194,7 @@ export class VideoFieldComponent implements OnInit, OnChanges, OnDestroy {
 
         if (dto.status === 'READY') {
           this.previewUrl.set(dto.url ?? null);
+          this.previewHls.set(dto.hls ?? null);
           this.stopPolling();
         } else if (dto.status === 'FAILED') {
           this.errorMsg.set(dto.errorMessage ?? 'Échec du transcodage.');
@@ -216,6 +221,7 @@ export class VideoFieldComponent implements OnInit, OnChanges, OnDestroy {
     this.currentVideoId = null;
     this.status.set(null);
     this.previewUrl.set(null);
+    this.previewHls.set(null);
     this.errorMsg.set(null);
     this.uploadError.set('');
   }

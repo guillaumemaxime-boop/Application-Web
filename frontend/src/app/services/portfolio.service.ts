@@ -153,6 +153,10 @@ export class PortfolioService {
     return this.http.delete<void>(`${API}/admin/videos/files/${filename}`);
   }
 
+  generateVideoHls(): Observable<{ count: number; generated: number }> {
+    return this.http.post<{ count: number; generated: number }>(`${API}/admin/videos/hls`, {});
+  }
+
   updatePhotoTags(id: string, tags: string[]): Observable<Photo> {
     return this.http.put<Photo>(`${API}/admin/photos/${id}/tags`, { tags });
   }
