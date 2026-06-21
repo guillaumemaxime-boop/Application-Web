@@ -27,7 +27,7 @@ class AdminVideoControllerTest {
     @Test
     void upload_ok_renvoie_201() throws IOException {
         MultipartFile file = new MockMultipartFile("file", "clip.mp4", "video/mp4", new byte[]{1});
-        when(service.store(file)).thenReturn(new VideoService.StoredVideo("uuid.mp4", "/api/videos/files/uuid.mp4"));
+        when(service.store(file)).thenReturn(new VideoService.StoredVideo(null, null, "/api/videos/files/uuid.mp4", "uuid.mp4"));
 
         ResponseEntity<?> result = controller.upload(file);
 
