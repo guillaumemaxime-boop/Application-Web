@@ -57,7 +57,22 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
           </div>
 
           <div class="info">
-            <span class="story-title">{{ row.title }}</span>
+            @if (renameFor() === row.id) {
+              <div class="rename">
+                <input
+                  type="text"
+                  class="rename-input"
+                  [formControl]="renameCtrl"
+                  (keydown.enter)="saveRename(row)"
+                  (keydown.escape)="cancelRename()"
+                  aria-label="Nouveau titre de la story"
+                  maxlength="200" />
+                <button type="button" class="action primary" (click)="saveRename(row)">OK</button>
+                <button type="button" class="action" (click)="cancelRename()">Annuler</button>
+              </div>
+            } @else {
+              <span class="story-title">{{ row.title }}</span>
+            }
             <div class="meta">
               <span class="badge" [class.furniture]="row.ownerKind === 'furniture'" [class.exhibition]="row.ownerKind === 'exhibition'">
                 {{ row.ownerKind === 'furniture' ? 'Mobilier' : 'Exposition' }}
@@ -80,6 +95,7 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
           </div>
 
           <div class="actions">
+            <button type="button" class="action" (click)="startRename(row)">Renommer</button>
             <a class="action" [routerLink]="['/admin/stories', row.id]">Éditer</a>
             <button type="button" class="action" (click)="openCover(row)">Cover</button>
             <button
@@ -161,6 +177,12 @@ import { StoryCreateModalComponent } from './story-create-modal.component';
 
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
     .story-title { font-weight: 600; }
+    .rename { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .rename-input {
+      flex: 1; min-width: 160px; padding: 6px 8px; font: inherit; font-weight: 600;
+      background: var(--color-bg); border: 1px solid var(--color-ink); color: var(--color-ink);
+    }
+    .rename-input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
     .meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; }
     .badge { padding: 2px 8px; border: 1px solid var(--color-line); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.08em; }
     .badge.furniture { border-color: var(--color-accent); }
@@ -227,6 +249,11 @@ export class StoriesAdminComponent {
   protected readonly coverCtrl = new FormControl('');
   protected readonly coverCropSig = signal<Crop | null>(null);
 
+  /** Id de la story en cours de renommage inline (null si aucune). */
+  protected readonly renameFor = signal<string | null>(null);
+  /** Contrôle du champ de renommage (réactif → écriture DOM synchrone). */
+  protected readonly renameCtrl = new FormControl('');
+
   protected readonly filtered = computed(() => {
     const q = this.search().toLowerCase();
     const f = this.ownerFilter();
@@ -279,6 +306,49 @@ export class StoriesAdminComponent {
         this.reloadSliders();
       },
       error: () => this.toast.error('Erreur lors de la mise à jour des sliders.'),
+    });
+  }
+
+  /** Démarre le renommage inline d'une story (pré-remplit le champ + focus). */
+  startRename(row: StoryAdminView): void {
+    this.renameFor.set(row.id);
+    this.renameCtrl.setValue(row.title);
+    if (typeof document !== 'undefined') {
+      setTimeout(() => {
+        const input = document.querySelector<HTMLInputElement>('.rename-input');
+        input?.focus();
+        input?.select();
+      }, 0);
+    }
+  }
+
+  /** Annule le renommage en cours. */
+  cancelRename(): void {
+    this.renameFor.set(null);
+  }
+
+  /**
+   * Enregistre le nouveau titre via updateStory (titre obligatoire ; les autres
+   * champs sont repris de la story pour ne rien écraser). Vide → ignoré ; titre
+   * inchangé → simple fermeture sans appel réseau.
+   */
+  saveRename(row: StoryAdminView): void {
+    const title = (this.renameCtrl.value ?? '').trim();
+    if (!title) { this.toast.error('Le titre ne peut pas être vide.'); return; }
+    if (title === row.title) { this.renameFor.set(null); return; }
+    this.portfolio.updateStory(row.id, {
+      ownerKind: row.ownerKind,
+      ownerId: row.ownerId,
+      title,
+      coverImage: row.coverImage,
+      coverCrop: row.coverCrop ?? null,
+    }).subscribe({
+      next: () => {
+        this.rows.update(a => a.map(x => x.id === row.id ? { ...x, title } : x));
+        this.renameFor.set(null);
+        this.toast.success('Story renommée.');
+      },
+      error: () => this.toast.error('Erreur lors du renommage.'),
     });
   }
 
