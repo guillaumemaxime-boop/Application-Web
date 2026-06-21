@@ -39,8 +39,24 @@ import { Photo } from '../../../models/photo.model';
               placeholder="Rechercher (nom de fichier ou tag)…"
               aria-label="Rechercher une photo par nom de fichier ou tag" />
           </div>
+          @if (allTags().length > 0) {
+            <div class="picker-tags" role="group" aria-label="Filtrer par tag">
+              @for (tag of allTags(); track tag) {
+                <button
+                  type="button"
+                  class="picker-tag"
+                  [class.active]="activeTag() === tag"
+                  [attr.aria-pressed]="activeTag() === tag"
+                  (click)="toggleTag(tag)">{{ tag }}</button>
+              }
+            </div>
+          }
           @if (filtered().length === 0) {
-            <p class="picker-empty">Aucun résultat pour « {{ query() }} ».</p>
+            @if (query().trim()) {
+              <p class="picker-empty">Aucun résultat pour « {{ query() }} ».</p>
+            } @else {
+              <p class="picker-empty">Aucune photo avec le tag « {{ activeTag() }} ».</p>
+            }
           } @else {
             <div class="picker-grid">
               @for (photo of filtered(); track photo.id) {
@@ -81,6 +97,19 @@ import { Photo } from '../../../models/photo.model';
     }
     .picker-search-input:focus { outline: none; border-color: var(--color-accent); }
     .picker-search-input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .picker-tags {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 24px 0; flex-shrink: 0;
+    }
+    .picker-tag {
+      font: inherit; font-size: 0.75rem; padding: 3px 10px; cursor: pointer;
+      border: 1px solid var(--color-line); background: var(--color-bg-alt);
+      color: var(--color-ink-soft); border-radius: 999px; line-height: 1.4;
+    }
+    .picker-tag:hover { border-color: var(--color-accent); }
+    .picker-tag.active {
+      background: var(--color-ink); color: var(--color-bg); border-color: var(--color-ink);
+    }
+    .picker-tag:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
     .picker-empty { padding: 32px 24px; color: var(--color-mute); font-size: 0.9rem; }
     .picker-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -102,6 +131,7 @@ export class PhotoPickerComponent implements OnInit, OnDestroy {
   @Output() closed = new EventEmitter<void>();
 
   protected readonly query = signal('');
+  protected readonly activeTag = signal<string | null>(null);
   private previousFocus: HTMLElement | null = null;
 
   ngOnInit(): void {
@@ -123,13 +153,32 @@ export class PhotoPickerComponent implements OnInit, OnDestroy {
     this.previousFocus = null;
   }
 
+  /** Tags distincts présents dans les photos, triés — pour le filtre par chips. */
+  protected allTags(): string[] {
+    const set = new Set<string>();
+    for (const p of this.photos) {
+      for (const t of p.tags ?? []) set.add(t);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'fr'));
+  }
+
+  /** Active/désactive le filtre par tag (clic sur un chip déjà actif = retrait). */
+  toggleTag(tag: string): void {
+    this.activeTag.update(current => current === tag ? null : tag);
+  }
+
   protected filtered(): Photo[] {
     const q = this.query().trim().toLowerCase();
-    if (!q) return this.photos;
-    return this.photos.filter(p =>
-      p.originalName.toLowerCase().includes(q) ||
-      (p.tags ?? []).some(t => t.includes(q))
-    );
+    const tag = this.activeTag();
+    let list = this.photos;
+    if (tag) list = list.filter(p => (p.tags ?? []).includes(tag));
+    if (q) {
+      list = list.filter(p =>
+        p.originalName.toLowerCase().includes(q) ||
+        (p.tags ?? []).some(t => t.includes(q))
+      );
+    }
+    return list;
   }
 
   select(photo: Photo): void {
