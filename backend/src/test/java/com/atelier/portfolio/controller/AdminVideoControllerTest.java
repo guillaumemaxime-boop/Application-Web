@@ -160,6 +160,23 @@ class AdminVideoControllerTest {
     }
 
     // -----------------------------------------------------------------------
+    // POST /api/admin/videos/hls — batch HLS
+    // -----------------------------------------------------------------------
+
+    /**
+     * Cas 7 : génération HLS batch → service.generateHlsAll renvoie un rapport → 200 avec count et generated.
+     */
+    @Test
+    void hls_batch_renvoie_le_resume() {
+        when(service.generateHlsAll()).thenReturn(new VideoService.VideoHlsReport(3, 2));
+
+        ResponseEntity<?> r = controller.generateHls();
+
+        assertEquals(200, r.getStatusCode().value());
+        assertEquals(Map.of("count", 3, "generated", 2), r.getBody());
+    }
+
+    // -----------------------------------------------------------------------
     // DELETE /api/admin/videos/files/{filename} — suppression .vtt sans entité
     // -----------------------------------------------------------------------
 

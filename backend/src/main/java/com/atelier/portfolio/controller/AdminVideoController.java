@@ -86,6 +86,16 @@ public class AdminVideoController {
     }
 
     // -----------------------------------------------------------------------
+    // POST /hls — génération HLS batch
+    // -----------------------------------------------------------------------
+
+    @PostMapping("/hls")
+    public ResponseEntity<?> generateHls() {
+        VideoService.VideoHlsReport report = service.generateHlsAll();
+        return ResponseEntity.ok(Map.of("count", report.count(), "generated", report.generated()));
+    }
+
+    // -----------------------------------------------------------------------
     // DELETE /{id} — suppression par id d'entité
     // -----------------------------------------------------------------------
 
