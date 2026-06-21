@@ -34,7 +34,7 @@ class SiteContentServiceVideoTest {
             new VideoService.ResolvedVideo(
                     "/api/videos/files/vid-studio.mp4",
                     "/api/photos/files/vid-studio-poster.jpg",
-                    42.0, 1920, 1080);
+                    42.0, 1920, 1080, null);
 
     private static SiteContentEntity entry(String key, String value) {
         SiteContentEntity e = new SiteContentEntity();

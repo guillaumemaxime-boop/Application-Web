@@ -36,7 +36,7 @@ class ExhibitionServiceVideoTest {
             new VideoService.ResolvedVideo(
                     "/api/videos/files/vid-1.mp4",
                     "/api/photos/files/vid-1-poster.jpg",
-                    12.5, 1920, 1080);
+                    12.5, 1920, 1080, null);
 
     private ExhibitionEntity baseEntity() {
         ExhibitionEntity e = new ExhibitionEntity();

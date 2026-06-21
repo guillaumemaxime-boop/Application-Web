@@ -65,6 +65,18 @@
       "type": "java.lang.Integer",
       "description": "Offset (secondes) utilise par ffmpeg pour extraire la miniature poster de la video.",
       "defaultValue": 1
+    },
+    {
+      "name": "app.video.hls-time-seconds",
+      "type": "java.lang.Integer",
+      "description": "Duree cible (secondes) de chaque segment HLS (.ts) genere par ffmpeg.",
+      "defaultValue": 6
+    },
+    {
+      "name": "app.video.hls-preset",
+      "type": "java.lang.String",
+      "description": "Preset d'encodage FFmpeg utilise pour le transcodage HLS (ultrafast..veryslow).",
+      "defaultValue": "veryfast"
     }
   ]
 }

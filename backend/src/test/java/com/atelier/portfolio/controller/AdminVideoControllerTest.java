@@ -74,7 +74,7 @@ class AdminVideoControllerTest {
      */
     @Test
     void getStatus_id_connu_renvoie_200_avec_dto() {
-        Video video = new Video("vid-1", "PROCESSING", null, null, null, null, null, null);
+        Video video = new Video("vid-1", "PROCESSING", null, null, null, null, null, null, null);
         when(service.getStatus("vid-1")).thenReturn(video);
 
         ResponseEntity<?> result = controller.getStatus("vid-1");
