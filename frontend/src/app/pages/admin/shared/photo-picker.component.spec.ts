@@ -92,6 +92,83 @@ describe('PhotoPickerComponent', () => {
     expect(items[0].nativeElement.getAttribute('title')).toBe('IMG_1234.jpg');
   });
 
+  it('liste les tags distincts présents (triés) en chips de filtre', () => {
+    const photosAvecTags: Photo[] = [
+      { id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '', tags: ['bois', 'atelier'] },
+      { id: '2', filename: 'b.jpg', originalName: 'B', url: '/uploads/b.jpg', uploadedAt: '', tags: ['atelier'] },
+      { id: '3', filename: 'c.jpg', originalName: 'C', url: '/uploads/c.jpg', uploadedAt: '', tags: [] },
+    ];
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'cover');
+    fixture.componentRef.setInput('photos', photosAvecTags);
+    fixture.detectChanges();
+    const chips = fixture.debugElement.queryAll(By.css('.picker-tag'));
+    expect(chips.map(c => c.nativeElement.textContent.trim())).toEqual(['atelier', 'bois']);
+  });
+
+  it('ne rend pas de zone de tags quand aucune photo n\'a de tag', () => {
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'cover');
+    fixture.componentRef.setInput('photos', photos); // tags: []
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('.picker-tags'))).toBeNull();
+  });
+
+  it('clic sur un chip de tag filtre la grille (appartenance exacte)', () => {
+    const photosAvecTags: Photo[] = [
+      { id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '', tags: ['atelier'] },
+      { id: '2', filename: 'b.jpg', originalName: 'B', url: '/uploads/b.jpg', uploadedAt: '', tags: ['exterieur'] },
+    ];
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'cover');
+    fixture.componentRef.setInput('photos', photosAvecTags);
+    fixture.detectChanges();
+    const atelierChip = fixture.debugElement.queryAll(By.css('.picker-tag'))
+      .find(c => c.nativeElement.textContent.trim() === 'atelier')!;
+    atelierChip.nativeElement.click();
+    fixture.detectChanges();
+    const items = fixture.debugElement.queryAll(By.css('.picker-item'));
+    expect(items.length).toBe(1);
+    expect(items[0].nativeElement.getAttribute('title')).toBe('A');
+    expect(atelierChip.nativeElement.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('re-clic sur le chip actif retire le filtre', () => {
+    const photosAvecTags: Photo[] = [
+      { id: '1', filename: 'a.jpg', originalName: 'A', url: '/uploads/a.jpg', uploadedAt: '', tags: ['atelier'] },
+      { id: '2', filename: 'b.jpg', originalName: 'B', url: '/uploads/b.jpg', uploadedAt: '', tags: ['exterieur'] },
+    ];
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'cover');
+    fixture.componentRef.setInput('photos', photosAvecTags);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance;
+    cmp.toggleTag('atelier');
+    fixture.detectChanges();
+    expect(fixture.debugElement.queryAll(By.css('.picker-item')).length).toBe(1);
+    cmp.toggleTag('atelier');
+    fixture.detectChanges();
+    expect(fixture.debugElement.queryAll(By.css('.picker-item')).length).toBe(2);
+  });
+
+  it('combine filtre par tag ET recherche texte', () => {
+    const photosAvecTags: Photo[] = [
+      { id: '1', filename: 'a.jpg', originalName: 'Chaise', url: '/uploads/a.jpg', uploadedAt: '', tags: ['atelier'] },
+      { id: '2', filename: 'b.jpg', originalName: 'Table', url: '/uploads/b.jpg', uploadedAt: '', tags: ['atelier'] },
+    ];
+    const fixture = TestBed.createComponent(PhotoPickerComponent);
+    fixture.componentRef.setInput('target', 'cover');
+    fixture.componentRef.setInput('photos', photosAvecTags);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as { query: { set: (v: string) => void }; toggleTag: (t: string) => void };
+    cmp.toggleTag('atelier');
+    cmp.query.set('table');
+    fixture.detectChanges();
+    const items = fixture.debugElement.queryAll(By.css('.picker-item'));
+    expect(items.length).toBe(1);
+    expect(items[0].nativeElement.getAttribute('title')).toBe('Table');
+  });
+
   it('expose le panel en role=dialog avec aria-modal (A-06)', () => {
     const fixture = TestBed.createComponent(PhotoPickerComponent);
     fixture.componentRef.setInput('target', 'cover');
