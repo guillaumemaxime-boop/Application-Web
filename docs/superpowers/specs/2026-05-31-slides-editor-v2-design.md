@@ -1,7 +1,7 @@
 # Éditeur de slides v2 — simplification UX + intégration vidéo
 
 Date : 2026-05-31
-Statut : Validé (en attente de plan d'implémentation)
+Statut : ✅ Implémenté — couvert par le chantier WYSIWYG v2 (6a/6b) + vidéos (ADR-0019)
 
 ## Contexte
 

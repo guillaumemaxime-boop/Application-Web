@@ -1,7 +1,7 @@
 # Gestion des stories in-preview + retrait des fiches publiques (sous-projet 6a) — Spec
 
 **Date** : 2026-06-13
-**Statut** : Validé — à planifier
+**Statut** : ✅ Implémenté — mergé sur main (feat/wysiwyg-stories-fiches-6a)
 **Sous-projet** : 6a du chantier « Améliorations WYSIWYG v2 ». Le sous-projet 6 (« Stories depuis les fiches », le plus gros) a été **décomposé en 6a + 6b** :
 - **6a** (cette spec) : retrait de la story du rendu **public** de la fiche + gestion des stories au niveau **story** depuis un bloc d'auteur admin dans le preview (sélection active, créer/renommer/supprimer/réordonner, cover), avec édition du contenu des slides via une **modale réutilisant l'éditeur existant**.
 - **6b** (cycle ultérieur) : édition des slides **en place** (pure WYSIWYG) dans le bloc d'auteur, en auto-save, remplaçant la modale.

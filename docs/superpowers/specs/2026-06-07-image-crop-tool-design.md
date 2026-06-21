@@ -1,7 +1,7 @@
 # Outil de cadrage d'image (crop) — Spec
 
 **Date** : 2026-06-07
-**Statut** : Validé — prêt pour writing-plans
+**Statut** : ✅ Implémenté — mergé sur main (ADR-0017)
 **Sous-projet** : 1/4 d'un chantier plus large « Console admin de configuration d'affichage des images ». Les 3 specs suivants traiteront du preview WYSIWYG (Mobilier → Exposition → Accueil) et s'appuieront sur ce premier livrable.
 
 ## Objectif

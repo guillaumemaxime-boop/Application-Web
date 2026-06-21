@@ -1,7 +1,7 @@
 # Traçabilité des accès et tendances d'audience (Umami auto-hébergé)
 
 **Date** : 2026-05-17
-**Statut** : Design validé, prêt pour plan d'implémentation
+**Statut** : ✅ Implémenté — mergé sur main (ADR-0012)
 **Auteur** : Maxime Guillaume (avec Claude)
 
 ## 1. Contexte & motivation

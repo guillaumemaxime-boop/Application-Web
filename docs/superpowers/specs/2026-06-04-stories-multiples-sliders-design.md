@@ -1,7 +1,7 @@
 # Stories multiples par owner + sliders d'actualités
 
 Date : 2026-06-04
-Statut : Validé (en attente de plan d'implémentation)
+Statut : ✅ Implémenté — mergé sur main (ADR-0015)
 
 ## Contexte
 

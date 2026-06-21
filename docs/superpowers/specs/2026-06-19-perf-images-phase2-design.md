@@ -1,7 +1,7 @@
 # Performance images — Phase 2a (variantes responsive) — Spec
 
 **Date** : 2026-06-19
-**Statut** : Validé — à planifier
+**Statut** : ✅ Implémenté — mergé sur main (Phase 2a) ; Phase 2b (WebP/AVIF) reste backlog
 **Type** : Optimisation perf (backlog). **Phase 2a** : variantes responsive multi-tailles. La **Phase 2b** (WebP/AVIF) est explicitement reportée (nécessite un encodeur dédié). La Phase 1 (cache immuable + lazy/priority + decoding) est mergée.
 
 ## Objectif

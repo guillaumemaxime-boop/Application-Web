@@ -1,7 +1,7 @@
 # Tests visuels automatisés avec Playwright
 
 Date : 2026-06-02
-Statut : Validé (en attente de plan d'implémentation)
+Statut : ✅ Implémenté — mergé sur main
 
 ## Contexte
 

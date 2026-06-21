@@ -1,7 +1,7 @@
 # Page « Créations » : tags sur mobilier + filtres unifiés
 
 Date : 2026-06-06
-Statut : Validé (en attente de plan d'implémentation)
+Statut : ✅ Implémenté — mergé sur main (ADR-0016)
 
 ## Contexte
 

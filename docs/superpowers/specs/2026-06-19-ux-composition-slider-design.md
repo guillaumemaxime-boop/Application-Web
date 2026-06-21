@@ -1,7 +1,7 @@
 # UX fenêtre de composition d'un slider — drag & drop 2 colonnes — Spec
 
 **Date** : 2026-06-19
-**Statut** : Validé — à planifier
+**Statut** : ✅ Implémenté — mergé sur main
 **Type** : Amélioration UX (backlog, demandée le 13/06/2026).
 
 ## Objectif

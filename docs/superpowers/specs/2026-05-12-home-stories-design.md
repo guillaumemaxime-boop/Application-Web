@@ -1,7 +1,7 @@
 # Refonte de la home en stories Instagram-like
 
 **Date** : 2026-05-12
-**Statut** : Design validé, prêt pour plan d'implémentation
+**Statut** : ✅ Implémenté — mergé sur main (ADR-0015)
 **Auteur** : Maxime Guillaume (avec Claude)
 **Prototype** : `docs/prototypes/home/index.html`
 
