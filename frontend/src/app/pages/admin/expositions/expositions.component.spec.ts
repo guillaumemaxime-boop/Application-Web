@@ -716,6 +716,33 @@ describe('ExpositionsComponent', () => {
     expect(cmp.exhibitionForm.getRawValue().tags).toEqual([]);
   });
 
+  it('saveExhibition envoie videoId dans le payload', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/tags').flush([]);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.exhibitionForm.patchValue({ title: 'T', startDate: '2024-01-01', endDate: '2024-02-01', videoId: 'vid-77' } as any);
+    cmp.saveExhibition();
+    const req = httpMock.expectOne(r => r.method === 'POST' && r.url === '/api/exhibitions');
+    expect(req.request.body['videoId']).toBe('vid-77');
+    req.flush({});
+    httpMock.expectOne('/api/exhibitions').flush([]);
+  });
+
+  it('loadExhibition() charge videoId depuis la fiche', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as ExpoInternals;
+    cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01', videoId: 'vid-55' });
+    expect((cmp.exhibitionForm.getRawValue() as any)['videoId']).toBe('vid-55');
+  });
+
   it('ne rend plus les cases showStoryLink/showStoryButton (obsolètes)', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);

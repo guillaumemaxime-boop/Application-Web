@@ -24,7 +24,7 @@ import { formTickSignal } from '../../shared/preview-page-helpers';
       (textFieldClick)="onTextFieldClick($event)"
       (textFieldEdit)="onTextFieldEdit($event)"
       (galleryItemResize)="onGalleryItemResize($event)"
-      (videoUrlChange)="videoUrlChange.emit($event)"
+      (videoIdChange)="videoIdChange.emit($event)"
       (videoPosterChange)="videoPosterChange.emit($event)"
       (videoCaptionsChange)="videoCaptionsChange.emit($event)" />
   `,
@@ -44,7 +44,7 @@ export class FurniturePreviewComponent implements OnInit {
   @Output() textFieldClick = new EventEmitter<EditableTextField>();
   @Output() textFieldEdit = new EventEmitter<{ field: EditableTextField; value: string }>();
   @Output() galleryItemResize = new EventEmitter<{ index: number; colSpan: number; rowSpan: number }>();
-  @Output() videoUrlChange = new EventEmitter<string | null>();
+  @Output() videoIdChange = new EventEmitter<string | null>();
   @Output() videoPosterChange = new EventEmitter<string | null>();
   @Output() videoCaptionsChange = new EventEmitter<string | null>();
 
@@ -80,6 +80,7 @@ export class FurniturePreviewComponent implements OnInit {
       showStoryLink: !!v.showStoryLink,
       showStoryButton: !!v.showStoryButton,
       slides: [],
+      videoId: v.videoId ?? null,
       videoUrl: v.videoUrl ?? null,
       videoPoster: v.videoPoster ?? null,
       videoCaptions: v.videoCaptions ?? null,

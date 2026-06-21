@@ -103,10 +103,10 @@ import { VideoFieldComponent } from '../shared/video-field.component';
             <p class="texts-group-hint">Affichée sur la page Studio sous le processus. Enregistrée automatiquement.</p>
             <app-video-field
               label="Studio — vidéo"
-              [videoUrl]="studioVideo()['studio.video.url'] || null"
+              [videoId]="studioVideo()['studio.video.id'] || null"
               [videoPoster]="studioVideo()['studio.video.poster'] || null"
               [videoCaptions]="studioVideo()['studio.video.captions'] || null"
-              (videoUrlChange)="setVideoContent('studio.video.url', $event)"
+              (videoIdChange)="setVideoContent('studio.video.id', $event)"
               (videoPosterChange)="setVideoContent('studio.video.poster', $event)"
               (videoCaptionsChange)="setVideoContent('studio.video.captions', $event)" />
           </div>
@@ -218,7 +218,7 @@ export class TextesComponent {
       next: content => {
         this.loading.set(false);
         this.studioVideo.set({
-          'studio.video.url': content['studio.video.url'] ?? '',
+          'studio.video.id': content['studio.video.id'] ?? '',
           'studio.video.poster': content['studio.video.poster'] ?? '',
           'studio.video.captions': content['studio.video.captions'] ?? '',
         });
@@ -294,7 +294,7 @@ export class TextesComponent {
   }
 
   /**
-   * Auto-save d'une clé vidéo Studio (studio.video.url/poster/captions).
+   * Auto-save d'une clé vidéo Studio (studio.video.id/poster/captions).
    * Met à jour le signal local pour refléter l'aperçu, puis persiste la seule
    * clé modifiée via updateContent. `null` (retrait) → clé vidée.
    */
