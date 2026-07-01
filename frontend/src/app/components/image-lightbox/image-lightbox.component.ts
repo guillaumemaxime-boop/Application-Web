@@ -44,8 +44,11 @@ export interface LightboxImage {
   `,
   styles: [`
     .lb-backdrop { position: fixed; inset: 0; z-index: 300; background: rgba(10,10,10,0.95); display: flex; align-items: center; justify-content: center; }
-    .lb-figure { margin: 0; width: 92vw; height: 88vh; display: flex; align-items: center; justify-content: center; }
-    .lb-img { display: block; max-width: 100%; max-height: 100%; }
+    .lb-figure { margin: 0; width: 92vw; height: 88dvh; display: flex; align-items: center; justify-content: center; }
+    /* L'hôte remplit la figure (taille définie) et centre le <canvas> : ainsi le
+       max-height:100% du canvas (mode contain) se résout contre une hauteur réelle
+       et l'image n'est plus tronquée quand le viewport s'élargit (ex. plein écran F11). */
+    .lb-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; min-height: 0; }
     .lb-close { position: absolute; top: 18px; right: 22px; background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer; opacity: 0.85; padding: 6px 10px; }
     .lb-close:hover, .lb-close:focus-visible { opacity: 1; }
     .lb-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
