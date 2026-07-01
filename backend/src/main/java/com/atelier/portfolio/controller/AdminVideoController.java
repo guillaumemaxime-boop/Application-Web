@@ -102,6 +102,19 @@ public class AdminVideoController {
     }
 
     // -----------------------------------------------------------------------
+    // POST /gc — garbage collection orphelins
+    // -----------------------------------------------------------------------
+
+    @PostMapping("/gc")
+    public ResponseEntity<?> gc(@RequestParam(defaultValue = "true") boolean dryRun) {
+        VideoService.VideoGcReport r = service.gcOrphans(dryRun);
+        return ResponseEntity.ok(Map.of(
+            "orphanVideos", r.orphanVideos(),
+            "orphanFiles", r.orphanFiles(),
+            "deleted", r.deleted()));
+    }
+
+    // -----------------------------------------------------------------------
     // DELETE /{id} — suppression par id d'entité
     // -----------------------------------------------------------------------
 

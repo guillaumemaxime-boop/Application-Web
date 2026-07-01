@@ -189,6 +189,28 @@ class AdminVideoControllerTest {
     }
 
     // -----------------------------------------------------------------------
+    // POST /api/admin/videos/gc — garbage collection orphelins
+    // -----------------------------------------------------------------------
+
+    @Test
+    void gc_dryRun_par_defaut_recense() {
+        when(service.gcOrphans(true)).thenReturn(
+            new VideoService.VideoGcReport(java.util.List.of("vid-a"), java.util.List.of("vid-b.mp4"), false));
+        ResponseEntity<?> r = controller.gc(true);
+        assertEquals(200, r.getStatusCode().value());
+        assertEquals(false, ((java.util.Map<?,?>) r.getBody()).get("deleted"));
+    }
+
+    @Test
+    void gc_execute_supprime() {
+        when(service.gcOrphans(false)).thenReturn(
+            new VideoService.VideoGcReport(java.util.List.of("vid-a"), java.util.List.of(), true));
+        ResponseEntity<?> r = controller.gc(false);
+        assertEquals(200, r.getStatusCode().value());
+        assertEquals(true, ((java.util.Map<?,?>) r.getBody()).get("deleted"));
+    }
+
+    // -----------------------------------------------------------------------
     // DELETE /api/admin/videos/files/{filename} — suppression .vtt sans entité
     // -----------------------------------------------------------------------
 
