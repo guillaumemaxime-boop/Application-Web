@@ -23,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -637,6 +638,68 @@ class VideoServiceTest {
         verify(repository, never()).delete(argThat(v -> "vid-y".equals(v.getId())));
 
         service.deleteIfUnreferenced(null); // no-op
+    }
+
+    // -----------------------------------------------------------------------
+    // GC — gcOrphans (Tache 3 SP3)
+    // -----------------------------------------------------------------------
+
+    private static VideoEntity video(String id, VideoStatus s, String createdAt) {
+        VideoEntity e = new VideoEntity();
+        e.setId(id);
+        e.setStatus(s);
+        e.setCreatedAt(createdAt);
+        e.setOutputFilename(id + ".mp4");
+        return e;
+    }
+
+    @Test
+    void gcOrphans_dryRun_recense_les_orphelines_sans_supprimer() {
+        var a = video("vid-a", VideoStatus.READY, Instant.now().minusSeconds(48*3600).toString());
+        var b = video("vid-b", VideoStatus.PROCESSING, Instant.now().minusSeconds(48*3600).toString());
+        var c = video("vid-c", VideoStatus.READY, Instant.now().minusSeconds(2*3600).toString());
+        var d = video("vid-d", VideoStatus.READY, Instant.now().minusSeconds(48*3600).toString());
+        when(repository.findAll()).thenReturn(List.of(a,b,c,d));
+        when(furnitureRepository.existsByVideoId(anyString())).thenReturn(false);
+        when(exhibitionRepository.existsByVideoId(anyString())).thenReturn(false);
+        when(siteContentRepository.findById("studio.video.id")).thenReturn(Optional.empty());
+        when(furnitureRepository.existsByVideoId("vid-d")).thenReturn(true);
+        ReflectionTestUtils.setField(service, "gcGraceHours", 24);
+        var report = service.gcOrphans(true);
+        assertTrue(report.orphanVideos().contains("vid-a"));
+        assertFalse(report.orphanVideos().contains("vid-b"));
+        assertFalse(report.orphanVideos().contains("vid-c"));
+        assertFalse(report.orphanVideos().contains("vid-d"));
+        assertFalse(report.deleted());
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void gcOrphans_execute_supprime_les_orphelines() {
+        var a = video("vid-a", VideoStatus.READY, Instant.now().minusSeconds(48*3600).toString());
+        when(repository.findAll()).thenReturn(List.of(a));
+        when(repository.findById("vid-a")).thenReturn(Optional.of(a));
+        when(furnitureRepository.existsByVideoId("vid-a")).thenReturn(false);
+        when(exhibitionRepository.existsByVideoId("vid-a")).thenReturn(false);
+        when(siteContentRepository.findById("studio.video.id")).thenReturn(Optional.empty());
+        ReflectionTestUtils.setField(service, "gcGraceHours", 24);
+        var report = service.gcOrphans(false);
+        assertTrue(report.orphanVideos().contains("vid-a"));
+        assertTrue(report.deleted());
+        verify(repository).delete(a);
+    }
+
+    @Test
+    void gcOrphans_scan_disque_liste_les_fichiers_vid_sans_entite() throws Exception {
+        java.nio.file.Files.writeString(tmp.resolve("vid-orphan.mp4"), "x");
+        java.nio.file.Files.setLastModifiedTime(tmp.resolve("vid-orphan.mp4"),
+            java.nio.file.attribute.FileTime.from(Instant.now().minusSeconds(48*3600)));
+        java.nio.file.Files.writeString(tmp.resolve("8f3a-photo.jpg"), "x");
+        when(repository.findAll()).thenReturn(List.of());
+        ReflectionTestUtils.setField(service, "gcGraceHours", 24);
+        var report = service.gcOrphans(true);
+        assertTrue(report.orphanFiles().contains("vid-orphan.mp4"));
+        assertFalse(report.orphanFiles().stream().anyMatch(f -> f.contains("photo")));
     }
 
     // -----------------------------------------------------------------------

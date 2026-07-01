@@ -83,6 +83,9 @@ public class VideoService {
     @Value("${app.video.hls-preset:veryfast}")
     private String hlsPreset;
 
+    @Value("${app.video.gc-grace-hours:24}")
+    int gcGraceHours;
+
     public VideoService(VideoRepository repository, VideoTranscoder transcoder,
                         FurnitureRepository furnitureRepository,
                         ExhibitionRepository exhibitionRepository,
@@ -397,6 +400,68 @@ public class VideoService {
     public void deleteIfUnreferenced(String id) {
         if (id == null || isReferenced(id)) return;
         delete(id);
+    }
+
+    public record VideoGcReport(java.util.List<String> orphanVideos, java.util.List<String> orphanFiles, boolean deleted) {}
+
+    /** true si la video est protegee par la periode de grace (en cours / trop recente). */
+    private boolean inGrace(VideoEntity e) {
+        if (e.getStatus() == VideoStatus.UPLOADED || e.getStatus() == VideoStatus.PROCESSING) return true;
+        String created = e.getCreatedAt();
+        if (created == null || created.isBlank()) return false;
+        try {
+            return Instant.parse(created).isAfter(Instant.now().minus(java.time.Duration.ofHours(gcGraceHours)));
+        } catch (Exception ex) { return false; }
+    }
+
+    /** Extrait l'id video d'un nom d'entree : "vid-ab12.mp4"/"vid-ab12-hls"/"vid-ab12-src.mp4" -> "vid-ab12". */
+    static String videoIdFromEntry(String name) {
+        String base = name;
+        int dot = base.lastIndexOf('.');
+        if (dot > 0) base = base.substring(0, dot);
+        for (String suf : new String[]{"-hls", "-src", "-poster"}) {
+            if (base.endsWith(suf)) return base.substring(0, base.length() - suf.length());
+        }
+        return base;
+    }
+
+    /** GC des videos orphelines (entites non referencees + fichiers vid-* sans entite). */
+    public VideoGcReport gcOrphans(boolean dryRun) {
+        java.util.List<String> orphanVideos = new java.util.ArrayList<>();
+        java.util.List<String> orphanFiles = new java.util.ArrayList<>();
+        java.util.Set<String> knownIds = new java.util.HashSet<>();
+        for (VideoEntity e : repository.findAll()) {
+            knownIds.add(e.getId());
+            if (inGrace(e)) continue;
+            if (!isReferenced(e.getId())) orphanVideos.add(e.getId());
+        }
+        Path dir = Paths.get(uploadDir);
+        if (Files.isDirectory(dir)) {
+            try (var stream = Files.list(dir)) {
+                for (Path p : stream.toList()) {
+                    String name = p.getFileName().toString();
+                    if (!name.startsWith("vid-")) continue;
+                    String id = videoIdFromEntry(name);
+                    if (id != null && knownIds.contains(id)) continue;
+                    try {
+                        if (Files.getLastModifiedTime(p).toInstant()
+                                .isAfter(Instant.now().minus(java.time.Duration.ofHours(gcGraceHours)))) continue;
+                    } catch (IOException ignored) {}
+                    orphanFiles.add(name);
+                }
+            } catch (IOException ignored) {}
+        }
+        if (!dryRun) {
+            for (String id : orphanVideos) delete(id);
+            Path uploadPath = dir.toAbsolutePath().normalize();
+            for (String name : orphanFiles) {
+                Path fp = uploadPath.resolve(name).normalize();
+                if (!fp.startsWith(uploadPath)) continue;
+                if (Files.isDirectory(fp)) deleteDirRecursive(fp);
+                else { try { Files.deleteIfExists(fp); } catch (IOException ignored) {} }
+            }
+        }
+        return new VideoGcReport(orphanVideos, orphanFiles, !dryRun);
     }
 
     // -----------------------------------------------------------------------
