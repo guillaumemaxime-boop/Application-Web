@@ -398,6 +398,9 @@ public class VideoService {
 
     /** Supprime la video (fichiers + entite) uniquement si plus referencee nulle part. */
     public void deleteIfUnreferenced(String id) {
+        // TOCTOU theorique : entre isReferenced() et delete(), un autre owner pourrait
+        // se rattacher a la video. Non exploitable en pratique (admin single-tenant, pas
+        // d'ecritures concurrentes) ; la periode de grace du GC batch rattrape le cas limite.
         if (id == null || isReferenced(id)) return;
         delete(id);
     }
@@ -514,6 +517,11 @@ public class VideoService {
 
     private void deleteDirRecursive(Path dir) {
         if (!Files.exists(dir)) return;
+        // Defense-en-profondeur : ne jamais supprimer recursivement hors de uploadDir,
+        // meme si un futur appelant passe un chemin non confine. Files.walk ne suit pas
+        // les symlinks par defaut (pas de FileVisitOption.FOLLOW_LINKS) : pas de sortie d'arbre.
+        Path uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+        if (!dir.toAbsolutePath().normalize().startsWith(uploadRoot)) return;
         try (var walk = Files.walk(dir)) {
             walk.sorted(java.util.Comparator.reverseOrder())
                     .forEach(p -> { try { Files.deleteIfExists(p); } catch (IOException ignored) {} });

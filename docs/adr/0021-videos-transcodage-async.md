@@ -37,6 +37,14 @@ Le pipeline SP1 est étendu pour produire, **en best-effort** (un échec HLS lai
 - **Player** : `<app-video-player>` choisit HLS **natif** (Safari/iOS), sinon **hls.js** (Chrome/FF/Edge), sinon **fallback mp4**. Dépendance `hls.js` (1ʳᵉ lib player tierce). CSP : segments via `connect-src 'self'` + `media-src 'self'` (déjà en place).
 - `delete` retire récursivement le dossier `{id}-hls/`. **GC global des orphelins = SP3** (dette).
 
+## SP3 — Housekeeping / GC des orphelins (extension, 2026-06-21)
+
+La dette de SP1/SP2 (accumulation de vidéos non référencées et de fichiers `vid-*` sans entité, au fil des remplacements/suppressions) est levée par deux mécanismes complémentaires :
+
+- **Nettoyage immédiat** — `VideoService.isReferenced(id)` (= `existsByVideoId` sur `furniture`/`exhibition` + valeur de la clé `studio.video.id`) et `deleteIfUnreferenced(id)`. Appelés au **remplacement** de la vidéo d'une fiche mobilier/expo ou du Studio, et à la **suppression** d'un propriétaire (`FurnitureService`/`ExhibitionService`/`SiteContentService`). L'ancienne vidéo n'est supprimée (entité + fichiers) que si **plus aucun** propriétaire ne la référence. Échec de suppression non bloquant pour l'opération métier (`try/catch` best-effort). `VideoService` injecte les **repositories** (pas les services) propriétaires → pas de cycle de beans.
+- **GC batch** — `gcOrphans(dryRun)` recense (a) les entités `Video` non référencées et (b) les entrées `vid-*` du `uploadDir` sans entité connue, puis supprime si `dryRun=false`. **Période de grâce** (`app.video.gc-grace-hours`, défaut **24 h**, env `VIDEO_GC_GRACE_HOURS`) : exclut les vidéos `UPLOADED`/`PROCESSING` et tout ce qui est plus récent que la fenêtre (entité `READY` par `createdAt`, fichier par mtime) → protège un **upload frais non encore rattaché** à une fiche sauvegardée. Endpoint `POST /api/admin/videos/gc?dryRun` (JWT, **`dryRun` défaut `true`** = aperçu sans suppression), réponse `{orphanVideos, orphanFiles, deleted}`.
+- **Sûreté** : le scan ne cible **que** les entrées préfixées `vid-` (les photos `{uuid}.ext` ne sont jamais candidates). Suppression **confinée au `uploadDir`** (`startsWith` sur chemin normalisé, plus une garde défensive interne à `deleteDirRecursive`) ; `Files.walk` ne suit pas les symlinks par défaut. La réponse du dry-run liste les noms de fichiers orphelins **à dessein** (aperçu opérationnel avant une opération destructive), derrière le gate JWT admin.
+
 ## Supersession
 
 Cet ADR **supersède en partie l'ADR-0019** : les points « pas de transcodage » et « pas d'entité vidéo / URL persistée sur la fiche » ne sont plus valables. Le reste de l'ADR-0019 demeure : auto-hébergement (pas d'embed tiers), serve avec HTTP Range/206, CSP `media-src 'self'`, allowlist `.mp4`/`.webm`/`.vtt`, upload streamé, limite 200 Mo.
