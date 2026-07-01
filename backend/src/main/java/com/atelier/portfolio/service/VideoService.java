@@ -3,6 +3,9 @@ package com.atelier.portfolio.service;
 import com.atelier.portfolio.entity.VideoEntity;
 import com.atelier.portfolio.entity.VideoStatus;
 import com.atelier.portfolio.model.Video;
+import com.atelier.portfolio.repository.ExhibitionRepository;
+import com.atelier.portfolio.repository.FurnitureRepository;
+import com.atelier.portfolio.repository.SiteContentRepository;
 import com.atelier.portfolio.repository.VideoRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -49,6 +52,9 @@ public class VideoService {
 
     private final VideoRepository repository;
     private final VideoTranscoder transcoder;
+    private final FurnitureRepository furnitureRepository;
+    private final ExhibitionRepository exhibitionRepository;
+    private final SiteContentRepository siteContentRepository;
 
     @Value("${app.upload.dir:./uploads}")
     private String uploadDir;
@@ -77,9 +83,15 @@ public class VideoService {
     @Value("${app.video.hls-preset:veryfast}")
     private String hlsPreset;
 
-    public VideoService(VideoRepository repository, VideoTranscoder transcoder) {
+    public VideoService(VideoRepository repository, VideoTranscoder transcoder,
+                        FurnitureRepository furnitureRepository,
+                        ExhibitionRepository exhibitionRepository,
+                        SiteContentRepository siteContentRepository) {
         this.repository = repository;
         this.transcoder = transcoder;
+        this.furnitureRepository = furnitureRepository;
+        this.exhibitionRepository = exhibitionRepository;
+        this.siteContentRepository = siteContentRepository;
     }
 
     // -----------------------------------------------------------------------
@@ -366,6 +378,25 @@ public class VideoService {
         } finally {
             hlsBatchRunning.set(false);
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Références (GC)
+    // -----------------------------------------------------------------------
+
+    /** true si l'id video est reference par une fiche mobilier/expo ou par le Studio. */
+    public boolean isReferenced(String videoId) {
+        if (videoId == null) return false;
+        if (furnitureRepository.existsByVideoId(videoId)) return true;
+        if (exhibitionRepository.existsByVideoId(videoId)) return true;
+        return siteContentRepository.findById("studio.video.id")
+                .map(e -> videoId.equals(e.getValue())).orElse(false);
+    }
+
+    /** Supprime la video (fichiers + entite) uniquement si plus referencee nulle part. */
+    public void deleteIfUnreferenced(String id) {
+        if (id == null || isReferenced(id)) return;
+        delete(id);
     }
 
     // -----------------------------------------------------------------------

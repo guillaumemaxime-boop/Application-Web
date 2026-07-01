@@ -1,8 +1,12 @@
 package com.atelier.portfolio.service;
 
+import com.atelier.portfolio.entity.SiteContentEntity;
 import com.atelier.portfolio.entity.VideoEntity;
 import com.atelier.portfolio.entity.VideoStatus;
 import com.atelier.portfolio.model.Video;
+import com.atelier.portfolio.repository.ExhibitionRepository;
+import com.atelier.portfolio.repository.FurnitureRepository;
+import com.atelier.portfolio.repository.SiteContentRepository;
 import com.atelier.portfolio.repository.VideoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,11 +43,20 @@ class VideoServiceTest {
     @Mock
     VideoTranscoder transcoder;
 
+    @Mock
+    FurnitureRepository furnitureRepository;
+
+    @Mock
+    ExhibitionRepository exhibitionRepository;
+
+    @Mock
+    SiteContentRepository siteContentRepository;
+
     VideoService service;
 
     @BeforeEach
     void setUp() {
-        service = new VideoService(repository, transcoder);
+        service = new VideoService(repository, transcoder, furnitureRepository, exhibitionRepository, siteContentRepository);
         ReflectionTestUtils.setField(service, "uploadDir", tmp.toString());
         ReflectionTestUtils.setField(service, "baseUrl", "/api/videos/files");
         ReflectionTestUtils.setField(service, "maxHeight", 1080);
@@ -586,6 +599,44 @@ class VideoServiceTest {
         verify(transcoder, never()).generateHls(any(), any(), anyInt(), any());
         assertEquals(1, report.count());
         assertEquals(0, report.generated());
+    }
+
+    // -----------------------------------------------------------------------
+    // GC — isReferenced / deleteIfUnreferenced (Tache 1 SP3)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void isReferenced_vrai_si_furniture_ou_exhibition_ou_studio_pointe_l_id() {
+        when(furnitureRepository.existsByVideoId("vid-1")).thenReturn(true);
+        assertTrue(service.isReferenced("vid-1"));
+
+        when(furnitureRepository.existsByVideoId("vid-2")).thenReturn(false);
+        when(exhibitionRepository.existsByVideoId("vid-2")).thenReturn(false);
+        when(siteContentRepository.findById("studio.video.id")).thenReturn(Optional.empty());
+        assertFalse(service.isReferenced("vid-2"));
+
+        when(furnitureRepository.existsByVideoId("vid-3")).thenReturn(false);
+        when(exhibitionRepository.existsByVideoId("vid-3")).thenReturn(false);
+        var sc = new SiteContentEntity(); sc.setKey("studio.video.id"); sc.setValue("vid-3");
+        when(siteContentRepository.findById("studio.video.id")).thenReturn(Optional.of(sc));
+        assertTrue(service.isReferenced("vid-3"));
+    }
+
+    @Test
+    void deleteIfUnreferenced_supprime_si_non_reference_sinon_non() {
+        when(furnitureRepository.existsByVideoId("vid-x")).thenReturn(false);
+        when(exhibitionRepository.existsByVideoId("vid-x")).thenReturn(false);
+        when(siteContentRepository.findById("studio.video.id")).thenReturn(Optional.empty());
+        var e = new VideoEntity(); e.setId("vid-x"); e.setStatus(VideoStatus.READY);
+        when(repository.findById("vid-x")).thenReturn(Optional.of(e));
+        service.deleteIfUnreferenced("vid-x");
+        verify(repository).delete(e);
+
+        when(furnitureRepository.existsByVideoId("vid-y")).thenReturn(true);
+        service.deleteIfUnreferenced("vid-y");
+        verify(repository, never()).delete(argThat(v -> "vid-y".equals(v.getId())));
+
+        service.deleteIfUnreferenced(null); // no-op
     }
 
     // -----------------------------------------------------------------------
