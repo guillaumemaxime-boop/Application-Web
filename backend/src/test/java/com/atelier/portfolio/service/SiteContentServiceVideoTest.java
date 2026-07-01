@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -154,5 +155,34 @@ class SiteContentServiceVideoTest {
         Map<String, String> result = service.findAll();
 
         assertThat(result).doesNotContainKey("studio.video.hls");
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests GC : nettoyage immédiat au remplacement du studio.video.id
+    // -----------------------------------------------------------------------
+
+    @Test
+    void saveAll_studioVideoId_remplace_appelle_deleteIfUnreferenced_sur_ancien() {
+        // Ancien studio.video.id = "a" en base
+        SiteContentEntity oldEntry = entry("studio.video.id", "a");
+        when(repository.findById("studio.video.id")).thenReturn(Optional.of(oldEntry));
+        when(repository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+        // findAll() appelé à la fin de saveAll, on renvoie la nouvelle valeur
+        when(repository.findAll()).thenReturn(List.of(entry("studio.video.id", "b")));
+        when(videoService.resolveForPublic("b")).thenReturn(Optional.empty());
+
+        service.saveAll(Map.of("studio.video.id", "b"));
+
+        verify(videoService).deleteIfUnreferenced("a");
+    }
+
+    @Test
+    void saveAll_sans_cle_studioVideoId_ne_appelle_pas_deleteIfUnreferenced() {
+        when(repository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.findAll()).thenReturn(List.of(entry("studio.title", "Atelier")));
+
+        service.saveAll(Map.of("studio.title", "Mon atelier"));
+
+        verify(videoService, never()).deleteIfUnreferenced(any());
     }
 }

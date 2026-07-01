@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -213,5 +214,67 @@ class FurnitureServiceVideoTest {
         Furniture result = furnitureService.update("test", input).orElseThrow();
 
         assertThat(result.videoId()).isEqualTo("vid-9");
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests GC : nettoyage immédiat au remplacement/suppression
+    // -----------------------------------------------------------------------
+
+    @Test
+    void update_video_remplacee_appelle_deleteIfUnreferenced_sur_ancienne() {
+        FurnitureEntity existing = baseEntity();
+        existing.setVideoId("old");
+
+        when(repository.findBySlug("test")).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(videoService.resolveForPublic(any())).thenReturn(Optional.empty());
+
+        Furniture input = new Furniture(
+                "f-test", "Test", "test", "Sièges", null, 2024,
+                null, null,
+                List.of(), null, null, List.of(), null,
+                false, true, true, List.of(), List.of(),
+                null, null, null, "new",
+                null, null, null, null
+        );
+
+        furnitureService.update("test", input);
+
+        verify(videoService).deleteIfUnreferenced("old");
+    }
+
+    @Test
+    void update_video_inchangee_ne_appelle_pas_deleteIfUnreferenced() {
+        FurnitureEntity existing = baseEntity();
+        existing.setVideoId("old");
+
+        when(repository.findBySlug("test")).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(videoService.resolveForPublic(any())).thenReturn(Optional.empty());
+
+        Furniture input = new Furniture(
+                "f-test", "Test", "test", "Sièges", null, 2024,
+                null, null,
+                List.of(), null, null, List.of(), null,
+                false, true, true, List.of(), List.of(),
+                null, null, null, "old",
+                null, null, null, null
+        );
+
+        furnitureService.update("test", input);
+
+        verify(videoService, never()).deleteIfUnreferenced("old");
+    }
+
+    @Test
+    void deleteBySlug_appelle_deleteIfUnreferenced_sur_video_de_la_fiche() {
+        FurnitureEntity existing = baseEntity();
+        existing.setVideoId("v");
+
+        when(repository.findBySlug("test")).thenReturn(Optional.of(existing));
+
+        furnitureService.deleteBySlug("test");
+
+        verify(videoService).deleteIfUnreferenced("v");
     }
 }

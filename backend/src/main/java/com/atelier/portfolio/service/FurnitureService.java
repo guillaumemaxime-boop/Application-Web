@@ -98,8 +98,13 @@ public class FurnitureService {
     @CacheEvict(cacheNames = "home", allEntries = true)
     public Optional<Furniture> update(String slug, Furniture input) {
         return repository.findBySlug(slug).map(entity -> {
+            String oldVideoId = entity.getVideoId();
             applyChanges(entity, input);
-            return toDto(repository.save(entity));
+            Furniture result = toDto(repository.save(entity));
+            if (oldVideoId != null && !oldVideoId.equals(input.videoId())) {
+                try { videoService.deleteIfUnreferenced(oldVideoId); } catch (Exception ignored) {}
+            }
+            return result;
         });
     }
 
@@ -107,9 +112,11 @@ public class FurnitureService {
     @CacheEvict(cacheNames = "home", allEntries = true)
     public boolean deleteBySlug(String slug) {
         return repository.findBySlug(slug).map(entity -> {
+            String vid = entity.getVideoId();
             storyService.deleteAllForOwner("furniture", entity.getId());
             homeFeedService.removeBySlug("furniture", entity.getSlug());
             repository.delete(entity);
+            if (vid != null) { try { videoService.deleteIfUnreferenced(vid); } catch (Exception ignored) {} }
             return true;
         }).orElse(false);
     }

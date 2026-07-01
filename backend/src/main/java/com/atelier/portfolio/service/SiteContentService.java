@@ -66,6 +66,11 @@ public class SiteContentService {
 
     @Transactional
     public Map<String, String> saveAll(Map<String, String> entries) {
+        String oldStudioVid = null;
+        if (entries.containsKey("studio.video.id")) {
+            oldStudioVid = repository.findById("studio.video.id")
+                    .map(SiteContentEntity::getValue).orElse(null);
+        }
         var entities = entries.entrySet().stream()
                 .map(e -> {
                     SiteContentEntity entity = new SiteContentEntity();
@@ -75,6 +80,12 @@ public class SiteContentService {
                 })
                 .toList();
         repository.saveAll(entities);
+        if (entries.containsKey("studio.video.id")) {
+            String neu = entries.get("studio.video.id");
+            if (oldStudioVid != null && !oldStudioVid.isBlank() && !oldStudioVid.equals(neu)) {
+                try { videoService.deleteIfUnreferenced(oldStudioVid); } catch (Exception ignored) {}
+            }
+        }
         return findAll();
     }
 }
