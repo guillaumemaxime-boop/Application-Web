@@ -16,7 +16,7 @@ type Internals = {
   filteredItems: () => any[];
   toggleTag: (t: string) => void;
   toggleYear: (y: number) => void;
-  setKind: (k: 'all' | 'furniture' | 'exhibition') => void;
+  toggleKind: (k: 'furniture' | 'exhibition') => void;
   clearFilters: () => void;
 };
 
@@ -85,8 +85,31 @@ describe('CreationsComponent', () => {
     );
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as Internals;
-    cmp.setKind('furniture');
+    cmp.toggleKind('furniture');
     expect(cmp.filteredItems().map(i => i.title)).toEqual(['F']);
+  });
+
+  it('affiche les mobiliers avant les expositions (tri par type)', () => {
+    setup();
+    flushApi(
+      [{ slug: 'f1', title: 'Meuble', coverImage: '', category: 'C', year: 2020, tags: [] }],
+      [{ slug: 'e1', title: 'Expo', coverImage: '', venue: 'V', startDate: '2025-01-01', tags: [] }],
+    );
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    // Le mobilier (2020) passe avant l'exposition (2025) malgre l'annee plus recente.
+    expect(cmp.allItems().map(i => i.kind)).toEqual(['furniture', 'exhibition']);
+  });
+
+  it('toggleKind re-clique revient a la vue combinee (all)', () => {
+    setup();
+    flushApi([{ slug: 'f1', title: 'F', coverImage: '', category: 'C', year: 2024, tags: [] }], []);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Internals;
+    cmp.toggleKind('furniture');
+    expect(cmp.selectedKind()).toBe('furniture');
+    cmp.toggleKind('furniture');
+    expect(cmp.selectedKind()).toBe('all');
   });
 
   it('filtre par tags en union (OR)', () => {
@@ -130,7 +153,7 @@ describe('CreationsComponent', () => {
     const cmp = fixture.componentInstance as unknown as Internals;
     cmp.toggleTag('x');
     cmp.toggleYear(2024);
-    cmp.setKind('furniture');
+    cmp.toggleKind('furniture');
     cmp.clearFilters();
     expect(cmp.selectedTags().size).toBe(0);
     expect(cmp.selectedYears().size).toBe(0);
@@ -189,7 +212,7 @@ describe('CreationsComponent', () => {
     );
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as Internals;
-    cmp.setKind('furniture');
+    cmp.toggleKind('furniture');
     // yearCount(2024) ne doit compter que les meubles, pas les expositions
     expect((fixture.componentInstance as any).yearCount(2024)).toBe(1);
   });
@@ -236,7 +259,7 @@ describe('CreationsComponent', () => {
     );
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as Internals;
-    cmp.setKind('furniture');
+    cmp.toggleKind('furniture');
     expect((fixture.componentInstance as any).tagCount('bois')).toBe(1);
   });
 
