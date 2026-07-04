@@ -22,13 +22,11 @@ type Kind = 'all' | 'furniture' | 'exhibition';
 
     <section class="filters">
       <div class="container">
-        <div class="kind-toggle" role="radiogroup" aria-label="Type de création">
-          <button type="button" role="radio" [attr.aria-checked]="selectedKind() === 'all'"
-                  [class.active]="selectedKind() === 'all'" (click)="setKind('all')">Tout</button>
-          <button type="button" role="radio" [attr.aria-checked]="selectedKind() === 'furniture'"
-                  [class.active]="selectedKind() === 'furniture'" (click)="setKind('furniture')">Mobilier</button>
-          <button type="button" role="radio" [attr.aria-checked]="selectedKind() === 'exhibition'"
-                  [class.active]="selectedKind() === 'exhibition'" (click)="setKind('exhibition')">Expositions</button>
+        <div class="kind-toggle" role="group" aria-label="Type de création">
+          <button type="button" [attr.aria-pressed]="selectedKind() === 'furniture'"
+                  [class.active]="selectedKind() === 'furniture'" (click)="toggleKind('furniture')">Mobilier</button>
+          <button type="button" [attr.aria-pressed]="selectedKind() === 'exhibition'"
+                  [class.active]="selectedKind() === 'exhibition'" (click)="toggleKind('exhibition')">Expositions</button>
         </div>
 
         @if (availableYears().length > 0) {
@@ -231,7 +229,12 @@ export class CreationsComponent implements OnInit {
           href: `/expositions/${e.slug}`,
         })),
       ];
-      items.sort((a, b) => b.year - a.year || a.title.localeCompare(b.title, 'fr'));
+      // Mobiliers d'abord, puis expositions ; a l'interieur, annee decroissante puis titre.
+      const kindOrder = (k: 'furniture' | 'exhibition') => (k === 'furniture' ? 0 : 1);
+      items.sort((a, b) =>
+        kindOrder(a.kind) - kindOrder(b.kind) ||
+        b.year - a.year ||
+        a.title.localeCompare(b.title, 'fr'));
       this.allItems.set(items);
       this.availableTags.set([...new Set(items.flatMap(i => i.tags))].sort((a, b) => a.localeCompare(b, 'fr')));
       this.availableYears.set([...new Set(items.map(i => i.year))].sort((a, b) => b - a));
@@ -256,8 +259,9 @@ export class CreationsComponent implements OnInit {
     this.syncQueryParams();
   }
 
-  protected setKind(kind: Kind): void {
-    this.selectedKind.set(kind);
+  /** Bascule le filtre de type : re-cliquer le type actif revient a la vue combinee (mobiliers puis expos). */
+  protected toggleKind(kind: 'furniture' | 'exhibition'): void {
+    this.selectedKind.update(current => (current === kind ? 'all' : kind));
     this.syncQueryParams();
   }
 
