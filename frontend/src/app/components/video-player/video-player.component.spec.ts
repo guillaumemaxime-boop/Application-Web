@@ -55,6 +55,24 @@ describe('VideoPlayerComponent', () => {
     expect(fixture.nativeElement.querySelector('track')).toBeNull();
   });
 
+  it('ré-initialise la lecture quand src change après le premier rendu (OnChanges)', () => {
+    render({ src: '/api/videos/files/a.mp4', label: 'x' });
+    const video: HTMLVideoElement = fixture.nativeElement.querySelector('video');
+    const loadSpy = spyOn(video, 'load');
+    fixture.componentInstance.src = '/api/videos/files/b.mp4';
+    fixture.componentInstance.ngOnChanges({ src: { firstChange: false } as never });
+    expect(loadSpy).toHaveBeenCalled();
+  });
+
+  it('repeint le poster quand seul poster change, sans flux hls (OnChanges)', () => {
+    render({ src: '/api/videos/files/a.mp4', poster: '/api/photos/files/p1.jpg', label: 'x' });
+    const video: HTMLVideoElement = fixture.nativeElement.querySelector('video');
+    const loadSpy = spyOn(video, 'load');
+    fixture.componentInstance.poster = '/api/photos/files/p2.jpg';
+    fixture.componentInstance.ngOnChanges({ poster: { firstChange: false } as never });
+    expect(loadSpy).toHaveBeenCalled();
+  });
+
   // -------------------------------------------------------------------------
   // Tests unitaires de la stratégie pure (chooseStrategy)
   // -------------------------------------------------------------------------
