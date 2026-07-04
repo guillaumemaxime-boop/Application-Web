@@ -3,6 +3,11 @@ package com.atelier.portfolio.service;
 import com.atelier.portfolio.entity.VideoEntity;
 import com.atelier.portfolio.entity.VideoStatus;
 import com.atelier.portfolio.model.Video;
+import com.atelier.portfolio.model.VideoSummary;
+import com.atelier.portfolio.model.VideoUsage;
+import com.atelier.portfolio.repository.ExhibitionRepository;
+import com.atelier.portfolio.repository.FurnitureRepository;
+import com.atelier.portfolio.repository.SiteContentRepository;
 import com.atelier.portfolio.repository.VideoRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -49,6 +54,9 @@ public class VideoService {
 
     private final VideoRepository repository;
     private final VideoTranscoder transcoder;
+    private final FurnitureRepository furnitureRepository;
+    private final ExhibitionRepository exhibitionRepository;
+    private final SiteContentRepository siteContentRepository;
 
     @Value("${app.upload.dir:./uploads}")
     private String uploadDir;
@@ -77,9 +85,18 @@ public class VideoService {
     @Value("${app.video.hls-preset:veryfast}")
     private String hlsPreset;
 
-    public VideoService(VideoRepository repository, VideoTranscoder transcoder) {
+    @Value("${app.video.gc-grace-hours:24}")
+    int gcGraceHours;
+
+    public VideoService(VideoRepository repository, VideoTranscoder transcoder,
+                        FurnitureRepository furnitureRepository,
+                        ExhibitionRepository exhibitionRepository,
+                        SiteContentRepository siteContentRepository) {
         this.repository = repository;
         this.transcoder = transcoder;
+        this.furnitureRepository = furnitureRepository;
+        this.exhibitionRepository = exhibitionRepository;
+        this.siteContentRepository = siteContentRepository;
     }
 
     // -----------------------------------------------------------------------
@@ -369,6 +386,115 @@ public class VideoService {
     }
 
     // -----------------------------------------------------------------------
+    // Références (GC)
+    // -----------------------------------------------------------------------
+
+    /** true si l'id video est reference par une fiche mobilier/expo ou par le Studio. */
+    public boolean isReferenced(String videoId) {
+        if (videoId == null) return false;
+        if (furnitureRepository.existsByVideoId(videoId)) return true;
+        if (exhibitionRepository.existsByVideoId(videoId)) return true;
+        return siteContentRepository.findById("studio.video.id")
+                .map(e -> videoId.equals(e.getValue())).orElse(false);
+    }
+
+    /** Usages d'une video (fiches mobilier/expo + Studio). Vide si orpheline. */
+    public java.util.List<VideoUsage> referencesOf(String videoId) {
+        java.util.List<VideoUsage> usages = new java.util.ArrayList<>();
+        for (var f : furnitureRepository.findByVideoIdIsNotNull()) {
+            if (videoId.equals(f.getVideoId())) usages.add(new VideoUsage("furniture", f.getTitle(), f.getSlug()));
+        }
+        for (var e : exhibitionRepository.findByVideoIdIsNotNull()) {
+            if (videoId.equals(e.getVideoId())) usages.add(new VideoUsage("exhibition", e.getTitle(), e.getSlug()));
+        }
+        siteContentRepository.findById("studio.video.id")
+            .filter(s -> videoId.equals(s.getValue()))
+            .ifPresent(s -> usages.add(new VideoUsage("studio", "Studio", null)));
+        return usages;
+    }
+
+    /** Liste admin de toutes les videos (tous statuts) avec usages, tri date desc. */
+    public java.util.List<VideoSummary> listAll() {
+        // usedBy en lot : une passe sur chaque source, regroupee par videoId
+        java.util.Map<String, java.util.List<VideoUsage>> byVideo = new java.util.HashMap<>();
+        for (var f : furnitureRepository.findByVideoIdIsNotNull()) {
+            byVideo.computeIfAbsent(f.getVideoId(), k -> new java.util.ArrayList<>())
+                   .add(new VideoUsage("furniture", f.getTitle(), f.getSlug()));
+        }
+        for (var e : exhibitionRepository.findByVideoIdIsNotNull()) {
+            byVideo.computeIfAbsent(e.getVideoId(), k -> new java.util.ArrayList<>())
+                   .add(new VideoUsage("exhibition", e.getTitle(), e.getSlug()));
+        }
+        siteContentRepository.findById("studio.video.id")
+            .map(com.atelier.portfolio.entity.SiteContentEntity::getValue)
+            .filter(v -> v != null && !v.isBlank())
+            .ifPresent(v -> byVideo.computeIfAbsent(v, k -> new java.util.ArrayList<>())
+                   .add(new VideoUsage("studio", "Studio", null)));
+
+        java.util.Comparator<VideoEntity> byDateDesc = java.util.Comparator.comparing(
+            VideoEntity::getCreatedAt, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()));
+        return repository.findAll().stream()
+            .sorted(byDateDesc)
+            .map(e -> new VideoSummary(
+                e.getId(), e.getStatus().name(), e.getOriginalName(),
+                e.getOutputFilename() != null ? baseUrl + "/" + e.getOutputFilename() : null,
+                e.getPosterFilename() != null ? "/api/photos/files/" + e.getPosterFilename() : null,
+                e.getHlsMasterFilename() != null ? baseUrl + "/" + e.getHlsMasterFilename() : null,
+                e.getDurationSeconds(), e.getWidth(), e.getHeight(),
+                e.getCreatedAt(),
+                e.getStatus() == VideoStatus.FAILED ? e.getErrorMessage() : null,
+                byVideo.getOrDefault(e.getId(), java.util.List.of())))
+            .toList();
+    }
+
+    public record VideoGcReport(java.util.List<String> orphanFiles, boolean deleted) {}
+
+    /** Extrait l'id video d'un nom d'entree : "vid-ab12.mp4"/"vid-ab12-hls"/"vid-ab12-src.mp4" -> "vid-ab12". */
+    static String videoIdFromEntry(String name) {
+        String base = name;
+        int dot = base.lastIndexOf('.');
+        if (dot > 0) base = base.substring(0, dot);
+        for (String suf : new String[]{"-hls", "-src", "-poster"}) {
+            if (base.endsWith(suf)) return base.substring(0, base.length() - suf.length());
+        }
+        return base;
+    }
+
+    /** GC des seuls FICHIERS disque vid-* sans entite connue (modele bibliotheque :
+     *  une entite Video non referencee n'est PAS un dechet). */
+    public VideoGcReport gcOrphans(boolean dryRun) {
+        java.util.Set<String> knownIds = new java.util.HashSet<>();
+        for (VideoEntity e : repository.findAll()) knownIds.add(e.getId());
+        java.util.List<String> orphanFiles = new java.util.ArrayList<>();
+        Path dir = Paths.get(uploadDir);
+        if (Files.isDirectory(dir)) {
+            try (var stream = Files.list(dir)) {
+                for (Path p : stream.toList()) {
+                    String name = p.getFileName().toString();
+                    if (!name.startsWith("vid-")) continue;
+                    String id = videoIdFromEntry(name);
+                    if (id != null && knownIds.contains(id)) continue;
+                    try {
+                        if (Files.getLastModifiedTime(p).toInstant()
+                                .isAfter(Instant.now().minus(java.time.Duration.ofHours(gcGraceHours)))) continue;
+                    } catch (IOException ignored) {}
+                    orphanFiles.add(name);
+                }
+            } catch (IOException ignored) {}
+        }
+        if (!dryRun) {
+            Path uploadPath = dir.toAbsolutePath().normalize();
+            for (String name : orphanFiles) {
+                Path fp = uploadPath.resolve(name).normalize();
+                if (!fp.startsWith(uploadPath)) continue;
+                if (Files.isDirectory(fp)) deleteDirRecursive(fp);
+                else { try { Files.deleteIfExists(fp); } catch (IOException ignored) {} }
+            }
+        }
+        return new VideoGcReport(orphanFiles, !dryRun);
+    }
+
+    // -----------------------------------------------------------------------
     // Suppression
     // -----------------------------------------------------------------------
 
@@ -418,6 +544,11 @@ public class VideoService {
 
     private void deleteDirRecursive(Path dir) {
         if (!Files.exists(dir)) return;
+        // Defense-en-profondeur : ne jamais supprimer recursivement hors de uploadDir,
+        // meme si un futur appelant passe un chemin non confine. Files.walk ne suit pas
+        // les symlinks par defaut (pas de FileVisitOption.FOLLOW_LINKS) : pas de sortie d'arbre.
+        Path uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+        if (!dir.toAbsolutePath().normalize().startsWith(uploadRoot)) return;
         try (var walk = Files.walk(dir)) {
             walk.sorted(java.util.Comparator.reverseOrder())
                     .forEach(p -> { try { Files.deleteIfExists(p); } catch (IOException ignored) {} });

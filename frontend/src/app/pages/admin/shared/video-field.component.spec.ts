@@ -11,10 +11,11 @@ describe('VideoFieldComponent', () => {
   beforeEach(async () => {
     portfolio = jasmine.createSpyObj('PortfolioService', [
       'uploadVideo', 'uploadCaptions', 'uploadPhoto', 'deleteVideo',
-      'getPhotos', 'getVideoStatus', 'retryVideo',
+      'getPhotos', 'getVideoStatus', 'retryVideo', 'getVideos',
     ]);
     portfolio.getPhotos.and.returnValue(of([{ url: '/api/photos/files/p.jpg' } as any]));
     portfolio.retryVideo.and.returnValue(of(undefined));
+    portfolio.getVideos.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [VideoFieldComponent],
@@ -178,4 +179,21 @@ describe('VideoFieldComponent', () => {
     expect(comp.previewUrl()).toBe('/api/videos/files/existing.mp4');
     tick(5 * 60 * 1000);
   }));
+
+  // -----------------------------------------------------------------------
+  // Picker vidéo : onVideoPicked adopte l'id et émet videoIdChange
+  // -----------------------------------------------------------------------
+  it('onVideoPicked adopte l\'id et émet videoIdChange', () => {
+    const ready: VideoStatusDto = { id: 'vid-42', status: 'READY', url: '/api/videos/files/vid-42.mp4' };
+    portfolio.getVideoStatus.and.returnValue(of(ready));
+    fixture.detectChanges();
+
+    let emitted: string | null | undefined;
+    fixture.componentInstance.videoIdChange.subscribe((id: string | null) => emitted = id);
+    fixture.componentInstance.onVideoPicked('vid-42');
+
+    expect(fixture.componentInstance.videoId).toBe('vid-42');
+    expect(emitted as string).toBe('vid-42');
+    expect((fixture.componentInstance as any).videoPickerOpen()).toBeFalse();
+  });
 });

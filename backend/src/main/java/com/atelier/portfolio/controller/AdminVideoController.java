@@ -1,6 +1,7 @@
 package com.atelier.portfolio.controller;
 
 import com.atelier.portfolio.model.Video;
+import com.atelier.portfolio.model.VideoSummary;
 import com.atelier.portfolio.service.VideoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,6 +42,15 @@ public class AdminVideoController {
 
     public AdminVideoController(VideoService service) {
         this.service = service;
+    }
+
+    // -----------------------------------------------------------------------
+    // GET / — liste (mediatheque video + picker)
+    // -----------------------------------------------------------------------
+
+    @GetMapping
+    public ResponseEntity<java.util.List<VideoSummary>> list() {
+        return ResponseEntity.ok(service.listAll());
     }
 
     // -----------------------------------------------------------------------
@@ -102,11 +112,27 @@ public class AdminVideoController {
     }
 
     // -----------------------------------------------------------------------
+    // POST /gc — garbage collection orphelins
+    // -----------------------------------------------------------------------
+
+    @PostMapping("/gc")
+    public ResponseEntity<?> gc(@RequestParam(defaultValue = "true") boolean dryRun) {
+        VideoService.VideoGcReport r = service.gcOrphans(dryRun);
+        // On n'expose qu'un compte : les noms de fichiers orphelins seraient
+        // servables publiquement (/api/videos/files/{name}) — pas de fuite de noms.
+        return ResponseEntity.ok(Map.of("orphanFilesCount", r.orphanFiles().size(), "deleted", r.deleted()));
+    }
+
+    // -----------------------------------------------------------------------
     // DELETE /{id} — suppression par id d'entité
     // -----------------------------------------------------------------------
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable String id) {
+    public ResponseEntity<?> deleteById(@PathVariable String id) {
+        java.util.List<com.atelier.portfolio.model.VideoUsage> usedBy = service.referencesOf(id);
+        if (!usedBy.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("usedBy", usedBy));
+        }
         return service.delete(id)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();

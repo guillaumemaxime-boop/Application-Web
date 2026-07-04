@@ -1,8 +1,14 @@
 package com.atelier.portfolio.service;
 
+import com.atelier.portfolio.entity.FurnitureEntity;
+import com.atelier.portfolio.entity.SiteContentEntity;
 import com.atelier.portfolio.entity.VideoEntity;
 import com.atelier.portfolio.entity.VideoStatus;
 import com.atelier.portfolio.model.Video;
+import com.atelier.portfolio.model.VideoSummary;
+import com.atelier.portfolio.repository.ExhibitionRepository;
+import com.atelier.portfolio.repository.FurnitureRepository;
+import com.atelier.portfolio.repository.SiteContentRepository;
 import com.atelier.portfolio.repository.VideoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +25,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,11 +46,20 @@ class VideoServiceTest {
     @Mock
     VideoTranscoder transcoder;
 
+    @Mock
+    FurnitureRepository furnitureRepository;
+
+    @Mock
+    ExhibitionRepository exhibitionRepository;
+
+    @Mock
+    SiteContentRepository siteContentRepository;
+
     VideoService service;
 
     @BeforeEach
     void setUp() {
-        service = new VideoService(repository, transcoder);
+        service = new VideoService(repository, transcoder, furnitureRepository, exhibitionRepository, siteContentRepository);
         ReflectionTestUtils.setField(service, "uploadDir", tmp.toString());
         ReflectionTestUtils.setField(service, "baseUrl", "/api/videos/files");
         ReflectionTestUtils.setField(service, "maxHeight", 1080);
@@ -586,6 +602,110 @@ class VideoServiceTest {
         verify(transcoder, never()).generateHls(any(), any(), anyInt(), any());
         assertEquals(1, report.count());
         assertEquals(0, report.generated());
+    }
+
+    // -----------------------------------------------------------------------
+    // GC — isReferenced (conserve — reutilise Tasks 2-3 SP4)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void isReferenced_vrai_si_furniture_ou_exhibition_ou_studio_pointe_l_id() {
+        when(furnitureRepository.existsByVideoId("vid-1")).thenReturn(true);
+        assertTrue(service.isReferenced("vid-1"));
+
+        when(furnitureRepository.existsByVideoId("vid-2")).thenReturn(false);
+        when(exhibitionRepository.existsByVideoId("vid-2")).thenReturn(false);
+        when(siteContentRepository.findById("studio.video.id")).thenReturn(Optional.empty());
+        assertFalse(service.isReferenced("vid-2"));
+
+        when(furnitureRepository.existsByVideoId("vid-3")).thenReturn(false);
+        when(exhibitionRepository.existsByVideoId("vid-3")).thenReturn(false);
+        var sc = new SiteContentEntity(); sc.setKey("studio.video.id"); sc.setValue("vid-3");
+        when(siteContentRepository.findById("studio.video.id")).thenReturn(Optional.of(sc));
+        assertTrue(service.isReferenced("vid-3"));
+    }
+
+    // -----------------------------------------------------------------------
+    // GC — gcOrphans : fichiers disque vid-* sans entite (modele bibliotheque)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void gcOrphans_recense_les_fichiers_vid_sans_entite_hors_grace() throws Exception {
+        // repository ne connait AUCUNE entite → tout fichier vid-* ancien est orphelin
+        when(repository.findAll()).thenReturn(java.util.List.of());
+        java.nio.file.Path dir = tmp;
+        java.nio.file.Path orphan = java.nio.file.Files.createFile(dir.resolve("vid-dead.mp4"));
+        // mtime ancien (au-dela de la grace de 24h)
+        java.nio.file.Files.setLastModifiedTime(orphan,
+            java.nio.file.attribute.FileTime.from(java.time.Instant.now().minus(java.time.Duration.ofHours(48))));
+        java.nio.file.Files.createFile(dir.resolve("photo.jpg")); // non vid-* → ignore
+
+        ReflectionTestUtils.setField(service, "gcGraceHours", 24);
+        VideoService.VideoGcReport report = service.gcOrphans(false);
+
+        assertTrue(report.orphanFiles().contains("vid-dead.mp4"));
+        assertTrue(report.deleted());
+        assertFalse(java.nio.file.Files.exists(orphan)); // supprime
+        assertTrue(java.nio.file.Files.exists(dir.resolve("photo.jpg"))); // intact
+    }
+
+    @Test
+    void gcOrphans_epargne_les_fichiers_recents_periode_de_grace() throws Exception {
+        when(repository.findAll()).thenReturn(java.util.List.of());
+        java.nio.file.Files.createFile(tmp.resolve("vid-fresh.mp4"));
+        // mtime recent → protege par la grace (mtime = maintenant par defaut)
+        ReflectionTestUtils.setField(service, "gcGraceHours", 24);
+        VideoService.VideoGcReport report = service.gcOrphans(true); // dry-run
+        assertFalse(report.orphanFiles().contains("vid-fresh.mp4"));
+        assertTrue(java.nio.file.Files.exists(tmp.resolve("vid-fresh.mp4")));
+    }
+
+    @Test
+    void gcOrphans_scan_disque_liste_les_fichiers_vid_sans_entite() throws Exception {
+        java.nio.file.Files.writeString(tmp.resolve("vid-orphan.mp4"), "x");
+        java.nio.file.Files.setLastModifiedTime(tmp.resolve("vid-orphan.mp4"),
+            java.nio.file.attribute.FileTime.from(Instant.now().minusSeconds(48*3600)));
+        java.nio.file.Files.writeString(tmp.resolve("8f3a-photo.jpg"), "x");
+        when(repository.findAll()).thenReturn(List.of());
+        ReflectionTestUtils.setField(service, "gcGraceHours", 24);
+        var report = service.gcOrphans(true);
+        assertTrue(report.orphanFiles().contains("vid-orphan.mp4"));
+        assertFalse(report.orphanFiles().stream().anyMatch(f -> f.contains("photo")));
+    }
+
+    // -----------------------------------------------------------------------
+    // listAll / referencesOf (Task 2 SP4)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void listAll_construit_usedBy_en_lot_et_trie_par_date_desc() {
+        VideoEntity v1 = new VideoEntity(); v1.setId("vid-1"); v1.setStatus(VideoStatus.READY);
+        v1.setOriginalName("intro.mp4"); v1.setOutputFilename("vid-1.mp4");
+        v1.setPosterFilename("vid-1-poster.jpg"); v1.setCreatedAt("2026-07-01T10:00:00Z");
+        VideoEntity v2 = new VideoEntity(); v2.setId("vid-2"); v2.setStatus(VideoStatus.PROCESSING);
+        v2.setOriginalName("clip.mp4"); v2.setCreatedAt("2026-07-02T10:00:00Z");
+        when(repository.findAll()).thenReturn(java.util.List.of(v1, v2));
+
+        FurnitureEntity f = new FurnitureEntity(); f.setTitle("Chaise"); f.setSlug("chaise"); f.setVideoId("vid-1");
+        when(furnitureRepository.findByVideoIdIsNotNull()).thenReturn(java.util.List.of(f));
+        when(exhibitionRepository.findByVideoIdIsNotNull()).thenReturn(java.util.List.of());
+        var studio = new com.atelier.portfolio.entity.SiteContentEntity();
+        studio.setKey("studio.video.id"); studio.setValue("vid-2");
+        when(siteContentRepository.findById("studio.video.id")).thenReturn(java.util.Optional.of(studio));
+
+        java.util.List<VideoSummary> list = service.listAll();
+
+        assertEquals(2, list.size());
+        assertEquals("vid-2", list.get(0).id()); // 2026-07-02 avant 2026-07-01
+        VideoSummary s1 = list.stream().filter(s -> s.id().equals("vid-1")).findFirst().orElseThrow();
+        assertEquals("/api/videos/files/vid-1.mp4", s1.url());
+        assertEquals("/api/photos/files/vid-1-poster.jpg", s1.poster());
+        assertEquals(1, s1.usedBy().size());
+        assertEquals("furniture", s1.usedBy().get(0).type());
+        assertEquals("chaise", s1.usedBy().get(0).slug());
+        VideoSummary s2 = list.stream().filter(s -> s.id().equals("vid-2")).findFirst().orElseThrow();
+        assertEquals("studio", s2.usedBy().get(0).type());
+        assertNull(s2.url()); // PROCESSING → pas de fichier de sortie
     }
 
     // -----------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, Input, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild } from '@angular/core';
 import Hls from 'hls.js';
 
 /**
@@ -23,7 +23,7 @@ import Hls from 'hls.js';
   `,
   styles: [`.vp-video { display: block; width: 100%; max-height: 80vh; background: #000; }`],
 })
-export class VideoPlayerComponent implements AfterViewInit, OnDestroy {
+export class VideoPlayerComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input({ required: true }) src = '';
   @Input() hlsSrc: string | null = null;
   @Input() poster: string | null = null;
@@ -49,13 +49,36 @@ export class VideoPlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    this.setupPlayback();
+  }
+
+  /**
+   * Réagit aux changements de source après le premier rendu : quand `src`/`hlsSrc`
+   * changent (ex. réutilisation d'une autre vidéo dans le champ admin), l'instance
+   * de lecteur persiste — il faut ré-initialiser la lecture. Un simple changement
+   * de `poster` (image seule, sans flux HLS actif) force un repaint via `load()`.
+   */
+  ngOnChanges(changes: SimpleChanges): void {
+    const video = this.videoRef?.nativeElement;
+    if (!video) return; // avant AfterViewInit : setupPlayback() s'en chargera
+    if (changes['src'] || changes['hlsSrc']) {
+      this.setupPlayback();
+    } else if (changes['poster'] && !this.hls) {
+      video.load();
+    }
+  }
+
+  private setupPlayback(): void {
     const video = this.videoRef?.nativeElement;
     if (!video) return;
+    this.destroyHls();
     const native = video.canPlayType('application/vnd.apple.mpegurl') !== '';
     const strat = VideoPlayerComponent.chooseStrategy(this.hlsSrc, native, Hls.isSupported());
     if (strat === 'native') {
       video.src = this.hlsSrc!;
+      video.load();
     } else if (strat === 'hlsjs') {
+      video.removeAttribute('src');
       this.hls = new Hls();
       this.hls.loadSource(this.hlsSrc!);
       this.hls.attachMedia(video);
@@ -63,10 +86,14 @@ export class VideoPlayerComponent implements AfterViewInit, OnDestroy {
         if (data.fatal) {
           this.destroyHls();
           video.src = this.src;
+          video.load();
         }
       });
+    } else {
+      // 'mp4' : la balise <source> du template porte la source ; forcer la relecture.
+      video.removeAttribute('src');
+      video.load();
     }
-    // 'mp4' : la balise <source> dans le template gère déjà la lecture.
   }
 
   ngOnDestroy(): void {

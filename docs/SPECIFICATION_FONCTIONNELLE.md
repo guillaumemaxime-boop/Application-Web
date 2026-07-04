@@ -152,7 +152,7 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 #### Administration (`/admin/**`)
 
 - Interface CRUD complète pour le mobilier, les expositions, les stories et les sliders.
-- Navigation latérale : **Accueil · Mobilier · Expositions · Stories · Navigation · Médiathèque · Textes · Typographie · Statistiques · Paramètres**.
+- Navigation latérale : **Accueil · Mobilier · Expositions · Stories · Navigation · Médiathèque photo · Médiathèque vidéo · Textes · Typographie · Statistiques · Paramètres**.
 - Formulaires de création / modification avec validation et retour visuel (toast auto-dismiss).
 - Suppression avec confirmation implicite.
 
@@ -195,6 +195,27 @@ Catalogue agrégé regroupant l'ensemble du mobilier et des expositions de l'ate
 
 - Toggle CMS pour chaque entrée de menu (visible / masqué).
 - L'entrée **Créations** est configurable depuis cette page.
+
+**Page Médiathèque photo (`/admin/mediatheque`)** :
+
+- Gestion des images : import multi-fichiers, optimisation batch, recherche (nom/tag), suppression, copie d'URL, visionneuse.
+- **Tags par photo** : chips supprimables + champ d'ajout (validé au blur et à Entrée). Persistance optimiste via `PUT /api/admin/photos/{id}/tags`.
+- **Filtre par tags** (F051) : chips de tags distincts dans la fenêtre d'ajout de ressource (galerie / image principale / poster vidéo), combinables avec la recherche.
+
+**Page Médiathèque vidéo (`/admin/mediatheque-video`)** (SP4, ADR-0021) :
+
+- **Grille de cartes** : vignette poster (lecture en place au clic), nom d'origine, badge de statut (`READY` / `PROCESSING` via `aria-live` / `FAILED` + bouton **Relancer**), durée et dimensions, date d'ajout.
+- **Bloc « Utilisée par »** : liste des fiches mobilier, expositions et Studio qui référencent la vidéo, avec liens directs vers l'édition de la fiche.
+- **Upload central** : file input `video/mp4,video/webm` → transcodage asynchrone → polling du statut → apparition dans la grille (`PROCESSING` → `READY`).
+- **Suppression** : bouton désactivé (avec infobulle) si la vidéo est encore référencée ; sinon confirmation → suppression (fichiers + entité). Le serveur retourne 409 en filet de sécurité (toast d'erreur affiché).
+- **Modèle bibliothèque** : une vidéo est un asset autonome — remplacer ou détacher une vidéo d'une fiche ne la supprime pas. Elle reste en médiathèque jusqu'à suppression explicite.
+
+**`<app-video-picker>`** (modale partagée) :
+
+- Ouverte depuis le bouton **« Choisir une vidéo existante »** dans `<app-video-field>` (champ vidéo des fiches mobilier, exposition et Studio).
+- Liste les vidéos `READY` : vignette poster, nom d'origine, durée, dimensions. Recherche par nom (filtre client).
+- Sélection → met à jour le `video_id` de la fiche (affiché dans l'aperçu immédiatement grâce au `ngOnChanges` du player).
+- Accessibilité : `role=dialog` + `aria-modal` + `cdkTrapFocus` + restitution du focus + fermeture Échap.
 
 > **Hors portée (reporté)** : fallback clavier pour drag/resize des galeries et des slides ; édition inline du champ catégorie ; application à d'autres pages (about, contact). (L'**édition des slides de story EN PLACE dans le preview** est faite — sous-projet 6b : voir blocs d'auteur ci-dessous.) Voir [docs/superpowers/specs/2026-06-07-image-crop-tool-design.md](../superpowers/specs/2026-06-07-image-crop-tool-design.md).
 
@@ -551,6 +572,7 @@ Le champ `coverCrop` est stocké dans `home_feed_entries` (colonnes `cover_crop_
 | **F048** | Preview WYSIWYG fiche exposition | Toggle Modifier / Aperçu sur la page admin expositions (toggle plein-largeur). Preview live identique au public, interactif : click-to-focus textes, double-clic édition inline texte, double-clic dates → swap `<input type="date">` natif, eyebrow décomposé en 3 spans cliquables, hover cover/galerie → Cadrer/Remplacer/Retirer, drag-reorder galerie, resize colSpan/rowSpan, toolbar Enregistrer + Plein écran. Galerie publique migrée en canvas. | ⭐⭐⭐ | ✅ Fait |
 | **F049** | Preview WYSIWYG accueil | Toggle Modifier / Aperçu sur la page admin Accueil (toggle plein-largeur). Preview live identique au public, interactif : double-clic hero eyebrow/titre/lead → édition inline contenteditable + **auto-save immédiat** (pas de bouton Enregistrer), hover cards feed → overlay checkbox Inclus + drag-reorder + bouton Cadrer (crop home-only, n'affecte pas la fiche source), cards exclues en opacité 0,35 + badge « Exclu », cartouche `[i]` sur sliders → retour mode Modifier + scroll. Plein écran avec focus trap. Refactor `home.component.ts` (délégation à `<app-home-view>`). | ⭐⭐⭐ | ✅ Fait |
 | **F051** | Médiathèque — tags & filtres | Taguer les images de la médiathèque (ajout validé au **blur** et à Entrée → fonctionne sur **mobile**, où la touche « OK/Done » du clavier virtuel n'émet pas d'Entrée fiable) ; rechercher par nom de fichier ou tag ; et, dans la fenêtre d'ajout de ressource depuis la médiathèque (galerie / image principale / poster vidéo), **filtrer par chips de tags** (clic = appartenance exacte, combinable avec la recherche). | ⭐⭐ | ✅ Fait |
+| **F052** | Médiathèque vidéo | Page `/admin/mediatheque-video` : parcourir les vidéos (grille avec badge de statut, durée, dimensions, bloc « Utilisée par » avec liens), uploader (transcodage async + polling), lire en place dans la vignette, supprimer (bloqué si référencée). Composant `<app-video-picker>` (modale) dans `<app-video-field>` : bouton « Choisir une vidéo existante » pour réutiliser une vidéo sans ré-uploader. Modèle bibliothèque : une vidéo persiste jusqu'à suppression explicite. | ⭐⭐⭐ | ✅ Fait |
 
 ### 5.5 Navigation et UX
 
@@ -974,6 +996,7 @@ PostgreSQL 16 (:5432)
 | 2.5.0 | 09/06/2026 | Maxime Guillaume | Preview WYSIWYG fiche exposition — sous-projet 3/4 (F048 ✅) · Section 4.1.2 dédiée (toggle plein-largeur Modifier/Aperçu, eyebrow composite 3 spans, date swap input natif, interactivité textes + images + galerie, toolbar, plein écran, migration galerie publique canvas) · Fiche Exposition publique enrichie (CSS Grid galerie, canvas) · Flux 6 admin WYSIWYG exposition · Roadmap Phase 6quater terminée, Phase 6quinquies ajoutée · Glossaire enrichi (app-exhibition-detail-view, eyebrow composite, date swap) |
 | 2.6.0 | 09/06/2026 | Maxime Guillaume | Preview WYSIWYG accueil — sous-projet 4/4, dernier du chantier WYSIWYG (F049 ✅) · Section 4.1.3 dédiée (toggle plein-largeur Modifier/Aperçu, auto-save inline hero, overlay cards feed — inclusion + reorder + crop home-only, cartouche `[i]` sliders, plein écran focus trap, refactor `home.component.ts`) · Modèle `HomeFeedEntry` ajouté · Page Accueil admin : mention preview WYSIWYG · Note hors-portée mise à jour · Flux 7 admin WYSIWYG accueil · Roadmap Phase 6quinquies terminée — **chantier WYSIWYG complet** · Glossaire enrichi (app-home-view, app-home-preview, auto-save, crop home-only, cartouche [i]) |
 | 2.7.0 | 21/06/2026 | Maxime Guillaume | Médiathèque — tags & filtres (F051 ✅) : correctif ajout de tag au blur (mobile) · filtre par chips de tags dans la fenêtre d'ajout de ressource (galerie / image principale / poster vidéo) |
+| 2.8.0 | 04/07/2026 | Maxime Guillaume | Médiathèque vidéo (F052 ✅, SP4 ADR-0021) : page médiathèque vidéo (grille, upload central, badge statut, usages, suppression) · `<app-video-picker>` (modale réutilisation) · modèle bibliothèque (vidéo = asset persistant, SP3 auto-cleanup retiré) · renommage nav « Médiathèque » → « Médiathèque photo » + « Médiathèque vidéo » · `<app-video-player>` réagit au changement de source |
 
 ---
 

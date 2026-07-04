@@ -37,6 +37,11 @@ export const adminRoutes: Routes = [
         title: 'Médiathèque — Administration',
       },
       {
+        path: 'mediatheque-video',
+        loadComponent: () => import('./mediatheque-video/mediatheque-video.component').then(m => m.MediathequeVideoComponent),
+        title: 'Médiathèque vidéo — Administration',
+      },
+      {
         path: 'mobilier',
         loadComponent: () => import('./mobilier/mobilier.component').then(m => m.MobilierComponent),
         title: 'Mobilier — Administration',

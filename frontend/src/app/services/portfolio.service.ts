@@ -13,7 +13,7 @@ import { ContactRequestInput, ContactRequestAck } from '../models/contact.model'
 import { MailSettingsView, MailSettingsInput, MailTestResult } from '../models/mail-settings.model';
 import { Story, StoryInput, StoryWithSlides, StoryAdminView } from '../models/story.model';
 import { NewsSlider, NewsSliderInput, NewsSliderView } from '../models/news-slider.model';
-import { VideoStatus, VideoStatusDto } from '../models/video.model';
+import { VideoStatus, VideoStatusDto, VideoSummary } from '../models/video.model';
 
 const API = '/api';
 
@@ -155,6 +155,16 @@ export class PortfolioService {
 
   generateVideoHls(): Observable<{ count: number; generated: number }> {
     return this.http.post<{ count: number; generated: number }>(`${API}/admin/videos/hls`, {});
+  }
+
+  /** Liste de toutes les vidéos (médiathèque vidéo + picker). */
+  getVideos(): Observable<VideoSummary[]> {
+    return this.http.get<VideoSummary[]>(`${API}/admin/videos`);
+  }
+
+  /** Supprime une vidéo par id d'entité (409 si référencée, géré côté appelant). */
+  deleteVideoById(id: string): Observable<void> {
+    return this.http.delete<void>(`${API}/admin/videos/${id}`);
   }
 
   updatePhotoTags(id: string, tags: string[]): Observable<Photo> {

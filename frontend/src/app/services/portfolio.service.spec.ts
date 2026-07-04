@@ -645,4 +645,24 @@ describe('PortfolioService', () => {
       req.flush(ack);
     });
   });
+
+  describe('Videos API', () => {
+    it('getVideos GET /api/admin/videos', () => {
+      service.getVideos().subscribe(v => expect(v.length).toBe(1));
+      const req = httpMock.expectOne('/api/admin/videos');
+      expect(req.request.method).toBe('GET');
+      req.flush([{
+        id: 'vid-1', status: 'READY', originalName: 'a.mp4', url: null, poster: null,
+        hls: null, durationSeconds: null, width: null, height: null, createdAt: null,
+        errorMessage: null, usedBy: [],
+      }]);
+    });
+
+    it('deleteVideoById DELETE /api/admin/videos/:id', () => {
+      service.deleteVideoById('vid-1').subscribe();
+      const req = httpMock.expectOne('/api/admin/videos/vid-1');
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
+    });
+  });
 });

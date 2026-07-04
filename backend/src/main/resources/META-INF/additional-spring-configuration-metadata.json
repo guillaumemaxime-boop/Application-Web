@@ -77,6 +77,12 @@
       "type": "java.lang.String",
       "description": "Preset d'encodage FFmpeg utilise pour le transcodage HLS (ultrafast..veryslow).",
       "defaultValue": "veryfast"
+    },
+    {
+      "name": "app.video.gc-grace-hours",
+      "type": "java.lang.Integer",
+      "description": "Periode de grace (heures) pendant laquelle une video READY recente est exclue du GC des orphelines.",
+      "defaultValue": 24
     }
   ]
 }

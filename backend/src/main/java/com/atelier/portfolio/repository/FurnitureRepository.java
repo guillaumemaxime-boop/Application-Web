@@ -15,4 +15,8 @@ public interface FurnitureRepository extends JpaRepository<FurnitureEntity, Stri
 
     @Query("SELECT DISTINCT f.category FROM FurnitureEntity f ORDER BY f.category ASC")
     List<String> findDistinctCategories();
+
+    boolean existsByVideoId(String videoId);
+
+    List<FurnitureEntity> findByVideoIdIsNotNull();
 }

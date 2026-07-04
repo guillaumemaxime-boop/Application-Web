@@ -7,8 +7,9 @@ import { switchMap, take } from 'rxjs/operators';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { VideoPlayerComponent } from '../../../components/video-player/video-player.component';
 import { PhotoPickerComponent } from './photo-picker.component';
+import { VideoPickerComponent } from './video-picker.component';
 import { Photo } from '../../../models/photo.model';
-import { VideoStatus } from '../../../models/video.model';
+import { VideoStatus, VideoSummary } from '../../../models/video.model';
 
 /**
  * Champ admin pour gérer la vidéo optionnelle d'une fiche/page :
@@ -19,7 +20,7 @@ import { VideoStatus } from '../../../models/video.model';
 @Component({
   selector: 'app-video-field',
   standalone: true,
-  imports: [VideoPlayerComponent, PhotoPickerComponent],
+  imports: [VideoPlayerComponent, PhotoPickerComponent, VideoPickerComponent],
   template: `
     <div class="video-field">
       <span class="vf-title">Vidéo (optionnelle)</span>
@@ -63,6 +64,7 @@ import { VideoStatus } from '../../../models/video.model';
         <button type="button" class="vf-btn" (click)="openPosterPicker()" title="Choisir le poster depuis la médiathèque">
           Poster depuis la médiathèque
         </button>
+        <button type="button" class="vf-btn" (click)="openVideoPicker()">Choisir une vidéo existante</button>
         <input #captionsInput type="file" accept=".vtt,text/vtt" hidden (change)="onCaptionsSelected($event)" />
         <button type="button" class="vf-btn" (click)="captionsInput.click()">
           {{ videoCaptions ? 'Remplacer les sous-titres' : 'Ajouter des sous-titres (.vtt)' }}
@@ -82,6 +84,13 @@ import { VideoStatus } from '../../../models/video.model';
         (selected)="onPosterPicked($event)"
         (closed)="posterPickerOpen.set(false)" />
     }
+
+    @if (videoPickerOpen()) {
+      <app-video-picker
+        [videos]="videoLibrary()"
+        (selected)="onVideoPicked($event)"
+        (closed)="videoPickerOpen.set(false)" />
+    }
   `,
   styles: [`
     .video-field { display: flex; flex-direction: column; gap: 10px; }
@@ -93,6 +102,7 @@ import { VideoStatus } from '../../../models/video.model';
       font-size: 0.78rem; cursor: pointer; color: var(--color-ink-soft);
     }
     .vf-btn:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .vf-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
     .vf-remove { color: #c0392b; }
     .vf-retry { margin-top: 4px; }
     .vf-error { color: #c0392b; font-size: 0.85rem; }
@@ -131,6 +141,8 @@ export class VideoFieldComponent implements OnInit, OnChanges, OnDestroy {
   protected readonly uploadError = signal('');
   protected readonly posterPickerOpen = signal(false);
   protected readonly photos = signal<Photo[]>([]);
+  protected readonly videoPickerOpen = signal(false);
+  protected readonly videoLibrary = signal<VideoSummary[]>([]);
 
   private pollingSubscription: Subscription | null = null;
   private currentVideoId: string | null = null;
@@ -298,4 +310,21 @@ export class VideoFieldComponent implements OnInit, OnChanges, OnDestroy {
     this.videoPosterChange.emit(photo.url);
     this.posterPickerOpen.set(false);
   }
+
+  /** Ouvre la médiathèque vidéo pour réutiliser une vidéo existante. */
+  openVideoPicker(): void {
+    this.videoPickerOpen.set(true);
+    this.portfolio.getVideos().subscribe(v => this.videoLibrary.set(v));
+  }
+
+  /** Vidéo choisie depuis la médiathèque : adopte son id et recharge le statut. */
+  onVideoPicked(videoId: string): void {
+    this.videoId = videoId;
+    this.videoIdChange.emit(videoId);
+    this.videoPickerOpen.set(false);
+    this.loadVideoStatusPublic(videoId);
+  }
+
+  /** Wrapper public pour permettre les tests sur loadVideoStatus (méthode privée). */
+  protected loadVideoStatusPublic(id: string): void { this.loadVideoStatus(id); }
 }
