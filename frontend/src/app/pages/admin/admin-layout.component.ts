@@ -31,7 +31,8 @@ import { ToastsComponent } from './shared/toasts.component';
             <a class="nav-item" routerLink="/admin/expositions" routerLinkActive="active">Expositions</a>
             <a class="nav-item" routerLink="/admin/stories" routerLinkActive="active">Stories</a>
             <a class="nav-item" routerLink="/admin/textes" routerLinkActive="active">Textes du site</a>
-            <a class="nav-item" routerLink="/admin/mediatheque" routerLinkActive="active">Médiathèque</a>
+            <a class="nav-item" routerLink="/admin/mediatheque" routerLinkActive="active">Médiathèque photo</a>
+            <a class="nav-item" routerLink="/admin/mediatheque-video" routerLinkActive="active">Médiathèque vidéo</a>
 
             <span class="nav-group">SITE</span>
             <a class="nav-item" routerLink="/admin/accueil" routerLinkActive="active">Accueil</a>
