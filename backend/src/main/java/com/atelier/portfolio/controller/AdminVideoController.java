@@ -127,6 +127,10 @@ public class AdminVideoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteById(@PathVariable String id) {
+        java.util.List<com.atelier.portfolio.model.VideoUsage> usedBy = service.referencesOf(id);
+        if (!usedBy.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("usedBy", usedBy));
+        }
         return service.delete(id)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();

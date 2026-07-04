@@ -135,23 +135,39 @@ class AdminVideoControllerTest {
     // -----------------------------------------------------------------------
 
     /**
-     * Cas 5a : entité existante → service.delete=true → 204.
+     * Cas 5a : vidéo référencée → 409 avec la liste des usages, sans suppression.
      */
     @Test
-    void deleteById_existant_renvoie_204() {
+    void deleteById_referencee_renvoie_409_avec_usedBy() {
+        when(service.referencesOf("vid-1")).thenReturn(java.util.List.of(
+            new com.atelier.portfolio.model.VideoUsage("furniture", "Chaise", "chaise")));
+
+        ResponseEntity<?> result = controller.deleteById("vid-1");
+
+        assertEquals(409, result.getStatusCode().value());
+        assertTrue(((java.util.Map<?, ?>) result.getBody()).containsKey("usedBy"));
+        verify(service, never()).delete("vid-1");
+    }
+
+    /**
+     * Cas 5b : non référencée + entité existante → service.delete=true → 204.
+     */
+    @Test
+    void deleteById_non_referencee_existante_renvoie_204() {
+        when(service.referencesOf("vid-1")).thenReturn(java.util.List.of());
         when(service.delete("vid-1")).thenReturn(true);
 
         ResponseEntity<?> result = controller.deleteById("vid-1");
 
         assertEquals(204, result.getStatusCode().value());
-        verify(service).delete("vid-1");
     }
 
     /**
-     * Cas 5b : id inconnu → service.delete=false → 404.
+     * Cas 5c : non référencée + id inconnu → service.delete=false → 404.
      */
     @Test
-    void deleteById_absent_renvoie_404() {
+    void deleteById_non_referencee_inconnue_renvoie_404() {
+        when(service.referencesOf("vid-ghost")).thenReturn(java.util.List.of());
         when(service.delete("vid-ghost")).thenReturn(false);
 
         ResponseEntity<?> result = controller.deleteById("vid-ghost");
