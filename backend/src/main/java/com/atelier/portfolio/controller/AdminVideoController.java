@@ -118,7 +118,9 @@ public class AdminVideoController {
     @PostMapping("/gc")
     public ResponseEntity<?> gc(@RequestParam(defaultValue = "true") boolean dryRun) {
         VideoService.VideoGcReport r = service.gcOrphans(dryRun);
-        return ResponseEntity.ok(Map.of("orphanFiles", r.orphanFiles(), "deleted", r.deleted()));
+        // On n'expose qu'un compte : les noms de fichiers orphelins seraient
+        // servables publiquement (/api/videos/files/{name}) — pas de fuite de noms.
+        return ResponseEntity.ok(Map.of("orphanFilesCount", r.orphanFiles().size(), "deleted", r.deleted()));
     }
 
     // -----------------------------------------------------------------------

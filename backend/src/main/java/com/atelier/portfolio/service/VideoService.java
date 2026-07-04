@@ -441,7 +441,8 @@ public class VideoService {
                 e.getPosterFilename() != null ? "/api/photos/files/" + e.getPosterFilename() : null,
                 e.getHlsMasterFilename() != null ? baseUrl + "/" + e.getHlsMasterFilename() : null,
                 e.getDurationSeconds(), e.getWidth(), e.getHeight(),
-                e.getCreatedAt(), e.getErrorMessage(),
+                e.getCreatedAt(),
+                e.getStatus() == VideoStatus.FAILED ? e.getErrorMessage() : null,
                 byVideo.getOrDefault(e.getId(), java.util.List.of())))
             .toList();
     }
