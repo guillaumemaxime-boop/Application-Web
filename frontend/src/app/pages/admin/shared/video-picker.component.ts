@@ -30,13 +30,14 @@ import { VideoSummary } from '../../../models/video.model';
             <div class="picker-grid">
               @for (v of filtered(); track v.id) {
                 <button type="button" class="picker-item vp-item" (click)="select(v)"
-                        [title]="v.originalName ?? v.id">
+                        [title]="v.originalName ?? v.id"
+                        [attr.aria-label]="'Choisir la vidéo ' + (v.originalName ?? v.id)">
                   @if (v.poster) {
-                    <img [src]="v.poster" [alt]="v.originalName ?? 'Vidéo'" loading="lazy" />
+                    <img [src]="v.poster" alt="" loading="lazy" />
                   } @else {
                     <span class="vp-noposter" aria-hidden="true">▶</span>
                   }
-                  <span class="vp-caption">
+                  <span class="vp-caption" aria-hidden="true">
                     <span class="vp-name">{{ v.originalName ?? v.id }}</span>
                     @if (v.durationSeconds) { <span class="vp-dur">{{ fmtDuration(v.durationSeconds) }}</span> }
                   </span>
@@ -73,7 +74,7 @@ import { VideoSummary } from '../../../models/video.model';
       border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-ink);
     }
     .picker-search-input:focus { outline: none; border-color: var(--color-accent); }
-    .picker-search-input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .picker-search-input:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
     .picker-empty { padding: 32px 24px; color: var(--color-mute); font-size: 0.9rem; }
     .picker-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -84,6 +85,7 @@ import { VideoSummary } from '../../../models/video.model';
       cursor: pointer; overflow: hidden;
     }
     .picker-item:hover { border-color: var(--color-accent); }
+    .picker-item:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
     .vp-item { display: flex; flex-direction: column; aspect-ratio: auto; }
     .vp-item img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
     .vp-noposter { display: flex; align-items: center; justify-content: center; aspect-ratio: 16/9; background: var(--color-bg-alt); color: var(--color-mute); font-size: 1.5rem; }

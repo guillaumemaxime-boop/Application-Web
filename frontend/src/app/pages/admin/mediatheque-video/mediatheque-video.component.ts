@@ -26,6 +26,7 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
       } @else if (videos().length === 0) {
         <p class="status">Aucune vidéo. Importez-en une ci-dessus.</p>
       } @else {
+        <h2 class="videos-list-title">Vidéos importées</h2>
         <div class="videos-grid">
           @for (v of videos(); track v.id) {
             <div class="video-card">
@@ -54,9 +55,9 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
                   @if (v.width && v.height) { <span>{{ v.width }}×{{ v.height }}</span> }
                 </span>
               </div>
-              @if (v.status === 'PROCESSING' || v.status === 'UPLOADED') {
-                <p class="video-processing" aria-live="polite">Traitement en cours…</p>
-              }
+              <p class="video-processing" aria-live="polite">
+                @if (v.status === 'PROCESSING' || v.status === 'UPLOADED') { Traitement en cours… }
+              </p>
               @if (v.status === 'FAILED') {
                 <div class="video-failed" role="alert">
                   <span>{{ v.errorMessage ?? 'Échec du transcodage.' }}</span>
@@ -82,6 +83,7 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
               <div class="video-actions">
                 <button type="button" class="video-del" [disabled]="!canDelete(v)"
                         [title]="canDelete(v) ? 'Supprimer' : 'Impossible : vidéo utilisée'"
+                        [attr.aria-label]="(canDelete(v) ? 'Supprimer ' : 'Impossible de supprimer : ') + (v.originalName ?? v.id)"
                         (click)="remove(v)">Supprimer</button>
               </div>
             </div>
@@ -108,9 +110,10 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
     .video-play-btn img { width: 100%; height: 100%; object-fit: cover; }
     .video-play-overlay {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      font-size: 2rem; color: #fff; background: rgba(0,0,0,0.25); transition: background var(--transition);
+      font-size: 2rem; color: #fff; background: rgba(0,0,0,0.45); transition: background var(--transition);
     }
-    .video-play-btn:hover .video-play-overlay, .video-play-btn:focus-visible .video-play-overlay { background: rgba(0,0,0,0.45); }
+    .video-play-btn:hover .video-play-overlay, .video-play-btn:focus-visible .video-play-overlay { background: rgba(0,0,0,0.6); }
+    .video-play-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
     .video-noposter { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--color-mute); font-size: 1.8rem; }
     .video-badge { position: absolute; top: 6px; left: 6px; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 6px; background: var(--color-ink); color: var(--color-bg); }
     .video-badge.ok { background: #2e7d32; } .video-badge.ko { background: #c0392b; }
@@ -120,6 +123,8 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
     .video-processing { padding: 0 12px 8px; font-size: 0.78rem; color: var(--color-ink-soft); }
     .video-failed { padding: 0 12px 8px; font-size: 0.78rem; color: #c0392b; display: flex; flex-direction: column; gap: 4px; }
     .btn-link { background: transparent; border: 0; color: var(--color-accent); cursor: pointer; text-align: left; padding: 0; font: inherit; text-decoration: underline; }
+    .btn-link:focus-visible, .video-del:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+    .videos-list-title { font-size: 1.1rem; font-weight: 500; margin: 0; }
     .video-usage { padding: 8px 12px; border-top: 1px solid var(--color-line); font-size: 0.75rem; }
     .video-usage ul { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 2px; }
     .video-usage-label { color: var(--color-mute); }

@@ -102,6 +102,7 @@ import { VideoStatus, VideoSummary } from '../../../models/video.model';
       font-size: 0.78rem; cursor: pointer; color: var(--color-ink-soft);
     }
     .vf-btn:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .vf-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
     .vf-remove { color: #c0392b; }
     .vf-retry { margin-top: 4px; }
     .vf-error { color: #c0392b; font-size: 0.85rem; }
