@@ -108,10 +108,7 @@ public class AdminVideoController {
     @PostMapping("/gc")
     public ResponseEntity<?> gc(@RequestParam(defaultValue = "true") boolean dryRun) {
         VideoService.VideoGcReport r = service.gcOrphans(dryRun);
-        return ResponseEntity.ok(Map.of(
-            "orphanVideos", r.orphanVideos(),
-            "orphanFiles", r.orphanFiles(),
-            "deleted", r.deleted()));
+        return ResponseEntity.ok(Map.of("orphanFiles", r.orphanFiles(), "deleted", r.deleted()));
     }
 
     // -----------------------------------------------------------------------
@@ -119,7 +116,7 @@ public class AdminVideoController {
     // -----------------------------------------------------------------------
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable String id) {
+    public ResponseEntity<?> deleteById(@PathVariable String id) {
         return service.delete(id)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();

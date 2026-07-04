@@ -396,26 +396,7 @@ public class VideoService {
                 .map(e -> videoId.equals(e.getValue())).orElse(false);
     }
 
-    /** Supprime la video (fichiers + entite) uniquement si plus referencee nulle part. */
-    public void deleteIfUnreferenced(String id) {
-        // TOCTOU theorique : entre isReferenced() et delete(), un autre owner pourrait
-        // se rattacher a la video. Non exploitable en pratique (admin single-tenant, pas
-        // d'ecritures concurrentes) ; la periode de grace du GC batch rattrape le cas limite.
-        if (id == null || isReferenced(id)) return;
-        delete(id);
-    }
-
-    public record VideoGcReport(java.util.List<String> orphanVideos, java.util.List<String> orphanFiles, boolean deleted) {}
-
-    /** true si la video est protegee par la periode de grace (en cours / trop recente). */
-    private boolean inGrace(VideoEntity e) {
-        if (e.getStatus() == VideoStatus.UPLOADED || e.getStatus() == VideoStatus.PROCESSING) return true;
-        String created = e.getCreatedAt();
-        if (created == null || created.isBlank()) return false;
-        try {
-            return Instant.parse(created).isAfter(Instant.now().minus(java.time.Duration.ofHours(gcGraceHours)));
-        } catch (Exception ex) { return false; }
-    }
+    public record VideoGcReport(java.util.List<String> orphanFiles, boolean deleted) {}
 
     /** Extrait l'id video d'un nom d'entree : "vid-ab12.mp4"/"vid-ab12-hls"/"vid-ab12-src.mp4" -> "vid-ab12". */
     static String videoIdFromEntry(String name) {
@@ -428,16 +409,12 @@ public class VideoService {
         return base;
     }
 
-    /** GC des videos orphelines (entites non referencees + fichiers vid-* sans entite). */
+    /** GC des seuls FICHIERS disque vid-* sans entite connue (modele bibliotheque :
+     *  une entite Video non referencee n'est PAS un dechet). */
     public VideoGcReport gcOrphans(boolean dryRun) {
-        java.util.List<String> orphanVideos = new java.util.ArrayList<>();
-        java.util.List<String> orphanFiles = new java.util.ArrayList<>();
         java.util.Set<String> knownIds = new java.util.HashSet<>();
-        for (VideoEntity e : repository.findAll()) {
-            knownIds.add(e.getId());
-            if (inGrace(e)) continue;
-            if (!isReferenced(e.getId())) orphanVideos.add(e.getId());
-        }
+        for (VideoEntity e : repository.findAll()) knownIds.add(e.getId());
+        java.util.List<String> orphanFiles = new java.util.ArrayList<>();
         Path dir = Paths.get(uploadDir);
         if (Files.isDirectory(dir)) {
             try (var stream = Files.list(dir)) {
@@ -455,7 +432,6 @@ public class VideoService {
             } catch (IOException ignored) {}
         }
         if (!dryRun) {
-            for (String id : orphanVideos) delete(id);
             Path uploadPath = dir.toAbsolutePath().normalize();
             for (String name : orphanFiles) {
                 Path fp = uploadPath.resolve(name).normalize();
@@ -464,7 +440,7 @@ public class VideoService {
                 else { try { Files.deleteIfExists(fp); } catch (IOException ignored) {} }
             }
         }
-        return new VideoGcReport(orphanVideos, orphanFiles, !dryRun);
+        return new VideoGcReport(orphanFiles, !dryRun);
     }
 
     // -----------------------------------------------------------------------

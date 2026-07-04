@@ -141,7 +141,7 @@ class AdminVideoControllerTest {
     void deleteById_existant_renvoie_204() {
         when(service.delete("vid-1")).thenReturn(true);
 
-        ResponseEntity<Void> result = controller.deleteById("vid-1");
+        ResponseEntity<?> result = controller.deleteById("vid-1");
 
         assertEquals(204, result.getStatusCode().value());
         verify(service).delete("vid-1");
@@ -154,7 +154,7 @@ class AdminVideoControllerTest {
     void deleteById_absent_renvoie_404() {
         when(service.delete("vid-ghost")).thenReturn(false);
 
-        ResponseEntity<Void> result = controller.deleteById("vid-ghost");
+        ResponseEntity<?> result = controller.deleteById("vid-ghost");
 
         assertEquals(404, result.getStatusCode().value());
     }
@@ -195,7 +195,7 @@ class AdminVideoControllerTest {
     @Test
     void gc_dryRun_par_defaut_recense() {
         when(service.gcOrphans(true)).thenReturn(
-            new VideoService.VideoGcReport(java.util.List.of("vid-a"), java.util.List.of("vid-b.mp4"), false));
+            new VideoService.VideoGcReport(java.util.List.of("vid-b.mp4"), false));
         ResponseEntity<?> r = controller.gc(true);
         assertEquals(200, r.getStatusCode().value());
         assertEquals(false, ((java.util.Map<?,?>) r.getBody()).get("deleted"));
@@ -204,7 +204,7 @@ class AdminVideoControllerTest {
     @Test
     void gc_execute_supprime() {
         when(service.gcOrphans(false)).thenReturn(
-            new VideoService.VideoGcReport(java.util.List.of("vid-a"), java.util.List.of(), true));
+            new VideoService.VideoGcReport(java.util.List.of(), true));
         ResponseEntity<?> r = controller.gc(false);
         assertEquals(200, r.getStatusCode().value());
         assertEquals(true, ((java.util.Map<?,?>) r.getBody()).get("deleted"));

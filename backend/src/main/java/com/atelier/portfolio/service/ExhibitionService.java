@@ -94,13 +94,8 @@ public class ExhibitionService {
     @CacheEvict(cacheNames = "home", allEntries = true)
     public Optional<Exhibition> update(String slug, Exhibition input) {
         return repository.findBySlug(slug).map(entity -> {
-            String oldVideoId = entity.getVideoId();
             applyChanges(entity, input);
-            Exhibition result = toDto(repository.save(entity));
-            if (oldVideoId != null && !oldVideoId.equals(input.videoId())) {
-                try { videoService.deleteIfUnreferenced(oldVideoId); } catch (Exception ignored) {}
-            }
-            return result;
+            return toDto(repository.save(entity));
         });
     }
 
@@ -108,12 +103,10 @@ public class ExhibitionService {
     @CacheEvict(cacheNames = "home", allEntries = true)
     public boolean deleteBySlug(String slug) {
         return repository.findBySlug(slug).map(entity -> {
-            String vid = entity.getVideoId();
             storyService.deleteAllForOwner("exhibition", entity.getId());
             homeFeedService.removeBySlug("exhibition", entity.getSlug());
             exhibitionMetaService.removeBySlug(entity.getSlug());
             repository.delete(entity);
-            if (vid != null) { try { videoService.deleteIfUnreferenced(vid); } catch (Exception ignored) {} }
             return true;
         }).orElse(false);
     }
