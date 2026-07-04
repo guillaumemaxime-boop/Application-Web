@@ -45,4 +45,9 @@ describe('MediathequeVideoComponent', () => {
     fixture.componentInstance.remove(used);
     expect(portfolio.deleteVideoById).not.toHaveBeenCalled();
   });
+
+  it('play() active le lecteur en place de la carte', () => {
+    fixture.componentInstance.play(orphan);
+    expect(fixture.componentInstance['activePlayerId']()).toBe('vid-o');
+  });
 });

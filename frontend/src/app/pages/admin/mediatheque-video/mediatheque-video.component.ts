@@ -3,11 +3,12 @@ import { RouterLink } from '@angular/router';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { ToastService } from '../shared/toast.service';
 import { VideoSummary } from '../../../models/video.model';
+import { VideoPlayerComponent } from '../../../components/video-player/video-player.component';
 
 @Component({
   selector: 'app-mediatheque-video',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, VideoPlayerComponent],
   template: `
     <div class="videos-tab">
       <div class="videos-upload-zone">
@@ -28,10 +29,23 @@ import { VideoSummary } from '../../../models/video.model';
         <div class="videos-grid">
           @for (v of videos(); track v.id) {
             <div class="video-card">
-              <div class="video-thumb">
-                @if (v.poster) { <img [src]="v.poster" [alt]="v.originalName ?? 'Vidéo'" loading="lazy" /> }
-                @else { <span class="video-noposter" aria-hidden="true">▶</span> }
-                <span class="video-badge" [class.ok]="v.status==='READY'" [class.ko]="v.status==='FAILED'">{{ statusLabel(v.status) }}</span>
+              <div class="video-thumb" [class.playing]="activePlayerId() === v.id">
+                @if (activePlayerId() === v.id && v.url) {
+                  <app-video-player [src]="v.url" [hlsSrc]="v.hls" [poster]="v.poster" [captions]="null" label="Aperçu vidéo" />
+                } @else if (v.status === 'READY' && v.url) {
+                  <button type="button" class="video-play-btn" (click)="play(v)"
+                          [attr.aria-label]="'Lire ' + (v.originalName ?? 'la vidéo')">
+                    @if (v.poster) { <img [src]="v.poster" [alt]="v.originalName ?? 'Vidéo'" loading="lazy" /> }
+                    @else { <span class="video-noposter" aria-hidden="true"></span> }
+                    <span class="video-play-overlay" aria-hidden="true">▶</span>
+                  </button>
+                } @else {
+                  @if (v.poster) { <img [src]="v.poster" [alt]="v.originalName ?? 'Vidéo'" loading="lazy" /> }
+                  @else { <span class="video-noposter" aria-hidden="true">▶</span> }
+                }
+                @if (activePlayerId() !== v.id) {
+                  <span class="video-badge" [class.ok]="v.status==='READY'" [class.ko]="v.status==='FAILED'">{{ statusLabel(v.status) }}</span>
+                }
               </div>
               <div class="video-info">
                 <span class="video-name" [title]="v.originalName ?? v.id">{{ v.originalName ?? v.id }}</span>
@@ -88,7 +102,15 @@ import { VideoSummary } from '../../../models/video.model';
     .videos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
     .video-card { display: flex; flex-direction: column; border: 1px solid var(--color-line); background: var(--color-bg); }
     .video-thumb { position: relative; aspect-ratio: 16/9; overflow: hidden; background: var(--color-bg-alt); }
+    .video-thumb.playing { aspect-ratio: auto; overflow: visible; }
     .video-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .video-play-btn { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; }
+    .video-play-btn img { width: 100%; height: 100%; object-fit: cover; }
+    .video-play-overlay {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; color: #fff; background: rgba(0,0,0,0.25); transition: background var(--transition);
+    }
+    .video-play-btn:hover .video-play-overlay, .video-play-btn:focus-visible .video-play-overlay { background: rgba(0,0,0,0.45); }
     .video-noposter { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--color-mute); font-size: 1.8rem; }
     .video-badge { position: absolute; top: 6px; left: 6px; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 6px; background: var(--color-ink); color: var(--color-bg); }
     .video-badge.ok { background: #2e7d32; } .video-badge.ko { background: #c0392b; }
@@ -116,9 +138,14 @@ export class MediathequeVideoComponent implements OnDestroy {
   protected readonly loading = signal(true);
   protected readonly uploading = signal(false);
   protected readonly uploadError = signal('');
+  /** Id de la vidéo dont le lecteur est actif dans sa carte (un seul à la fois). */
+  protected readonly activePlayerId = signal<string | null>(null);
   private pollTimers = new Map<string, ReturnType<typeof setInterval>>();
 
   constructor() { this.refresh(); }
+
+  /** Active la lecture en place dans la carte de la vidéo v. */
+  play(v: VideoSummary): void { this.activePlayerId.set(v.id); }
 
   ngOnDestroy(): void { this.pollTimers.forEach(t => clearInterval(t)); }
 
