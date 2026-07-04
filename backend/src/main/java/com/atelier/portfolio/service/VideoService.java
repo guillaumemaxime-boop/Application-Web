@@ -3,6 +3,8 @@ package com.atelier.portfolio.service;
 import com.atelier.portfolio.entity.VideoEntity;
 import com.atelier.portfolio.entity.VideoStatus;
 import com.atelier.portfolio.model.Video;
+import com.atelier.portfolio.model.VideoSummary;
+import com.atelier.portfolio.model.VideoUsage;
 import com.atelier.portfolio.repository.ExhibitionRepository;
 import com.atelier.portfolio.repository.FurnitureRepository;
 import com.atelier.portfolio.repository.SiteContentRepository;
@@ -394,6 +396,54 @@ public class VideoService {
         if (exhibitionRepository.existsByVideoId(videoId)) return true;
         return siteContentRepository.findById("studio.video.id")
                 .map(e -> videoId.equals(e.getValue())).orElse(false);
+    }
+
+    /** Usages d'une video (fiches mobilier/expo + Studio). Vide si orpheline. */
+    public java.util.List<VideoUsage> referencesOf(String videoId) {
+        java.util.List<VideoUsage> usages = new java.util.ArrayList<>();
+        for (var f : furnitureRepository.findByVideoIdIsNotNull()) {
+            if (videoId.equals(f.getVideoId())) usages.add(new VideoUsage("furniture", f.getTitle(), f.getSlug()));
+        }
+        for (var e : exhibitionRepository.findByVideoIdIsNotNull()) {
+            if (videoId.equals(e.getVideoId())) usages.add(new VideoUsage("exhibition", e.getTitle(), e.getSlug()));
+        }
+        siteContentRepository.findById("studio.video.id")
+            .filter(s -> videoId.equals(s.getValue()))
+            .ifPresent(s -> usages.add(new VideoUsage("studio", "Studio", null)));
+        return usages;
+    }
+
+    /** Liste admin de toutes les videos (tous statuts) avec usages, tri date desc. */
+    public java.util.List<VideoSummary> listAll() {
+        // usedBy en lot : une passe sur chaque source, regroupee par videoId
+        java.util.Map<String, java.util.List<VideoUsage>> byVideo = new java.util.HashMap<>();
+        for (var f : furnitureRepository.findByVideoIdIsNotNull()) {
+            byVideo.computeIfAbsent(f.getVideoId(), k -> new java.util.ArrayList<>())
+                   .add(new VideoUsage("furniture", f.getTitle(), f.getSlug()));
+        }
+        for (var e : exhibitionRepository.findByVideoIdIsNotNull()) {
+            byVideo.computeIfAbsent(e.getVideoId(), k -> new java.util.ArrayList<>())
+                   .add(new VideoUsage("exhibition", e.getTitle(), e.getSlug()));
+        }
+        siteContentRepository.findById("studio.video.id")
+            .map(com.atelier.portfolio.entity.SiteContentEntity::getValue)
+            .filter(v -> v != null && !v.isBlank())
+            .ifPresent(v -> byVideo.computeIfAbsent(v, k -> new java.util.ArrayList<>())
+                   .add(new VideoUsage("studio", "Studio", null)));
+
+        java.util.Comparator<VideoEntity> byDateDesc = java.util.Comparator.comparing(
+            VideoEntity::getCreatedAt, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()));
+        return repository.findAll().stream()
+            .sorted(byDateDesc)
+            .map(e -> new VideoSummary(
+                e.getId(), e.getStatus().name(), e.getOriginalName(),
+                e.getOutputFilename() != null ? baseUrl + "/" + e.getOutputFilename() : null,
+                e.getPosterFilename() != null ? "/api/photos/files/" + e.getPosterFilename() : null,
+                e.getHlsMasterFilename() != null ? baseUrl + "/" + e.getHlsMasterFilename() : null,
+                e.getDurationSeconds(), e.getWidth(), e.getHeight(),
+                e.getCreatedAt(), e.getErrorMessage(),
+                byVideo.getOrDefault(e.getId(), java.util.List.of())))
+            .toList();
     }
 
     public record VideoGcReport(java.util.List<String> orphanFiles, boolean deleted) {}

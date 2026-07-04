@@ -1,9 +1,11 @@
 package com.atelier.portfolio.service;
 
+import com.atelier.portfolio.entity.FurnitureEntity;
 import com.atelier.portfolio.entity.SiteContentEntity;
 import com.atelier.portfolio.entity.VideoEntity;
 import com.atelier.portfolio.entity.VideoStatus;
 import com.atelier.portfolio.model.Video;
+import com.atelier.portfolio.model.VideoSummary;
 import com.atelier.portfolio.repository.ExhibitionRepository;
 import com.atelier.portfolio.repository.FurnitureRepository;
 import com.atelier.portfolio.repository.SiteContentRepository;
@@ -669,6 +671,41 @@ class VideoServiceTest {
         var report = service.gcOrphans(true);
         assertTrue(report.orphanFiles().contains("vid-orphan.mp4"));
         assertFalse(report.orphanFiles().stream().anyMatch(f -> f.contains("photo")));
+    }
+
+    // -----------------------------------------------------------------------
+    // listAll / referencesOf (Task 2 SP4)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void listAll_construit_usedBy_en_lot_et_trie_par_date_desc() {
+        VideoEntity v1 = new VideoEntity(); v1.setId("vid-1"); v1.setStatus(VideoStatus.READY);
+        v1.setOriginalName("intro.mp4"); v1.setOutputFilename("vid-1.mp4");
+        v1.setPosterFilename("vid-1-poster.jpg"); v1.setCreatedAt("2026-07-01T10:00:00Z");
+        VideoEntity v2 = new VideoEntity(); v2.setId("vid-2"); v2.setStatus(VideoStatus.PROCESSING);
+        v2.setOriginalName("clip.mp4"); v2.setCreatedAt("2026-07-02T10:00:00Z");
+        when(repository.findAll()).thenReturn(java.util.List.of(v1, v2));
+
+        FurnitureEntity f = new FurnitureEntity(); f.setTitle("Chaise"); f.setSlug("chaise"); f.setVideoId("vid-1");
+        when(furnitureRepository.findByVideoIdIsNotNull()).thenReturn(java.util.List.of(f));
+        when(exhibitionRepository.findByVideoIdIsNotNull()).thenReturn(java.util.List.of());
+        var studio = new com.atelier.portfolio.entity.SiteContentEntity();
+        studio.setKey("studio.video.id"); studio.setValue("vid-2");
+        when(siteContentRepository.findById("studio.video.id")).thenReturn(java.util.Optional.of(studio));
+
+        java.util.List<VideoSummary> list = service.listAll();
+
+        assertEquals(2, list.size());
+        assertEquals("vid-2", list.get(0).id()); // 2026-07-02 avant 2026-07-01
+        VideoSummary s1 = list.stream().filter(s -> s.id().equals("vid-1")).findFirst().orElseThrow();
+        assertEquals("/api/videos/files/vid-1.mp4", s1.url());
+        assertEquals("/api/photos/files/vid-1-poster.jpg", s1.poster());
+        assertEquals(1, s1.usedBy().size());
+        assertEquals("furniture", s1.usedBy().get(0).type());
+        assertEquals("chaise", s1.usedBy().get(0).slug());
+        VideoSummary s2 = list.stream().filter(s -> s.id().equals("vid-2")).findFirst().orElseThrow();
+        assertEquals("studio", s2.usedBy().get(0).type());
+        assertNull(s2.url()); // PROCESSING → pas de fichier de sortie
     }
 
     // -----------------------------------------------------------------------

@@ -211,6 +211,21 @@ class AdminVideoControllerTest {
     }
 
     // -----------------------------------------------------------------------
+    // GET /api/admin/videos — liste (mediatheque video + picker)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void list_renvoie_200_avec_les_videos() {
+        when(service.listAll()).thenReturn(java.util.List.of(
+            new com.atelier.portfolio.model.VideoSummary("vid-1", "READY", "a.mp4",
+                "/api/videos/files/vid-1.mp4", null, null, 12.0, 1920, 1080,
+                "2026-07-01T10:00:00Z", null, java.util.List.of())));
+        ResponseEntity<?> r = controller.list();
+        assertEquals(200, r.getStatusCode().value());
+        assertEquals(1, ((java.util.List<?>) r.getBody()).size());
+    }
+
+    // -----------------------------------------------------------------------
     // DELETE /api/admin/videos/files/{filename} — suppression .vtt sans entité
     // -----------------------------------------------------------------------
 

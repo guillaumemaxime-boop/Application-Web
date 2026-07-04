@@ -1,6 +1,7 @@
 package com.atelier.portfolio.controller;
 
 import com.atelier.portfolio.model.Video;
+import com.atelier.portfolio.model.VideoSummary;
 import com.atelier.portfolio.service.VideoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,6 +42,15 @@ public class AdminVideoController {
 
     public AdminVideoController(VideoService service) {
         this.service = service;
+    }
+
+    // -----------------------------------------------------------------------
+    // GET / — liste (mediatheque video + picker)
+    // -----------------------------------------------------------------------
+
+    @GetMapping
+    public ResponseEntity<java.util.List<VideoSummary>> list() {
+        return ResponseEntity.ok(service.listAll());
     }
 
     // -----------------------------------------------------------------------

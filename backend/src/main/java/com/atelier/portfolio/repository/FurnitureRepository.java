@@ -17,4 +17,6 @@ public interface FurnitureRepository extends JpaRepository<FurnitureEntity, Stri
     List<String> findDistinctCategories();
 
     boolean existsByVideoId(String videoId);
+
+    List<FurnitureEntity> findByVideoIdIsNotNull();
 }
