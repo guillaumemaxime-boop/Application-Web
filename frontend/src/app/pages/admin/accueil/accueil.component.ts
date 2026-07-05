@@ -7,7 +7,7 @@ import { PortfolioService } from '../../../services/portfolio.service';
 import { AdminFeedEntry, HomePageData } from '../../../models/home.model';
 import { Crop } from '../../../models/crop.model';
 import { SiteContent } from '../../../models/site-content.model';
-import { NewsSlider, NewsSliderView, SliderZone } from '../../../models/news-slider.model';
+import { NewsSlider, NewsSliderView, SliderZone, SliderStoryRef } from '../../../models/news-slider.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { ToastService } from '../shared/toast.service';
 import { SlidersComponent } from '../sliders/sliders.component';
@@ -79,7 +79,8 @@ interface HomeAdminItem {
           (sliderAssign)="onSliderAssign($event)"
           (sliderCompositionRequested)="onSliderCompositionRequested($event)"
           (feedItemCropEdit)="onPreviewFeedItemCropEdit($event)"
-          (feedItemOpen)="onPreviewFeedItemOpen($event)" />
+          (feedItemOpen)="onPreviewFeedItemOpen($event)"
+          (sliderStoryEdit)="onSliderStoryEdit($event)" />
       </ng-template>
     </app-admin-preview-shell>
 
@@ -415,6 +416,11 @@ export class AccueilComponent {
   protected onPreviewFeedItemOpen(e: { kind: 'furniture' | 'exhibition'; slug: string }): void {
     const path = e.kind === 'furniture' ? '/admin/mobilier' : '/admin/expositions';
     this.router.navigate([path], { queryParams: { slug: e.slug } });
+  }
+
+  /** Ouvre l'editeur de la story cliquee dans un slider de l'apercu Accueil. */
+  protected onSliderStoryEdit(story: SliderStoryRef): void {
+    this.router.navigate(['/admin/stories', story.id]);
   }
 
   protected onCropEditSave(crop: Crop): void {

@@ -359,6 +359,21 @@ describe('AccueilComponent', () => {
     expect(navSpy).toHaveBeenCalledWith(['/admin/expositions'], { queryParams: { slug: 'salon' } });
   });
 
+  it('onSliderStoryEdit navigue vers l\'editeur de la story', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    const cmp = fixture.componentInstance as any;
+    const router = TestBed.inject(Router);
+    const navSpy = spyOn(router, 'navigate');
+    cmp.onSliderStoryEdit({ id: 'st-9', title: 'Story', ownerLabel: 'X', coverImage: '' });
+    expect(navSpy).toHaveBeenCalledWith(['/admin/stories', 'st-9']);
+  });
+
   it('includedSlugs reflete les items inclus', () => {
     const fixture = TestBed.createComponent(AccueilComponent);
     fixture.detectChanges();

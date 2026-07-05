@@ -67,7 +67,7 @@ export type EditableHomeContentKey =
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
                       (click)="sliderDelete.emit(s.id)">×</button>
             </div>
-            <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+            <app-news-slider [slider]="s" [content]="content" [editable]="editable" (storyOpen)="onSliderStoryOpen($event)" (storyEdit)="sliderStoryEdit.emit($event)" />
           </div>
         } @else {
           <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
@@ -101,7 +101,7 @@ export type EditableHomeContentKey =
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
                       (click)="sliderDelete.emit(s.id)">×</button>
             </div>
-            <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+            <app-news-slider [slider]="s" [content]="content" [editable]="editable" (storyOpen)="onSliderStoryOpen($event)" (storyEdit)="sliderStoryEdit.emit($event)" />
           </div>
         } @else {
           <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
@@ -203,7 +203,7 @@ export type EditableHomeContentKey =
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
                       (click)="sliderDelete.emit(s.id)">×</button>
             </div>
-            <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+            <app-news-slider [slider]="s" [content]="content" [editable]="editable" (storyOpen)="onSliderStoryOpen($event)" (storyEdit)="sliderStoryEdit.emit($event)" />
           </div>
         } @else {
           <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
@@ -316,6 +316,7 @@ export class HomeViewComponent {
   @Input() includedSlugs: Set<string> = new Set();
 
   @Output() storyOpen = new EventEmitter<SliderStoryRef>();
+  @Output() sliderStoryEdit = new EventEmitter<SliderStoryRef>();
   @Output() viewerClosed = new EventEmitter<void>();
   @Output() feedReorder = new EventEmitter<number[]>();
   @Output() feedItemToggleInclude = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string; included: boolean }>();
