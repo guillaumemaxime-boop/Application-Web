@@ -123,8 +123,8 @@ type Kind = 'all' | 'furniture' | 'exhibition';
     .filters-toggle .ft-icon { font-size: 1.1rem; }
 
     .filters { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 22px; }
-    .kind-toggle { display: inline-flex; gap: 0; border: 1px solid var(--color-ink); align-self: flex-start; }
-    .kind-toggle button { padding: 8px 18px; background: var(--color-bg); border: 0; cursor: pointer; font-size: 0.85rem; color: var(--color-ink); }
+    .kind-toggle { display: flex; gap: 0; border: 1px solid var(--color-ink); align-self: stretch; }
+    .kind-toggle button { flex: 1; text-align: center; padding: 8px 18px; background: var(--color-bg); border: 0; cursor: pointer; font-size: 0.85rem; color: var(--color-ink); }
     .kind-toggle button.active { background: var(--color-ink); color: var(--color-bg); }
     .kind-toggle button + button { border-left: 1px solid var(--color-ink); }
 
