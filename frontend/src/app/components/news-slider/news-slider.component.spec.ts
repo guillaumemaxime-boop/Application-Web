@@ -43,6 +43,21 @@ describe('NewsSliderComponent', () => {
     expect(emitted?.id).toBe('st-2');
   });
 
+  it('pas de bouton "Ouvrir la story" quand non editable', () => {
+    expect(fixture.nativeElement.querySelector('.story-edit-btn')).toBeNull();
+  });
+
+  it('en editable, emet storyEdit au clic sur "Ouvrir la story"', () => {
+    fixture.componentRef.setInput('editable', true);
+    fixture.detectChanges();
+    const btns = fixture.nativeElement.querySelectorAll('.story-edit-btn');
+    expect(btns.length).toBe(2);
+    let emitted: any = null;
+    fixture.componentInstance.storyEdit.subscribe(s => emitted = s);
+    btns[1].click();
+    expect(emitted?.id).toBe('st-2');
+  });
+
   it('scrollPrev() appelle scrollByCard(-1) — ne plante pas avec stories', () => {
     expect(() => fixture.componentInstance.scrollPrev()).not.toThrow();
   });

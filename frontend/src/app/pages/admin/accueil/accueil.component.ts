@@ -1,4 +1,5 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 import { SliderCompositionEditorComponent } from '../shared/slider-composition-editor.component';
 import { Story } from '../../../models/story.model';
 import { forkJoin } from 'rxjs';
@@ -6,7 +7,7 @@ import { PortfolioService } from '../../../services/portfolio.service';
 import { AdminFeedEntry, HomePageData } from '../../../models/home.model';
 import { Crop } from '../../../models/crop.model';
 import { SiteContent } from '../../../models/site-content.model';
-import { NewsSlider, NewsSliderView, SliderZone } from '../../../models/news-slider.model';
+import { NewsSlider, NewsSliderView, SliderZone, SliderStoryRef } from '../../../models/news-slider.model';
 import { ReorderableDirective } from '../../../directives/reorderable.directive';
 import { ToastService } from '../shared/toast.service';
 import { SlidersComponent } from '../sliders/sliders.component';
@@ -29,6 +30,7 @@ interface HomeAdminItem {
   template: `
     <app-admin-preview-shell
       [(viewMode)]="accueilViewMode"
+      [startFullscreen]="wantFullscreen()"
       modeBarAriaLabel="Mode d'édition de l'accueil"
       formTabLabel="✏ Modifier l'accueil"
       previewDialogLabel="Aperçu de l’accueil"
@@ -77,7 +79,9 @@ interface HomeAdminItem {
           (sliderZoneChange)="onSliderZoneChange($event)"
           (sliderAssign)="onSliderAssign($event)"
           (sliderCompositionRequested)="onSliderCompositionRequested($event)"
-          (feedItemCropEdit)="onPreviewFeedItemCropEdit($event)" />
+          (feedItemCropEdit)="onPreviewFeedItemCropEdit($event)"
+          (feedItemOpen)="onPreviewFeedItemOpen($event)"
+          (sliderStoryEdit)="onSliderStoryEdit($event)" />
       </ng-template>
     </app-admin-preview-shell>
 
@@ -123,6 +127,11 @@ interface HomeAdminItem {
 export class AccueilComponent {
   private readonly portfolio = inject(PortfolioService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  /** Passe à true via ?preview=full (lien "Éditer" du dashboard) → ouvre l'aperçu plein écran. */
+  protected readonly wantFullscreen = signal(false);
 
   protected readonly homeItems = signal<HomeAdminItem[] | null>(null);
 
@@ -157,6 +166,10 @@ export class AccueilComponent {
   });
 
   constructor() {
+    this.route.queryParamMap.subscribe(p => {
+      if (p.get('preview') === 'full') this.wantFullscreen.set(true);
+    });
+
     forkJoin([
       this.portfolio.getAllFurniture(),
       this.portfolio.getAllExhibitions(),
@@ -406,6 +419,17 @@ export class AccueilComponent {
       initialCrop: item.coverCrop ?? null,
     });
     this.cropEditOpen.set(true);
+  }
+
+  /** Ouvre la fiche mobilier/expo correspondante (deep-link ?slug=, ouverte en Apercu). */
+  protected onPreviewFeedItemOpen(e: { kind: 'furniture' | 'exhibition'; slug: string }): void {
+    const path = e.kind === 'furniture' ? '/admin/mobilier' : '/admin/expositions';
+    this.router.navigate([path], { queryParams: { slug: e.slug, preview: 'full' } });
+  }
+
+  /** Ouvre l'editeur de la story cliquee dans un slider de l'apercu Accueil. */
+  protected onSliderStoryEdit(story: SliderStoryRef): void {
+    this.router.navigate(['/admin/stories', story.id]);
   }
 
   protected onCropEditSave(crop: Crop): void {

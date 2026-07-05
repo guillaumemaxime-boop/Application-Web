@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
+import { provideRouter, Router } from '@angular/router';
 import { AccueilComponent } from './accueil.component';
 import { ToastService } from '../shared/toast.service';
 
@@ -62,7 +63,7 @@ describe('AccueilComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AccueilComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
   });
@@ -339,6 +340,38 @@ describe('AccueilComponent', () => {
     expect(cmp.accueilViewMode()).toBe('form');
     cmp.accueilViewMode.set('preview');
     expect(cmp.accueilViewMode()).toBe('preview');
+  });
+
+  it('onPreviewFeedItemOpen navigue vers la fiche (deep-link slug)', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    const cmp = fixture.componentInstance as any;
+    const router = TestBed.inject(Router);
+    const navSpy = spyOn(router, 'navigate');
+    cmp.onPreviewFeedItemOpen({ kind: 'furniture', slug: 'chaise' });
+    expect(navSpy).toHaveBeenCalledWith(['/admin/mobilier'], { queryParams: { slug: 'chaise', preview: 'full' } });
+    cmp.onPreviewFeedItemOpen({ kind: 'exhibition', slug: 'salon' });
+    expect(navSpy).toHaveBeenCalledWith(['/admin/expositions'], { queryParams: { slug: 'salon', preview: 'full' } });
+  });
+
+  it('onSliderStoryEdit navigue vers l\'editeur de la story', () => {
+    const fixture = TestBed.createComponent(AccueilComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/furniture').flush([]);
+    httpMock.expectOne('/api/exhibitions').flush([]);
+    httpMock.expectOne('/api/admin/home/feed').flush([]);
+    flushPreview(httpMock);
+    flushSliders(httpMock);
+    const cmp = fixture.componentInstance as any;
+    const router = TestBed.inject(Router);
+    const navSpy = spyOn(router, 'navigate');
+    cmp.onSliderStoryEdit({ id: 'st-9', title: 'Story', ownerLabel: 'X', coverImage: '' });
+    expect(navSpy).toHaveBeenCalledWith(['/admin/stories', 'st-9']);
   });
 
   it('includedSlugs reflete les items inclus', () => {

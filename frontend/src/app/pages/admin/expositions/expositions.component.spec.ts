@@ -96,6 +96,17 @@ describe('ExpositionsComponent', () => {
     expect(cmp.editingExhibitionSlug()).toBeNull();
   });
 
+  it('loadExhibition() ouvre l\'onglet Apercu (preview)', () => {
+    configure();
+    const fixture = TestBed.createComponent(ExpositionsComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.loadExhibition({ id: 'e1', slug: 'salon', title: 'Salon', startDate: '2024-01-01', endDate: '2024-02-01' });
+    expect(cmp.expoViewMode()).toBe('preview');
+  });
+
   it('loadExhibition() populate le form', () => {
     configure();
     const fixture = TestBed.createComponent(ExpositionsComponent);

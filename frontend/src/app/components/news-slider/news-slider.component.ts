@@ -25,21 +25,28 @@ import { srcsetFor } from '../../utils/image-variant';
       </header>
       <div #track class="track" (scroll)="onScroll()">
         @for (story of slider.stories; track story.id) {
-          <button class="card" type="button"
-                  [attr.aria-label]="story.ownerLabel + ' — ' + story.title"
-                  (click)="onCardClick(story)">
-            <div class="thumb">
-              <img [src]="story.coverImage" [alt]="story.title" loading="lazy" decoding="async"
-                   [attr.srcset]="srcsetFor(story.coverImage) || null"
-                   sizes="(max-width: 600px) 100vw, 400px"
-                   [style.transform]="storyCoverStyle(story).transform"
-                   [style.transform-origin]="storyCoverStyle(story).transformOrigin" />
-            </div>
-            <div class="meta">
-              <span class="cat">{{ story.ownerLabel }}</span>
-              <h3 class="title">{{ story.title }}</h3>
-            </div>
-          </button>
+          <div class="card-wrap">
+            <button class="card" type="button"
+                    [attr.aria-label]="story.ownerLabel + ' — ' + story.title"
+                    (click)="onCardClick(story)">
+              <div class="thumb">
+                <img [src]="story.coverImage" [alt]="story.title" loading="lazy" decoding="async"
+                     [attr.srcset]="srcsetFor(story.coverImage) || null"
+                     sizes="(max-width: 600px) 100vw, 400px"
+                     [style.transform]="storyCoverStyle(story).transform"
+                     [style.transform-origin]="storyCoverStyle(story).transformOrigin" />
+              </div>
+              <div class="meta">
+                <span class="cat">{{ story.ownerLabel }}</span>
+                <h3 class="title">{{ story.title }}</h3>
+              </div>
+            </button>
+            @if (editable) {
+              <button type="button" class="story-edit-btn"
+                      [attr.aria-label]="'Ouvrir la story : ' + story.title"
+                      (click)="storyEdit.emit(story)">✎ Ouvrir la story</button>
+            }
+          </div>
         }
       </div>
     </section>
@@ -77,9 +84,14 @@ import { srcsetFor } from '../../utils/image-variant';
     }
     .track::-webkit-scrollbar { display: none; }
 
-    .card {
+    .card-wrap {
       flex: 0 0 calc((100% - 48px) / 3);
       scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card {
       display: flex;
       flex-direction: column;
       text-align: left;
@@ -87,7 +99,17 @@ import { srcsetFor } from '../../utils/image-variant';
       border: none;
       padding: 0;
       cursor: pointer;
+      width: 100%;
     }
+    .story-edit-btn {
+      align-self: flex-start;
+      padding: 5px 10px;
+      background: var(--color-bg); color: var(--color-ink);
+      border: 1px solid var(--color-line); cursor: pointer;
+      font: inherit; font-size: 0.75rem;
+    }
+    .story-edit-btn:hover { background: var(--color-ink); color: var(--color-bg); }
+    .story-edit-btn:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
     .thumb { aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-bg-alt); }
     .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 480ms ease; }
     .card:hover .thumb img { transform: scale(1.03); }
@@ -96,14 +118,16 @@ import { srcsetFor } from '../../utils/image-variant';
     h3.title { font-family: var(--serif); font-weight: 400; font-size: 1.1rem; line-height: 1.2; color: var(--color-ink); margin: 0; }
 
     @media (max-width: 720px) {
-      .card { flex: 0 0 75%; }
+      .card-wrap { flex: 0 0 75%; }
     }
   `]
 })
 export class NewsSliderComponent {
   @Input({ required: true }) slider!: NewsSliderView;
   readonly content = input<SiteContent>({});
+  @Input() editable = false;
   @Output() storyOpen = new EventEmitter<SliderStoryRef>();
+  @Output() storyEdit = new EventEmitter<SliderStoryRef>();
 
   protected readonly titleStyle = computed(() => roleStyle(this.content(), 'section-title'));
   protected readonly srcsetFor = srcsetFor;

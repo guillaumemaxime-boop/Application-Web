@@ -126,6 +126,17 @@ describe('MobilierComponent', () => {
     expect(cmp.furnitureGallery()).toEqual([{ url: '/g1.jpg' }, { url: '/g2.jpg' }]);
   });
 
+  it('loadFurniture() ouvre l\'onglet Apercu (preview)', () => {
+    configure();
+    const fixture = TestBed.createComponent(MobilierComponent);
+    fixture.detectChanges();
+    flushInitial();
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as any;
+    cmp.loadFurniture({ id: 'id-1', slug: 'x', title: 'X', category: 'C', year: 2024 });
+    expect(cmp.mobilierViewMode()).toBe('preview');
+  });
+
   it('loadFurniture() supporte les champs optionnels manquants', () => {
     configure();
     const fixture = TestBed.createComponent(MobilierComponent);

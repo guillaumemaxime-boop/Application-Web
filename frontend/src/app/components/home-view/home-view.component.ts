@@ -67,7 +67,7 @@ export type EditableHomeContentKey =
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
                       (click)="sliderDelete.emit(s.id)">×</button>
             </div>
-            <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+            <app-news-slider [slider]="s" [content]="content" [editable]="editable" (storyOpen)="onSliderStoryOpen($event)" (storyEdit)="sliderStoryEdit.emit($event)" />
           </div>
         } @else {
           <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
@@ -101,7 +101,7 @@ export type EditableHomeContentKey =
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
                       (click)="sliderDelete.emit(s.id)">×</button>
             </div>
-            <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+            <app-news-slider [slider]="s" [content]="content" [editable]="editable" (storyOpen)="onSliderStoryOpen($event)" (storyEdit)="sliderStoryEdit.emit($event)" />
           </div>
         } @else {
           <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
@@ -143,9 +143,14 @@ export type EditableHomeContentKey =
                       <h3 class="title">{{ item.title }}</h3>
                     </div>
                     <div class="edit-overlay">
-                      <button type="button" class="overlay-btn crop-btn"
-                              aria-label="Cadrer l'image de cette card"
-                              (click)="feedItemCropEdit.emit({ kind: item.kind, slug: item.slug })">✂ Cadrer</button>
+                      <div class="overlay-actions">
+                        <button type="button" class="overlay-btn crop-btn"
+                                aria-label="Cadrer l'image de cette card"
+                                (click)="feedItemCropEdit.emit({ kind: item.kind, slug: item.slug })">✂ Cadrer</button>
+                        <button type="button" class="overlay-btn open-btn"
+                                [attr.aria-label]="'Ouvrir la fiche : ' + item.title"
+                                (click)="feedItemOpen.emit({ kind: item.kind, slug: item.slug })">✎ Ouvrir la fiche</button>
+                      </div>
                       <label class="incl-toggle">
                         <input type="checkbox" [checked]="isIncluded(item)" (change)="onToggleInclude(item, $event)" />
                         <span>Inclus</span>
@@ -198,7 +203,7 @@ export type EditableHomeContentKey =
               <button type="button" class="slider-delete-btn" aria-label="Supprimer ce slider"
                       (click)="sliderDelete.emit(s.id)">×</button>
             </div>
-            <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
+            <app-news-slider [slider]="s" [content]="content" [editable]="editable" (storyOpen)="onSliderStoryOpen($event)" (storyEdit)="sliderStoryEdit.emit($event)" />
           </div>
         } @else {
           <app-news-slider [slider]="s" [content]="content" (storyOpen)="onSliderStoryOpen($event)" />
@@ -292,10 +297,11 @@ export type EditableHomeContentKey =
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
     .card.editable .drag-handle:active { cursor: grabbing; }
+    .card.editable .overlay-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
     .card.editable .overlay-btn {
       padding: 6px 10px; background: var(--color-bg); color: var(--color-ink);
       border: 1px solid var(--color-line); cursor: pointer; font-family: inherit;
-      font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;
+      font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
     }
     .card.editable .overlay-btn:hover { background: var(--color-ink); color: var(--color-bg); }
   `]
@@ -310,6 +316,7 @@ export class HomeViewComponent {
   @Input() includedSlugs: Set<string> = new Set();
 
   @Output() storyOpen = new EventEmitter<SliderStoryRef>();
+  @Output() sliderStoryEdit = new EventEmitter<SliderStoryRef>();
   @Output() viewerClosed = new EventEmitter<void>();
   @Output() feedReorder = new EventEmitter<number[]>();
   @Output() feedItemToggleInclude = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string; included: boolean }>();
@@ -321,6 +328,7 @@ export class HomeViewComponent {
   @Output() sliderCreate = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
   @Output() sliderAssign = new EventEmitter<{ id: string; zoneKey: SliderZone }>();
   @Output() feedItemCropEdit = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
+  @Output() feedItemOpen = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
 
   protected editingKey: EditableHomeContentKey | null = null;
 
