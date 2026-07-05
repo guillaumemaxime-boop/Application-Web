@@ -131,7 +131,7 @@ type Kind = 'all' | 'furniture' | 'exhibition';
     .facet { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
     .facet-label { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-mute); }
     .facet-options { display: flex; flex-wrap: wrap; gap: 6px; }
-    .facet-options--stacked { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 12px; }
+    .facet-options--stacked { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 7px; }
     .facet button {
       padding: 5px 14px; background: transparent; border: 1px solid var(--color-ink);
       border-radius: 999px; cursor: pointer; font-size: 0.82rem; color: var(--color-ink);
