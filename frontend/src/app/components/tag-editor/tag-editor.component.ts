@@ -67,6 +67,7 @@ let _counter = 0;
       padding: 4px 12px; background: transparent; border: 1px solid var(--color-ink);
       border-radius: 999px; color: var(--color-ink); font-size: 0.82rem;
     }
+    .chip:hover { background: var(--color-bg-alt); }
     .chip-remove {
       background: none; border: 0; cursor: pointer; font-size: 1.1rem; line-height: 1;
       color: var(--color-ink-soft); padding: 0 0 0 2px;

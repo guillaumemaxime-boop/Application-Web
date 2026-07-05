@@ -264,7 +264,7 @@ import { VideoFieldComponent } from '../../pages/admin/shared/video-field.compon
       font-size: 0.78rem; padding: 4px 14px; background: transparent;
       border: 1px solid var(--color-ink); border-radius: 999px; color: var(--color-ink); text-decoration: none;
     }
-    .tag-chip:hover { background: var(--color-ink); color: var(--color-bg); }
+    .tag-chip:hover { background: var(--color-bg-alt); }
 
     .video-block .narrow { max-width: 880px; }
     .video-title { font-size: 1.375rem; margin-bottom: 16px; }

@@ -265,7 +265,7 @@ export type EditableExhibitionField =
     .intro .body { font-size: 1rem; line-height: 1.7; color: var(--color-ink-soft); white-space: pre-line; }
     .tags-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
     .tag-chip { padding: 4px 14px; font-size: 0.78rem; border: 1px solid var(--color-ink); border-radius: 999px; background: transparent; color: var(--color-ink); text-decoration: none; }
-    .tag-chip:hover { background: var(--color-ink); color: var(--color-bg); }
+    .tag-chip:hover { background: var(--color-bg-alt); }
 
     .gallery .g-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; grid-auto-rows: 220px; }
     .gallery .g-grid figure { margin: 0; overflow: hidden; height: 100%; }

@@ -156,9 +156,9 @@ type Kind = 'all' | 'furniture' | 'exhibition';
 
     .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
     .card-tag { font-size: 0.7rem; padding: 3px 12px; background: transparent; border: 1px solid var(--color-ink); border-radius: 999px; color: var(--color-ink); cursor: pointer; }
-    .card-tag:hover { background: var(--color-ink); color: var(--color-bg); }
+    .card-tag:hover { background: var(--color-bg-alt); }
     .card-tag.more { cursor: default; }
-    .card-tag.more:hover { background: transparent; color: var(--color-ink); }
+    .card-tag.more:hover { background: transparent; }
 
     @media (max-width: 860px) {
       .creations-layout { grid-template-columns: 1fr; gap: 20px; }
