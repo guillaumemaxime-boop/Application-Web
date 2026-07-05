@@ -1,4 +1,5 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { SliderCompositionEditorComponent } from '../shared/slider-composition-editor.component';
 import { Story } from '../../../models/story.model';
 import { forkJoin } from 'rxjs';
@@ -77,7 +78,8 @@ interface HomeAdminItem {
           (sliderZoneChange)="onSliderZoneChange($event)"
           (sliderAssign)="onSliderAssign($event)"
           (sliderCompositionRequested)="onSliderCompositionRequested($event)"
-          (feedItemCropEdit)="onPreviewFeedItemCropEdit($event)" />
+          (feedItemCropEdit)="onPreviewFeedItemCropEdit($event)"
+          (feedItemOpen)="onPreviewFeedItemOpen($event)" />
       </ng-template>
     </app-admin-preview-shell>
 
@@ -123,6 +125,7 @@ interface HomeAdminItem {
 export class AccueilComponent {
   private readonly portfolio = inject(PortfolioService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   protected readonly homeItems = signal<HomeAdminItem[] | null>(null);
 
@@ -406,6 +409,12 @@ export class AccueilComponent {
       initialCrop: item.coverCrop ?? null,
     });
     this.cropEditOpen.set(true);
+  }
+
+  /** Ouvre la fiche mobilier/expo correspondante (deep-link ?slug=, ouverte en Apercu). */
+  protected onPreviewFeedItemOpen(e: { kind: 'furniture' | 'exhibition'; slug: string }): void {
+    const path = e.kind === 'furniture' ? '/admin/mobilier' : '/admin/expositions';
+    this.router.navigate([path], { queryParams: { slug: e.slug } });
   }
 
   protected onCropEditSave(crop: Crop): void {

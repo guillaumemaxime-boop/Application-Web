@@ -25,7 +25,8 @@ import { EditableHomeContentKey, HomeViewComponent } from '../../../../component
       (sliderZoneChange)="sliderZoneChange.emit($event)"
       (sliderCreate)="sliderCreate.emit($event)"
       (sliderAssign)="sliderAssign.emit($event)"
-      (feedItemCropEdit)="onFeedItemCropEdit($event)" />
+      (feedItemCropEdit)="onFeedItemCropEdit($event)"
+      (feedItemOpen)="feedItemOpen.emit($event)" />
   `,
   styles: []
 })
@@ -46,6 +47,7 @@ export class HomePreviewComponent {
   @Output() sliderCreate = new EventEmitter<'home-top' | 'home-middle' | 'home-bottom'>();
   @Output() sliderAssign = new EventEmitter<{ id: string; zoneKey: SliderZone }>();
   @Output() feedItemCropEdit = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
+  @Output() feedItemOpen = new EventEmitter<{ kind: 'furniture' | 'exhibition'; slug: string }>();
 
   protected onFeedReorder(o: number[]): void { this.feedReorder.emit(o); }
   protected onFeedItemToggleInclude(e: { kind: 'furniture' | 'exhibition'; slug: string; included: boolean }): void { this.feedItemToggleInclude.emit(e); }

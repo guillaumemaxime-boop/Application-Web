@@ -278,6 +278,21 @@ describe('HomeViewComponent', () => {
     expect(emitted).toEqual({ kind: 'furniture', slug: 'a' });
   });
 
+  it('emet feedItemOpen au clic sur Ouvrir la fiche', () => {
+    const data = { feed: [
+      { kind: 'furniture', slug: 'a', title: 'A', subtitle: 'X', cover: '/a.jpg', coverCrop: null, description: '' },
+    ]} as unknown as HomePageData;
+    fixture.componentRef.setInput('data', data);
+    fixture.componentRef.setInput('editable', true);
+    fixture.componentRef.setInput('includedSlugs', new Set(['furniture:a']));
+    fixture.detectChanges();
+    let emitted: any = null;
+    fixture.componentInstance.feedItemOpen.subscribe(e => emitted = e);
+    const btn = fixture.nativeElement.querySelector('.open-btn') as HTMLButtonElement;
+    btn.click();
+    expect(emitted).toEqual({ kind: 'furniture', slug: 'a' });
+  });
+
   it('pas de bouton Cadrer quand editable=false', () => {
     const data = { feed: [
       { kind: 'furniture', slug: 'a', title: 'A', subtitle: 'X', cover: '/a.jpg', coverCrop: null, description: '' },
