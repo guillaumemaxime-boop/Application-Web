@@ -14,12 +14,12 @@ import java.time.Instant;
 public class MailSettingsService {
 
     private final MailSettingsRepository repository;
-    private final ResendMailService resendMailService;
+    private final MailSender mailSender;
 
     public MailSettingsService(MailSettingsRepository repository,
-                               ResendMailService resendMailService) {
+                               MailSender mailSender) {
         this.repository = repository;
-        this.resendMailService = resendMailService;
+        this.mailSender = mailSender;
     }
 
     @Transactional(readOnly = true)
@@ -41,12 +41,12 @@ public class MailSettingsService {
         if (entity == null
                 || entity.getFromAddress() == null || entity.getFromAddress().isBlank()
                 || entity.getToAddress() == null || entity.getToAddress().isBlank()
-                || !resendMailService.isConfigured()) {
+                || !mailSender.isConfigured()) {
             return MailTestResult.failure("incomplete");
         }
         String from = entity.getFromAddress();
         String to = entity.getToAddress();
-        boolean ok = resendMailService.send(
+        boolean ok = mailSender.send(
                 from, to, from,
                 "Test de configuration mail — Atelier",
                 "Mail de test envoyé le " + Instant.now() + "."
@@ -70,7 +70,7 @@ public class MailSettingsService {
         return new MailSettingsView(
                 e.getFromAddress(),
                 e.getToAddress(),
-                resendMailService.isConfigured(),
+                mailSender.isConfigured(),
                 e.getUpdatedAt()
         );
     }

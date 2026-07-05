@@ -23,13 +23,13 @@ import static org.mockito.Mockito.*;
 class MailSettingsServiceTest {
 
     @Mock private MailSettingsRepository repository;
-    @Mock private ResendMailService resendMailService;
+    @Mock private MailSender mailSender;
 
     private MailSettingsService service;
 
     @BeforeEach
     void setUp() {
-        service = new MailSettingsService(repository, resendMailService);
+        service = new MailSettingsService(repository, mailSender);
     }
 
     private MailSettingsEntity existing() {
@@ -44,7 +44,7 @@ class MailSettingsServiceTest {
     @Test
     void get_returnsViewWithApiKeyConfiguredTrueWhenServiceIsConfigured() {
         when(repository.findById("default")).thenReturn(Optional.of(existing()));
-        when(resendMailService.isConfigured()).thenReturn(true);
+        when(mailSender.isConfigured()).thenReturn(true);
 
         MailSettingsView v = service.get();
 
@@ -57,7 +57,7 @@ class MailSettingsServiceTest {
     @Test
     void get_apiKeyConfiguredFalseWhenServiceIsDegraded() {
         when(repository.findById("default")).thenReturn(Optional.of(existing()));
-        when(resendMailService.isConfigured()).thenReturn(false);
+        when(mailSender.isConfigured()).thenReturn(false);
 
         assertFalse(service.get().apiKeyConfigured());
     }
@@ -66,7 +66,7 @@ class MailSettingsServiceTest {
     void save_updatesFromAndToOnly() {
         when(repository.findById("default")).thenReturn(Optional.of(existing()));
         when(repository.save(any(MailSettingsEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(resendMailService.isConfigured()).thenReturn(true);
+        when(mailSender.isConfigured()).thenReturn(true);
         MailSettingsInput input = new MailSettingsInput("new-from@example.com", "new-to@example.com");
 
         MailSettingsView v = service.save(input);
@@ -83,8 +83,8 @@ class MailSettingsServiceTest {
     @Test
     void sendTest_callsResendWithStoredFromTo() {
         when(repository.findById("default")).thenReturn(Optional.of(existing()));
-        when(resendMailService.isConfigured()).thenReturn(true);
-        when(resendMailService.send(
+        when(mailSender.isConfigured()).thenReturn(true);
+        when(mailSender.send(
                 eq("from@example.com"), eq("to@example.com"), eq("from@example.com"),
                 any(), any()
         )).thenReturn(true);
@@ -93,7 +93,7 @@ class MailSettingsServiceTest {
 
         assertTrue(result.success());
         assertNull(result.error());
-        verify(resendMailService).send(
+        verify(mailSender).send(
                 eq("from@example.com"), eq("to@example.com"), eq("from@example.com"),
                 any(), any()
         );
@@ -110,26 +110,26 @@ class MailSettingsServiceTest {
 
         assertFalse(result.success());
         assertEquals("incomplete", result.error());
-        verify(resendMailService, never()).send(any(), any(), any(), any(), any());
+        verify(mailSender, never()).send(any(), any(), any(), any(), any());
     }
 
     @Test
     void sendTest_returnsIncompleteWhenApiKeyMissing() {
         when(repository.findById("default")).thenReturn(Optional.of(existing()));
-        when(resendMailService.isConfigured()).thenReturn(false);
+        when(mailSender.isConfigured()).thenReturn(false);
 
         MailTestResult result = service.sendTest();
 
         assertFalse(result.success());
         assertEquals("incomplete", result.error());
-        verify(resendMailService, never()).send(any(), any(), any(), any(), any());
+        verify(mailSender, never()).send(any(), any(), any(), any(), any());
     }
 
     @Test
     void sendTest_returnsFailureWhenResendRejects() {
         when(repository.findById("default")).thenReturn(Optional.of(existing()));
-        when(resendMailService.isConfigured()).thenReturn(true);
-        when(resendMailService.send(any(), any(), any(), any(), any())).thenReturn(false);
+        when(mailSender.isConfigured()).thenReturn(true);
+        when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(false);
 
         MailTestResult result = service.sendTest();
 

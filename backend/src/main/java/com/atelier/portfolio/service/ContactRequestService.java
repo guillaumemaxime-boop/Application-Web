@@ -20,14 +20,14 @@ public class ContactRequestService {
 
     private final ContactRequestRepository repository;
     private final MailSettingsService mailSettingsService;
-    private final ResendMailService resendMailService;
+    private final MailSender mailSender;
 
     public ContactRequestService(ContactRequestRepository repository,
                                  MailSettingsService mailSettingsService,
-                                 ResendMailService resendMailService) {
+                                 MailSender mailSender) {
         this.repository = repository;
         this.mailSettingsService = mailSettingsService;
-        this.resendMailService = resendMailService;
+        this.mailSender = mailSender;
     }
 
     @Transactional
@@ -60,7 +60,7 @@ public class ContactRequestService {
             log.info("Mail delivery skipped (from/to missing) — contact request {} stored only", req.getId());
             return false;
         }
-        return resendMailService.send(
+        return mailSender.send(
                 cfg.fromAddress(),
                 cfg.toAddress(),
                 req.getEmail(),
