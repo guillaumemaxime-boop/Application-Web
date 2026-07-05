@@ -68,10 +68,14 @@ export class VideoPlayerComponent implements AfterViewInit, OnChanges, OnDestroy
     }
   }
 
+  /** Démarre le chargement HLS au premier play (voir autoStartLoad:false ci-dessous). */
+  private readonly startHlsLoad = () => this.hls?.startLoad();
+
   private setupPlayback(): void {
     const video = this.videoRef?.nativeElement;
     if (!video) return;
     this.destroyHls();
+    video.removeEventListener('play', this.startHlsLoad);
     const native = video.canPlayType('application/vnd.apple.mpegurl') !== '';
     const strat = VideoPlayerComponent.chooseStrategy(this.hlsSrc, native, Hls.isSupported());
     if (strat === 'native') {
@@ -79,9 +83,12 @@ export class VideoPlayerComponent implements AfterViewInit, OnChanges, OnDestroy
       video.load();
     } else if (strat === 'hlsjs') {
       video.removeAttribute('src');
-      this.hls = new Hls();
+      // autoStartLoad:false → hls.js ne bufferise pas avant lecture : le poster reste
+      // visible (honore preload="none"). Le chargement démarre au premier play.
+      this.hls = new Hls({ autoStartLoad: false });
       this.hls.loadSource(this.hlsSrc!);
       this.hls.attachMedia(video);
+      video.addEventListener('play', this.startHlsLoad, { once: true });
       this.hls.on(Hls.Events.ERROR, (_e, data) => {
         if (data.fatal) {
           this.destroyHls();
