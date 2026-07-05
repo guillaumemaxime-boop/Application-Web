@@ -261,10 +261,10 @@ import { VideoFieldComponent } from '../../pages/admin/shared/video-field.compon
 
     .tags-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 24px; }
     .tag-chip {
-      font-size: 0.78rem; padding: 4px 12px; background: var(--color-bg-alt);
-      border: 1px solid var(--color-line); color: var(--color-ink-soft); text-decoration: none;
+      font-size: 0.78rem; padding: 4px 14px; background: transparent;
+      border: 1px solid var(--color-ink); border-radius: 999px; color: var(--color-ink); text-decoration: none;
     }
-    .tag-chip:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .tag-chip:hover { background: var(--color-bg-alt); }
 
     .video-block .narrow { max-width: 880px; }
     .video-title { font-size: 1.375rem; margin-bottom: 16px; }

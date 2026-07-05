@@ -53,7 +53,7 @@ type Kind = 'all' | 'furniture' | 'exhibition';
             @if (availableTags().length > 0) {
               <div class="facet">
                 <span class="facet-label">Tags</span>
-                <div class="facet-options">
+                <div class="facet-options facet-options--stacked">
                   @for (t of availableTags(); track t) {
                     <button type="button" [class.active]="selectedTags().has(t)"
                             [attr.aria-pressed]="selectedTags().has(t)" (click)="toggleTag(t)">
@@ -123,19 +123,20 @@ type Kind = 'all' | 'furniture' | 'exhibition';
     .filters-toggle .ft-icon { font-size: 1.1rem; }
 
     .filters { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 22px; }
-    .kind-toggle { display: inline-flex; gap: 0; border: 1px solid var(--color-ink); align-self: flex-start; }
-    .kind-toggle button { padding: 8px 18px; background: var(--color-bg); border: 0; cursor: pointer; font-size: 0.85rem; color: var(--color-ink); }
+    .kind-toggle { display: flex; gap: 0; border: 1px solid var(--color-ink); align-self: stretch; }
+    .kind-toggle button { flex: 1; text-align: center; padding: 8px 18px; background: var(--color-bg); border: 0; cursor: pointer; font-size: 0.85rem; color: var(--color-ink); }
     .kind-toggle button.active { background: var(--color-ink); color: var(--color-bg); }
     .kind-toggle button + button { border-left: 1px solid var(--color-ink); }
 
     .facet { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
     .facet-label { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-mute); }
     .facet-options { display: flex; flex-wrap: wrap; gap: 6px; }
+    .facet-options--stacked { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 7px; }
     .facet button {
-      padding: 6px 12px; background: var(--color-bg); border: 1px solid var(--color-line);
-      cursor: pointer; font-size: 0.82rem; color: var(--color-ink);
+      padding: 5px 14px; background: transparent; border: 1px solid var(--color-ink);
+      border-radius: 999px; cursor: pointer; font-size: 0.82rem; color: var(--color-ink);
     }
-    .facet button:hover { border-color: var(--color-ink); }
+    .facet button:hover { background: var(--color-bg-alt); }
     .facet button.active { background: var(--color-ink); color: var(--color-bg); border-color: var(--color-ink); }
     .facet button small { opacity: 0.7; margin-left: 2px; }
 
@@ -155,10 +156,10 @@ type Kind = 'all' | 'furniture' | 'exhibition';
     .badge { position: absolute; top: 14px; left: 14px; background: var(--color-bg); color: var(--color-ink); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 10px; border: 1px solid var(--color-ink); z-index: 2; }
 
     .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-    .card-tag { font-size: 0.7rem; padding: 2px 8px; background: var(--color-bg-alt); border: 1px solid var(--color-line); color: var(--color-ink-soft); cursor: pointer; }
-    .card-tag:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .card-tag { font-size: 0.7rem; padding: 3px 12px; background: transparent; border: 1px solid var(--color-ink); border-radius: 999px; color: var(--color-ink); cursor: pointer; }
+    .card-tag:hover { background: var(--color-bg-alt); }
     .card-tag.more { cursor: default; }
-    .card-tag.more:hover { color: var(--color-ink-soft); border-color: var(--color-line); }
+    .card-tag.more:hover { background: transparent; }
 
     @media (max-width: 860px) {
       .creations-layout { grid-template-columns: 1fr; gap: 20px; }
