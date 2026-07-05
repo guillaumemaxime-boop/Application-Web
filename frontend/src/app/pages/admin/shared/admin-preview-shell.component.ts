@@ -137,6 +137,8 @@ export class ShellPreviewDirective {
 export class AdminPreviewShellComponent {
   /** Item en cours d'édition : affiche la mode-bar et autorise le panel preview. */
   readonly active = input(true);
+  /** Quand passe à true (ex. depuis un lien externe), ouvre directement l'aperçu en plein écran. */
+  readonly startFullscreen = input(false);
   /** aria-label de la tablist, ex. « Mode d'édition de la pièce ». */
   readonly modeBarAriaLabel = input.required<string>();
   /** Texte de l'onglet form, ex. « ✏ Modifier la pièce ». */
@@ -187,6 +189,14 @@ export class AdminPreviewShellComponent {
       if (mode !== 'preview') untracked(() => this.setFullscreen(false));
       if (firstMode) { firstMode = false; return; }
       this.announcer.announce(mode === 'preview' ? 'Mode aperçu' : 'Mode édition');
+    });
+
+    // Ouverture directe en plein écran (déclenchée par un input externe).
+    effect(() => {
+      if (this.startFullscreen()) {
+        this.viewMode.set('preview');
+        untracked(() => this.setFullscreen(true));
+      }
     });
   }
 

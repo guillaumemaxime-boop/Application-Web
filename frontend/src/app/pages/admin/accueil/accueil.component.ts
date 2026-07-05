@@ -1,5 +1,5 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { SliderCompositionEditorComponent } from '../shared/slider-composition-editor.component';
 import { Story } from '../../../models/story.model';
 import { forkJoin } from 'rxjs';
@@ -30,6 +30,7 @@ interface HomeAdminItem {
   template: `
     <app-admin-preview-shell
       [(viewMode)]="accueilViewMode"
+      [startFullscreen]="wantFullscreen()"
       modeBarAriaLabel="Mode d'édition de l'accueil"
       formTabLabel="✏ Modifier l'accueil"
       previewDialogLabel="Aperçu de l’accueil"
@@ -127,6 +128,10 @@ export class AccueilComponent {
   private readonly portfolio = inject(PortfolioService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  /** Passe à true via ?preview=full (lien "Éditer" du dashboard) → ouvre l'aperçu plein écran. */
+  protected readonly wantFullscreen = signal(false);
 
   protected readonly homeItems = signal<HomeAdminItem[] | null>(null);
 
@@ -161,6 +166,10 @@ export class AccueilComponent {
   });
 
   constructor() {
+    this.route.queryParamMap.subscribe(p => {
+      if (p.get('preview') === 'full') this.wantFullscreen.set(true);
+    });
+
     forkJoin([
       this.portfolio.getAllFurniture(),
       this.portfolio.getAllExhibitions(),

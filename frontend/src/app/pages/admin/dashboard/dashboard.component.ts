@@ -10,6 +10,22 @@ import { RouterLink } from '@angular/router';
       <h2>Tableau de bord</h2>
       <p class="hint">Bienvenue dans l'espace d'administration. Choisissez une action rapide ou naviguez via la sidebar.</p>
       <div class="actions-grid">
+        <a routerLink="/admin/accueil" [queryParams]="{ preview: 'full' }" class="action-card">
+          <span class="action-icon">✎</span>
+          <span class="action-label">Éditer</span>
+        </a>
+        <a routerLink="/admin/mediatheque" [queryParams]="{ import: 1 }" class="action-card">
+          <span class="action-icon">↑</span>
+          <span class="action-label">Importer photo</span>
+        </a>
+        <a routerLink="/admin/mediatheque-video" [queryParams]="{ import: 1 }" class="action-card">
+          <span class="action-icon">↑</span>
+          <span class="action-label">Importer vidéo</span>
+        </a>
+        <a routerLink="/admin/stories" [queryParams]="{ new: 1 }" class="action-card">
+          <span class="action-icon">+</span>
+          <span class="action-label">Nouvelle story</span>
+        </a>
         <a routerLink="/admin/mobilier" [queryParams]="{ new: 1 }" class="action-card">
           <span class="action-icon">+</span>
           <span class="action-label">Nouvelle pièce</span>
@@ -18,17 +34,9 @@ import { RouterLink } from '@angular/router';
           <span class="action-icon">+</span>
           <span class="action-label">Nouvelle exposition</span>
         </a>
-        <a routerLink="/admin/stories" [queryParams]="{ new: 1 }" class="action-card">
-          <span class="action-icon">+</span>
-          <span class="action-label">Nouvelle story</span>
-        </a>
-        <a routerLink="/admin/mediatheque" [queryParams]="{ import: 1 }" class="action-card">
-          <span class="action-icon">↑</span>
-          <span class="action-label">Importer photo</span>
-        </a>
-        <a routerLink="/admin/accueil" class="action-card">
-          <span class="action-icon">✎</span>
-          <span class="action-label">Éditer l'accueil</span>
+        <a routerLink="/admin/analytics" class="action-card">
+          <span class="action-icon">📊</span>
+          <span class="action-label">Analytics</span>
         </a>
       </div>
     </div>

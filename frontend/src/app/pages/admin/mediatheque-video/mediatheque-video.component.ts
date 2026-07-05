@@ -1,5 +1,5 @@
-import { Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PortfolioService } from '../../../services/portfolio.service';
 import { ToastService } from '../shared/toast.service';
 import { VideoSummary } from '../../../models/video.model';
@@ -134,9 +134,10 @@ import { VideoPlayerComponent } from '../../../components/video-player/video-pla
     .video-del:disabled { opacity: 0.4; cursor: not-allowed; color: var(--color-mute); }
   `]
 })
-export class MediathequeVideoComponent implements OnDestroy {
+export class MediathequeVideoComponent implements OnDestroy, AfterViewInit {
   private readonly portfolio = inject(PortfolioService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   protected readonly videos = signal<VideoSummary[]>([]);
@@ -148,6 +149,15 @@ export class MediathequeVideoComponent implements OnDestroy {
   private pollTimers = new Map<string, ReturnType<typeof setInterval>>();
 
   constructor() { this.refresh(); }
+
+  ngAfterViewInit(): void {
+    // ?import=1 (lien "Importer vidéo" du dashboard) → ouvre directement le sélecteur de fichier.
+    this.route.queryParamMap.subscribe(params => {
+      if (params.get('import') === '1') {
+        setTimeout(() => this.fileInput?.nativeElement.click(), 0);
+      }
+    });
+  }
 
   /** Active la lecture en place dans la carte de la vidéo v. */
   play(v: VideoSummary): void { this.activePlayerId.set(v.id); }
