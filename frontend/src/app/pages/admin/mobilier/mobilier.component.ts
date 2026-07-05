@@ -378,14 +378,26 @@ export class MobilierComponent {
     this.refreshFurniture();
     this.portfolio.getAllTags().subscribe(t => this.allTags.set(t));
     this.route.queryParamMap.subscribe(params => {
-      if (params.get('new') === '1') this.newFurniture();
+      if (params.get('new') === '1') { this.newFurniture(); return; }
+      const slug = params.get('slug');
+      if (slug) { this.pendingSlug = slug; this.trySelectPendingSlug(); }
     });
+  }
+
+  /** Slug a selectionner via deep-link (?slug=), consomme une fois la liste chargee. */
+  private pendingSlug: string | null = null;
+
+  private trySelectPendingSlug(): void {
+    const slug = this.pendingSlug;
+    if (!slug) return;
+    const item = this.furniture().find(f => f.slug === slug);
+    if (item) { this.pendingSlug = null; this.loadFurniture(item); }
   }
 
   private refreshFurniture(): void {
     this.loadingFurniture.set(true);
     this.portfolio.getAllFurniture().subscribe({
-      next: data => { this.furniture.set(data); this.loadingFurniture.set(false); },
+      next: data => { this.furniture.set(data); this.loadingFurniture.set(false); this.trySelectPendingSlug(); },
       error: () => { this.loadingFurniture.set(false); this.toast.error('Impossible de charger les pièces.'); }
     });
   }
@@ -431,7 +443,8 @@ export class MobilierComponent {
     this.editingFurnitureSlug.set(item.slug);
     this.editingFurnitureId.set(item.id ?? null);
     this.creatingFurniture.set(false);
-    this.mobilierViewMode.set('form');
+    // Selection d'une piece existante -> ouvre l'onglet Apercu (edition via l'onglet Modifier).
+    this.mobilierViewMode.set('preview');
     const dims = this.parseDimensions(item.dimensions ?? []);
     this.furnitureForm.reset({
       title: item.title, slug: item.slug, category: item.category, year: item.year,

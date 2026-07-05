@@ -306,8 +306,20 @@ export class ExpositionsComponent {
     this.refreshExhibitions();
     this.portfolio.getAllTags().subscribe(t => this.allTags.set(t));
     this.route.queryParamMap.subscribe(params => {
-      if (params.get('new') === '1') this.newExhibition();
+      if (params.get('new') === '1') { this.newExhibition(); return; }
+      const slug = params.get('slug');
+      if (slug) { this.pendingSlug = slug; this.trySelectPendingSlug(); }
     });
+  }
+
+  /** Slug a selectionner via deep-link (?slug=), consomme une fois la liste chargee. */
+  private pendingSlug: string | null = null;
+
+  private trySelectPendingSlug(): void {
+    const slug = this.pendingSlug;
+    if (!slug) return;
+    const item = this.exhibitions().find(e => e.slug === slug);
+    if (item) { this.pendingSlug = null; this.loadExhibition(item); }
   }
 
   /** Message du garde-fou perte de saisie. */
@@ -358,7 +370,8 @@ export class ExpositionsComponent {
     this.editingExhibitionSlug.set(item.slug);
     this.editingExhibitionId.set(item.id ?? null);
     this.creatingExhibition.set(false);
-    this.expoViewMode.set('form');
+    // Selection d'une expo existante -> ouvre l'onglet Apercu (edition via l'onglet Modifier).
+    this.expoViewMode.set('preview');
     this.exhibitionForm.reset({
       title: item.title, slug: item.slug, venue: item.venue ?? '', city: item.city ?? '', country: item.country ?? '',
       startDate: item.startDate ?? '', endDate: item.endDate ?? '', curator: item.curator ?? '',
