@@ -155,10 +155,10 @@ type Kind = 'all' | 'furniture' | 'exhibition';
     .badge { position: absolute; top: 14px; left: 14px; background: var(--color-bg); color: var(--color-ink); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 10px; border: 1px solid var(--color-ink); z-index: 2; }
 
     .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-    .card-tag { font-size: 0.7rem; padding: 2px 8px; background: var(--color-bg-alt); border: 1px solid var(--color-line); color: var(--color-ink-soft); cursor: pointer; }
-    .card-tag:hover { color: var(--color-ink); border-color: var(--color-ink); }
+    .card-tag { font-size: 0.7rem; padding: 3px 12px; background: transparent; border: 1px solid var(--color-ink); border-radius: 999px; color: var(--color-ink); cursor: pointer; }
+    .card-tag:hover { background: var(--color-ink); color: var(--color-bg); }
     .card-tag.more { cursor: default; }
-    .card-tag.more:hover { color: var(--color-ink-soft); border-color: var(--color-line); }
+    .card-tag.more:hover { background: transparent; color: var(--color-ink); }
 
     @media (max-width: 860px) {
       .creations-layout { grid-template-columns: 1fr; gap: 20px; }

@@ -109,11 +109,11 @@ import { Photo } from '../../../models/photo.model';
       display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 24px 0; flex-shrink: 0;
     }
     .picker-tag {
-      font: inherit; font-size: 0.75rem; padding: 3px 10px; cursor: pointer;
-      border: 1px solid var(--color-line); background: var(--color-bg-alt);
-      color: var(--color-ink-soft); border-radius: 999px; line-height: 1.4;
+      font: inherit; font-size: 0.75rem; padding: 3px 12px; cursor: pointer;
+      border: 1px solid var(--color-ink); background: transparent;
+      color: var(--color-ink); border-radius: 999px; line-height: 1.4;
     }
-    .picker-tag:hover { border-color: var(--color-accent); }
+    .picker-tag:hover { background: var(--color-bg-alt); }
     .picker-tag.active {
       background: var(--color-ink); color: var(--color-bg); border-color: var(--color-ink);
     }
