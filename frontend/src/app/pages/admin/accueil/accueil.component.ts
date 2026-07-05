@@ -424,7 +424,7 @@ export class AccueilComponent {
   /** Ouvre la fiche mobilier/expo correspondante (deep-link ?slug=, ouverte en Apercu). */
   protected onPreviewFeedItemOpen(e: { kind: 'furniture' | 'exhibition'; slug: string }): void {
     const path = e.kind === 'furniture' ? '/admin/mobilier' : '/admin/expositions';
-    this.router.navigate([path], { queryParams: { slug: e.slug } });
+    this.router.navigate([path], { queryParams: { slug: e.slug, preview: 'full' } });
   }
 
   /** Ouvre l'editeur de la story cliquee dans un slider de l'apercu Accueil. */

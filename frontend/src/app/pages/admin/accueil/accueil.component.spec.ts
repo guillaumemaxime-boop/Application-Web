@@ -354,9 +354,9 @@ describe('AccueilComponent', () => {
     const router = TestBed.inject(Router);
     const navSpy = spyOn(router, 'navigate');
     cmp.onPreviewFeedItemOpen({ kind: 'furniture', slug: 'chaise' });
-    expect(navSpy).toHaveBeenCalledWith(['/admin/mobilier'], { queryParams: { slug: 'chaise' } });
+    expect(navSpy).toHaveBeenCalledWith(['/admin/mobilier'], { queryParams: { slug: 'chaise', preview: 'full' } });
     cmp.onPreviewFeedItemOpen({ kind: 'exhibition', slug: 'salon' });
-    expect(navSpy).toHaveBeenCalledWith(['/admin/expositions'], { queryParams: { slug: 'salon' } });
+    expect(navSpy).toHaveBeenCalledWith(['/admin/expositions'], { queryParams: { slug: 'salon', preview: 'full' } });
   });
 
   it('onSliderStoryEdit navigue vers l\'editeur de la story', () => {

@@ -49,6 +49,7 @@ import { EditableExhibitionField } from '../../../components/exhibition-detail-v
       <app-admin-preview-shell
         [active]="previewActive()"
         [(viewMode)]="expoViewMode"
+        [startFullscreen]="wantFullscreen()"
         modeBarAriaLabel="Mode d'édition de l'exposition"
         formTabLabel="✏ Modifier l'exposition"
         previewDialogLabel="Aperçu de l’exposition"
@@ -211,6 +212,8 @@ export class ExpositionsComponent {
 
   protected readonly creatingExhibition = signal(false);
   protected readonly expoViewMode = signal<'form' | 'preview'>('form');
+  /** Passe à true via ?preview=full (lien "Ouvrir la fiche") → ouvre l'aperçu plein écran. */
+  protected readonly wantFullscreen = signal(false);
   /** Reflète le plein écran du shell — rend la liste latérale inert (neutralisation aria-modal). */
   protected readonly previewFullscreenActive = signal(false);
 
@@ -306,6 +309,7 @@ export class ExpositionsComponent {
     this.refreshExhibitions();
     this.portfolio.getAllTags().subscribe(t => this.allTags.set(t));
     this.route.queryParamMap.subscribe(params => {
+      if (params.get('preview') === 'full') this.wantFullscreen.set(true);
       if (params.get('new') === '1') { this.newExhibition(); return; }
       const slug = params.get('slug');
       if (slug) { this.pendingSlug = slug; this.trySelectPendingSlug(); }

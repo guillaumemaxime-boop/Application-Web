@@ -49,6 +49,7 @@ import { EditableTextField } from '../../../components/furniture-detail-view/fur
       <app-admin-preview-shell
         [active]="previewActive()"
         [(viewMode)]="mobilierViewMode"
+        [startFullscreen]="wantFullscreen()"
         modeBarAriaLabel="Mode d'édition de la pièce"
         formTabLabel="✏ Modifier la pièce"
         previewDialogLabel="Aperçu de la fiche"
@@ -280,6 +281,8 @@ export class MobilierComponent {
 
   protected readonly creatingFurniture = signal(false);
   protected readonly mobilierViewMode = signal<'form' | 'preview'>('form');
+  /** Passe à true via ?preview=full (lien "Ouvrir la fiche") → ouvre l'aperçu plein écran. */
+  protected readonly wantFullscreen = signal(false);
   /** Reflète le plein écran du shell — rend la liste latérale inert (neutralisation aria-modal). */
   protected readonly previewFullscreenActive = signal(false);
 
@@ -378,6 +381,7 @@ export class MobilierComponent {
     this.refreshFurniture();
     this.portfolio.getAllTags().subscribe(t => this.allTags.set(t));
     this.route.queryParamMap.subscribe(params => {
+      if (params.get('preview') === 'full') this.wantFullscreen.set(true);
       if (params.get('new') === '1') { this.newFurniture(); return; }
       const slug = params.get('slug');
       if (slug) { this.pendingSlug = slug; this.trySelectPendingSlug(); }
