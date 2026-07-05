@@ -23,14 +23,14 @@ class ContactRequestServiceTest {
 
     @Mock private ContactRequestRepository repository;
     @Mock private MailSettingsService mailSettingsService;
-    @Mock private ResendMailService resendMailService;
+    @Mock private MailSender mailSender;
 
     private ContactRequestService service;
 
     @BeforeEach
     void setUp() {
         when(repository.save(any(ContactRequestEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-        service = new ContactRequestService(repository, mailSettingsService, resendMailService);
+        service = new ContactRequestService(repository, mailSettingsService, mailSender);
     }
 
     private ContactRequestInput sampleInput() {
@@ -51,7 +51,7 @@ class ContactRequestServiceTest {
     @Test
     void testSubmit_PersistsTrimmedFields() {
         when(mailSettingsService.get()).thenReturn(configuredView());
-        when(resendMailService.send(any(), any(), any(), any(), any())).thenReturn(true);
+        when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(true);
         ContactRequestInput input = new ContactRequestInput(
                 "  Jean  ", "  jean@example.com ", "  ", "acquisition",
                 "  Hello world  ", "", "", ""
@@ -80,7 +80,7 @@ class ContactRequestServiceTest {
 
         service.submit(sampleInput());
 
-        verify(resendMailService, never()).send(any(), any(), any(), any(), any());
+        verify(mailSender, never()).send(any(), any(), any(), any(), any());
         ArgumentCaptor<ContactRequestEntity> captor = ArgumentCaptor.forClass(ContactRequestEntity.class);
         verify(repository).save(captor.capture());
         assertFalse(captor.getValue().isMailSent());
@@ -96,7 +96,7 @@ class ContactRequestServiceTest {
 
         service.submit(sampleInput());
 
-        verify(resendMailService, never()).send(any(), any(), any(), any(), any());
+        verify(mailSender, never()).send(any(), any(), any(), any(), any());
         ArgumentCaptor<ContactRequestEntity> captor = ArgumentCaptor.forClass(ContactRequestEntity.class);
         verify(repository).save(captor.capture());
         assertFalse(captor.getValue().isMailSent());
@@ -105,11 +105,11 @@ class ContactRequestServiceTest {
     @Test
     void testSubmit_MailConfigured_SendsViaResendAndMarksMailSent() {
         when(mailSettingsService.get()).thenReturn(configuredView());
-        when(resendMailService.send(any(), any(), any(), any(), any())).thenReturn(true);
+        when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(true);
 
         service.submit(sampleInput());
 
-        verify(resendMailService).send(
+        verify(mailSender).send(
                 eq("no-reply@studio.fr"),
                 eq("studio@example.com"),
                 eq("jean@example.com"),
@@ -124,7 +124,7 @@ class ContactRequestServiceTest {
     @Test
     void testSubmit_ResendReturnsFalse_KeepsRecordWithMailSentFalse() {
         when(mailSettingsService.get()).thenReturn(configuredView());
-        when(resendMailService.send(any(), any(), any(), any(), any())).thenReturn(false);
+        when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(false);
 
         ContactRequestAck ack = service.submit(sampleInput());
 
@@ -137,7 +137,7 @@ class ContactRequestServiceTest {
     @Test
     void testSubmit_PressInterest_UsesPressLabelInSubject() {
         when(mailSettingsService.get()).thenReturn(configuredView());
-        when(resendMailService.send(any(), any(), any(), any(), any())).thenReturn(true);
+        when(mailSender.send(any(), any(), any(), any(), any())).thenReturn(true);
         ContactRequestInput input = new ContactRequestInput(
                 "Reporter", "r@p.fr", null, "press",
                 "Demande presse.", null, null, null
@@ -145,7 +145,7 @@ class ContactRequestServiceTest {
 
         service.submit(input);
 
-        verify(resendMailService).send(
+        verify(mailSender).send(
                 any(), any(), any(),
                 argThat(s -> s.contains("Presse")),
                 any()

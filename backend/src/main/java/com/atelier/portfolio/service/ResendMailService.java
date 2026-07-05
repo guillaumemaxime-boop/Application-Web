@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ResendMailService {
+public class ResendMailService implements MailSender {
 
     private static final Logger log = LoggerFactory.getLogger(ResendMailService.class);
 
@@ -35,6 +35,7 @@ public class ResendMailService {
         this.degraded = false;
     }
 
+    @Override
     public boolean isConfigured() {
         return !degraded;
     }
@@ -43,6 +44,7 @@ public class ResendMailService {
      * Sends an email via Resend. Returns true if Resend accepted the message,
      * false otherwise (degraded mode OR exception). Never propagates.
      */
+    @Override
     public boolean send(String from, String to, String replyTo, String subject, String body) {
         if (degraded) return false;
         try {
