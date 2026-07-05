@@ -40,6 +40,8 @@ Référence : [adr.github.io](https://adr.github.io/) — format inspiré de [MA
 | 0018 | [Pattern page/view pour les fiches détail](0018-page-vs-view-pattern.md) | Accepted | 2026-06-08 |
 | 0019 | [Vidéos auto-hébergées (fiches + Studio)](0019-videos-auto-hebergees.md) | Accepted | 2026-06-19 |
 | 0020 | [Page d'administration dédiée pour les stories](0020-page-stories-admin-dediee.md) | Accepted | 2026-06-19 |
+| 0021 | [Vidéos : transcodage asynchrone + entité Video](0021-videos-transcodage-async.md) | Accepted | 2026-06-21 |
+| 0022 | [Architecture logicielle : couches pragmatiques + ports/adapters sélectifs](0022-architecture-couches-pragmatique-vs-hexagonal.md) | Accepted | 2026-07-05 |
 
 ## Créer un nouvel ADR
 
